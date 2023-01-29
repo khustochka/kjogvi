@@ -1,6 +1,6 @@
 defmodule Ornitho.Schema.Book do
   @moduledoc """
-  This represents a "book" - a taxonomic list (checklist). A book is uniquely identified
+  This schema represents a "book" - a taxonomic list (checklist). A book is uniquely identified
   by a combination of slug and version.
 
   Potential improvements:
@@ -18,6 +18,8 @@ defmodule Ornitho.Schema.Book do
     field(:name, :string)
     field(:description, :string)
     field(:extras, :map)
+
+    has_many(:taxa, Ornitho.Schema.Taxon)
 
     timestamps()
   end
