@@ -14,13 +14,15 @@ defmodule Ornitho.Schema.TaxonTest do
     end
 
     test "same scientific names in different books" do
-      error = try do
-        _tx1 = insert(:taxon)
-        _tx2 = insert(:taxon)
-        nil
-      rescue
-        e -> e
-      end
+      error =
+        try do
+          _tx1 = insert(:taxon)
+          _tx2 = insert(:taxon)
+          nil
+        rescue
+          e -> e
+        end
+
       assert error == nil
     end
   end

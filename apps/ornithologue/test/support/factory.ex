@@ -28,7 +28,7 @@ defmodule Ornitho.Factory do
       protonym: "Cuculus canorus",
       order: "Cuculiformes",
       family: "Cuculidae",
-      sort_order: sequence(:sort_order, &(&1)),
+      sort_order: sequence(:sort_order, & &1),
       extras: %{
         "family_en" => "Cuckoos",
         "species_group" => "Cuckoos"
