@@ -4,25 +4,33 @@ defmodule Ornitho.Importer.Generic do
 
   ## Examples
 
-    use Ornitho.Importer.Generic,
-      slug: "demo",
-      version: "v1",
-      name: "Demo book"
+      use Ornitho.Importer.Generic,
+        slug: "demo",
+        version: "v1",
+        name: "Demo book"
   """
 
   # TODO: add behaviours.
+  @required_keys [:slug, :version, :name]
 
   defmacro __using__(opts) do
-    unless opts[:slug] do
-      raise ArgumentError, "missing :slug option on use Ornitho.Importer.Generic"
-    end
+    {keys, _} = opts |> Keyword.split(@required_keys)
 
-    unless opts[:version] do
-      raise ArgumentError, "missing :version option on use Ornitho.Importer.Generic"
-    end
+    keys =
+      keys
+      |> Enum.filter(fn {_, v} -> not is_nil(v) end)
+      |> Keyword.keys()
+      |> Enum.uniq()
 
-    unless opts[:name] do
-      raise ArgumentError, "missing :name option on use Ornitho.Importer.Generic"
+    missing_keys =
+      (@required_keys -- keys)
+      |> Enum.map(&Atom.to_string/1)
+      |> Enum.map(fn str -> ":#{str}" end)
+
+    unless Enum.empty?(missing_keys) do
+      raise ArgumentError,
+            "missing required option(s) #{missing_keys |> Enum.join(", ")} on " <>
+              "`use Ornitho.Importer.Generic`"
     end
 
     quote bind_quoted: [opts: opts] do
@@ -34,10 +42,14 @@ defmodule Ornitho.Importer.Generic do
       @slug opts[:slug]
       @version opts[:version]
       @name opts[:name]
+      @description opts[:description]
+      @extras opts[:extras]
 
       def slug(), do: @slug
       def version(), do: @version
       def name(), do: @name
+      def description(), do: @description
+      def extras(), do: @extras
 
       def book_query() do
         from(Book, where: [slug: ^slug(), version: ^version()])
@@ -47,6 +59,16 @@ defmodule Ornitho.Importer.Generic do
         from(t in Taxon,
           where: t.book_id in subquery(from(book_query(), select: [:id]))
         )
+      end
+
+      def book_map do
+        %Book{
+          slug: slug(),
+          version: version(),
+          name: name(),
+          description: description(),
+          extras: extras()
+        }
       end
     end
   end

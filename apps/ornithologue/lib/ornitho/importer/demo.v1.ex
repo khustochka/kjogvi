@@ -6,5 +6,6 @@ defmodule Ornitho.Importer.Demo.V1 do
   use Ornitho.Importer.Generic,
     slug: "demo",
     version: "v1",
-    name: "Demo book"
+    name: "Demo book",
+    description: "This is a demo book"
 end

@@ -3,9 +3,12 @@ defmodule Ornitho.Importer do
   The module that does book import.
   """
 
-  def process_import(importer, force: force) do
+  def process_import(importer, opts \\ []) do
+    force = opts[:force]
+
     with {:module, _} <- Code.ensure_compiled(importer),
          {:ok, _} <- prepare_repo(importer, force: force) do
+      create_book(importer)
       {:ok, :done}
     else
       {:error, :nofile} -> {:error, :incorrect_importer_module}
@@ -13,9 +16,11 @@ defmodule Ornitho.Importer do
     end
   end
 
-  def prepare_repo(importer, force: force) do
+  def prepare_repo(importer, opts \\ []) do
+    force = opts[:force]
+
     if book_exists?(importer) do
-      if force do
+      if force == true do
         delete_book(importer)
         {:ok, :ready}
       else
@@ -32,10 +37,17 @@ defmodule Ornitho.Importer do
   end
 
   defp delete_book(importer) do
-    importer.taxa_query()
-    |> Ornitho.Repo.delete_all()
+    Ornitho.Repo.transaction(fn repo ->
+      importer.taxa_query()
+      |> repo.delete_all()
 
-    importer.book_query()
-    |> Ornitho.Repo.delete_all()
+      importer.book_query()
+      |> repo.delete_all()
+    end)
+  end
+
+  defp create_book(importer) do
+    importer.book_map()
+    |> Ornitho.Repo.insert()
   end
 end

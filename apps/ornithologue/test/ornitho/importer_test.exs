@@ -11,14 +11,14 @@ defmodule Ornitho.ImporterTest do
     test "returns error if the book exists" do
       insert(:book, slug: "demo", version: "v1")
 
-      assert Importer.prepare_repo(@importer, force: false) ==
+      assert Importer.prepare_repo(@importer) ==
                {:error, :overwrite_not_allowed}
 
       assert Ornitho.Repo.exists?(@importer.book_query) == true
     end
 
     test "returns ok if the book does not exist" do
-      assert {:ok, _} = Importer.prepare_repo(@importer, force: false)
+      assert {:ok, _} = Importer.prepare_repo(@importer)
     end
 
     test "returns ok and removes the book if instructed to force" do
@@ -41,7 +41,21 @@ defmodule Ornitho.ImporterTest do
 
   describe "process_import/2" do
     test "fails if importer module does not exist" do
-      assert {:error, _} = Importer.process_import(Importer.Fake.V2, force: false)
+      assert {:error, _} = Importer.process_import(Importer.Fake.V2)
+    end
+
+    test "creates a book with provided fields" do
+      assert Ornitho.Repo.exists?(@importer.book_query) == false
+      assert {:ok, _} = Importer.process_import(@importer)
+
+      book = Ornitho.Repo.one(@importer.book_query)
+
+      assert %{
+               slug: "demo",
+               version: "v1",
+               name: "Demo book",
+               description: "This is a demo book"
+             } = book
     end
   end
 end
