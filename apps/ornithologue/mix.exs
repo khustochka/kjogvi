@@ -36,7 +36,8 @@ defmodule Ornithologue.MixProject do
       {:ex_machina, "~> 2.7.0", only: :test},
       {:postgrex, ">= 0.0.0"},
       # For jsonb columns
-      {:jason, "~> 1.0"}
+      {:jason, "~> 1.0"},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 
