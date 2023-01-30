@@ -8,7 +8,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
   server: false
 
 # Print only warnings and errors during test (set DEBUG env var to print debug messages)
-config :logger, level: (if System.get_env("DEBUG"), do: :debug, else: :warning)
+config :logger, level: if(System.get_env("DEBUG"), do: :debug, else: :warning)
 
 # In test we don't send emails.
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Test
