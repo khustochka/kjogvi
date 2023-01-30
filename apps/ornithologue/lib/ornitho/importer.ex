@@ -7,8 +7,9 @@ defmodule Ornitho.Importer do
     force = opts[:force]
 
     with {:module, _} <- Code.ensure_compiled(importer),
-         {:ok, _} <- prepare_repo(importer, force: force) do
-      create_book(importer)
+         {:ok, _} <- prepare_repo(importer, force: force),
+         {:ok, book} <- create_book(importer) do
+      create_taxa(importer, book)
       {:ok, :done}
     else
       {:error, :nofile} -> {:error, :incorrect_importer_module}
@@ -37,17 +38,16 @@ defmodule Ornitho.Importer do
   end
 
   defp delete_book(importer) do
-    Ornitho.Repo.transaction(fn repo ->
-      importer.taxa_query()
-      |> repo.delete_all()
-
-      importer.book_query()
-      |> repo.delete_all()
-    end)
+    importer.book_query()
+    |> Ornitho.Repo.delete_all()
   end
 
   defp create_book(importer) do
     importer.book_map()
     |> Ornitho.Repo.insert()
+  end
+
+  defp create_taxa(importer, book) do
+    # importer.create_taxa(book)
   end
 end

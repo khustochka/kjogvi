@@ -3,7 +3,7 @@ defmodule Ornitho.Repo.Migrations.AddTaxaTable do
 
   def change do
     create table(:taxa) do
-      add :book_id, references("books"), null: false
+      add :book_id, references("books", on_delete: :delete_all), null: false
       add :name_sci, :string, size: 256, null: false
       add :name_en, :string
       add :code, :string, size: 256, null: false
@@ -13,7 +13,7 @@ defmodule Ornitho.Repo.Migrations.AddTaxaTable do
       add :protonym, :string # not present in eBird
       add :order, :string
       add :family, :string
-      add :parent_species_id, references("taxa")
+      add :parent_species_id, references("taxa", on_delete: :nilify_all)
       add :extras, :map # family_en, species_group, extinct, extinct_year, changes, range, ebird_order_num_str
       add :sort_order, :integer, null: false
 
