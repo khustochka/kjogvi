@@ -34,8 +34,7 @@ defmodule Ornitho.Importer.Generic do
     end
 
     quote bind_quoted: [opts: opts] do
-      alias Ornitho.Schema.Book
-      alias Ornitho.Schema.Taxon
+      alias Ornitho.Schema.{Book, Taxon}
 
       import Ecto.Query, only: [from: 2]
 
@@ -53,12 +52,6 @@ defmodule Ornitho.Importer.Generic do
 
       def book_query() do
         from(Book, where: [slug: ^slug(), version: ^version()])
-      end
-
-      def taxa_query() do
-        from(t in Taxon,
-          where: t.book_id in subquery(from(book_query(), select: [:id]))
-        )
       end
 
       def book_map do
