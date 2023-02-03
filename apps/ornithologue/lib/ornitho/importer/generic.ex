@@ -50,6 +50,42 @@ defmodule Ornitho.Importer.Generic do
       def description(), do: @description
       def extras(), do: @extras
 
+      def process_import(opts \\ []) do
+        force = opts[:force]
+
+        with {:ok, _} <- prepare_repo(force: force),
+             {:ok, book} <- create_book() do
+          create_taxa(book)
+        else
+          e = {:error, _} -> e
+        end
+      end
+
+      defp prepare_repo(opts \\ []) do
+        force = opts[:force]
+
+        if book_exists?() do
+          if force == true do
+            delete_book()
+            {:ok, :ready}
+          else
+            {:error, :overwrite_not_allowed}
+          end
+        else
+          {:ok, :ready}
+        end
+      end
+
+      defp book_exists?() do
+        book_query()
+        |> Ornitho.Repo.exists?()
+      end
+
+      defp delete_book() do
+        book_query()
+        |> Ornitho.Repo.delete_all()
+      end
+
       def book_query() do
         from(Book, where: [slug: ^slug(), version: ^version()])
       end
@@ -62,6 +98,15 @@ defmodule Ornitho.Importer.Generic do
           description: description(),
           extras: extras()
         }
+      end
+
+      defp create_book() do
+        Ornitho.create_book(book_map())
+      end
+
+      defp create_taxa(book) do
+        # importer.create_taxa(book)
+        {:ok, :done}
       end
     end
   end

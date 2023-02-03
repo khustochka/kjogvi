@@ -4,8 +4,8 @@ defmodule Ornitho.Schema.BookTest do
   use Ornitho.RepoCase
   alias Ornitho.Schema.Book
 
-  describe "Book" do
-    test "is saved" do
+  describe "Book factory" do
+    test "is valid" do
       book = insert(:book)
 
       assert Repo.all(Book) == [book]

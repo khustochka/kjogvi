@@ -12,6 +12,8 @@ defmodule Ornitho.Schema.Book do
   """
   use Ornitho.Schema
 
+  alias __MODULE__
+
   schema "books" do
     field(:slug, :string)
     field(:version, :string)
@@ -22,5 +24,26 @@ defmodule Ornitho.Schema.Book do
     has_many(:taxa, Ornitho.Schema.Taxon)
 
     timestamps()
+  end
+
+  def creation_changeset(book = %Book{}, attrs) do
+    book
+    |> changeset_common_process(attrs)
+  end
+
+  def updating_changeset(book = %Book{}, attrs \\ %{}) do
+    book
+    |> changeset_common_process(attrs)
+  end
+
+  defp changeset_common_process(book = %Book{}, attrs) do
+    book
+    |> Ecto.Changeset.cast(attrs, saveable_fields())
+    |> Ecto.Changeset.validate_required([:slug, :version, :name])
+    |> Ecto.Changeset.unique_constraint([:version, :slug], name: "books_slug_version_index")
+  end
+
+  defp saveable_fields do
+    Book.__schema__(:fields) -- [:id, :inserted_at, :updated_at]
   end
 end
