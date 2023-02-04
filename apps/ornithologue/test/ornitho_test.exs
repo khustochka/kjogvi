@@ -2,7 +2,6 @@ defmodule OrnithoTest do
   @moduledoc false
 
   use Ornitho.RepoCase
-  alias Ornitho.Schema.Book
 
   describe "Book creation" do
     test "is not saved with empty slug" do

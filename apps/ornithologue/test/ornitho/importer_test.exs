@@ -6,23 +6,23 @@ defmodule Ornitho.ImporterTest do
   alias Ornitho.Importer
 
   describe "process_import/2" do
-    test "fails if importer module does not exist" do
-      assert {:error, _} = Importer.process_import(Importer.Fake.V2)
-    end
-
-    test "returns error if the book exists (no force option)" do
+    test "raises if the book exists (no force option)" do
       insert(:book, slug: "test", version: "no_taxa")
 
-      assert Importer.process_import(Importer.Test.NoTaxa) ==
-               {:error, :overwrite_not_allowed}
+      assert_raise RuntimeError,
+        "A book for importer Ornitho.Importer.Test.NoTaxa already exists, to force overwrite " <>
+        "it pass [force: true] (or --force in a Mix task. Please note that in this case all " <>
+        "taxa will be deleted!", fn ->
+        Importer.Test.NoTaxa.process_import()
+      end
 
-      assert Ornitho.Repo.exists?(Importer.Test.NoTaxa.book_query) == true
+      assert Ornitho.Repo.exists?(Importer.Test.NoTaxa.book_query()) == true
     end
 
     test "returns ok and updates the book if instructed to force" do
-      old_book = insert(:book, slug: "test", version: "no_taxa", name: "Old name")
+      _old_book = insert(:book, slug: "test", version: "no_taxa", name: "Old name")
 
-      assert {:ok, _} = Importer.process_import(Importer.Test.NoTaxa, force: true)
+      assert {:ok, _} = Importer.Test.NoTaxa.process_import(force: true)
       book = Importer.Test.NoTaxa.book_query |> Ornitho.Repo.one()
       assert not is_nil(book)
       assert book.name == Importer.Test.NoTaxa.name()
@@ -35,20 +35,20 @@ defmodule Ornitho.ImporterTest do
       book = insert(:book, slug: "test", version: "no_taxa") # ironic!
       taxon = insert(:taxon, book: book)
 
-      Importer.process_import(Importer.Test.NoTaxa, force: true)
+      Importer.Test.NoTaxa.process_import(force: true)
 
       assert Ornitho.Repo.reload(taxon) == nil
     end
 
     test "returns ok if the book does not exist" do
-      assert {:ok, _} = Importer.process_import(Importer.Test.NoTaxa)
+      assert {:ok, _} = Importer.Test.NoTaxa.process_import()
     end
 
     test "creates the book if the book does not exist" do
       assert Ornitho.Repo.exists?(Importer.Test.NoTaxa.book_query()) == false
-      assert {:ok, _} = Importer.process_import(Importer.Test.NoTaxa)
+      assert {:ok, _} = Importer.Test.NoTaxa.process_import()
 
-      book = Ornitho.Repo.one(Importer.Test.NoTaxa.book_query)
+      book = Ornitho.Repo.one(Importer.Test.NoTaxa.book_query())
 
       assert %{
                slug: "test",

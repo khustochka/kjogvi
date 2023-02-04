@@ -1,5 +1,18 @@
 defmodule Mix.Tasks.Ornitho.Import do
-  @moduledoc "The task to import a book"
+  @moduledoc """
+  Runs a custom importer which imports a Book with Taxa. Provide the importer module as an
+  argument. Optional parameter `--force` will remove the existing book and its taxa prior to
+  importing.
+
+  ## Examples
+
+    $ mix ornitho.import Importer.Ebird.V1
+
+  ## Command line options
+
+  • `--force`, `-f` - force overwrite existing book and taxa
+  """
+
   use Mix.Task
 
   @aliases [
@@ -19,25 +32,39 @@ defmodule Mix.Tasks.Ornitho.Import do
         force = opts[:force]
         importer = Module.concat([importer_name])
 
-        case Ornitho.Importer.process_import(importer, force: force) do
-          {:error, :incorrect_importer_module} ->
-            Mix.raise("Importer module #{Atom.to_string(importer)} does not exists")
-
-          {:error, :overwrite_not_allowed} ->
-            Mix.raise(
-              "A book for importer #{Atom.to_string(importer)} already exists, " <>
-                "to force overwrite it pass --force. All taxa will be deleted!"
-            )
-
-          {:ok, _} ->
-            nil
+        with {:ok, _} <- ensure_module_exists(importer),
+             {:ok, _} <- ensure_function_exported(importer) do
+          importer.process_import(force: force)
+        else
+          {:error, error} ->
+            Mix.raise(error)
         end
 
       {_, _} ->
         Mix.raise(
           "expected ornitho.import to receive the importer module name, " <>
-            "got: #{inspect(Enum.join(args, " "))}"
+            "got: #{inspect(Enum.join(args, " "))}\n" <>
+            "See 'mix help ornitho.import' for details."
         )
+    end
+  end
+
+  defp ensure_module_exists(module) do
+    case Code.ensure_compiled(module) do
+      {:module, _} ->
+        {:ok, module}
+
+      {:error, error} ->
+        {:error ,"Could not load Importer module #{inspect(module)}, error: #{inspect(error)}."}
+    end
+  end
+
+  defp ensure_function_exported(module) do
+    if function_exported?(module, :process_import, 1) do
+      {:ok, module}
+    else
+      {:error,
+       "Module #{inspect(module)} is not an Importer, needs to define function 'process_import/1'."}
     end
   end
 end
