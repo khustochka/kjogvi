@@ -64,7 +64,7 @@ defmodule Ornitho.Importer do
       defp prepare_repo(opts \\ []) do
         force = opts[:force]
 
-        if book_exists?() do
+        if Ornitho.book_exists?(book_map()) do
           if force == true do
             delete_book()
             {:ok, :ready}
@@ -79,14 +79,8 @@ defmodule Ornitho.Importer do
         end
       end
 
-      defp book_exists?() do
-        book_query()
-        |> Ornitho.Repo.exists?()
-      end
-
       defp delete_book() do
-        book_query()
-        |> Ornitho.Repo.delete_all()
+        Ornitho.delete_book(book_map())
       end
 
       def book_query() do
