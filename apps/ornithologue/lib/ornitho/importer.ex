@@ -10,7 +10,6 @@ defmodule Ornitho.Importer do
         name: "Demo book"
   """
 
-  # TODO: add behaviours.
   @required_keys [:slug, :version, :name]
 
   defmacro __using__(opts) do
@@ -35,6 +34,8 @@ defmodule Ornitho.Importer do
 
     quote bind_quoted: [opts: opts] do
       alias Ornitho.Schema.{Book, Taxon}
+
+      @callback create_taxa(book :: %Book{}) :: {:ok, any()} | {:error, any()}
 
       import Ecto.Query, only: [from: 2]
 
