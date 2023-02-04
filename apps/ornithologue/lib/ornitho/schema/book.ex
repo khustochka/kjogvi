@@ -26,17 +26,17 @@ defmodule Ornitho.Schema.Book do
     timestamps()
   end
 
-  def creation_changeset(book = %Book{}, attrs) do
+  def creation_changeset(%Book{} = book, attrs) do
     book
     |> changeset_common_process(attrs)
   end
 
-  def updating_changeset(book = %Book{}, attrs \\ %{}) do
+  def updating_changeset(%Book{} = book, attrs \\ %{}) do
     book
     |> changeset_common_process(attrs)
   end
 
-  defp changeset_common_process(book = %Book{}, attrs) do
+  defp changeset_common_process(%Book{} = book, attrs) do
     book
     |> Ecto.Changeset.cast(attrs, saveable_fields())
     |> Ecto.Changeset.validate_required([:slug, :version, :name])

@@ -8,12 +8,12 @@ defmodule Ornitho do
 
   import Ecto.Query
 
-  def create_book(book = %Book{}) do
+  def create_book(%Book{} = book) do
     Book.creation_changeset(book, %{})
     |> Ornitho.Repo.insert()
   end
 
-  def create_book(attrs = %{}) do
+  def create_book(%{} = attrs) do
     Book.creation_changeset(%Book{}, attrs)
     |> Ornitho.Repo.insert()
   end
