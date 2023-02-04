@@ -4,6 +4,9 @@ if System.get_env("PHX_SERVER") do
   config :kjogvi_web, KjogviWeb.Endpoint, server: true
 end
 
+config :ornithologue, Ornitho.Repo,
+  url: System.get_env("ORNITHO_DATABASE_URL")
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -31,9 +34,6 @@ if config_env() == :prod do
       port: String.to_integer(System.get_env("PORT") || "4000")
     ],
     secret_key_base: secret_key_base
-
-    config :ornithologue, Ornitho.Repo,
-        url: System.get_env("ORNITHO_DATABASE_URL")
 
   # ## Using releases
   #
