@@ -16,7 +16,7 @@ defmodule Ornitho.ImporterTest do
         Importer.Test.NoTaxa.process_import()
       end
 
-      assert Ornitho.book_exists?(Importer.Test.NoTaxa.book_map()) == true
+      assert Ornitho.book_exists?(Importer.Test.NoTaxa.book_attributes()) == true
     end
 
     test "returns ok and updates the book if instructed to force" do
@@ -45,7 +45,7 @@ defmodule Ornitho.ImporterTest do
     end
 
     test "creates the book if the book does not exist" do
-      assert Ornitho.book_exists?(Importer.Test.NoTaxa.book_map()) == false
+      assert Ornitho.book_exists?(Importer.Test.NoTaxa.book_attributes()) == false
       assert {:ok, _} = Importer.Test.NoTaxa.process_import()
 
       book = Ornitho.Repo.one(Importer.Test.NoTaxa.book_query())

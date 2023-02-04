@@ -44,10 +44,19 @@ defmodule Ornitho.Importer do
       @description opts[:description]
       @extras opts[:extras]
 
+      @spec slug() :: String.t()
       def slug(), do: @slug
+
+      @spec version() :: String.t()
       def version(), do: @version
+
+      @spec name() :: String.t()
       def name(), do: @name
+
+      @spec description() :: nil | String.t()
       def description(), do: @description
+
+      @spec extras() :: nil | map()
       def extras(), do: @extras
 
       def process_import(opts \\ []) do
@@ -64,9 +73,9 @@ defmodule Ornitho.Importer do
       defp prepare_repo(opts \\ []) do
         force = opts[:force]
 
-        if Ornitho.book_exists?(book_map()) do
+        if Ornitho.book_exists?(slug(), version()) do
           if force == true do
-            Ornitho.delete_book(book_map())
+            Ornitho.delete_book(slug(), version())
             {:ok, :ready}
           else
             raise(
@@ -83,7 +92,7 @@ defmodule Ornitho.Importer do
         from(Book, where: [slug: ^slug(), version: ^version()])
       end
 
-      def book_map do
+      def book_attributes() do
         %Book{
           slug: slug(),
           version: version(),
@@ -94,7 +103,7 @@ defmodule Ornitho.Importer do
       end
 
       defp create_book() do
-        Ornitho.create_book(book_map())
+        Ornitho.create_book(book_attributes())
       end
     end
   end
