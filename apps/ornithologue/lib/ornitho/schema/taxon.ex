@@ -10,6 +10,10 @@ defmodule Ornitho.Schema.Taxon do
   """
   use Ornitho.Schema
 
+  alias Ornitho.Schema.Taxon
+
+  @required_fields [:name_sci, :name_en, :code, :category, :sort_order, :book_id, :sort_order]
+
   schema "taxa" do
     field(:name_sci, :string)
     field(:name_en, :string)
@@ -29,5 +33,30 @@ defmodule Ornitho.Schema.Taxon do
     belongs_to(:parent_species, Ornitho.Schema.Taxon)
 
     timestamps()
+  end
+
+  def creation_changeset(%Taxon{} = taxon, attrs) do
+    taxon
+    |> changeset_common_process(attrs)
+  end
+
+  def updating_changeset(%Taxon{} = taxon, attrs \\ %{}) do
+    taxon
+    |> changeset_common_process(attrs)
+  end
+
+  # TODO: sort order should be consequitive?
+  # TODO: parent_species should point to a species
+  defp changeset_common_process(%Taxon{} = taxon, attrs) do
+    taxon
+    |> Ecto.Changeset.cast(attrs, saveable_fields())
+    |> Ecto.Changeset.validate_required(@required_fields)
+    |> Ecto.Changeset.unique_constraint([:name_sci, :book_id], name: "taxa_book_id_name_sci_index")
+    |> Ecto.Changeset.unique_constraint([:code, :book_id], name: "taxa_book_id_code_index")
+    |> Ecto.Changeset.unique_constraint([:sort_order, :book_id], name: "taxa_book_id_sort_order_index")
+  end
+
+  defp saveable_fields do
+    Taxon.__schema__(:fields) -- [:id, :inserted_at, :updated_at]
   end
 end

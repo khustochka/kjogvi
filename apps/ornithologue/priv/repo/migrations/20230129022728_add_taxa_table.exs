@@ -23,8 +23,7 @@ defmodule Ornitho.Repo.Migrations.AddTaxaTable do
     create index(:taxa, [:book_id], unique: false)
     create index(:taxa, [:book_id, :name_sci], unique: true)
     create index(:taxa, [:book_id, :code], unique: true)
-    # TODO: make sort_order mandatory
-    create index(:taxa, [:book_id, :sort_order], unique: true, where: "sort_order IS NOT NULL")
+    create index(:taxa, [:book_id, :sort_order], unique: true)
     create index(:taxa, [:parent_species_id], unique: false, where: "parent_species_id IS NOT NULL")
   end
 end

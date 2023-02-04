@@ -26,4 +26,11 @@ defmodule Ornitho.Schema.TaxonTest do
       assert error == nil
     end
   end
+
+  describe "changeset" do
+    test "cannot be saved wihout book" do
+      taxon_attrs = params_for(:taxon, book_id: nil)
+      assert {:error, _} = Taxon.creation_changeset(%Taxon{}, taxon_attrs) |> Repo.insert()
+    end
+  end
 end
