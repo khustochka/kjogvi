@@ -66,7 +66,7 @@ defmodule Ornitho.Importer do
 
         if Ornitho.book_exists?(book_map()) do
           if force == true do
-            delete_book()
+            Ornitho.delete_book(book_map())
             {:ok, :ready}
           else
             raise(
@@ -77,10 +77,6 @@ defmodule Ornitho.Importer do
         else
           {:ok, :ready}
         end
-      end
-
-      defp delete_book() do
-        Ornitho.delete_book(book_map())
       end
 
       def book_query() do
@@ -99,11 +95,6 @@ defmodule Ornitho.Importer do
 
       defp create_book() do
         Ornitho.create_book(book_map())
-      end
-
-      defp create_taxa(book) do
-        # importer.create_taxa(book)
-        {:ok, :done}
       end
     end
   end

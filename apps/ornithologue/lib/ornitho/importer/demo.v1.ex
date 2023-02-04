@@ -8,4 +8,8 @@ defmodule Ornitho.Importer.Demo.V1 do
     version: "v1",
     name: "Demo book",
     description: "This is a demo book"
+
+  def create_taxa(_book) do
+    {:ok, []}
+  end
 end
