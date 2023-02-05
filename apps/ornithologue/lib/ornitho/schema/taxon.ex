@@ -10,9 +10,9 @@ defmodule Ornitho.Schema.Taxon do
   """
   use Ornitho.Schema
 
-  alias Ornitho.Schema.Taxon
+  alias Ornitho.Schema.{Book, Taxon}
 
-  @required_fields [:name_sci, :name_en, :code, :category, :sort_order, :book_id, :sort_order]
+  @required_fields [:name_sci, :name_en, :code, :category, :sort_order, :book_id]
 
   schema "taxa" do
     field(:name_sci, :string)
@@ -33,6 +33,12 @@ defmodule Ornitho.Schema.Taxon do
     belongs_to(:parent_species, Ornitho.Schema.Taxon)
 
     timestamps()
+  end
+
+  def creation_changeset(%Book{} = book, attrs) do
+    book
+    |> Ecto.build_assoc(:taxa)
+    |> creation_changeset(attrs)
   end
 
   def creation_changeset(%Taxon{} = taxon, attrs) do

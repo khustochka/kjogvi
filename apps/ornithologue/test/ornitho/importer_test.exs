@@ -57,5 +57,13 @@ defmodule Ornitho.ImporterTest do
                description: "This is a test book"
              } = book
     end
+
+    @importer Importer.Demo.V1
+    test "creates new taxa" do
+      @importer.process_import()
+      book = Ornitho.find_book(@importer.slug(), @importer.version())
+      taxa = Ecto.assoc(book, :taxa) |> Ornitho.Repo.all
+      assert length(taxa) > 0
+    end
   end
 end
