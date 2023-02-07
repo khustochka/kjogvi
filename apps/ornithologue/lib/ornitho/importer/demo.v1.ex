@@ -25,7 +25,7 @@ defmodule Ornitho.Importer.Demo.V1 do
       order: "Passeriformes",
       family: "Corvidae",
       sort_order: 2
-    },
+    }
   ]
 
   use Ornitho.Importer,
@@ -36,7 +36,9 @@ defmodule Ornitho.Importer.Demo.V1 do
 
   def create_taxa(book) do
     case Ornitho.create_taxa(book, @taxa_list) do
-      {:ok, m} -> {:ok, m}
+      {:ok, m} ->
+        {:ok, m}
+
       {:error, attrs, changeset, _} ->
         raise """
         Failed to insert:

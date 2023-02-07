@@ -10,11 +10,12 @@ defmodule Ornitho.ImporterTest do
       insert(:book, slug: "test", version: "no_taxa")
 
       assert_raise RuntimeError,
-        "A book for importer Ornitho.Importer.Test.NoTaxa already exists, to force overwrite " <>
-        "it pass [force: true] (or --force in a Mix task. Please note that in this case all " <>
-        "taxa will be deleted!", fn ->
-        Importer.Test.NoTaxa.process_import()
-      end
+                   "A book for importer Ornitho.Importer.Test.NoTaxa already exists, to force overwrite " <>
+                     "it pass [force: true] (or --force in a Mix task. Please note that in this case all " <>
+                     "taxa will be deleted!",
+                   fn ->
+                     Importer.Test.NoTaxa.process_import()
+                   end
 
       assert Ornitho.book_exists?(Importer.Test.NoTaxa.book_attributes()) == true
     end
@@ -23,7 +24,7 @@ defmodule Ornitho.ImporterTest do
       _old_book = insert(:book, slug: "test", version: "no_taxa", name: "Old name")
 
       assert {:ok, _} = Importer.Test.NoTaxa.process_import(force: true)
-      book = Importer.Test.NoTaxa.book_query |> Ornitho.Repo.one()
+      book = Importer.Test.NoTaxa.book_query() |> Ornitho.Repo.one()
       assert not is_nil(book)
       assert book.name == Importer.Test.NoTaxa.name()
 
@@ -32,7 +33,8 @@ defmodule Ornitho.ImporterTest do
     end
 
     test "removes the taxa if instructed to force" do
-      book = insert(:book, slug: "test", version: "no_taxa") # ironic!
+      # ironic!
+      book = insert(:book, slug: "test", version: "no_taxa")
       taxon = insert(:taxon, book: book)
 
       Importer.Test.NoTaxa.process_import(force: true)
@@ -62,7 +64,7 @@ defmodule Ornitho.ImporterTest do
     test "creates new taxa" do
       @importer.process_import()
       book = Ornitho.find_book(@importer.slug(), @importer.version())
-      taxa = Ecto.assoc(book, :taxa) |> Ornitho.Repo.all
+      taxa = Ecto.assoc(book, :taxa) |> Ornitho.Repo.all()
       assert length(taxa) > 0
     end
   end

@@ -82,7 +82,8 @@ defmodule Ornitho.Importer do
             raise(
               "A book for importer #{inspect(__MODULE__)} already exists, " <>
                 "to force overwrite it pass [force: true] (or --force in a Mix task. " <>
-                "Please note that in this case all taxa will be deleted!")
+                "Please note that in this case all taxa will be deleted!"
+            )
           end
         else
           {:ok, :ready}

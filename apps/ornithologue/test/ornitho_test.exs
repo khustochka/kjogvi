@@ -40,4 +40,7 @@ defmodule OrnithoTest do
       assert Ornitho.delete_book("ebird", "v1") == {0, nil}
     end
   end
+
+  describe "update_taxon" do
+  end
 end

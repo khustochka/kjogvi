@@ -12,7 +12,7 @@ defmodule Ornitho do
   def find_book(slug, version) do
     base_book()
     |> Query.Book.by_signature(slug, version)
-    |> Ornitho.Repo.one
+    |> Ornitho.Repo.one()
   end
 
   def create_book(%Book{} = book) do
@@ -56,10 +56,22 @@ defmodule Ornitho do
 
   def create_taxa(book, attrs_list) do
     attrs_list
-    |> Enum.reduce(Multi.new, fn attrs, multi ->
+    |> Enum.reduce(Multi.new(), fn attrs, multi ->
       multi
       |> Multi.insert(attrs, Taxon.creation_changeset(book, attrs))
     end)
     |> Ornitho.Repo.transaction()
+  end
+
+  def update_taxon(taxon, attrs) do
+    Taxon.updating_changeset(taxon, attrs)
+    |> Ornitho.Repo.update()
+  end
+
+  def find_taxon_by_name_sci(book, name_sci) do
+    book
+    |> Ecto.assoc(:taxa)
+    |> where(name_sci: ^name_sci)
+    |> Ornitho.Repo.one()
   end
 end
