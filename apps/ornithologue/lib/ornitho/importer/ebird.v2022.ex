@@ -27,7 +27,12 @@ defmodule Ornitho.Importer.Ebird.V2022 do
         "Downloaded from https://www.birds.cornell.edu/clementschecklist/download/"
 
   def create_taxa(book) do
-    @ebird_taxonomy_file
+    create_taxa_from_csv(book, @ebird_taxonomy_file)
+    amend_taxa_from_csv(book, @clements_checklist_file)
+  end
+
+  def create_taxa_from_csv(book, csv_file) do
+    csv_file
     |> File.stream!([:trim_bom])
     |> CSV.decode(headers: true)
     |> Enum.reduce({1, %{}}, fn {:ok, row}, {sort_order, species_cache} ->
@@ -60,16 +65,14 @@ defmodule Ornitho.Importer.Ebird.V2022 do
 
       {sort_order + 1, new_cache}
     end)
-
-    amend_taxa(book)
   end
 
-  defp amend_taxa(book) do
-    @clements_checklist_file
+  defp amend_taxa_from_csv(book, csv_file) do
+    csv_file
     |> File.stream!([:trim_bom])
     |> CSV.decode(headers: true)
     |> Enum.each(fn {:ok, row} ->
-      taxon = Ornitho.find_taxon_by_name_sci(book, row["scientific name"])
+      taxon = Ornitho.Find.Taxon.by_name_sci(book, row["scientific name"])
 
       if not is_nil(taxon) do
         new_extras = taxon.extras |> Map.merge(extract_extras(row))

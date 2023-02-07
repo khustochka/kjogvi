@@ -7,14 +7,6 @@ defmodule Ornitho do
   alias Ornitho.Query
   alias Ecto.Multi
 
-  import Ecto.Query
-
-  def find_book(slug, version) do
-    base_book()
-    |> Query.Book.by_signature(slug, version)
-    |> Ornitho.Repo.one()
-  end
-
   def create_book(%Book{} = book) do
     Book.creation_changeset(book, %{})
     |> Ornitho.Repo.insert()
@@ -25,28 +17,14 @@ defmodule Ornitho do
     |> Ornitho.Repo.insert()
   end
 
-  def book_exists?(%{slug: slug, version: version}) do
-    book_exists?(slug, version)
-  end
-
-  def book_exists?(slug, version) do
-    base_book()
-    |> Query.Book.by_signature(slug, version)
-    |> Ornitho.Repo.exists?()
-  end
-
   def delete_book(%{slug: slug, version: version}) do
     delete_book(slug, version)
   end
 
   def delete_book(slug, version) do
-    base_book()
+    Query.Book.base_book()
     |> Query.Book.by_signature(slug, version)
     |> Ornitho.Repo.delete_all()
-  end
-
-  defp base_book() do
-    from(Book, as: :book)
   end
 
   def create_taxon(book, attrs) do
@@ -66,12 +44,5 @@ defmodule Ornitho do
   def update_taxon(taxon, attrs) do
     Taxon.updating_changeset(taxon, attrs)
     |> Ornitho.Repo.update()
-  end
-
-  def find_taxon_by_name_sci(book, name_sci) do
-    book
-    |> Ecto.assoc(:taxa)
-    |> where(name_sci: ^name_sci)
-    |> Ornitho.Repo.one()
   end
 end

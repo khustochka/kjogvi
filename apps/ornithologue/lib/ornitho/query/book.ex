@@ -3,6 +3,8 @@ defmodule Ornitho.Query.Book do
   Queries for Books.
   """
 
+  alias Ornitho.Schema.Book
+
   import Ecto.Query
 
   @spec by_signature(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
@@ -20,5 +22,9 @@ defmodule Ornitho.Query.Book do
           Ecto.Query.t()
   def by_signature(query, %{slug: slug, version: version}) do
     by_signature(query, slug, version)
+  end
+
+  def base_book() do
+    from(Book, as: :book)
   end
 end

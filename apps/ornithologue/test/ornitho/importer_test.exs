@@ -17,14 +17,20 @@ defmodule Ornitho.ImporterTest do
                      Importer.Test.NoTaxa.process_import()
                    end
 
-      assert Ornitho.book_exists?(Importer.Test.NoTaxa.book_attributes()) == true
+      assert Ornitho.Find.Book.exists?(Importer.Test.NoTaxa.book_attributes()) == true
     end
 
     test "returns ok and updates the book if instructed to force" do
       _old_book = insert(:book, slug: "test", version: "no_taxa", name: "Old name")
 
       assert {:ok, _} = Importer.Test.NoTaxa.process_import(force: true)
-      book = Importer.Test.NoTaxa.book_query() |> Ornitho.Repo.one()
+
+      book =
+        Ornitho.Find.Book.by_signature(
+          Importer.Test.NoTaxa.slug(),
+          Importer.Test.NoTaxa.version()
+        )
+
       assert not is_nil(book)
       assert book.name == Importer.Test.NoTaxa.name()
 
@@ -47,10 +53,14 @@ defmodule Ornitho.ImporterTest do
     end
 
     test "creates the book if the book does not exist" do
-      assert Ornitho.book_exists?(Importer.Test.NoTaxa.book_attributes()) == false
+      assert Ornitho.Find.Book.exists?(Importer.Test.NoTaxa.book_attributes()) == false
       assert {:ok, _} = Importer.Test.NoTaxa.process_import()
 
-      book = Ornitho.Repo.one(Importer.Test.NoTaxa.book_query())
+      book =
+        Ornitho.Find.Book.by_signature(
+          Importer.Test.NoTaxa.slug(),
+          Importer.Test.NoTaxa.version()
+        )
 
       assert %{
                slug: "test",
@@ -63,7 +73,7 @@ defmodule Ornitho.ImporterTest do
     @importer Importer.Demo.V1
     test "creates new taxa" do
       @importer.process_import()
-      book = Ornitho.find_book(@importer.slug(), @importer.version())
+      book = Ornitho.Find.Book.by_signature(@importer.slug(), @importer.version())
       taxa = Ecto.assoc(book, :taxa) |> Ornitho.Repo.all()
       assert length(taxa) > 0
     end

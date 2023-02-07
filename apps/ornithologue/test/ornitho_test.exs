@@ -16,27 +16,16 @@ defmodule OrnithoTest do
     end
   end
 
-  describe ".book_exists?" do
-    test "returns true if the book exists" do
-      book = insert(:book)
-      assert Ornitho.book_exists?(book.slug, book.version) == true
-    end
-
-    test "returns true if the book does not exist" do
-      assert Ornitho.book_exists?("ebird", "v1") == false
-    end
-  end
-
   describe "delete_book" do
     test "deletes the book if it exists" do
       book = insert(:book)
       assert Ornitho.delete_book(book.slug, book.version) == {1, nil}
 
-      assert Ornitho.book_exists?(book.slug, book.version) == false
+      assert Ornitho.Find.Book.exists?(book.slug, book.version) == false
     end
 
     test "does nothing if the book does not exist" do
-      assert Ornitho.book_exists?("ebird", "v1") == false
+      assert Ornitho.Find.Book.exists?("ebird", "v1") == false
       assert Ornitho.delete_book("ebird", "v1") == {0, nil}
     end
   end
