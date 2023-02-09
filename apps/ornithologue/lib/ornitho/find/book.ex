@@ -7,6 +7,11 @@ defmodule Ornitho.Find.Book do
   alias Ornitho.Query
   alias Ornitho.Schema.Book
 
+  def all() do
+    Query.Book.base_book()
+    |> Repo.all()
+  end
+
   @spec by_signature(String.t(), String.t()) :: %Book{} | nil
   def by_signature(slug, version) do
     Query.Book.base_book()

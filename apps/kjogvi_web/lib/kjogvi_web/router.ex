@@ -20,6 +20,13 @@ defmodule KjogviWeb.Router do
     get "/", PageController, :home
   end
 
+  scope "/taxonomy", KjogviWeb do
+    pipe_through :browser
+
+    get "/", BooksController, :index
+    get "/:slug/:version", BooksController, :show
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", KjogviWeb do
   #   pipe_through :api

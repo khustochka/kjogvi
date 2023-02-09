@@ -8,7 +8,7 @@ defmodule Ornitho.Importer.Ebird.V2022 do
   use Ornitho.Importer,
     slug: "ebird",
     version: "v2022",
-    name: "eBird/Clements Checklist",
+    name: "eBird/Clements Checklist v2022",
     description:
       "Clements, J. F., T. S. Schulenberg, M. J. Iliff, T. A. Fredericks, " <>
         "J. A. Gerbracht, D. Lepage, S. M. Billerman, B. L. Sullivan, and C. L. Wood. 2022. " <>
