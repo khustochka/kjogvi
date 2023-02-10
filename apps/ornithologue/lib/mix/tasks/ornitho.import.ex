@@ -33,11 +33,14 @@ defmodule Mix.Tasks.Ornitho.Import do
         importer = Module.concat([importer_name])
 
         with {:ok, _} <- ensure_module_exists(importer),
-             {:ok, _} <- ensure_function_exported(importer) do
-          importer.process_import(force: force)
+             {:ok, _} <- ensure_function_exported(importer),
+             {:ok, _} <- importer.process_import(force: force) do
         else
-          {:error, error} ->
+          {:error, error} when is_binary(error) ->
             Mix.raise(error)
+
+          {:error, error} ->
+            Mix.raise(error |> inspect())
         end
 
       {_, _} ->

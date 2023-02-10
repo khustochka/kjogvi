@@ -23,24 +23,32 @@ defmodule Ornitho.Importer.Ebird.V2022 do
     csv_file
     |> File.stream!([:trim_bom])
     |> CSV.decode(headers: true)
-    |> Enum.reduce(%{}, fn {:ok, row}, taxa_cache ->
-
+    |> Enum.reduce({0, %{}}, fn {:ok, row}, {num_saved, species_cache} ->
       {:ok, extras} = Jason.decode(row["extras"])
+
       attrs =
         row
-        |> Map.put("parent_species_id", taxa_cache[row["parent_species_code"]])
+        |> Map.put("parent_species_id", species_cache[row["parent_species_code"]])
         |> Map.put("extras", extras)
 
-      {:ok, taxon} = Ornitho.create_taxon(book, attrs)
+      with {:ok, taxon} <- Ornitho.create_taxon(book, attrs) do
+        new_cache =
+          row["category"]
+          |> case do
+            "species" ->
+              Map.put(species_cache, row["code"], taxon.id)
 
-      new_cache =
-        if row["category"] == "species" do
-          Map.put(taxa_cache, row["code"], taxon.id)
-        else
-          taxa_cache
-        end
+            _ ->
+              species_cache
+          end
 
-      new_cache
+        {num_saved + 1, new_cache}
+      else
+        {:error, _} = e -> e
+      end
+      |> case do
+        {n, _} -> {:ok, n}
+      end
     end)
   end
 end

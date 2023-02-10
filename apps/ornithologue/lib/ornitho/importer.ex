@@ -64,10 +64,12 @@ defmodule Ornitho.Importer do
         force = opts[:force]
 
         with {:ok, _} <- prepare_repo(force: force),
-             {:ok, book} <- create_book() do
-          create_taxa(book)
+             {:ok, book} <- create_book(),
+             {:ok, _} = result <- create_taxa(book) do
+          result
         else
-          e = {:error, _} -> e
+          {:error, e} when is_binary(e) -> raise(e)
+          {:error, e} -> raise(inspect(e))
         end
       end
 
