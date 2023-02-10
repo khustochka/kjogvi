@@ -7,8 +7,6 @@ defmodule Ornitho do
   alias Ornitho.Query
   alias Ecto.Multi
 
-  import Ecto.Query
-
   def create_book(%Book{} = book) do
     Book.creation_changeset(book, %{})
     |> Ornitho.Repo.insert()
@@ -20,9 +18,8 @@ defmodule Ornitho do
   end
 
   def mark_book_imported(book) do
-    Query.Book.base_book()
-    |> Query.Book.by_id(book.id)
-    |> Ornitho.Repo.update_all(set: [imported_at: DateTime.utc_now()])
+    Query.Book.touch_imported_at(book)
+    |> Ornitho.Repo.update_all([])
   end
 
   def delete_book(%{slug: slug, version: version}) do
