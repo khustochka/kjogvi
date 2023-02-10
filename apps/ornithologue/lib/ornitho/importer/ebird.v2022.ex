@@ -31,24 +31,22 @@ defmodule Ornitho.Importer.Ebird.V2022 do
         |> Map.put("parent_species_id", species_cache[row["parent_species_code"]])
         |> Map.put("extras", extras)
 
-      with {:ok, taxon} <- Ornitho.create_taxon(book, attrs) do
-        new_cache =
-          row["category"]
-          |> case do
-            "species" ->
-              Map.put(species_cache, row["code"], taxon.id)
+      taxon = Ornitho.create_taxon!(book, attrs)
 
-            _ ->
-              species_cache
-          end
+      new_cache =
+        row["category"]
+        |> case do
+          "species" ->
+            Map.put(species_cache, row["code"], taxon.id)
 
-        {num_saved + 1, new_cache}
-      else
-        {:error, _} = e -> e
-      end
-      |> case do
-        {n, _} -> {:ok, n}
-      end
+          _ ->
+            species_cache
+        end
+
+      {num_saved + 1, new_cache}
     end)
+    |> case do
+      {n, _} -> {:ok, n}
+    end
   end
 end
