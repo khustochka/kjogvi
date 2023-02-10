@@ -9,7 +9,7 @@ defmodule Ornitho.Find.Taxon do
   # alias Ornitho.Query
   alias Ornitho.Schema.{Book, Taxon}
 
-  @spec by_name_sci(%Book{}, String.t()) :: %Taxon{} | nil
+  @spec by_name_sci(Book.t(), String.t()) :: Taxon.t() | nil
   def by_name_sci(book, name_sci) do
     book
     |> Ecto.assoc(:taxa)

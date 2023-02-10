@@ -12,7 +12,7 @@ defmodule Ornitho.Find.Book do
     |> Repo.all()
   end
 
-  @spec by_signature(String.t(), String.t()) :: %Book{} | nil
+  @spec by_signature(String.t(), String.t()) :: Book.t() | nil
   def by_signature(slug, version) do
     Query.Book.base_book()
     |> Query.Book.by_signature(slug, version)
