@@ -30,9 +30,8 @@ defmodule Ornitho.Query.Book do
     )
   end
 
-  def touch_imported_at(book) do
-    base_book()
-    |> by_id(book.id)
+  def touch_imported_at(query) do
+    query
     |> update(set: [imported_at: fragment("NOW()")])
   end
 

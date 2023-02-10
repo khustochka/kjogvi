@@ -18,7 +18,9 @@ defmodule Ornitho do
   end
 
   def mark_book_imported(book) do
-    Query.Book.touch_imported_at(book)
+    Query.Book.base_book()
+    |> Query.Book.by_id(book.id)
+    |> Query.Book.touch_imported_at()
     |> Ornitho.Repo.update_all([])
   end
 
