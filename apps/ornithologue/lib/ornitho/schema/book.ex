@@ -22,6 +22,8 @@ defmodule Ornitho.Schema.Book do
     field(:name, :string)
     field(:description, :string)
     field(:extras, :map)
+    # Time when the taxa were imported
+    field(:imported_at, :utc_datetime_usec)
 
     has_many(:taxa, Ornitho.Schema.Taxon)
 

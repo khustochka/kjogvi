@@ -77,5 +77,12 @@ defmodule Ornitho.ImporterTest do
       taxa = Ecto.assoc(book, :taxa) |> Ornitho.Repo.all()
       assert length(taxa) > 0
     end
+
+    @importer Importer.Demo.V1
+    test "sets the imported_at time after the taxa are imported" do
+      @importer.process_import()
+      book = Ornitho.Find.Book.by_signature(@importer.slug(), @importer.version())
+      assert not is_nil(book.imported_at)
+    end
   end
 end

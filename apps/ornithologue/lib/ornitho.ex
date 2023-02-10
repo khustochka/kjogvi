@@ -7,6 +7,8 @@ defmodule Ornitho do
   alias Ornitho.Query
   alias Ecto.Multi
 
+  import Ecto.Query
+
   def create_book(%Book{} = book) do
     Book.creation_changeset(book, %{})
     |> Ornitho.Repo.insert()
@@ -15,6 +17,12 @@ defmodule Ornitho do
   def create_book(%{} = attrs) do
     Book.creation_changeset(%Book{}, attrs)
     |> Ornitho.Repo.insert()
+  end
+
+  def mark_book_imported(book) do
+    Query.Book.base_book()
+    |> Query.Book.by_id(book.id)
+    |> Ornitho.Repo.update_all(set: [imported_at: DateTime.utc_now()])
   end
 
   def delete_book(%{slug: slug, version: version}) do
@@ -30,6 +38,11 @@ defmodule Ornitho do
   def create_taxon(book, attrs) do
     Taxon.creation_changeset(book, attrs)
     |> Ornitho.Repo.insert()
+  end
+
+  def create_taxon!(book, attrs) do
+    Taxon.creation_changeset(book, attrs)
+    |> Ornitho.Repo.insert!()
   end
 
   def create_taxa(book, attrs_list) do

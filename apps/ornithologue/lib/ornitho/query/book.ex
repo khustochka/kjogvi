@@ -24,6 +24,12 @@ defmodule Ornitho.Query.Book do
     by_signature(query, slug, version)
   end
 
+  def by_id(query, id) do
+    from([..., book: b] in query,
+      where: b.id == ^id
+    )
+  end
+
   def base_book() do
     from(Book, as: :book)
   end

@@ -65,7 +65,9 @@ defmodule Ornitho.Importer do
 
         with {:ok, _} <- prepare_repo(force: force),
              {:ok, book} <- create_book(),
-             {:ok, _} = result <- create_taxa(book) do
+             {:ok, _} = result <- create_taxa(book),
+             {1, _} <- update_imported_time(book)
+             do
           result
         else
           {:error, e} when is_binary(e) -> raise(e)
@@ -104,6 +106,10 @@ defmodule Ornitho.Importer do
 
       defp create_book() do
         Ornitho.create_book(book_attributes())
+      end
+
+      defp update_imported_time(book) do
+        Ornitho.mark_book_imported(book)
       end
     end
   end
