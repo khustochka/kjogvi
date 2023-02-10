@@ -4,8 +4,7 @@ if System.get_env("PHX_SERVER") do
   config :kjogvi_web, KjogviWeb.Endpoint, server: true
 end
 
-config :ornithologue, Ornitho.Repo,
-  url: System.get_env("ORNITHO_DATABASE_URL")
+config :ornithologue, Ornitho.Repo, url: System.get_env("ORNITHO_DATABASE_URL")
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
