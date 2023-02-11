@@ -1,6 +1,6 @@
 defmodule KjogviWeb.ErrorHTML do
   @moduledoc false
-  
+
   use KjogviWeb, :html
 
   # If you want to customize your error pages,
