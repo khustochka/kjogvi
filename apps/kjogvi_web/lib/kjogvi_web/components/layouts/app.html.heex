@@ -12,12 +12,14 @@
       <p class="rounded-full bg-brand/5 px-2 text-[0.8125rem] font-medium leading-6 text-brand">
         v1.7
       </p>
+      <%= if Application.get_env(:kjogvi_web, :dev_routes) do %>
       <a
-        href={~p"/dev/dashboard"}
+        href="/dev/dashboard"
         class="text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
         Dashboard
       </a>
+      <% end %>
     </div>
     <div class="flex items-center gap-4">
       <a
