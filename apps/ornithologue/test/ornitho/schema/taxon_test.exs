@@ -1,7 +1,7 @@
 defmodule Ornitho.Schema.TaxonTest do
   @moduledoc false
 
-  use Ornitho.RepoCase
+  use Ornitho.RepoCase, async: true
   alias Ornitho.Schema.Taxon
 
   describe "Taxon" do

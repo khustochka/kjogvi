@@ -1,7 +1,7 @@
 defmodule OrnithoTest do
   @moduledoc false
 
-  use Ornitho.RepoCase
+  use Ornitho.RepoCase, async: true
 
   describe ".create_book" do
     test "is not saved with empty slug" do

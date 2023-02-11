@@ -1,7 +1,7 @@
 defmodule Ornitho.Schema.BookTest do
   @moduledoc false
 
-  use Ornitho.RepoCase
+  use Ornitho.RepoCase, async: true
   alias Ornitho.Schema.Book
 
   describe "Book factory" do

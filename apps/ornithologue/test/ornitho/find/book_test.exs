@@ -1,7 +1,7 @@
 defmodule Ornitho.Find.BookTest do
   @moduledoc false
 
-  use Ornitho.RepoCase
+  use Ornitho.RepoCase, async: true
 
   describe "exists?/2" do
     test "returns true if the book exists" do

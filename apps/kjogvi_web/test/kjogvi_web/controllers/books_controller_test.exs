@@ -1,5 +1,5 @@
 defmodule KjogviWeb.BooksControllerTest do
-  use KjogviWeb.ConnCase
+  use KjogviWeb.ConnCase, async: true
   use KjogviWeb.OrnithoCase
 
   describe "No books" do
