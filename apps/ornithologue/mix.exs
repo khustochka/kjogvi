@@ -14,7 +14,8 @@ defmodule Ornithologue.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      description: "Ornithological taxonomy"
+      description: "Ornithological taxonomy",
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -40,7 +41,8 @@ defmodule Ornithologue.MixProject do
       # For jsonb columns
       {:jason, "~> 1.0"},
       {:csv, "~> 3.0"},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.15", only: [:test], runtime: false}
     ]
   end
 

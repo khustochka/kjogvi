@@ -13,7 +13,8 @@ defmodule KjogviWeb.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -51,7 +52,8 @@ defmodule KjogviWeb.MixProject do
       {:gettext, "~> 0.20"},
       {:kjogvi, in_umbrella: true},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"}
+      {:plug_cowboy, "~> 2.5"},
+      {:excoveralls, "~> 0.15", only: [:test], runtime: false}
     ]
   end
 
