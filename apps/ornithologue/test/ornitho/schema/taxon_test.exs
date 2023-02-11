@@ -13,11 +13,20 @@ defmodule Ornitho.Schema.TaxonTest do
       assert taxon.name_sci == tx.name_sci
     end
 
+    test "same scientific names in the same book" do
+      book = insert(:book)
+
+      assert_raise(Ecto.ConstraintError, fn ->
+        _tx1 = insert(:taxon, book: book, name_sci: "Cuculus canorus")
+        _tx2 = insert(:taxon, book: book, name_sci: "Cuculus canorus")
+      end)
+    end
+
     test "same scientific names in different books" do
       error =
         try do
-          _tx1 = insert(:taxon)
-          _tx2 = insert(:taxon)
+          _tx1 = insert(:taxon, name_sci: "Cuculus canorus")
+          _tx2 = insert(:taxon, name_sci: "Cuculus canorus")
           nil
         rescue
           e -> e
