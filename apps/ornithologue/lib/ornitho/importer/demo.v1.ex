@@ -35,7 +35,7 @@ defmodule Ornitho.Importer.Demo.V1 do
     description: "This is a demo book"
 
   def create_taxa(book) do
-    case Ornitho.create_taxa(book, @taxa_list) do
+    case Ops.Taxon.create_many(book, @taxa_list) do
       {:ok, m} ->
         {:ok, m}
 

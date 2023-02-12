@@ -39,8 +39,8 @@ defmodule Ornitho.ImporterTest do
     end
 
     test "removes the taxa if instructed to force" do
-      # ironic!
       book = insert(:book, slug: "test", version: "no_taxa")
+      # ironic!
       taxon = insert(:taxon, book: book)
 
       Importer.Test.NoTaxa.process_import(force: true)

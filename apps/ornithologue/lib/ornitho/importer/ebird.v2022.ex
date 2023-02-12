@@ -31,7 +31,7 @@ defmodule Ornitho.Importer.Ebird.V2022 do
         |> Map.put("parent_species_id", species_cache[row["parent_species_code"]])
         |> Map.put("extras", extras)
 
-      taxon = Ornitho.create_taxon!(book, attrs)
+      taxon = Ops.Taxon.create!(book, attrs)
 
       new_cache =
         row["category"]

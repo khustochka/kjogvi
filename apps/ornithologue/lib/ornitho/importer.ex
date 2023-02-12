@@ -34,6 +34,7 @@ defmodule Ornitho.Importer do
 
     quote bind_quoted: [opts: opts] do
       alias Ornitho.Schema.{Book, Taxon}
+      alias Ornitho.Ops
 
       @callback create_taxa(book :: %Book{}) :: {:ok, any()} | {:error, any()}
 
@@ -79,7 +80,7 @@ defmodule Ornitho.Importer do
 
         if Ornitho.Find.Book.exists?(slug(), version()) do
           if force == true do
-            Ornitho.delete_book(slug(), version())
+            Ops.Book.delete(slug(), version())
             {:ok, :ready}
           else
             raise(
@@ -94,7 +95,7 @@ defmodule Ornitho.Importer do
       end
 
       def book_attributes() do
-        %Book{
+        %{
           slug: slug(),
           version: version(),
           name: name(),
@@ -104,11 +105,11 @@ defmodule Ornitho.Importer do
       end
 
       defp create_book() do
-        Ornitho.create_book(book_attributes())
+        Ops.Book.create(book_attributes())
       end
 
       defp update_imported_time(book) do
-        Ornitho.mark_book_imported(book)
+        Ops.Book.mark_book_imported(book)
       end
     end
   end

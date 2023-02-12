@@ -4,15 +4,17 @@ defmodule Ornitho.Schema.TaxonTest do
   use Ornitho.RepoCase, async: true
   alias Ornitho.Schema.Taxon
 
-  describe "Taxon" do
-    test "is saved" do
-      tx = insert(:taxon)
+  describe "Taxon factory" do
+    test "is valid" do
+      taxon = insert(:taxon)
+      repo_tx = Repo.all(Taxon)
 
-      assert [taxon] = Repo.all(Taxon)
-
-      assert taxon.name_sci == tx.name_sci
+      assert length(repo_tx) == 1
+      assert hd(repo_tx).code == taxon.code
     end
+  end
 
+  describe "Taxon" do
     test "same scientific names in the same book" do
       book = insert(:book)
 

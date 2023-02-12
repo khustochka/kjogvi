@@ -13,4 +13,13 @@ defmodule Ornitho.Find.BookTest do
       assert Ornitho.Find.Book.exists?("ebird", "v1") == false
     end
   end
+
+  describe "all/0" do
+    test "returns all books" do
+      book = insert(:book)
+      book = insert(:book)
+
+      assert length(Ornitho.Find.Book.all) == 2
+    end
+  end
 end

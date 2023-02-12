@@ -2,6 +2,8 @@ defmodule KjogviWeb.BooksControllerTest do
   use KjogviWeb.ConnCase, async: true
   use KjogviWeb.OrnithoCase
 
+  alias Ornitho.Ops
+
   describe "No books" do
     test "GET /taxonomy", %{conn: conn} do
       conn = get(conn, ~p"/taxonomy")
@@ -25,7 +27,7 @@ defmodule KjogviWeb.BooksControllerTest do
       book = insert(:book)
       insert(:taxon, book: book)
       insert(:taxon, book: book)
-      Ornitho.mark_book_imported(book)
+      Ops.Book.mark_book_imported(book)
 
       conn = get(conn, ~p"/taxonomy")
       resp = html_response(conn, 200)
