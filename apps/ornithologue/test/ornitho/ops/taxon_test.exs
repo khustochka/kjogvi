@@ -5,7 +5,6 @@ defmodule Ornitho.Ops.TaxonTest do
   alias Ornitho.Ops
 
   describe "creating one taxon" do
-
     test "success" do
       book = insert(:book)
       attrs = params_for(:taxon)

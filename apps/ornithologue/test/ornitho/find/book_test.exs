@@ -19,7 +19,7 @@ defmodule Ornitho.Find.BookTest do
       insert(:book)
       insert(:book)
 
-      assert length(Ornitho.Find.Book.all) == 2
+      assert length(Ornitho.Find.Book.all()) == 2
     end
   end
 end
