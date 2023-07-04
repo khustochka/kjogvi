@@ -22,6 +22,7 @@ config :phoenix, :plug_init_mode, :runtime
 # ORNITHOLOGUE
 
 config :ornithologue, Ornitho.Repo,
-  database: "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}",
   hostname: "localhost",
-  pool: Ecto.Adapters.SQL.Sandbox
+  database: "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 10

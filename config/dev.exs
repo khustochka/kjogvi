@@ -72,4 +72,7 @@ config :phoenix, :stacktrace_depth, 20
 
 config :ornithologue, Ornitho.Repo,
   database: "ornithologue_dev",
-  hostname: "localhost"
+  hostname: "localhost",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
