@@ -53,7 +53,8 @@ defmodule KjogviWeb.MixProject do
       {:kjogvi, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:excoveralls, "~> 0.15", only: [:test], runtime: false}
+      {:excoveralls, "~> 0.15", only: [:test], runtime: false},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 
