@@ -4,6 +4,11 @@ if System.get_env("PHX_SERVER") do
   config :kjogvi_web, KjogviWeb.Endpoint, server: true
 end
 
+if config_env() == :dev && System.get_env("BIND_PUBLIC") in ~w(true 1) do
+  config :kjogvi_web, KjogviWeb.Endpoint,
+    http: [ip: {0, 0, 0, 0}, port: "4000"]
+end
+
 config :ornithologue, Ornitho.Repo, url: System.get_env("ORNITHO_DATABASE_URL")
 
 # config/runtime.exs is executed for all environments, including
