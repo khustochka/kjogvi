@@ -22,4 +22,17 @@ defmodule Ornitho.Find.BookTest do
       assert length(Ornitho.Find.Book.all()) == 2
     end
   end
+
+  describe "with_taxa_count/0" do
+    test "returns books with the number of taxa" do
+      book1 = insert(:book)
+      book2 = insert(:book)
+      insert(:taxon, book: book1)
+      insert(:taxon, book: book1)
+
+      result = Ornitho.Find.Book.with_taxa_count()
+      assert {book1, %{taxa_count: 2}} in result
+      assert {book2, %{taxa_count: 0}} in result
+    end
+  end
 end

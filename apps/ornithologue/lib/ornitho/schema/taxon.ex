@@ -59,7 +59,9 @@ defmodule Ornitho.Schema.Taxon do
     taxon
     |> Ecto.Changeset.cast(attrs, saveable_fields(action))
     |> Ecto.Changeset.validate_required(@required_fields)
-    |> Ecto.Changeset.unique_constraint([:name_sci, :book_id], name: "taxa_book_id_name_sci_index")
+    |> Ecto.Changeset.unique_constraint([:name_sci, :book_id],
+      name: "taxa_book_id_name_sci_index"
+    )
     |> Ecto.Changeset.unique_constraint([:code, :book_id], name: "taxa_book_id_code_index")
     |> Ecto.Changeset.unique_constraint([:sort_order, :book_id],
       name: "taxa_book_id_sort_order_index"

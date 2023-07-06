@@ -12,6 +12,12 @@ defmodule Ornitho.Find.Book do
     |> Repo.all()
   end
 
+  def with_taxa_count() do
+    Query.Book.base_book()
+    |> Query.Book.with_taxa_count()
+    |> Repo.all()
+  end
+
   @spec by_signature(String.t(), String.t()) :: Book.t() | nil
   def by_signature(slug, version) do
     Query.Book.base_book()

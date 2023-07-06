@@ -1,9 +1,7 @@
 import Config
 
-
 if config_env() == :dev && System.get_env("BIND_PUBLIC") in ~w(true 1) do
-  config :kjogvi_web, KjogviWeb.Endpoint,
-    http: [ip: {0, 0, 0, 0}, port: "4000"]
+  config :kjogvi_web, KjogviWeb.Endpoint, http: [ip: {0, 0, 0, 0}, port: "4000"]
 end
 
 config :ornithologue, Ornitho.Repo,
