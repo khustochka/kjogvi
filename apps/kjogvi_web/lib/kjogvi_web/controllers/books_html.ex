@@ -5,6 +5,7 @@ defmodule KjogviWeb.BooksHTML do
 
   import KjogviWeb.TimeComponents
   import KjogviWeb.TaxaComponents
+  import KjogviWeb.PaginationComponents
 
   embed_templates "books_html/*"
 
@@ -36,9 +37,6 @@ defmodule KjogviWeb.BooksHTML do
       <%= @book.name %>
       <:subtitle><%= @book.description %></:subtitle>
     </.header>
-    <h2 class="mt-4">
-    Page <%= @page_num %>
-    </h2>
     <.simpler_table id="taxa" rows={@taxa}>
       <:col :let={taxon} label="no"><%= taxon.sort_order %></:col>
       <:col :let={taxon} label="code"><%= taxon.code %></:col>
@@ -52,6 +50,7 @@ defmodule KjogviWeb.BooksHTML do
         <div><%= taxon.family %></div>
       </:col>
     </.simpler_table>
+    <.simple_pagination page_num={@page_num} url_generator={fn n -> ~p"/taxonomy/#{@book.slug}/#{@book.version}/page/#{n}" end} />
     """
   end
 end

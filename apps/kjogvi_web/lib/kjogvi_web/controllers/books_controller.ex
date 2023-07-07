@@ -11,6 +11,7 @@ defmodule KjogviWeb.BooksController do
   end
 
   def show(conn, %{"slug" => slug, "version" => version, "page" => page_str}) do
+    # TODO: validate page number; redirect to default if number is 1
     page = String.to_integer(page_str)
     book = Ornitho.Finder.Book.by_signature(slug, version)
     taxa = Ornitho.Finder.Taxon.page(book, page)
@@ -23,7 +24,7 @@ defmodule KjogviWeb.BooksController do
     |> render(:show)
   end
 
-  def show(conn, %{"slug" => slug, "version" => version}) do
-    show(conn, %{"slug" => slug, "version" => version, "page" => "1"})
+  def show(conn, assigns) do
+    show(conn, Map.put(assigns, "page", "1"))
   end
 end
