@@ -17,7 +17,7 @@ defmodule Ornitho.ImporterTest do
                      Importer.Test.NoTaxa.process_import()
                    end
 
-      assert Ornitho.Find.Book.exists?(Importer.Test.NoTaxa.book_attributes()) == true
+      assert Ornitho.Finder.Book.exists?(Importer.Test.NoTaxa.book_attributes()) == true
     end
 
     test "returns ok and updates the book if instructed to force" do
@@ -26,7 +26,7 @@ defmodule Ornitho.ImporterTest do
       assert {:ok, _} = Importer.Test.NoTaxa.process_import(force: true)
 
       book =
-        Ornitho.Find.Book.by_signature(
+        Ornitho.Finder.Book.by_signature(
           Importer.Test.NoTaxa.slug(),
           Importer.Test.NoTaxa.version()
         )
@@ -53,11 +53,11 @@ defmodule Ornitho.ImporterTest do
     end
 
     test "creates the book if the book does not exist" do
-      assert Ornitho.Find.Book.exists?(Importer.Test.NoTaxa.book_attributes()) == false
+      assert Ornitho.Finder.Book.exists?(Importer.Test.NoTaxa.book_attributes()) == false
       assert {:ok, _} = Importer.Test.NoTaxa.process_import()
 
       book =
-        Ornitho.Find.Book.by_signature(
+        Ornitho.Finder.Book.by_signature(
           Importer.Test.NoTaxa.slug(),
           Importer.Test.NoTaxa.version()
         )
@@ -73,7 +73,7 @@ defmodule Ornitho.ImporterTest do
     @importer Importer.Demo.V1
     test "creates new taxa" do
       @importer.process_import()
-      book = Ornitho.Find.Book.by_signature(@importer.slug(), @importer.version())
+      book = Ornitho.Finder.Book.by_signature(@importer.slug(), @importer.version())
       taxa = Ecto.assoc(book, :taxa) |> Ornitho.Repo.all()
       assert length(taxa) > 0
     end
@@ -81,7 +81,7 @@ defmodule Ornitho.ImporterTest do
     @importer Importer.Demo.V1
     test "sets the imported_at time after the taxa are imported" do
       @importer.process_import()
-      book = Ornitho.Find.Book.by_signature(@importer.slug(), @importer.version())
+      book = Ornitho.Finder.Book.by_signature(@importer.slug(), @importer.version())
       assert not is_nil(book.imported_at)
     end
   end

@@ -1,4 +1,4 @@
-defmodule Ornitho.Find.TaxonTest do
+defmodule Ornitho.Finder.TaxonTest do
   @moduledoc false
 
   use Ornitho.RepoCase, async: true
@@ -12,7 +12,7 @@ defmodule Ornitho.Find.TaxonTest do
         |> Enum.to_list()
         |> Enum.map(fn _ -> insert(:taxon, book: book) end)
 
-      result = Ornitho.Find.Taxon.page(book, 1)
+      result = Ornitho.Finder.Taxon.page(book, 1)
       assert Enum.map(result, & &1.id) == Enum.map(Enum.take(taxa, 25), & &1.id)
     end
   end
@@ -26,7 +26,7 @@ defmodule Ornitho.Find.TaxonTest do
       _taxon4 = insert(:taxon, book: book)
       _taxon5 = insert(:taxon, book: book)
 
-      result = Ornitho.Find.Taxon.page(book, 1, per_page: 3)
+      result = Ornitho.Finder.Taxon.page(book, 1, per_page: 3)
       assert Enum.map(result, & &1.id) == Enum.map([taxon1, taxon2, taxon3], & &1.id)
     end
 
@@ -38,7 +38,7 @@ defmodule Ornitho.Find.TaxonTest do
       taxon4 = insert(:taxon, book: book)
       taxon5 = insert(:taxon, book: book)
 
-      result = Ornitho.Find.Taxon.page(book, 2, per_page: 3)
+      result = Ornitho.Finder.Taxon.page(book, 2, per_page: 3)
       assert Enum.map(result, & &1.id) == Enum.map([taxon4, taxon5], & &1.id)
     end
   end

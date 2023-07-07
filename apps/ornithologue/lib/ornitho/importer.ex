@@ -78,7 +78,7 @@ defmodule Ornitho.Importer do
       defp prepare_repo(opts \\ []) do
         force = opts[:force]
 
-        if Ornitho.Find.Book.exists?(slug(), version()) do
+        if Ornitho.Finder.Book.exists?(slug(), version()) do
           if force == true do
             Ops.Book.delete(slug(), version())
             {:ok, :ready}

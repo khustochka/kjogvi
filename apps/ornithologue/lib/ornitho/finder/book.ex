@@ -1,4 +1,4 @@
-defmodule Ornitho.Find.Book do
+defmodule Ornitho.Finder.Book do
   @moduledoc """
   Functions for fetching Books.
   """

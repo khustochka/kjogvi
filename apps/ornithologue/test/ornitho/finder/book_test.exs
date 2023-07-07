@@ -1,4 +1,4 @@
-defmodule Ornitho.Find.BookTest do
+defmodule Ornitho.Finder.BookTest do
   @moduledoc false
 
   use Ornitho.RepoCase, async: true
@@ -6,11 +6,11 @@ defmodule Ornitho.Find.BookTest do
   describe "exists?/2" do
     test "returns true if the book exists" do
       book = insert(:book)
-      assert Ornitho.Find.Book.exists?(book.slug, book.version) == true
+      assert Ornitho.Finder.Book.exists?(book.slug, book.version) == true
     end
 
     test "returns false if the book does not exist" do
-      assert Ornitho.Find.Book.exists?("ebird", "v1") == false
+      assert Ornitho.Finder.Book.exists?("ebird", "v1") == false
     end
   end
 
@@ -19,7 +19,7 @@ defmodule Ornitho.Find.BookTest do
       insert(:book)
       insert(:book)
 
-      assert length(Ornitho.Find.Book.all()) == 2
+      assert length(Ornitho.Finder.Book.all()) == 2
     end
   end
 
@@ -30,7 +30,7 @@ defmodule Ornitho.Find.BookTest do
       insert(:taxon, book: book1)
       insert(:taxon, book: book1)
 
-      result = Ornitho.Find.Book.with_taxa_count()
+      result = Ornitho.Finder.Book.with_taxa_count()
       assert {book1, %{taxa_count: 2}} in result
       assert {book2, %{taxa_count: 0}} in result
     end

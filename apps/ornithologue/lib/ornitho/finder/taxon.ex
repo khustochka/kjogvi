@@ -1,4 +1,4 @@
-defmodule Ornitho.Find.Taxon do
+defmodule Ornitho.Finder.Taxon do
   @moduledoc """
   Functions for fetching Taxa.
   """

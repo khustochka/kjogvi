@@ -27,11 +27,11 @@ defmodule Ornitho.Ops.BookTest do
       book = insert(:book)
       assert Ops.Book.delete(book.slug, book.version) == {1, nil}
 
-      assert Ornitho.Find.Book.exists?(book.slug, book.version) == false
+      assert Ornitho.Finder.Book.exists?(book.slug, book.version) == false
     end
 
     test "does nothing if the book does not exist" do
-      assert Ornitho.Find.Book.exists?("ebird", "v1") == false
+      assert Ornitho.Finder.Book.exists?("ebird", "v1") == false
       assert Ops.Book.delete("ebird", "v1") == {0, nil}
     end
   end
