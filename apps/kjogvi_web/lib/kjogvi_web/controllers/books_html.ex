@@ -36,6 +36,9 @@ defmodule KjogviWeb.BooksHTML do
       <%= @book.name %>
       <:subtitle><%= @book.description %></:subtitle>
     </.header>
+    <h2 class="mt-4">
+    Page <%= @page_num %>
+    </h2>
     <.simpler_table id="taxa" rows={@taxa}>
       <:col :let={taxon} label="no"><%= taxon.sort_order %></:col>
       <:col :let={taxon} label="code"><%= taxon.code %></:col>

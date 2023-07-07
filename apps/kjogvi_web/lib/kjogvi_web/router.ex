@@ -25,6 +25,7 @@ defmodule KjogviWeb.Router do
 
     get "/", BooksController, :index
     get "/:slug/:version", BooksController, :show
+    get "/:slug/:version/page/:page", BooksController, :show
   end
 
   # Other scopes may use custom stacks.

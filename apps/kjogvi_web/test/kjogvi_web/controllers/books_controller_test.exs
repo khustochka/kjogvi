@@ -45,11 +45,25 @@ defmodule KjogviWeb.BooksControllerTest do
       book = insert(:book)
       insert(:taxon, book: book)
       insert(:taxon, book: book)
-      Ops.Book.mark_book_imported(book)
 
       conn = get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
       resp = html_response(conn, 200)
       assert resp =~ book.name
+    end
+  end
+
+  describe "GET /taxonomy/:book_slug/page/:n" do
+    test "shows n-th page", %{conn: conn} do
+      book = insert(:book)
+      taxa =
+        1..26
+        |> Enum.to_list()
+        |> Enum.map(fn _ -> insert(:taxon, book: book) end)
+
+
+      conn = get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/page/2")
+      resp = html_response(conn, 200)
+      assert resp =~ List.last(taxa).name_sci
     end
   end
 end
