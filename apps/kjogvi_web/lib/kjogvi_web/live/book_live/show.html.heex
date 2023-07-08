@@ -4,12 +4,23 @@
 </.header>
 <.simpler_table id="taxa" rows={@taxa}>
   <:col :let={taxon} label="no"><%= taxon.sort_order %></:col>
-  <:col :let={taxon} label="code"><%= taxon.code %></:col>
+  <:col :let={taxon} label="code">
+    <span class="font-mono"><%= taxon.code %></span>
+  </:col>
   <:col :let={taxon} label="name">
-    <div class="font-semibold text-zinc-900"><%= taxon.name_sci %></div>
+    <div class="text-zinc-900">
+    <strong><i><%= taxon.name_sci %></i></strong>
+    </div>
     <div><%= taxon.name_en %></div>
   </:col>
-  <:col :let={taxon} label="category"><%= taxon.category %></:col>
+  <:col :let={taxon} label="category & parent species">
+    <div class="text-center">
+    <span class="bg-green-500 text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg">
+      <%= taxon.category %>
+    </span>
+    </div>
+    <div class="text-center" :if={taxon.parent_species}><i><%= taxon.parent_species.name_sci %></i></div>
+  </:col>
   <:col :let={taxon} label="taxonomy">
     <div><%= taxon.order %></div>
     <div><%= taxon.family %></div>

@@ -18,17 +18,23 @@ defmodule Ornitho.Finder.Taxon do
     |> Repo.one()
   end
 
-  def page(book, page_num) do
-    page(book, page_num, per_page: @default_per_page)
-  end
-
-  def page(book, page_num, per_page: per_page) do
+  def page(book, page_num, opts \\ []) do
+    per_page = opts[:per_page] || @default_per_page
     off = per_page * (page_num - 1)
 
-    Query.Taxon.base_taxon(book)
-    |> order_by(:sort_order)
-    |> offset(^off)
-    |> limit(^per_page)
+    base_query =
+      Query.Taxon.base_taxon(book)
+      |> order_by(:sort_order)
+      |> offset(^off)
+      |> limit(^per_page)
+
+    query = if opts[:with_parent_species] do
+      base_query |> preload(:parent_species)
+    else
+      base_query
+    end
+
+    query
     |> Repo.all()
   end
 end

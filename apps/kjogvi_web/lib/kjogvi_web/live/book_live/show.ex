@@ -11,7 +11,8 @@ defmodule KjogviWeb.BookLive.Show do
     {:ok,
      socket
      |> assign(:book, book)
-     |> assign(:page_title, book.name)}
+     |> assign(:page_title, book.name)
+    }
   end
 
   @impl true
@@ -23,7 +24,7 @@ defmodule KjogviWeb.BookLive.Show do
         str -> String.to_integer(str)
       end
 
-    taxa = Ornitho.Finder.Taxon.page(socket.assigns.book, page)
+    taxa = Ornitho.Finder.Taxon.page(socket.assigns.book, page, %{with_parent_species: true})
 
     {:noreply,
      socket
