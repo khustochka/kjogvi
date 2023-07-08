@@ -17,22 +17,21 @@ defmodule KjogviWeb.PaginationComponents do
   def simple_pagination(%{page_num: _} = assigns) do
     ~H"""
     <div class="simple-pagination flex flex-row gap-4">
-      <div class="simple-pagination-first" :if={@page_num > 2}>
-        <a href={@url_generator.(1)}>Page 1</a>
-        &nbsp;|
+      <div :if={@page_num > 2} class="simple-pagination-first">
+        <.link patch={@url_generator.(1)}>Page 1</.link> &nbsp;|
       </div>
-      <div class="simple-pagination-prev" :if={@page_num > 1}>
-        <a href={@url_generator.(@page_num - 1)}>
-        Page <%= assigns.page_num - 1 %>
-        </a>
+      <div :if={@page_num > 1} class="simple-pagination-prev">
+        <.link patch={@url_generator.(@page_num - 1)}>
+          Page <%= assigns.page_num - 1 %>
+        </.link>
       </div>
       <div class="simple-pagination-current">
         <b>Page <%= assigns.page_num %></b>
       </div>
       <div class="simple-pagination-next">
-        <a href={@url_generator.(@page_num + 1)}>
-        Page <%= assigns.page_num + 1 %>
-        </a>
+        <.link patch={@url_generator.(@page_num + 1)}>
+          Page <%= assigns.page_num + 1 %>
+        </.link>
       </div>
     </div>
     """

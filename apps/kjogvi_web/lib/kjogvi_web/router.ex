@@ -24,8 +24,8 @@ defmodule KjogviWeb.Router do
     pipe_through :browser
 
     get "/", BooksController, :index
-    get "/:slug/:version", BooksController, :show
-    get "/:slug/:version/page/:page", BooksController, :show
+    live "/:slug/:version", BookLive.Show
+    live "/:slug/:version/page/:page", BookLive.Show
   end
 
   # Other scopes may use custom stacks.

@@ -33,7 +33,9 @@ defmodule KjogviWeb.BooksControllerTest do
     end
   end
 
-  describe "GET /taxonomy/:book_slug" do
+  # These tests do not have a controller, but still work; and it is still good
+  # to test that they work without JavaScript.
+  describe "GET /taxonomy/:slug/:version" do
     test "Book with no taxa", %{conn: conn} do
       book = insert(:book)
       conn = get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
@@ -52,14 +54,14 @@ defmodule KjogviWeb.BooksControllerTest do
     end
   end
 
-  describe "GET /taxonomy/:book_slug/page/:n" do
+  describe "GET /taxonomy/:slug/:version/page/:n" do
     test "shows n-th page", %{conn: conn} do
       book = insert(:book)
+
       taxa =
         1..26
         |> Enum.to_list()
         |> Enum.map(fn _ -> insert(:taxon, book: book) end)
-
 
       conn = get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/page/2")
       resp = html_response(conn, 200)
