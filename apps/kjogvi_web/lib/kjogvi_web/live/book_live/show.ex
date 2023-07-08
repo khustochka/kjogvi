@@ -38,4 +38,14 @@ defmodule KjogviWeb.BookLive.Show do
   #    |> assign(:page_title, page_title(socket.assigns.live_action))
   #    |> assign(:book, Bibliothek.get_book!(id))}
   # end
+
+  defp category_to_color(cat) do
+    case cat do
+      "species" -> "bg-green-500"
+      "issf" -> "bg-blue-500"
+      c when c in ["slash", "spuh", "form"] -> "bg-rose-400"
+      c when c in ["domestic", "intergrade", "hybrid"] -> "bg-zinc-400"
+      _ -> "bg-zinc-400"
+    end
+  end
 end
