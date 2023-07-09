@@ -1,9 +1,6 @@
 defmodule KjogviWeb.BookLive.Show do
   use KjogviWeb, :live_view
 
-  import KjogviWeb.TaxaComponents
-  import KjogviWeb.PaginationComponents
-
   @impl true
   def mount(%{"slug" => slug, "version" => version}, _session, socket) do
     book = Ornitho.Finder.Book.by_signature(slug, version)
@@ -24,11 +21,8 @@ defmodule KjogviWeb.BookLive.Show do
         str -> String.to_integer(str)
       end
 
-    taxa = Ornitho.Finder.Taxon.page(socket.assigns.book, page, %{with_parent_species: true})
-
     {:noreply,
      socket
-     |> assign(:taxa, taxa)
      |> assign(:page_num, page)}
   end
 
@@ -39,13 +33,14 @@ defmodule KjogviWeb.BookLive.Show do
   #    |> assign(:book, Bibliothek.get_book!(id))}
   # end
 
-  defp category_to_color(cat) do
-    case cat do
-      "species" -> "bg-green-500"
-      "issf" -> "bg-blue-500"
-      c when c in ["slash", "spuh", "form"] -> "bg-rose-400"
-      c when c in ["domestic", "intergrade", "hybrid"] -> "bg-zinc-400"
-      _ -> "bg-zinc-400"
-    end
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <.header>
+      <%= @book.name %>
+      <:subtitle><%= @book.description %></:subtitle>
+    </.header>
+    <.live_component module={KjogviWeb.TaxaLive.Table} id="taxa-table" book={@book} page_num={@page_num} />
+    """
   end
 end
