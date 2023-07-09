@@ -3,6 +3,8 @@ defmodule Ornitho.Finder.Taxon do
   Functions for fetching Taxa.
   """
 
+  @search_results_limit 10
+
   import Ecto.Query
 
   alias Ornitho.Repo
@@ -22,19 +24,35 @@ defmodule Ornitho.Finder.Taxon do
     per_page = opts[:per_page] || @default_per_page
     off = per_page * (page_num - 1)
 
-    base_query =
-      Query.Taxon.base_taxon(book)
-      |> order_by(:sort_order)
-      |> offset(^off)
-      |> limit(^per_page)
-
-    query = if opts[:with_parent_species] do
-      base_query |> preload(:parent_species)
-    else
-      base_query
-    end
-
-    query
+    Query.Taxon.base_taxon(book)
+    |> order_by(:sort_order)
+    |> offset(^off)
+    |> limit(^per_page)
+    |> maybe_preload_parent_species(opts[:with_parent_species])
     |> Repo.all()
+  end
+
+  def search(book, search_term, opts \\ []) do
+    limit = opts[:limit] || @search_results_limit
+    start_term = "#{search_term}%"
+    like_term = "%#{search_term}%"
+
+    Query.Taxon.base_taxon(book)
+    |> order_by(:sort_order)
+    |> limit(^limit)
+    |> where([t], ilike(t.name_sci, ^like_term))
+    |> or_where([t], ilike(t.name_en, ^like_term))
+    |> or_where([t], ilike(t.code, ^start_term))
+    |> maybe_preload_parent_species(opts[:with_parent_species])
+    |> Repo.all()
+  end
+
+  defp maybe_preload_parent_species(query, true) do
+    query
+    |> preload(:parent_species)
+  end
+
+  defp maybe_preload_parent_species(query, x) when x == false or is_nil(x) do
+    query
   end
 end

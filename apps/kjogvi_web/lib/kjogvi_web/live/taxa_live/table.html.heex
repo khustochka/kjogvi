@@ -1,4 +1,10 @@
 <div>
+    <form class="mt-5 mb-4">
+        <.input type="search" id="taxa-search"  name="search_term" label="Search"
+                value={@search_term} phx-change="term_updated" phx-target={@myself} 
+                errors={[]} />
+    </form>
+
     <.simpler_table id="taxa" rows={@taxa}>
     <:col :let={taxon} label="no"><%= taxon.sort_order %></:col>
     <:col :let={taxon} label="code">
@@ -26,6 +32,7 @@
     </:col>
     </.simpler_table>
     <.simple_pagination
+    :if={!@search_enabled}
     page_num={@page_num}
     url_generator={fn n -> ~p"/taxonomy/#{@book.slug}/#{@book.version}/page/#{n}" end}
     />
