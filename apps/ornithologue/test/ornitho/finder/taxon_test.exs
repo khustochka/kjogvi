@@ -3,8 +3,8 @@ defmodule Ornitho.Finder.TaxonTest do
 
   use Ornitho.RepoCase, async: true
 
-  describe "page/1" do
-    test "returns the value if per_page is empty" do
+  describe "page" do
+    test "returns the default amount of results if per_page is empty" do
       book = insert(:book)
 
       taxa =
@@ -15,10 +15,8 @@ defmodule Ornitho.Finder.TaxonTest do
       result = Ornitho.Finder.Taxon.page(book, 1)
       assert Enum.map(result, & &1.id) == Enum.map(Enum.take(taxa, 25), & &1.id)
     end
-  end
 
-  describe "page/2" do
-    test "returns the correct amount of taxa on the first page" do
+    test "returns the correct amount of results on the first page" do
       book = insert(:book)
       taxon1 = insert(:taxon, book: book)
       taxon2 = insert(:taxon, book: book)
@@ -40,6 +38,89 @@ defmodule Ornitho.Finder.TaxonTest do
 
       result = Ornitho.Finder.Taxon.page(book, 2, per_page: 3)
       assert Enum.map(result, & &1.id) == Enum.map([taxon4, taxon5], & &1.id)
+    end
+
+    test "with_parent_species preloads parent species" do
+      book = insert(:book)
+      taxon1 = insert(:taxon, book: book)
+      taxon2 = insert(:taxon, book: book, parent_species: taxon1, category: "issf")
+      result = Ornitho.Finder.Taxon.page(book, 1, with_parent_species: true)
+      tx = Enum.find(result, fn tx -> tx.id == taxon2.id end)
+      assert tx.parent_species.name_sci == taxon1.name_sci
+    end
+  end
+
+  describe "search" do
+    test "searches for the start of the scientific name" do
+      book = insert(:book)
+      taxon1 = insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
+      taxon2 = insert(:taxon, book: book, name_sci: "Acrocephalus scirpaceus")
+      taxon3 = insert(:taxon, book: book, name_sci: "Certhia familiaris")
+      result = Ornitho.Finder.Taxon.search(book, "acro")
+      ids = Enum.map(result, & &1.id)
+      assert taxon1.id in ids
+      assert taxon2.id in ids
+      assert taxon3.id not in ids
+    end
+
+    test "searches for the part of the scientific name" do
+      book = insert(:book)
+      taxon1 = insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
+      taxon2 = insert(:taxon, book: book, name_sci: "Acrocephalus scirpaceus")
+      taxon3 = insert(:taxon, book: book, name_sci: "Certhia familiaris")
+      result = Ornitho.Finder.Taxon.search(book, "fam")
+      ids = Enum.map(result, & &1.id)
+      assert taxon1.id not in ids
+      assert taxon2.id not in ids
+      assert taxon3.id in ids
+    end
+
+    test "searches for the start of the common name" do
+      book = insert(:book)
+      taxon1 = insert(:taxon, book: book, name_en: "House Sparrow")
+      taxon2 = insert(:taxon, book: book, name_en: "House Finch")
+      taxon3 = insert(:taxon, book: book, name_en: "Northern Wheatear")
+      result = Ornitho.Finder.Taxon.search(book, "hous")
+      ids = Enum.map(result, & &1.id)
+      assert taxon1.id in ids
+      assert taxon2.id in ids
+      assert taxon3.id not in ids
+    end
+
+    test "searches for the part of the common name" do
+      book = insert(:book)
+      taxon1 = insert(:taxon, book: book, name_en: "House Sparrow")
+      taxon2 = insert(:taxon, book: book, name_en: "House Finch")
+      taxon3 = insert(:taxon, book: book, name_en: "Northern Wheatear")
+      result = Ornitho.Finder.Taxon.search(book, "SE")
+      ids = Enum.map(result, & &1.id)
+      assert taxon1.id in ids
+      assert taxon2.id in ids
+      assert taxon3.id not in ids
+    end
+
+    test "searches for the start of the taxon code" do
+      book = insert(:book)
+      taxon1 = insert(:taxon, book: book, code: "yelwar")
+      taxon2 = insert(:taxon, book: book, code: "yellow")
+      taxon3 = insert(:taxon, book: book, code: "midmer")
+      result = Ornitho.Finder.Taxon.search(book, "yel")
+      ids = Enum.map(result, & &1.id)
+      assert taxon1.id in ids
+      assert taxon2.id in ids
+      assert taxon3.id not in ids
+    end
+
+    test "does not search for the middle of the taxon code" do
+      book = insert(:book)
+      taxon1 = insert(:taxon, book: book, code: "yelwar")
+      taxon2 = insert(:taxon, book: book, code: "yellow")
+      taxon3 = insert(:taxon, book: book, code: "greyel")
+      result = Ornitho.Finder.Taxon.search(book, "yel")
+      ids = Enum.map(result, & &1.id)
+      assert taxon1.id in ids
+      assert taxon2.id in ids
+      assert taxon3.id not in ids
     end
   end
 end

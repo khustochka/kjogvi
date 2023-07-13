@@ -16,4 +16,18 @@ defmodule Ornitho.Query.Taxon do
     query
     |> order_by(:sort_order)
   end
+
+  def search(query, search_term) do
+    start_term = "#{search_term}%"
+    like_term = "%#{search_term}%"
+    query
+    |> where([t], ilike(t.name_sci, ^like_term))
+    |> or_where([t], ilike(t.name_en, ^like_term))
+    |> or_where([t], ilike(t.code, ^start_term))
+  end
+
+  def with_parent_species(query) do
+    query
+    |> preload(:parent_species)
+  end
 end

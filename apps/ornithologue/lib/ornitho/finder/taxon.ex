@@ -25,7 +25,7 @@ defmodule Ornitho.Finder.Taxon do
     off = per_page * (page_num - 1)
 
     Query.Taxon.base_taxon(book)
-    |> order_by(:sort_order)
+    |> Query.Taxon.ordered
     |> offset(^off)
     |> limit(^per_page)
     |> maybe_preload_parent_species(opts[:with_parent_species])
@@ -34,22 +34,18 @@ defmodule Ornitho.Finder.Taxon do
 
   def search(book, search_term, opts \\ []) do
     limit = opts[:limit] || @search_results_limit
-    start_term = "#{search_term}%"
-    like_term = "%#{search_term}%"
 
     Query.Taxon.base_taxon(book)
-    |> order_by(:sort_order)
+    |> Query.Taxon.ordered
     |> limit(^limit)
-    |> where([t], ilike(t.name_sci, ^like_term))
-    |> or_where([t], ilike(t.name_en, ^like_term))
-    |> or_where([t], ilike(t.code, ^start_term))
+    |> Query.Taxon.search(search_term)
     |> maybe_preload_parent_species(opts[:with_parent_species])
     |> Repo.all()
   end
 
   defp maybe_preload_parent_species(query, true) do
     query
-    |> preload(:parent_species)
+    |> Query.Taxon.with_parent_species
   end
 
   defp maybe_preload_parent_species(query, x) when x == false or is_nil(x) do
