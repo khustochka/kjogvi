@@ -26,6 +26,7 @@ defmodule KjogviWeb.Router do
     get "/", BooksController, :index
     live "/:slug/:version", BookLive.Show
     live "/:slug/:version/page/:page", BookLive.Show
+    live "/:slug/:version/:code", TaxaLive.Show
   end
 
   # Other scopes may use custom stacks.

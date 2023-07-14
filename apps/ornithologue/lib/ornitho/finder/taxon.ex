@@ -20,41 +20,36 @@ defmodule Ornitho.Finder.Taxon do
     |> Repo.one()
   end
 
+  @spec by_code(Book.t(), String.t()) :: Taxon.t() | nil
+  def by_code(book, name_sci) do
+    Query.Taxon.base_taxon(book)
+    |> where(code: ^name_sci)
+    |> Repo.one()
+  end
+
   def page(book, page_num, opts \\ []) do
     per_page = opts[:per_page] || @default_per_page
     off = per_page * (page_num - 1)
-    newopts = Keyword.delete(opts, :per_page)
 
     Query.Taxon.base_taxon(book)
     |> Query.Taxon.ordered
     |> offset(^off)
     |> limit(^per_page)
-    |> process_options(newopts)
     |> Repo.all()
   end
 
   def search(book, search_term, opts \\ []) do
     limit = opts[:limit] || @search_results_limit
-    newopts = Keyword.delete(opts, :limit)
 
     Query.Taxon.base_taxon(book)
     |> Query.Taxon.ordered
     |> limit(^limit)
     |> Query.Taxon.search(search_term)
-    |> process_options(newopts)
     |> Repo.all()
   end
 
-  defp process_options(query, opts) do
-    Enum.reduce(opts, query, fn {key, val}, newquery ->
-      case key do
-        :with_parent_species ->
-          case val do
-            true -> Query.Taxon.with_parent_species(newquery)
-            nil -> newquery
-            false -> newquery
-          end
-      end
-    end)
+  def with_parent_species(taxa) do
+    taxa
+    |> Repo.preload(:parent_species)
   end
 end

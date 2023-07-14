@@ -12,15 +12,17 @@
     </:col>
     <:col :let={taxon} label="name">
         <div class="text-zinc-900">
-        <strong><i><%= taxon.name_sci %></i></strong>
+        <strong>
+        <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.code}"}>
+        <i><%= taxon.name_sci %></i>
+        </.link>
+        </strong>
         </div>
         <div><%= taxon.name_en %></div>
     </:col>
     <:col :let={taxon} label="category & parent species">
         <div class="text-center" :if={taxon.category}>
-        <span class={[category_to_color(taxon.category), "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"]}>
-        <%= taxon.category %>
-        </span>
+            <.category_tag category={taxon.category} />
         </div>
         <div class="text-center" :if={taxon.parent_species}>
         <i><%= taxon.parent_species.name_sci %></i>

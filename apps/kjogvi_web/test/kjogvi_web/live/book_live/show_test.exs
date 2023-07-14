@@ -1,4 +1,4 @@
-defmodule KjogviWeb.BookLiveTest do
+defmodule KjogviWeb.BookLive.ShowTest do
   use KjogviWeb.ConnCase
   use KjogviWeb.OrnithoCase
 

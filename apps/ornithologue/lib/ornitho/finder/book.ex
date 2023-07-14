@@ -27,7 +27,7 @@ defmodule Ornitho.Finder.Book do
 
   @spec taxa_count(Book.t()) :: Integer
   def taxa_count(book) do
-    Query.Taxon.base_taxon(book)
+    Ecto.assoc(book, :taxa)
     |> Repo.aggregate(:count)
   end
 

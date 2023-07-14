@@ -39,15 +39,6 @@ defmodule Ornitho.Finder.TaxonTest do
       result = Ornitho.Finder.Taxon.page(book, 2, per_page: 3)
       assert Enum.map(result, & &1.id) == Enum.map([taxon4, taxon5], & &1.id)
     end
-
-    test "with_parent_species preloads parent species" do
-      book = insert(:book)
-      taxon1 = insert(:taxon, book: book)
-      taxon2 = insert(:taxon, book: book, parent_species: taxon1, category: "issf")
-      result = Ornitho.Finder.Taxon.page(book, 1, with_parent_species: true)
-      tx = Enum.find(result, fn tx -> tx.id == taxon2.id end)
-      assert tx.parent_species.name_sci == taxon1.name_sci
-    end
   end
 
   describe "search" do

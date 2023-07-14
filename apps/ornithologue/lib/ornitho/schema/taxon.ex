@@ -37,6 +37,17 @@ defmodule Ornitho.Schema.Taxon do
     timestamps()
   end
 
+  def formatted_authority(taxon) do
+    case taxon.authority do
+      nil -> nil
+      str when is_binary(str) ->
+        case taxon.authority_brackets do
+          true -> "(#{taxon.authority})"
+          _ -> taxon.authority
+        end
+    end
+  end
+
   def creation_changeset(%Book{} = book, attrs) do
     book
     |> Ecto.build_assoc(:taxa)

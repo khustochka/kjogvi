@@ -26,16 +26,6 @@ defmodule KjogviWeb.TaxaLive.Table do
     }
   end
 
-  defp category_to_color(cat) do
-    case cat do
-      "species" -> "bg-green-500"
-      "issf" -> "bg-blue-500"
-      c when c in ["slash", "spuh", "form"] -> "bg-rose-400"
-      c when c in ["domestic", "intergrade", "hybrid"] -> "bg-zinc-400"
-      _ -> "bg-zinc-400"
-    end
-  end
-
   defp assign_search_state(socket, nil = _search_term) do
     socket
     |> assign(:search_term, nil)
@@ -59,10 +49,12 @@ defmodule KjogviWeb.TaxaLive.Table do
   end
 
   defp get_taxa(%{book: book, search_enabled: false, page_num: page_num}) do
-    Ornitho.Finder.Taxon.page(book, page_num, with_parent_species: true)
+    Ornitho.Finder.Taxon.page(book, page_num)
+    |> Ornitho.Finder.Taxon.with_parent_species()
   end
 
   defp get_taxa(%{book: book, search_enabled: true, search_term: search_term}) do
-    Ornitho.Finder.Taxon.search(book, search_term, limit: 15, with_parent_species: true)
+    Ornitho.Finder.Taxon.search(book, search_term, limit: 15)
+    |> Ornitho.Finder.Taxon.with_parent_species()
   end
 end

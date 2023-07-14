@@ -26,9 +26,4 @@ defmodule Ornitho.Query.Taxon do
     |> or_where([t], ilike(t.name_en, ^like_term))
     |> or_where([t], ilike(t.code, ^start_term))
   end
-
-  def with_parent_species(query) do
-    query
-    |> preload(:parent_species)
-  end
 end

@@ -70,4 +70,22 @@ defmodule KjogviWeb.TaxaComponents do
     </div>
     """
   end
+
+  def category_tag(assigns) do
+    ~H"""
+    <span class={[category_to_color(@category), "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"]}>
+    <%= @category %>
+    </span>
+    """
+  end
+
+  defp category_to_color(cat) do
+    case cat do
+      "species" -> "bg-green-500"
+      "issf" -> "bg-blue-500"
+      c when c in ["slash", "spuh", "form"] -> "bg-rose-400"
+      c when c in ["domestic", "intergrade", "hybrid"] -> "bg-zinc-400"
+      _ -> "bg-zinc-400"
+    end
+  end
 end

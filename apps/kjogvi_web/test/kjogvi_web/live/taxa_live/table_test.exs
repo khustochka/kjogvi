@@ -1,4 +1,4 @@
-defmodule KjogviWeb.TaxaLiveTest do
+defmodule KjogviWeb.TaxaLive.TableTest do
   use KjogviWeb.ConnCase
   use KjogviWeb.OrnithoCase
 
