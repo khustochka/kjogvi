@@ -48,8 +48,13 @@ defmodule Ornitho.Finder.Taxon do
     |> Repo.all()
   end
 
-  def with_parent_species(taxa) do
-    taxa
+  def with_parent_species(taxon_or_taxa) do
+    taxon_or_taxa
     |> Repo.preload(:parent_species)
+  end
+
+  def with_child_taxa(taxon_or_taxa) do
+    taxon_or_taxa
+    |> Repo.preload(:child_taxa)
   end
 end
