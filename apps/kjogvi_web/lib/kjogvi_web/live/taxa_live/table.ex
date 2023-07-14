@@ -43,15 +43,14 @@ defmodule KjogviWeb.TaxaLive.Table do
   end
 
   defp assign_search_state(socket, "" = _search_term) do
-    socket
-    |> assign(:search_term, nil)
-    |> assign(:search_enabled, false)
+    assign_search_state(socket, nil)
   end
 
   defp assign_search_state(socket, search_term) when is_binary(search_term) do
+    normalized_term = String.trim(search_term)
     socket
-    |> assign(:search_term, search_term)
-    |> assign(:search_enabled, String.length(search_term) >= @minimum_search_term_length)
+    |> assign(:search_term, normalized_term)
+    |> assign(:search_enabled, String.length(normalized_term) >= @minimum_search_term_length)
   end
 
   defp assign_taxa(socket) do
@@ -60,10 +59,10 @@ defmodule KjogviWeb.TaxaLive.Table do
   end
 
   defp get_taxa(%{book: book, search_enabled: false, page_num: page_num}) do
-    Ornitho.Finder.Taxon.page(book, page_num, %{with_parent_species: true})
+    Ornitho.Finder.Taxon.page(book, page_num, with_parent_species: true)
   end
 
   defp get_taxa(%{book: book, search_enabled: true, search_term: search_term}) do
-    Ornitho.Finder.Taxon.search(book, search_term, %{limit: 15, with_parent_species: true})
+    Ornitho.Finder.Taxon.search(book, search_term, limit: 15, with_parent_species: true)
   end
 end

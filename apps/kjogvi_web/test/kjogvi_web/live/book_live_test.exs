@@ -18,8 +18,11 @@ defmodule KjogviWeb.BookLiveTest do
     test "displays taxa", %{conn: conn} do
       book = insert(:book)
       taxon = insert(:taxon, book: book)
-      insert(:taxon, book: book)
-      insert(:taxon, book: book)
+      insert(:taxon, book: book, category: "species")
+      insert(:taxon, book: book, category: "issf")
+      insert(:taxon, book: book, category: "spuh")
+      insert(:taxon, book: book, category: "hybrid")
+      insert(:taxon, book: book, category: "random")
 
       {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
 
