@@ -28,7 +28,7 @@ defmodule Ornitho.Finder.Taxon do
     |> Query.Taxon.ordered
     |> offset(^off)
     |> limit(^per_page)
-    |> maybe_preload_parent_species(opts[:with_parent_species])
+    |> process_options(opts)
     |> Repo.all()
   end
 
@@ -39,16 +39,20 @@ defmodule Ornitho.Finder.Taxon do
     |> Query.Taxon.ordered
     |> limit(^limit)
     |> Query.Taxon.search(search_term)
-    |> maybe_preload_parent_species(opts[:with_parent_species])
+    |> process_options(opts)
     |> Repo.all()
   end
 
-  defp maybe_preload_parent_species(query, true) do
-    query
-    |> Query.Taxon.with_parent_species
-  end
-
-  defp maybe_preload_parent_species(query, x) when x == false or is_nil(x) do
-    query
+  defp process_options(query, opts) do
+    Enum.reduce(opts, query, fn {key, val}, newquery ->
+      case key do
+        :with_parent_species ->
+          case val do
+            true -> Query.Taxon.with_parent_species(newquery)
+            _ -> newquery
+          end
+        _ -> newquery
+      end
+    end)
   end
 end
