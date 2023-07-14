@@ -18,8 +18,9 @@ defmodule Ornitho.Query.Taxon do
   end
 
   def search(query, search_term) do
-    start_term = "#{search_term}%"
-    like_term = "%#{search_term}%"
+    sanitized_term = Ornitho.Query.Utils.sanitize_like(search_term)
+    start_term = "#{sanitized_term}%"
+    like_term = "%#{sanitized_term}%"
     query
     |> where([t], ilike(t.name_sci, ^like_term))
     |> or_where([t], ilike(t.name_en, ^like_term))
