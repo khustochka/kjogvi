@@ -1,13 +1,17 @@
 defmodule KjogviWeb.BookLive.Show do
   use KjogviWeb, :live_view
 
+  import KjogviWeb.TimeComponents
+
   @impl true
   def mount(%{"slug" => slug, "version" => version}, _session, socket) do
     book = Ornitho.Finder.Book.by_signature(slug, version)
+    taxa_count = Ornitho.Finder.Book.taxa_count(book)
 
     {:ok,
      socket
      |> assign(:book, book)
+     |> assign(:taxa_count, taxa_count)
      |> assign(:page_title, book.name)
     }
   end
@@ -40,6 +44,13 @@ defmodule KjogviWeb.BookLive.Show do
       <%= @book.name %>
       <:subtitle><%= @book.description %></:subtitle>
     </.header>
+    <.list>
+    <:item title="Imported at"><.datetime time={@book.imported_at} /></:item>
+    <:item title="Taxa"><%= @taxa_count %></:item>
+    <:item :for={{key, value} <- (@book.extras || %{})} title={key}>
+    <%= value %>
+    </:item>
+    </.list>
     <.live_component module={KjogviWeb.TaxaLive.Table} id="taxa-table" book={@book} page_num={@page_num} />
     """
   end

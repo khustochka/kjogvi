@@ -25,6 +25,12 @@ defmodule Ornitho.Finder.Book do
     |> Repo.one()
   end
 
+  @spec taxa_count(Book.t()) :: Integer
+  def taxa_count(book) do
+    Query.Taxon.base_taxon(book)
+    |> Repo.aggregate(:count)
+  end
+
   def exists?(%{slug: slug, version: version}) do
     exists?(slug, version)
   end
