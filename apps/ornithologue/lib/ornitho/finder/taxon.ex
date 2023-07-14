@@ -23,23 +23,25 @@ defmodule Ornitho.Finder.Taxon do
   def page(book, page_num, opts \\ []) do
     per_page = opts[:per_page] || @default_per_page
     off = per_page * (page_num - 1)
+    newopts = Keyword.delete(opts, :per_page)
 
     Query.Taxon.base_taxon(book)
     |> Query.Taxon.ordered
     |> offset(^off)
     |> limit(^per_page)
-    |> process_options(opts)
+    |> process_options(newopts)
     |> Repo.all()
   end
 
   def search(book, search_term, opts \\ []) do
     limit = opts[:limit] || @search_results_limit
+    newopts = Keyword.delete(opts, :limit)
 
     Query.Taxon.base_taxon(book)
     |> Query.Taxon.ordered
     |> limit(^limit)
     |> Query.Taxon.search(search_term)
-    |> process_options(opts)
+    |> process_options(newopts)
     |> Repo.all()
   end
 
@@ -49,9 +51,9 @@ defmodule Ornitho.Finder.Taxon do
         :with_parent_species ->
           case val do
             true -> Query.Taxon.with_parent_species(newquery)
-            _ -> newquery
+            nil -> newquery
+            false -> newquery
           end
-        _ -> newquery
       end
     end)
   end
