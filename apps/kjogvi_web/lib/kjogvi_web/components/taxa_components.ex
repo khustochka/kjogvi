@@ -80,6 +80,10 @@ defmodule KjogviWeb.TaxaComponents do
     """
   end
 
+  attr :skip_parent_species, :boolean, default: false
+  attr :book, :any, required: true
+  attr :taxa, :any, required: true
+
   def taxa_table(assigns) do
     ~H"""
     <.simpler_table id="taxa" rows={@taxa}>
@@ -101,7 +105,7 @@ defmodule KjogviWeb.TaxaComponents do
           <div class="text-center" :if={taxon.category}>
               <.category_tag category={taxon.category} />
           </div>
-          <div class="text-center" :if={taxon.parent_species}>
+          <div class="text-center" :if={!@skip_parent_species && taxon.parent_species}>
           <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.parent_species.code}"}>
           <i><%= taxon.parent_species.name_sci %></i>
           </.link>

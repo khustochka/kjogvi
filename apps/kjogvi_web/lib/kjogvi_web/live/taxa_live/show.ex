@@ -20,15 +20,9 @@ defmodule KjogviWeb.TaxaLive.Show do
       |> Ornitho.Finder.Taxon.with_parent_species()
       |> Ornitho.Finder.Taxon.with_child_taxa()
 
-    child_taxa =
-      taxon.child_taxa
-      |> Ornitho.Finder.Taxon.with_parent_species()
-
-
     {:noreply,
      socket
      |> assign(:taxon, taxon)
-     |> assign(:child_taxa, child_taxa)
      |> assign(:page_title, "#{taxon.name_sci} · #{socket.assigns.book.name}")
     }
   end
@@ -63,9 +57,9 @@ defmodule KjogviWeb.TaxaLive.Show do
     <%= value %>
     </:item>
     </.list>
-    <div :if={@child_taxa != []} class="mt-6">
+    <div :if={@taxon.child_taxa != []} class="mt-6">
     <h2>Child taxa</h2>
-    <.taxa_table book={@book} taxa={@child_taxa} />
+    <.taxa_table book={@book} taxa={@taxon.child_taxa} skip_parent_species={true} />
     </div>
     """
   end
