@@ -122,5 +122,17 @@ defmodule Ornitho.Finder.TaxonTest do
       assert taxon2.id in ids
       assert taxon3.id not in ids
     end
+
+    test "using % does not allow searching for the middle of the taxon code" do
+      book = insert(:book)
+      taxon1 = insert(:taxon, book: book, code: "yelwar")
+      taxon2 = insert(:taxon, book: book, code: "yellow")
+      taxon3 = insert(:taxon, book: book, code: "greyel")
+      result = Ornitho.Finder.Taxon.search(book, "%yel")
+      ids = Enum.map(result, & &1.id)
+      assert taxon1.id in ids
+      assert taxon2.id in ids
+      assert taxon3.id not in ids
+    end
   end
 end
