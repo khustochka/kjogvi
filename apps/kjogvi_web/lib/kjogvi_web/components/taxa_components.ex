@@ -95,9 +95,10 @@ defmodule KjogviWeb.TaxaComponents do
           <div class="text-zinc-900">
           <strong>
           <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon}"}>
-          <i><%= taxon.name_sci %></i>
-          </.link>
-          </strong>
+          <i><%= taxon.name_sci %></i></.link></strong>
+          <span :if={taxon.authority} class="ml-2 text-zinc-500 text-xs">
+          <%= Ornitho.Schema.Taxon.formatted_authority(taxon)%>
+          </span>
           </div>
           <div><%= taxon.name_en %></div>
       </:col>
