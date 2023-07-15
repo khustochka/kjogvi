@@ -26,7 +26,7 @@ defmodule KjogviWeb.TaxaLive.Table do
     }
   end
 
-  attr :book, :map, required: true
+  attr :book, Ornitho.Schema.Book, required: true
   attr :taxa, :list, required: true
   attr :pagenum, :integer, default: 1
   attr :search_enabled, :boolean, default: false

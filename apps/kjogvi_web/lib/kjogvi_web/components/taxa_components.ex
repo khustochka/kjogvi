@@ -81,7 +81,7 @@ defmodule KjogviWeb.TaxaComponents do
   end
 
   attr :skip_parent_species, :boolean, default: false
-  attr :book, :map, required: true
+  attr :book, Ornitho.Schema.Book, required: true
   attr :taxa, :list, required: true
 
   def taxa_table(assigns) do
