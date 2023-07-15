@@ -94,7 +94,7 @@ defmodule KjogviWeb.TaxaComponents do
       <:col :let={taxon} label="name">
           <div class="text-zinc-900">
           <strong>
-          <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.code}"}>
+          <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon}"}>
           <i><%= taxon.name_sci %></i>
           </.link>
           </strong>

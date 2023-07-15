@@ -9,7 +9,7 @@ defmodule KjogviWeb.TaxaLive.ShowTest do
       taxon = insert(:taxon)
       book = taxon.book
 
-      {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/#{taxon.code}")
+      {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/#{taxon}")
 
       assert html =~ book.slug
       assert html =~ book.version
@@ -23,7 +23,7 @@ defmodule KjogviWeb.TaxaLive.ShowTest do
       book = taxon.book
       child_taxon = insert(:taxon, book: book, parent_species: taxon)
 
-      {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/#{taxon.code}")
+      {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/#{taxon}")
 
       assert html =~ child_taxon.name_sci
       assert html =~ child_taxon.name_en
