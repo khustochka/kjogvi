@@ -2,11 +2,11 @@ defmodule Ornitho.Schema.Taxon do
   @moduledoc """
   This schema represents a taxon. This can be a species, a subspecies, or another taxonomic
   category. Subspecies and other sub-species taxa are linked to species, which makes them
-  countable. Some books (e.g. eBird) contain uncountable taxa (slashes, spuhs. domestic forms).
+  countable. Some books (e.g. eBird) contain uncountable taxa (slashes, spuhs, domestic forms).
   On the other hand, some lists may only contain species.
 
   Taxon is uniquely identified by a combination of book slug, book version, and taxon code.
-  If there is no short code in the book, scientific name should be used as code.
+  If there is no short code in the book, scientific name may be used as code.
   """
   use Ornitho.Schema
 
