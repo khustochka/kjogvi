@@ -56,7 +56,7 @@ defmodule KjogviWeb.BookLive.Show do
     <%= value %>
     </:item>
     </.list>
-    <.live_component module={KjogviWeb.TaxaLive.Table} id="taxa-table" book={@book} page_num={@page_num} />
+    <.live_component module={KjogviWeb.TaxaLive.Index} id="taxa-index" book={@book} page_num={@page_num} />
     """
   end
 end

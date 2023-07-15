@@ -1,4 +1,4 @@
-defmodule KjogviWeb.TaxaLive.Table do
+defmodule KjogviWeb.TaxaLive.Index do
   use KjogviWeb, :live_component
 
   @minimum_search_term_length 3

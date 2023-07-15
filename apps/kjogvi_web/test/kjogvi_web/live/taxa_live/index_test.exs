@@ -1,10 +1,10 @@
-defmodule KjogviWeb.TaxaLive.TableTest do
+defmodule KjogviWeb.TaxaLive.IndexTest do
   use KjogviWeb.ConnCase
   use KjogviWeb.OrnithoCase
 
   import Phoenix.LiveViewTest
 
-  describe "Table" do
+  describe "Index" do
     test "displays taxa", %{conn: conn} do
       book = insert(:book)
       taxon = insert(:taxon, book: book)
