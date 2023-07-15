@@ -26,46 +26,72 @@ defmodule KjogviWeb.TaxaLive.Table do
 
   def render(assigns) do
     ~H"""
-    <div>
-      <.simpler_table id="taxa" rows={@taxa}>
-        <:col :let={taxon} label="no"><%= taxon.sort_order %></:col>
-        <:col :let={taxon} label="code">
-            <span class="font-mono"><%= taxon.code %></span>
-        </:col>
-        <:col :let={taxon} label="name">
-            <div class="text-zinc-900">
-            <strong>
-            <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon}"}>
-            <i><%= taxon.name_sci %></i></.link></strong>
-            <span :if={taxon.authority} class="ml-2 text-zinc-500 text-xs">
-            <%= Ornitho.Schema.Taxon.formatted_authority(taxon)%>
-            </span>
-            </div>
-            <div><%= taxon.name_en %></div>
-        </:col>
-        <:col :let={taxon} label="category & parent species">
-            <div class="text-center" :if={taxon.category}>
-                <.category_tag category={taxon.category} />
-            </div>
-            <div class="text-center" :if={!@skip_parent_species && taxon.parent_species}>
-            <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.parent_species.code}"}>
-            <i><%= taxon.parent_species.name_sci %></i>
-            </.link>
-            </div>
-        </:col>
-        <:col :let={taxon} label="taxonomy">
-            <div><%= taxon.order %></div>
-            <div><%= taxon.family %></div>
-        </:col>
-        <:col :let={taxon} label="">
-            <div :if={taxon.code != @expanded_taxon}>
-              <.link phx-click="expand_taxon" phx-target={@myself} phx-value-code={taxon.code}>Expand</.link>
-            </div>
-            <div :if={taxon.code == @expanded_taxon}>
-              <.link phx-click="collapse_taxon" phx-target={@myself}>Collapse</.link>
-            </div>
-        </:col>
-      </.simpler_table>
+    <div id={@id} class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
+      <table class="mt-6 w-[40rem] sm:w-full">
+        <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
+          <tr>
+            <th class="p-0 pb-4 pr-6 font-normal">no</th>
+            <th class="p-0 pb-4 pr-6 font-normal">code</th>
+            <th class="p-0 pb-4 pr-6 font-normal">name</th>
+            <th class="p-0 pb-4 pr-6 font-normal text-center" :if={!@skip_parent_species}>
+              parent species
+            </th>
+            <th class="p-0 pb-4 pr-6 font-normal">taxonomy</th>
+            <th class="p-0 pb-4 pr-6 font-normal"><span class="sr-only">expand/collapese</span></th>
+          </tr>
+        </thead>
+        <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
+          <%= for taxon <- @taxa do %>
+            <tr>
+              <td class="p-0 py-4 pr-6">
+                <%= taxon.sort_order %>
+              </td>
+              <td class="p-0 py-4 pr-6">
+                <span class="font-mono"><%= taxon.code %></span>
+              </td>
+              <td class="p-0 py-4 pr-6">
+                <div class="text-zinc-900">
+                  <div>
+                    <div>
+                      <strong>
+                      <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon}"}>
+                      <i><%= taxon.name_sci %></i></.link>
+                      </strong>
+                      <.category_tag category={taxon.category} :if={taxon.category} />
+                    </div>
+                    <div :if={taxon.authority} class="text-zinc-500 text-xs">
+                    <%= Ornitho.Schema.Taxon.formatted_authority(taxon)%>
+                    </div>
+                  </div>
+                </div>
+                <div><%= taxon.name_en %></div>
+              </td>
+              <td class="p-0 py-4 pr-6 text-center" :if={!@skip_parent_species}>
+                <.link  :if={taxon.parent_species} navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.parent_species}"}>
+                <i><%= taxon.parent_species.name_sci %></i>
+                </.link>
+              </td>
+              <td class="p-0 py-4 pr-6">
+                <div><%= taxon.order %></div>
+                <div><%= taxon.family %></div>
+              </td>
+              <td class="p-0 py-4 pr-6">
+                <div :if={taxon.code != @expanded_taxon}>
+                  <.link phx-click="expand_taxon" phx-target={@myself} phx-value-code={taxon.code}>Expand</.link>
+                </div>
+                <div :if={taxon.code == @expanded_taxon}>
+                  <.link phx-click="collapse_taxon" phx-target={@myself}>Collapse</.link>
+                </div>
+              </td>
+            </tr>
+            <tr :if={taxon.code == @expanded_taxon}>
+              <td class="p-0 py-4 pr-6" colspan={if @skip_parent_species, do: 5, else: 6}>
+                Expanded
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
     """
   end
