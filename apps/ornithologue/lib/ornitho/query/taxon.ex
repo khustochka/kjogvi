@@ -14,7 +14,7 @@ defmodule Ornitho.Query.Taxon do
 
   def ordered(query) do
     query
-    |> order_by(:sort_order)
+    |> order_by(^Taxon.default_order())
   end
 
   def search(query, search_term) do

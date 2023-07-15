@@ -16,6 +16,8 @@ defmodule Ornitho.Schema.Book do
 
   @type t() :: %__MODULE__{}
 
+  @default_order [asc: :slug, asc: :version]
+
   schema "books" do
     field(:slug, :string)
     field(:version, :string)
@@ -28,6 +30,10 @@ defmodule Ornitho.Schema.Book do
     has_many(:taxa, Ornitho.Schema.Taxon)
 
     timestamps()
+  end
+
+  def default_order do
+    @default_order
   end
 
   def creation_changeset(%Book{} = book, attrs) do

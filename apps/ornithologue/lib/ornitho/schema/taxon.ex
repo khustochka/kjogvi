@@ -15,6 +15,7 @@ defmodule Ornitho.Schema.Taxon do
   @type t() :: %__MODULE__{}
 
   @required_fields [:name_sci, :name_en, :code, :category, :sort_order, :book_id]
+  @default_order [asc: :sort_order]
 
   schema "taxa" do
     field(:name_sci, :string)
@@ -34,9 +35,13 @@ defmodule Ornitho.Schema.Taxon do
     belongs_to(:book, Ornitho.Schema.Book)
     belongs_to(:parent_species, Ornitho.Schema.Taxon)
 
-    has_many(:child_taxa, Ornitho.Schema.Taxon, foreign_key: :parent_species_id, preload_order: [asc: :sort_order])
+    has_many(:child_taxa, Ornitho.Schema.Taxon, foreign_key: :parent_species_id, preload_order: @default_order)
 
     timestamps()
+  end
+
+  def default_order do
+    @default_order
   end
 
   def formatted_authority(taxon) do

@@ -7,6 +7,11 @@ defmodule Ornitho.Query.Book do
 
   import Ecto.Query
 
+  def ordered(query) do
+    query
+    |> order_by(^Book.default_order())
+  end
+
   @spec by_signature(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def by_signature(query, slug, version) do
     from([..., book: b] in query,

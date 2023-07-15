@@ -9,11 +9,13 @@ defmodule Ornitho.Finder.Book do
 
   def all() do
     Query.Book.base_book()
+    |> Query.Book.ordered()
     |> Repo.all()
   end
 
   def with_taxa_count() do
     Query.Book.base_book()
+    |> Query.Book.ordered()
     |> Query.Book.with_taxa_count()
     |> Repo.all()
   end
