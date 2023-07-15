@@ -2,8 +2,8 @@ defmodule KjogviWeb.TaxaComponents do
   @moduledoc """
   UI Components for rendering taxa
   """
-  use Phoenix.Component
-  use KjogviWeb, :verified_routes
+  # use Phoenix.Component
+  use KjogviWeb, :html
 
   # alias Phoenix.LiveView.JS
   import KjogviWeb.Gettext

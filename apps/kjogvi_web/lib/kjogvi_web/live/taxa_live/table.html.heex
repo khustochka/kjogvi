@@ -1,8 +1,8 @@
 <div>
     <form class="mt-5 mb-4">
         <.input type="search" id="taxa-search"  name="search_term" label="Search taxa"
-                value={@search_term} phx-change="term_updated" phx-target={@myself} 
-                errors={[]} />
+                value={@search_term} errors={[]} 
+                phx-change="term_updated" phx-target={@myself} phx-debounce="300" />
     </form>
 
     <.taxa_table book={@book} taxa={@taxa} />
@@ -10,6 +10,5 @@
     <.simple_pagination
     :if={!@search_enabled}
     page_num={@page_num}
-    url_generator={fn n -> ~p"/taxonomy/#{@book.slug}/#{@book.version}/page/#{n}" end}
-    />
+    url_generator={&~p"/taxonomy/#{@book.slug}/#{@book.version}/page/#{&1}"} />
 </div>
