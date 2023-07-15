@@ -25,8 +25,8 @@ defmodule KjogviWeb.TaxaLive.TableTest do
 
       html2 =
         show_live
-        |> element("form input#taxa-search")
-        |> render_change(%{"_target" => ["search_term"], "search_term" => " acr"})
+        |> form("#taxa-search")
+        |> render_change(%{"search_term" => " acr"})
 
       assert html2 =~ "Acrocephalus palustris"
       assert not(html2 =~ "Cuculus canorus")
@@ -41,8 +41,8 @@ defmodule KjogviWeb.TaxaLive.TableTest do
 
       html2 =
         show_live
-        |> element("form input#taxa-search")
-        |> render_change(%{"_target" => ["search_term"], "search_term" => "ac"})
+        |> form("#taxa-search")
+        |> render_change(%{"search_term" => "ac"})
 
       assert html2 =~ "Acrocephalus palustris"
       assert html2 =~ "Cuculus canorus"
@@ -60,8 +60,8 @@ defmodule KjogviWeb.TaxaLive.TableTest do
 
       html2 =
         show_live
-        |> element("form input#taxa-search")
-        |> render_change(%{"_target" => ["search_term"], "search_term" => "acr"})
+        |> form("#taxa-search")
+        |> render_change(%{"search_term" => "acr"})
 
       assert html2 =~ "Acrocephalus palustris"
       assert not(html2 =~ "Cuculus canorus")
@@ -76,16 +76,16 @@ defmodule KjogviWeb.TaxaLive.TableTest do
 
       html2 =
         show_live
-        |> element("form input#taxa-search")
-        |> render_change(%{"_target" => ["search_term"], "search_term" => "acr"})
+        |> form("#taxa-search")
+        |> render_change(%{"search_term" => "acr"})
 
       assert html2 =~ "Acrocephalus palustris"
       assert not(html2 =~ "Cuculus canorus")
 
       html3 =
         show_live
-        |> element("form input#taxa-search")
-        |> render_change(%{"_target" => ["search_term"], "search_term" => ""})
+        |> form("#taxa-search")
+        |> render_change(%{"search_term" => ""})
 
       assert html3 =~ "Acrocephalus palustris"
       assert html3 =~ "Cuculus canorus"

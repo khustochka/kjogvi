@@ -18,12 +18,36 @@ defmodule KjogviWeb.TaxaLive.Table do
   end
 
   @impl true
-  def handle_event("term_updated", %{"_target" => ["search_term"], "search_term" => search_term}, socket) do
+  def handle_event("search_updated", %{"search_term" => search_term}, socket) do
     {:noreply,
       socket
       |> assign_search_state(search_term)
       |> assign_taxa
     }
+  end
+
+  attr :book, :map, required: true
+  attr :taxa, :list, required: true
+  attr :pagenum, :integer, default: 1
+  attr :search_enabled, :boolean, default: false
+
+  def render(assigns) do
+    ~H"""
+    <div>
+      <form class="mt-5 mb-4" id="taxa-search"
+          phx-change="search_updated" phx-target={@myself} phx-debounce="200">
+        <.input type="search" name="search_term" label="Search taxa"
+            id="search_term" value={@search_term} errors={[]} />
+      </form>
+
+      <.taxa_table book={@book} taxa={@taxa} />
+
+      <.simple_pagination
+        :if={!@search_enabled}
+        page_num={@page_num}
+        url_generator={&~p"/taxonomy/#{@book.slug}/#{@book.version}/page/#{&1}"} />
+    </div>
+    """
   end
 
   defp assign_search_state(socket, nil = _search_term) do
