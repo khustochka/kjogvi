@@ -2,21 +2,19 @@ defmodule KjogviWeb.TaxaComponents do
   @moduledoc """
   UI Components for rendering taxa
   """
-  # use Phoenix.Component
   use KjogviWeb, :html
 
-  # alias Phoenix.LiveView.JS
   import KjogviWeb.Gettext
 
-  @doc ~S"""
-  Renders a table with generic styling.
+  @doc """
+  Renders a table with generic styling. Simplified compared to the table from CoreComponents.
 
   ## Examples
 
-      <.table id="users" rows={@users}>
+      <.simpler_table id="users" rows={@users}>
         <:col :let={user} label="id"><%= user.id %></:col>
         <:col :let={user} label="username"><%= user.username %></:col>
-      </.table>
+      </.simpler_table>
   """
   attr :id, :string, required: true
   attr :row_click, :any, default: nil
@@ -72,6 +70,9 @@ defmodule KjogviWeb.TaxaComponents do
     """
   end
 
+  @doc """
+  Renders a tag with taxon category.
+  """
   attr :category, :string
 
   def category_tag(assigns) do
@@ -82,6 +83,9 @@ defmodule KjogviWeb.TaxaComponents do
     """
   end
 
+  @doc """
+  Renders a tag if the taxon is extinct.
+  """
   attr :taxon, Ornitho.Schema.Taxon, required: true
 
   def extinct_tag(assigns) do

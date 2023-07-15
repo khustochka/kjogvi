@@ -9,12 +9,17 @@ defmodule KjogviWeb.PaginationComponents do
   # import KjogviWeb.Gettext
 
   @doc """
-  Simple pagination UI.
+  Simple pagination navigation. Renders links to the next and previous pages (except if
+  the current page is 1). For pages after the 2nd, also shows link to the 1st page.
+
+  ## Examples
+
+      <.simple_pagination page_num={@page_num} url_generator={&~p"/taxonomy/page/\#{&1}"} />
   """
-  attr :page_num, :integer, required: true
+  attr :page_num, :integer, default: 1
   attr :url_generator, :any, required: true
 
-  def simple_pagination(%{page_num: _} = assigns) do
+  def simple_pagination(assigns) do
     ~H"""
     <div class="simple-pagination flex flex-row gap-4">
       <div :if={@page_num > 2} class="simple-pagination-first">

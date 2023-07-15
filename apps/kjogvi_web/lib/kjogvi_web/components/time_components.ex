@@ -5,26 +5,25 @@ defmodule KjogviWeb.TimeComponents do
 
   use Phoenix.Component
 
-  # alias Phoenix.LiveView.JS
-  # import KjogviWeb.Gettext
-
   @doc """
-  Renders datetime.
+  Renders datetime in two rows in a human-readable format.
+
+  ## Examples
+
+      <.datetime time={@book.imported_at} />
   """
   attr :time, :any, required: true
 
-  def datetime(%{time: _} = assigns) do
+  def datetime(assigns) do
     ~H"""
-    <%= if assigns.time do %>
-      <time datetime={assigns.time}>
-        <nobr>
-          <%= Calendar.strftime(assigns.time, "%-d %b %Y") %>
-        </nobr>
-        <nobr>
-          <%= Calendar.strftime(assigns.time, "%X") %>
-        </nobr>
-      </time>
-    <% end %>
+    <time datetime={@time} :if={@time}>
+      <nobr>
+        <%= Calendar.strftime(@time, "%-d %b %Y") %>
+      </nobr>
+      <nobr>
+        <%= Calendar.strftime(@time, "%X") %>
+      </nobr>
+    </time>
     """
   end
 end
