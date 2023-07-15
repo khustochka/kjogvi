@@ -49,13 +49,15 @@ defmodule KjogviWeb.BookLive.Show do
       <%= @book.name %>
       <:subtitle><%= @book.description %></:subtitle>
     </.header>
-    <.list>
-    <:item title="Imported at"><.datetime time={@book.imported_at} /></:item>
-    <:item title="Taxa"><%= @taxa_count %></:item>
-    <:item :for={{key, value} <- (@book.extras || %{})} title={key}>
-    <%= value %>
-    </:item>
-    </.list>
+    <div class="mt-8">
+      <.list>
+      <:item title="Imported at"><.datetime time={@book.imported_at} /></:item>
+      <:item title="Taxa"><%= @taxa_count %></:item>
+      <:item :for={{key, value} <- (@book.extras || %{})} title={key}>
+      <%= value %>
+      </:item>
+      </.list>
+    </div>
     <.live_component module={KjogviWeb.TaxaLive.Index} id="taxa-index" book={@book} page_num={@page_num} />
     """
   end

@@ -77,16 +77,27 @@ defmodule KjogviWeb.TaxaLive.Table do
               </td>
               <td class="p-0 py-4 pr-6">
                 <div :if={taxon.code != @expanded_taxon}>
-                  <.link phx-click="expand_taxon" phx-target={@myself} phx-value-code={taxon.code}>Expand</.link>
+                  <.link phx-click="expand_taxon" phx-target={@myself} phx-value-code={taxon.code}>
+                    <Heroicons.chevron_down class="w-6 h-6" />
+                    <span class="sr-only">Expand</span>
+                  </.link>
                 </div>
                 <div :if={taxon.code == @expanded_taxon}>
-                  <.link phx-click="collapse_taxon" phx-target={@myself}>Collapse</.link>
+                  <.link phx-click="collapse_taxon" phx-target={@myself}>
+                    <Heroicons.chevron_up class="w-6 h-6" />
+                    <span class="sr-only">Collapse</span>
+                  </.link>
                 </div>
               </td>
             </tr>
             <tr :if={taxon.code == @expanded_taxon}>
-              <td class="p-0 py-4 pr-6" colspan={if @skip_parent_species, do: 5, else: 6}>
-                Expanded
+              <td></td>
+              <td class="p-0 py-4 pr-6" colspan={if @skip_parent_species, do: 4, else: 5}>
+                <.list>
+                  <:item :for={{key, value} <- (taxon.extras || %{})} title={key}>
+                    <%= value %>
+                  </:item>
+                </.list>
               </td>
             </tr>
           <% end %>

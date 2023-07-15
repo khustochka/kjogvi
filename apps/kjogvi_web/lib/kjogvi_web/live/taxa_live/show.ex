@@ -42,21 +42,23 @@ defmodule KjogviWeb.TaxaLive.Show do
       <.category_tag category={@taxon.category} />
       <:subtitle><%= @taxon.name_en %></:subtitle>
     </.header>
-    <.list>
-    <:item title="Order #"><%= @taxon.sort_order %></:item>
-    <:item title="Authority" :if={@taxon.authority}><%= Ornitho.Schema.Taxon.formatted_authority(@taxon) %></:item>
-    <:item title="Protonym" :if={@taxon.protonym}><%= @taxon.protonym %></:item>
-    <:item title="Taxonomy" :if={@taxon.order || @taxon.family}><%= @taxon.order %> / <%= @taxon.family %></:item>
-    <:item title="Code"><span class="font-mono"><%= @taxon.code %></span></:item>
-    <:item title="Parent species" :if={@taxon.parent_species}>
-    <.link patch={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}"}>
-    <i><%= @taxon.parent_species.name_sci %></i>
-    </.link>
-    </:item>
-    <:item :for={{key, value} <- (@taxon.extras || %{})} title={key}>
-    <%= value %>
-    </:item>
-    </.list>
+    <div class="mt-8">
+      <.list>
+        <:item title="Order #"><%= @taxon.sort_order %></:item>
+        <:item title="Authority" :if={@taxon.authority}><%= Ornitho.Schema.Taxon.formatted_authority(@taxon) %></:item>
+        <:item title="Protonym" :if={@taxon.protonym}><%= @taxon.protonym %></:item>
+        <:item title="Taxonomy" :if={@taxon.order || @taxon.family}><%= @taxon.order %> / <%= @taxon.family %></:item>
+        <:item title="Code"><span class="font-mono"><%= @taxon.code %></span></:item>
+        <:item title="Parent species" :if={@taxon.parent_species}>
+        <.link patch={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}"}>
+        <i><%= @taxon.parent_species.name_sci %></i>
+        </.link>
+        </:item>
+        <:item :for={{key, value} <- (@taxon.extras || %{})} title={key}>
+        <%= value %>
+        </:item>
+      </.list>
+    </div>
     <div :if={@taxon.child_taxa != []} class="mt-6">
     <h2>Child taxa</h2>
     <.live_component module={KjogviWeb.TaxaLive.Table} id="child-taxa-table" book={@book} taxa={@taxon.child_taxa} skip_parent_species={true} />
