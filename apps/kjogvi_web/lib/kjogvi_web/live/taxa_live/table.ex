@@ -58,6 +58,7 @@ defmodule KjogviWeb.TaxaLive.Table do
                       <i><%= taxon.name_sci %></i></.link>
                       </strong>
                       <.category_tag category={taxon.category} :if={taxon.category} />
+                      <.extinct_tag taxon={taxon} />
                     </div>
                     <div :if={taxon.authority} class="text-zinc-500 text-xs">
                     <%= Ornitho.Schema.Taxon.formatted_authority(taxon)%>

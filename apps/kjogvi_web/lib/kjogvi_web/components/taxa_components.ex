@@ -72,10 +72,23 @@ defmodule KjogviWeb.TaxaComponents do
     """
   end
 
+  attr :category, :string
+
   def category_tag(assigns) do
     ~H"""
-    <span class={[category_to_color(@category), "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"]}>
+    <span :if={@category} class={[category_to_color(@category), "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"]}>
     <%= @category %>
+    </span>
+    """
+  end
+
+  attr :taxon, Ornitho.Schema.Taxon, required: true
+
+  def extinct_tag(assigns) do
+    ~H"""
+    <span :if={Ornitho.Schema.Taxon.is_extinct?(@taxon)} class="text-white bg-black px-1.5 pt-0.5 pb-1 mx-1 font-semibold text-xs rounded-lg" title="Extinct">
+    EX
+    <span class="sr-only">Extinct</span>
     </span>
     """
   end

@@ -44,15 +44,20 @@ defmodule Ornitho.Schema.Taxon do
     @default_order
   end
 
-  def formatted_authority(taxon) do
-    case taxon.authority do
-      nil -> nil
-      str when is_binary(str) ->
-        case taxon.authority_brackets do
-          true -> "(#{taxon.authority})"
-          _ -> taxon.authority
-        end
-    end
+  def formatted_authority(%Taxon{authority: nil}) do
+    nil
+  end
+
+  def formatted_authority(%Taxon{authority: authority, authority_brackets: true}) do
+    "(#{authority})"
+  end
+
+  def formatted_authority(%Taxon{authority: authority, authority_brackets: _}) do
+    authority
+  end
+
+  def is_extinct?(%Taxon{extras: extras}) do
+    extras["extinct"]
   end
 
   def creation_changeset(%Book{} = book, attrs) do
