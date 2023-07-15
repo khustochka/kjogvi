@@ -59,7 +59,7 @@ defmodule KjogviWeb.TaxaLive.Show do
     </.list>
     <div :if={@taxon.child_taxa != []} class="mt-6">
     <h2>Child taxa</h2>
-    <.taxa_table book={@book} taxa={@taxon.child_taxa} skip_parent_species={true} />
+    <.live_component module={KjogviWeb.TaxaLive.Table} id="child-taxa-table" book={@book} taxa={@taxon.child_taxa} skip_parent_species={true} />
     </div>
     """
   end

@@ -3,7 +3,6 @@ defmodule KjogviWeb.TaxaLive.Index do
 
   @minimum_search_term_length 3
 
-  import KjogviWeb.TaxaComponents
   import KjogviWeb.PaginationComponents
 
   @impl true
@@ -40,7 +39,7 @@ defmodule KjogviWeb.TaxaLive.Index do
             id="search_term" value={@search_term} errors={[]} />
       </form>
 
-      <.taxa_table book={@book} taxa={@taxa} />
+      <.live_component module={KjogviWeb.TaxaLive.Table} id="taxa-table" book={@book} taxa={@taxa} />
 
       <.simple_pagination
         :if={!@search_enabled}
