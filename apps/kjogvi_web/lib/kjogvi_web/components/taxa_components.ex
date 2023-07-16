@@ -97,6 +97,17 @@ defmodule KjogviWeb.TaxaComponents do
     """
   end
 
+  @doc """
+  Renders a taxon scientific name, which should be always italisized.
+  """
+  attr :taxon, Ornitho.Schema.Taxon, required: true
+
+  def sci_name(assigns) do
+    ~H"""
+    <em class="italic"><%= @taxon.name_sci %></em>
+    """
+  end
+
   defp category_to_color(cat) do
     case cat do
       "species" -> "bg-green-500"

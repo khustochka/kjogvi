@@ -35,10 +35,10 @@ defmodule KjogviWeb.TaxaLive.Show do
       <span class="mx-1 text-sm text-zinc-400">/</span>
       <b><.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}"}><%= @book.name %></.link></b>
       <span class="mx-1 text-sm text-zinc-400">/</span>
-      <i><%= @taxon.name_sci %></i>
+      <.sci_name taxon={@taxon} />
     </div>
     <.header>
-      <i><%= @taxon.name_sci %></i>
+      <.sci_name taxon={@taxon} />
       <.category_tag category={@taxon.category} />
       <:subtitle><%= @taxon.name_en %></:subtitle>
     </.header>
@@ -51,7 +51,7 @@ defmodule KjogviWeb.TaxaLive.Show do
         <:item title="Code"><span class="font-mono"><%= @taxon.code %></span></:item>
         <:item title="Parent species" :if={@taxon.parent_species}>
         <.link patch={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}"}>
-        <i><%= @taxon.parent_species.name_sci %></i>
+        <.sci_name taxon={@taxon.parent_species} />
         </.link>
         </:item>
         <:item :for={{key, value} <- (@taxon.extras || %{})} title={key}>

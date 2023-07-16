@@ -55,7 +55,7 @@ defmodule KjogviWeb.TaxaLive.Table do
                     <div>
                       <strong>
                       <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon}"}>
-                      <i><%= taxon.name_sci %></i></.link>
+                      <.sci_name taxon={taxon} /></.link>
                       </strong>
                       <.category_tag category={taxon.category} :if={taxon.category} />
                       <.extinct_tag taxon={taxon} />
@@ -68,9 +68,8 @@ defmodule KjogviWeb.TaxaLive.Table do
                 <div><%= taxon.name_en %></div>
               </td>
               <td class="p-0 py-4 pr-6 text-center" :if={!@skip_parent_species}>
-                <.link  :if={taxon.parent_species} navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.parent_species}"}>
-                <i><%= taxon.parent_species.name_sci %></i>
-                </.link>
+                <.link :if={taxon.parent_species} navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.parent_species}"}>
+                <.sci_name taxon={taxon.parent_species} /></.link>
               </td>
               <td class="p-0 py-4 pr-6">
                 <div><%= taxon.order %></div>
