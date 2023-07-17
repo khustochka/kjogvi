@@ -1,9 +1,9 @@
 defmodule KjogviWeb.TaxaLive.Index do
   use KjogviWeb, :live_component
 
-  @minimum_search_term_length 3
-
   import KjogviWeb.PaginationComponents
+
+  @minimum_search_term_length 3
 
   @impl true
   def update(%{book: book, page_num: page_num}, socket) do

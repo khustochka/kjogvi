@@ -3,8 +3,6 @@ defmodule Ornitho.Finder.Taxon do
   Functions for fetching Taxa.
   """
 
-  @search_results_limit 10
-
   import Ecto.Query
 
   alias Ornitho.Repo
@@ -12,6 +10,7 @@ defmodule Ornitho.Finder.Taxon do
   alias Ornitho.Schema.{Book, Taxon}
 
   @default_per_page 25
+  @search_results_limit 10
 
   @spec by_name_sci(Book.t(), String.t()) :: Taxon.t() | nil
   def by_name_sci(book, name_sci) do

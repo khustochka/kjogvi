@@ -3,9 +3,9 @@ defmodule Ornitho.Query.Taxon do
   Queries for Taxa.
   """
 
-  alias Ornitho.Schema.Taxon
-
   import Ecto.Query
+
+  alias Ornitho.Schema.Taxon
 
   def base_taxon(book) do
     from(Taxon, as: :taxon)

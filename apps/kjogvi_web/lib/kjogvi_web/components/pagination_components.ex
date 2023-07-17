@@ -5,8 +5,9 @@ defmodule KjogviWeb.PaginationComponents do
 
   use Phoenix.Component
 
-  # alias Phoenix.LiveView.JS
   # import KjogviWeb.Gettext
+  
+  # alias Phoenix.LiveView.JS
 
   @doc """
   Simple pagination navigation. Renders links to the next and previous pages (except if

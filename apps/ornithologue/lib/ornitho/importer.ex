@@ -33,18 +33,18 @@ defmodule Ornitho.Importer do
     end
 
     quote bind_quoted: [opts: opts] do
+      import Ecto.Query, only: [from: 2]
+
       alias Ornitho.Schema.{Book, Taxon}
       alias Ornitho.Ops
-
-      @callback create_taxa(book :: %Book{}) :: {:ok, any()} | {:error, any()}
-
-      import Ecto.Query, only: [from: 2]
 
       @slug opts[:slug]
       @version opts[:version]
       @name opts[:name]
       @description opts[:description]
       @extras opts[:extras]
+
+      @callback create_taxa(book :: %Book{}) :: {:ok, any()} | {:error, any()}
 
       @spec slug() :: String.t()
       def slug(), do: @slug

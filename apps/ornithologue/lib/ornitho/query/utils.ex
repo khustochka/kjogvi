@@ -1,4 +1,8 @@
 defmodule Ornitho.Query.Utils do
+  @moduledoc """
+  Query utilities.
+  """
+
   @like_special_symbols ~r/(%|_|\\)/
   @like_replace_pattern "\\\\\\1"
 

@@ -14,9 +14,9 @@ defmodule Ornitho.Schema.Book do
 
   alias __MODULE__
 
-  @type t() :: %__MODULE__{}
-
   @default_order [asc: :slug, asc: :version]
+
+  @type t() :: %__MODULE__{}
 
   schema "books" do
     field(:slug, :string)

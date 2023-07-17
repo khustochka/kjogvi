@@ -3,9 +3,9 @@ defmodule Ornitho.Query.Book do
   Queries for Books.
   """
 
-  alias Ornitho.Schema.Book
-
   import Ecto.Query
+
+  alias Ornitho.Schema.Book
 
   def ordered(query) do
     query

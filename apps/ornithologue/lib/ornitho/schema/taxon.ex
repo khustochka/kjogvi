@@ -12,10 +12,10 @@ defmodule Ornitho.Schema.Taxon do
 
   alias Ornitho.Schema.{Book, Taxon}
 
-  @type t() :: %__MODULE__{}
-
   @required_fields [:name_sci, :name_en, :code, :category, :sort_order, :book_id]
   @default_order [asc: :sort_order]
+
+  @type t() :: %__MODULE__{}
 
   schema "taxa" do
     field(:name_sci, :string)
