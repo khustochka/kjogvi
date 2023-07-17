@@ -65,7 +65,10 @@ defmodule KjogviWeb.TaxaLive.Table do
                     </div>
                   </div>
                 </div>
-                <div><%= taxon.name_en %></div>
+                <div>
+                  <%= taxon.name_en %>
+                  <% # Future: <.highlighted content={taxon.name_en} term={@search_term} /> %>
+                </div>
               </td>
               <td class="p-0 py-4 pr-6 text-center" :if={!@skip_parent_species}>
                 <.link :if={taxon.parent_species} navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.parent_species}"}>

@@ -110,6 +110,37 @@ defmodule KjogviWeb.TaxaComponents do
     """
   end
 
+  attr :content, :string, required: true
+  attr :term, :string
+  
+  def highlighted(assigns) do
+    ~H"""
+    <%= if is_nil(@term) do %>
+      <%= assigns.content %>
+    <% else %>
+      <%= for {type, text} <- split_for_highlight(assigns.content, assigns.term) do %>
+        <%= if type == :highlight do %>
+          <span class="bg-yellow-400"><%= text %></span>
+         <% else %>
+          <%= text %>
+        <% end %>
+      <% end %>
+    <% end %>
+    """
+  end
+
+  defp split_for_highlight(content, term) do
+    content
+    |> String.split(~r{#{term}}i, include_captures: true)
+    |> Enum.map(fn str ->
+      if str =~ ~r{\A#{term}\Z}i do
+        {:highlight, str}
+      else
+        {:plain, str}
+      end
+    end)
+  end
+
   defp category_to_color(cat) do
     case cat do
       "species" -> "bg-green-500"
