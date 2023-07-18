@@ -77,9 +77,12 @@ defmodule KjogviWeb.TaxaComponents do
 
   def category_tag(assigns) do
     ~H"""
-    <span :if={@category} class={[category_to_color(@category), "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"]}>
-    <%= @category %>
-    </span>
+    <span
+      :if={@category}
+      class={[category_to_color(@category), "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"]}
+    ><span class="sr-only">[</span><%=
+      @category
+    %><span class="sr-only">]</span></span>
     """
   end
 
@@ -112,7 +115,7 @@ defmodule KjogviWeb.TaxaComponents do
 
   attr :content, :string, required: true
   attr :term, :string
-  
+
   def highlighted(assigns) do
     ~H"""
     <%= if is_nil(@term) do %>
