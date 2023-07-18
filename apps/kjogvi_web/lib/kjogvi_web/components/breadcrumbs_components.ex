@@ -26,7 +26,7 @@ defmodule KjogviWeb.BreadcrumbsComponents do
       class="breadcrumbs mb-6 text-xs"
     >
     <%= for {crumb, i} <- Enum.with_index(@crumb) do %>
-    <%= render_slot(crumb) %>
+    <div class="inline-block"><%= render_slot(crumb) %></div>
     <.breadcrumbs_separator :if={i < length(@crumb) - 1} />
     <% end %>
     </nav>
