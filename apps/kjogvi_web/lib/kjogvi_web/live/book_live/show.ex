@@ -1,6 +1,7 @@
 defmodule KjogviWeb.BookLive.Show do
   use KjogviWeb, :live_view
 
+  import KjogviWeb.BreadcrumbsComponents
   import KjogviWeb.TimeComponents
 
   @impl true
@@ -38,11 +39,11 @@ defmodule KjogviWeb.BookLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <nav aria-label="Breadcrumbs" class="breadcrumbs mb-6 text-xs">
-      <b><.link href={~p"/taxonomy"}>Taxonomy</.link></b>
-      <span class="mx-1 text-sm text-zinc-400">/</span>
-      <%= @book.name %>
-    </nav>
+    <.breadcrumbs>
+      <:crumb><b><.link href={~p"/taxonomy"}>Taxonomy</.link></b></:crumb>
+      <:crumb><%= @book.name %></:crumb>
+    </.breadcrumbs>
+
     <.header>
       <%= @book.name %>
       <:subtitle><%= @book.description %></:subtitle>

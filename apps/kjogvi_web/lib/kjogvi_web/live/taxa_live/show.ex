@@ -1,6 +1,7 @@
 defmodule KjogviWeb.TaxaLive.Show do
   use KjogviWeb, :live_view
 
+  import KjogviWeb.BreadcrumbsComponents
   import KjogviWeb.TaxaComponents
 
   @impl true
@@ -30,13 +31,12 @@ defmodule KjogviWeb.TaxaLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <nav aria-label="Breadcrumbs" class="breadcrumbs mb-6 text-xs">
-      <b><.link href={~p"/taxonomy"}>Taxonomy</.link></b>
-      <span class="mx-1 text-sm text-zinc-400">/</span>
-      <b><.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}"}><%= @book.name %></.link></b>
-      <span class="mx-1 text-sm text-zinc-400">/</span>
-      <.sci_name taxon={@taxon} />
-    </nav>
+    <.breadcrumbs>
+      <:crumb><b><.link href={~p"/taxonomy"}>Taxonomy</.link></b></:crumb>
+      <:crumb><b><.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}"}><%= @book.name %></.link></b></:crumb>
+      <:crumb><.sci_name taxon={@taxon} /></:crumb>
+    </.breadcrumbs>
+
     <.header>
       <.sci_name taxon={@taxon} />
       <.category_tag category={@taxon.category} />
