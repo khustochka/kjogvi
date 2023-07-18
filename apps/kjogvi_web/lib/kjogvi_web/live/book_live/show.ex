@@ -20,10 +20,8 @@ defmodule KjogviWeb.BookLive.Show do
   def handle_params(params, _, socket) do
     # TODO: validate page number; redirect to default if number is 1
     page =
-      case params["page"] do
-        nil -> 1
-        str -> String.to_integer(str)
-      end
+      Map.get(params, "page", "1")
+      |> String.to_integer()
 
     {:noreply,
      socket

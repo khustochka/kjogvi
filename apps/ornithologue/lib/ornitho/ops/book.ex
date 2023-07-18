@@ -23,10 +23,6 @@ defmodule Ornitho.Ops.Book do
     |> Ornitho.Repo.update_all([])
   end
 
-  # def delete(%{slug: slug, version: version}) do
-  #   delete(slug, version)
-  # end
-
   def delete(slug, version) do
     Query.Book.base_book()
     |> Query.Book.by_signature(slug, version)

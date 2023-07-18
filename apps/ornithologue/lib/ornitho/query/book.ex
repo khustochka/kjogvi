@@ -19,16 +19,6 @@ defmodule Ornitho.Query.Book do
     )
   end
 
-  @spec by_signature(Ecto.Queryable.t(), %{
-          :slug => String.t(),
-          :version => String.t(),
-          optional(any) => any
-        }) ::
-          Ecto.Query.t()
-  def by_signature(query, %{slug: slug, version: version}) do
-    by_signature(query, slug, version)
-  end
-
   def by_id(query, id) do
     from([..., book: b] in query,
       where: b.id == ^id

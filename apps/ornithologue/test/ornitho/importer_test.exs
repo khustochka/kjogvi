@@ -5,6 +5,7 @@ defmodule Ornitho.ImporterTest do
 
   alias Ornitho.Importer
 
+  @importer Importer.Test.NoTaxa
   describe "process_import/2" do
     test "raises if the book exists (no force option)" do
       insert(:book, slug: "test", version: "no_taxa")
@@ -14,52 +15,56 @@ defmodule Ornitho.ImporterTest do
                      "it pass [force: true] (or --force in a Mix task. Please note that in this case all " <>
                      "taxa will be deleted!",
                    fn ->
-                     Importer.Test.NoTaxa.process_import()
+                     @importer.process_import()
                    end
 
-      assert Ornitho.Finder.Book.exists?(Importer.Test.NoTaxa.book_attributes()) == true
+      assert Ornitho.Finder.Book.exists?(@importer.slug, @importer.version) == true
     end
 
+    @importer Importer.Test.NoTaxa
     test "returns ok and updates the book if instructed to force" do
       _old_book = insert(:book, slug: "test", version: "no_taxa", name: "Old name")
 
-      assert {:ok, _} = Importer.Test.NoTaxa.process_import(force: true)
+      assert {:ok, _} = @importer.process_import(force: true)
 
       book =
         Ornitho.Finder.Book.by_signature(
-          Importer.Test.NoTaxa.slug(),
-          Importer.Test.NoTaxa.version()
+          @importer.slug(),
+          @importer.version()
         )
 
       assert not is_nil(book)
-      assert book.name == Importer.Test.NoTaxa.name()
+      assert book.name == @importer.name()
 
       # TODO: when upsert is implemented
       # assert book.id == old_book.id
     end
 
+    @importer Importer.Test.NoTaxa
     test "removes the taxa if instructed to force" do
       book = insert(:book, slug: "test", version: "no_taxa")
       # ironic!
       taxon = insert(:taxon, book: book)
 
-      Importer.Test.NoTaxa.process_import(force: true)
+      @importer.process_import(force: true)
 
       assert Ornitho.Repo.reload(taxon) == nil
     end
 
+    @importer Importer.Test.NoTaxa
     test "returns ok if the book does not exist" do
-      assert {:ok, _} = Importer.Test.NoTaxa.process_import()
+      assert {:ok, _} = @importer.process_import()
     end
 
+    @importer Importer.Test.NoTaxa
     test "creates the book if the book does not exist" do
-      assert Ornitho.Finder.Book.exists?(Importer.Test.NoTaxa.book_attributes()) == false
-      assert {:ok, _} = Importer.Test.NoTaxa.process_import()
+      assert Ornitho.Finder.Book.exists?(@importer.slug, @importer.version) == false
+      assert {:ok, _} = @importer.process_import()
 
       book =
         Ornitho.Finder.Book.by_signature(
-          Importer.Test.NoTaxa.slug(),
-          Importer.Test.NoTaxa.version()
+          @importer.slug(),
+          @importer.version()
         )
 
       assert %{

@@ -33,10 +33,6 @@ defmodule Ornitho.Finder.Book do
     |> Repo.aggregate(:count)
   end
 
-  def exists?(%{slug: slug, version: version}) do
-    exists?(slug, version)
-  end
-
   def exists?(slug, version) do
     Query.Book.base_book()
     |> Query.Book.by_signature(slug, version)
