@@ -58,10 +58,7 @@ defmodule KjogviWeb.BooksControllerTest do
     test "shows n-th page", %{conn: conn} do
       book = insert(:book)
 
-      taxa =
-        1..26
-        |> Enum.to_list()
-        |> Enum.map(fn _ -> insert(:taxon, book: book) end)
+      taxa = insert_list(26, :taxon, book: book)
 
       conn = get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/page/2")
       resp = html_response(conn, 200)

@@ -7,10 +7,7 @@ defmodule Ornitho.Finder.TaxonTest do
     test "returns the default amount of results if per_page is empty" do
       book = insert(:book)
 
-      taxa =
-        1..26
-        |> Enum.to_list()
-        |> Enum.map(fn _ -> insert(:taxon, book: book) end)
+      taxa = insert_list(26, :taxon, book: book)
 
       result = Ornitho.Finder.Taxon.page(book, 1)
       assert Enum.map(result, & &1.id) == Enum.map(Enum.take(taxa, 25), & &1.id)

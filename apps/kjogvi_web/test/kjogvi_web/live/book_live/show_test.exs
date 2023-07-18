@@ -32,10 +32,7 @@ defmodule KjogviWeb.BookLive.ShowTest do
     test "displays taxa on next pages", %{conn: conn} do
       book = insert(:book)
 
-      taxa =
-        1..26
-        |> Enum.to_list()
-        |> Enum.map(fn _ -> insert(:taxon, book: book) end)
+      taxa = insert_list(26, :taxon, book: book)
 
       {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/page/2")
 
@@ -45,10 +42,7 @@ defmodule KjogviWeb.BookLive.ShowTest do
     test "navigates to next page", %{conn: conn} do
       book = insert(:book)
 
-      taxa =
-        1..26
-        |> Enum.to_list()
-        |> Enum.map(fn _ -> insert(:taxon, book: book) end)
+      taxa = insert_list(26, :taxon, book: book)
 
       {:ok, show_live, _html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
 
