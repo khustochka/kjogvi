@@ -6,7 +6,7 @@ defmodule KjogviWeb.PaginationComponents do
   use Phoenix.Component
 
   # import KjogviWeb.Gettext
-  
+
   # alias Phoenix.LiveView.JS
 
   @doc """
@@ -22,7 +22,7 @@ defmodule KjogviWeb.PaginationComponents do
 
   def simple_pagination(assigns) do
     ~H"""
-    <div class="simple-pagination flex flex-row gap-4">
+    <nav aria-label="Pagination" class="simple-pagination flex flex-row gap-4">
       <div :if={@page_num > 2} class="simple-pagination-first">
         <.link patch={@url_generator.(1)}>Page 1</.link> &nbsp;|
       </div>
@@ -39,7 +39,7 @@ defmodule KjogviWeb.PaginationComponents do
           Page <%= assigns.page_num + 1 %>
         </.link>
       </div>
-    </div>
+    </nav>
     """
   end
 end

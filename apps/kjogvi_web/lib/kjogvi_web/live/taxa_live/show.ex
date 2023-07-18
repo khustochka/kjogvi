@@ -30,13 +30,13 @@ defmodule KjogviWeb.TaxaLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="breadcrumbs mb-6 text-xs">
+    <nav aria-label="Breadcrumbs" class="breadcrumbs mb-6 text-xs">
       <b><.link href={~p"/taxonomy"}>Taxonomy</.link></b>
       <span class="mx-1 text-sm text-zinc-400">/</span>
       <b><.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}"}><%= @book.name %></.link></b>
       <span class="mx-1 text-sm text-zinc-400">/</span>
       <.sci_name taxon={@taxon} />
-    </div>
+    </nav>
     <.header>
       <.sci_name taxon={@taxon} />
       <.category_tag category={@taxon.category} />
