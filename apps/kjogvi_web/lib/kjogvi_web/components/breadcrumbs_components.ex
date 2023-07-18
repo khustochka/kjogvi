@@ -21,6 +21,7 @@ defmodule KjogviWeb.BreadcrumbsComponents do
   def breadcrumbs(assigns) do
     ~H"""
     <nav
+      role="navigation"
       aria-label="Breadcrumbs"
       class="breadcrumbs mb-6 text-xs"
     >

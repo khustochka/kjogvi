@@ -33,7 +33,7 @@ defmodule KjogviWeb.TaxaLive.Index do
   def render(assigns) do
     ~H"""
     <div>
-      <form class="mt-5 mb-4" id="taxa-search"
+      <form id="taxa-search" role="search" class="mt-5 mb-4"
           phx-change="search_updated" phx-target={@myself} phx-debounce="200">
         <.input type="search" name="search_term" label="Search taxa"
             id="search_term" value={@search_term} errors={[]} />
