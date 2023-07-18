@@ -35,7 +35,10 @@ defmodule Ornitho.Schema.Taxon do
     belongs_to(:book, Ornitho.Schema.Book)
     belongs_to(:parent_species, Ornitho.Schema.Taxon)
 
-    has_many(:child_taxa, Ornitho.Schema.Taxon, foreign_key: :parent_species_id, preload_order: @default_order)
+    has_many(:child_taxa, Ornitho.Schema.Taxon,
+      foreign_key: :parent_species_id,
+      preload_order: @default_order
+    )
 
     timestamps()
   end

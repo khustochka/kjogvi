@@ -35,7 +35,7 @@ defmodule Ornithologue.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ecto_sql, "~> 3.0"},
+      {:ecto_sql, "~> 3.10"},
       {:ex_machina, "~> 2.7.0", only: :test},
       {:postgrex, ">= 0.0.0"},
       # For jsonb columns

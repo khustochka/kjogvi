@@ -29,7 +29,6 @@ defmodule Kjogvi.Umbrella.MixProject do
   # and cannot be accessed from applications inside the apps/ folder.
   defp deps do
     [
-      {:phoenix, "~> 1.7.0", override: true},
       # Required to run "mix format" on ~H/.heex files from the umbrella root
       {:phoenix_live_view, ">= 0.0.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},

@@ -10,8 +10,7 @@ defmodule KjogviWeb.TaxaLive.Show do
 
     {:ok,
      socket
-     |> assign(:book, book)
-    }
+     |> assign(:book, book)}
   end
 
   @impl true
@@ -24,8 +23,7 @@ defmodule KjogviWeb.TaxaLive.Show do
     {:noreply,
      socket
      |> assign(:taxon, taxon)
-     |> assign(:page_title, "#{taxon.name_sci} · #{socket.assigns.book.name}")
-    }
+     |> assign(:page_title, "#{taxon.name_sci} · #{socket.assigns.book.name}")}
   end
 
   @impl true
@@ -33,7 +31,11 @@ defmodule KjogviWeb.TaxaLive.Show do
     ~H"""
     <.breadcrumbs>
       <:crumb><b><.link href={~p"/taxonomy"}>Taxonomy</.link></b></:crumb>
-      <:crumb><b><.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}"}><%= @book.name %></.link></b></:crumb>
+      <:crumb>
+        <b>
+          <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}"}><%= @book.name %></.link>
+        </b>
+      </:crumb>
       <:crumb><.sci_name taxon={@taxon} /></:crumb>
     </.breadcrumbs>
 
@@ -45,23 +47,33 @@ defmodule KjogviWeb.TaxaLive.Show do
     <div class="mt-8">
       <.list>
         <:item title="Order #"><%= @taxon.sort_order %></:item>
-        <:item title="Authority" :if={@taxon.authority}><%= Ornitho.Schema.Taxon.formatted_authority(@taxon) %></:item>
-        <:item title="Protonym" :if={@taxon.protonym}><%= @taxon.protonym %></:item>
-        <:item title="Taxonomy" :if={@taxon.order || @taxon.family}><%= @taxon.order %> / <%= @taxon.family %></:item>
-        <:item title="Code"><span class="font-mono"><%= @taxon.code %></span></:item>
-        <:item title="Parent species" :if={@taxon.parent_species}>
-        <.link patch={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}"}>
-        <.sci_name taxon={@taxon.parent_species} />
-        </.link>
+        <:item :if={@taxon.authority} title="Authority">
+          <%= Ornitho.Schema.Taxon.formatted_authority(@taxon) %>
         </:item>
-        <:item :for={{key, value} <- (@taxon.extras || %{})} title={key}>
-        <%= value %>
+        <:item :if={@taxon.protonym} title="Protonym"><%= @taxon.protonym %></:item>
+        <:item :if={@taxon.order || @taxon.family} title="Taxonomy">
+          <%= @taxon.order %> / <%= @taxon.family %>
+        </:item>
+        <:item title="Code"><span class="font-mono"><%= @taxon.code %></span></:item>
+        <:item :if={@taxon.parent_species} title="Parent species">
+          <.link patch={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}"}>
+            <.sci_name taxon={@taxon.parent_species} />
+          </.link>
+        </:item>
+        <:item :for={{key, value} <- @taxon.extras || %{}} title={key}>
+          <%= value %>
         </:item>
       </.list>
     </div>
     <div :if={@taxon.child_taxa != []} class="mt-6">
-    <h2>Child taxa</h2>
-    <.live_component module={KjogviWeb.TaxaLive.Table} id="child-taxa-table" book={@book} taxa={@taxon.child_taxa} skip_parent_species={true} />
+      <h2>Child taxa</h2>
+      <.live_component
+        module={KjogviWeb.TaxaLive.Table}
+        id="child-taxa-table"
+        book={@book}
+        taxa={@taxon.child_taxa}
+        skip_parent_species={true}
+      />
     </div>
     """
   end

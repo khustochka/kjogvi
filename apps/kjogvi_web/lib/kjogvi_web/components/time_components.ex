@@ -16,7 +16,7 @@ defmodule KjogviWeb.TimeComponents do
 
   def datetime(assigns) do
     ~H"""
-    <time datetime={@time} :if={@time}>
+    <time :if={@time} datetime={@time}>
       <nobr>
         <%= Calendar.strftime(@time, "%-d %b %Y") %>
       </nobr>

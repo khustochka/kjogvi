@@ -31,7 +31,7 @@ defmodule Ornitho.Finder.Taxon do
     off = per_page * (page_num - 1)
 
     Query.Taxon.base_taxon(book)
-    |> Query.Taxon.ordered
+    |> Query.Taxon.ordered()
     |> offset(^off)
     |> limit(^per_page)
     |> Repo.all()
@@ -41,7 +41,7 @@ defmodule Ornitho.Finder.Taxon do
     limit = opts[:limit] || @search_results_limit
 
     Query.Taxon.base_taxon(book)
-    |> Query.Taxon.ordered
+    |> Query.Taxon.ordered()
     |> limit(^limit)
     |> Query.Taxon.search(search_term)
     |> Repo.all()

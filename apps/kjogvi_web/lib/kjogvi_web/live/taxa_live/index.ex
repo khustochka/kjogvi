@@ -12,17 +12,15 @@ defmodule KjogviWeb.TaxaLive.Index do
      |> assign(:book, book)
      |> assign(:page_num, page_num)
      |> assign_search_state(nil)
-     |> assign_taxa
-    }
+     |> assign_taxa}
   end
 
   @impl true
   def handle_event("search_updated", %{"search_term" => search_term}, socket) do
     {:noreply,
-      socket
-      |> assign_search_state(search_term)
-      |> assign_taxa
-    }
+     socket
+     |> assign_search_state(search_term)
+     |> assign_taxa}
   end
 
   attr :book, Ornitho.Schema.Book, required: true
@@ -33,10 +31,22 @@ defmodule KjogviWeb.TaxaLive.Index do
   def render(assigns) do
     ~H"""
     <div>
-      <form id="taxa-search" role="search" class="mt-5 mb-4"
-          phx-change="search_updated" phx-target={@myself} phx-debounce="200">
-        <.input type="search" name="search_term" label="Search taxa"
-            id="search_term" value={@search_term} errors={[]} />
+      <form
+        id="taxa-search"
+        role="search"
+        class="mt-5 mb-4"
+        phx-change="search_updated"
+        phx-target={@myself}
+        phx-debounce="200"
+      >
+        <.input
+          type="search"
+          name="search_term"
+          label="Search taxa"
+          id="search_term"
+          value={@search_term}
+          errors={[]}
+        />
       </form>
 
       <.live_component module={KjogviWeb.TaxaLive.Table} id="taxa-table" book={@book} taxa={@taxa} />
@@ -44,7 +54,8 @@ defmodule KjogviWeb.TaxaLive.Index do
       <.simple_pagination
         :if={!@search_enabled}
         page_num={@page_num}
-        url_generator={&~p"/taxonomy/#{@book.slug}/#{@book.version}/page/#{&1}"} />
+        url_generator={&~p"/taxonomy/#{@book.slug}/#{@book.version}/page/#{&1}"}
+      />
     </div>
     """
   end
@@ -61,6 +72,7 @@ defmodule KjogviWeb.TaxaLive.Index do
 
   defp assign_search_state(socket, search_term) when is_binary(search_term) do
     normalized_term = String.trim(search_term)
+
     socket
     |> assign(:search_term, normalized_term)
     |> assign(:search_enabled, String.length(normalized_term) >= @minimum_search_term_length)

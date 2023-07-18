@@ -13,8 +13,7 @@ defmodule KjogviWeb.BookLive.Show do
      socket
      |> assign(:book, book)
      |> assign(:taxa_count, taxa_count)
-     |> assign(:page_title, book.name)
-    }
+     |> assign(:page_title, book.name)}
   end
 
   @impl true
@@ -50,14 +49,19 @@ defmodule KjogviWeb.BookLive.Show do
     </.header>
     <div class="mt-8">
       <.list>
-      <:item title="Imported at"><.datetime time={@book.imported_at} /></:item>
-      <:item title="Taxa"><%= @taxa_count %></:item>
-      <:item :for={{key, value} <- (@book.extras || %{})} title={key}>
-      <%= value %>
-      </:item>
+        <:item title="Imported at"><.datetime time={@book.imported_at} /></:item>
+        <:item title="Taxa"><%= @taxa_count %></:item>
+        <:item :for={{key, value} <- @book.extras || %{}} title={key}>
+          <%= value %>
+        </:item>
       </.list>
     </div>
-    <.live_component module={KjogviWeb.TaxaLive.Index} id="taxa-index" book={@book} page_num={@page_num} />
+    <.live_component
+      module={KjogviWeb.TaxaLive.Index}
+      id="taxa-index"
+      book={@book}
+      page_num={@page_num}
+    />
     """
   end
 end

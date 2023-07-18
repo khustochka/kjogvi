@@ -9,30 +9,30 @@ defmodule Ornitho.Importer.Demo.V1 do
     name: "Demo book",
     description: "This is a demo book"
 
-    @taxa_list [
-      %{
-        name_sci: "Pica pica",
-        name_en: "Eurasian Magpie",
-        code: "eurmag1",
-        category: "species",
-        authority: "Linnaeus, 1758",
-        authority_brackets: true,
-        order: "Passeriformes",
-        family: "Corvidae",
-        sort_order: 1
-      },
-      %{
-        name_sci: "Corvus cornix",
-        name_en: "Hooded Crow",
-        code: "hoocro1",
-        category: "species",
-        authority: "Linnaeus, 1758",
-        authority_brackets: false,
-        order: "Passeriformes",
-        family: "Corvidae",
-        sort_order: 2
-      }
-    ]
+  @taxa_list [
+    %{
+      name_sci: "Pica pica",
+      name_en: "Eurasian Magpie",
+      code: "eurmag1",
+      category: "species",
+      authority: "Linnaeus, 1758",
+      authority_brackets: true,
+      order: "Passeriformes",
+      family: "Corvidae",
+      sort_order: 1
+    },
+    %{
+      name_sci: "Corvus cornix",
+      name_en: "Hooded Crow",
+      code: "hoocro1",
+      category: "species",
+      authority: "Linnaeus, 1758",
+      authority_brackets: false,
+      order: "Passeriformes",
+      family: "Corvidae",
+      sort_order: 2
+    }
+  ]
 
   def create_taxa(book) do
     case Ops.Taxon.create_many(book, @taxa_list) do

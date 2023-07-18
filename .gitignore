@@ -20,7 +20,7 @@ erl_crash.dump
 *.ez
 
 # Temporary files, for example, from tests.
-/tmp
+/tmp/
 .DS_Store
 .elixir_ls
 

@@ -79,10 +79,13 @@ defmodule KjogviWeb.TaxaComponents do
     ~H"""
     <span
       :if={@category}
-      class={[category_to_color(@category), "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"]}
-    ><span class="sr-only">[</span><%=
-      @category
-    %><span class="sr-only">]</span></span>
+      class={[
+        category_to_color(@category),
+        "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"
+      ]}
+    >
+      <span class="sr-only">[</span><%= @category %><span class="sr-only">]</span>
+    </span>
     """
   end
 
@@ -93,9 +96,13 @@ defmodule KjogviWeb.TaxaComponents do
 
   def extinct_tag(assigns) do
     ~H"""
-    <span :if={Ornitho.Schema.Taxon.is_extinct?(@taxon)} class="text-white bg-black px-1.5 pt-0.5 pb-1 mx-1 font-semibold text-xs rounded-lg" title="Extinct">
-    <span aria-hidden="true">EX</span>
-    <span class="sr-only">Extinct</span>
+    <span
+      :if={Ornitho.Schema.Taxon.is_extinct?(@taxon)}
+      class="text-white bg-black px-1.5 pt-0.5 pb-1 mx-1 font-semibold text-xs rounded-lg"
+      title="Extinct"
+    >
+      <span aria-hidden="true">EX</span>
+      <span class="sr-only">Extinct</span>
     </span>
     """
   end
@@ -124,7 +131,7 @@ defmodule KjogviWeb.TaxaComponents do
       <%= for {type, text} <- split_for_highlight(assigns.content, assigns.term) do %>
         <%= if type == :highlight do %>
           <span class="bg-yellow-400"><%= text %></span>
-         <% else %>
+        <% else %>
           <%= text %>
         <% end %>
       <% end %>

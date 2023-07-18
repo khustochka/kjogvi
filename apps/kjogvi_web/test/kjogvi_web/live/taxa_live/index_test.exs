@@ -29,7 +29,7 @@ defmodule KjogviWeb.TaxaLive.IndexTest do
         |> render_change(%{"search_term" => " acr"})
 
       assert html2 =~ "Acrocephalus palustris"
-      assert not(html2 =~ "Cuculus canorus")
+      assert not (html2 =~ "Cuculus canorus")
     end
 
     test "when search term is less than 3 letters, shows the page", %{conn: conn} do
@@ -64,7 +64,7 @@ defmodule KjogviWeb.TaxaLive.IndexTest do
         |> render_change(%{"search_term" => "acr"})
 
       assert html2 =~ "Acrocephalus palustris"
-      assert not(html2 =~ "Cuculus canorus")
+      assert not (html2 =~ "Cuculus canorus")
     end
 
     test "when search term is cleared, shows the page", %{conn: conn} do
@@ -80,7 +80,7 @@ defmodule KjogviWeb.TaxaLive.IndexTest do
         |> render_change(%{"search_term" => "acr"})
 
       assert html2 =~ "Acrocephalus palustris"
-      assert not(html2 =~ "Cuculus canorus")
+      assert not (html2 =~ "Cuculus canorus")
 
       html3 =
         show_live
