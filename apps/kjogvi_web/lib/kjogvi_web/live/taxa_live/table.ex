@@ -35,7 +35,7 @@ defmodule KjogviWeb.TaxaLive.Table do
               parent species
             </th>
             <th class="p-0 pb-4 pr-6 font-normal">taxonomy</th>
-            <th class="p-0 pb-4 pr-6 font-normal"><span class="sr-only">expand/collapese</span></th>
+            <th class="p-0 pb-4 pr-6 font-normal"><span class="sr-only">expand/collapse</span></th>
           </tr>
         </thead>
         <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
