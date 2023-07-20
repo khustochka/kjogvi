@@ -82,18 +82,25 @@ defmodule KjogviWeb.TaxaLive.Table do
                 <div><%= taxon.family %></div>
               </td>
               <td class="p-0 py-4 pr-6">
-                <div :if={taxon.code != @expanded_taxon}>
-                  <.link phx-click="expand_taxon" phx-target={@myself} phx-value-code={taxon.code}>
-                    <.icon name="hero-chevron-down-solid" class="w-6 h-6" />
-                    <span class="sr-only">Expand</span>
-                  </.link>
-                </div>
-                <div :if={taxon.code == @expanded_taxon}>
-                  <.link phx-click="collapse_taxon" phx-target={@myself}>
-                    <.icon name="hero-chevron-up-solid" class="w-6 h-6" />
-                    <span class="sr-only">Collapse</span>
-                  </.link>
-                </div>
+                <span
+                  :if={taxon.code != @expanded_taxon}
+                  phx-click="expand_taxon"
+                  phx-target={@myself}
+                  phx-value-code={taxon.code}
+                  class="hover:cursor-pointer"
+                >
+                  <.icon name="hero-chevron-down-solid" class="w-6 h-6" />
+                  <span class="sr-only">Expand</span>
+                </span>
+                <span
+                  :if={taxon.code == @expanded_taxon}
+                  phx-click="collapse_taxon"
+                  phx-target={@myself}
+                  class="hover:cursor-pointer"
+                >
+                  <.icon name="hero-chevron-up-solid" class="w-6 h-6" />
+                  <span class="sr-only">Collapse</span>
+                </span>
               </td>
             </tr>
             <tr :if={taxon.code == @expanded_taxon}>

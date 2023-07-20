@@ -17,7 +17,7 @@ defmodule KjogviWeb.BookLive.Show do
   end
 
   @impl true
-  def handle_params(params, _, socket) do
+  def handle_params(params, _url, socket) do
     # TODO: validate page number; redirect to default if number is 1
     page =
       Map.get(params, "page", "1")
