@@ -21,14 +21,14 @@ defmodule Ornitho.Importer do
       |> Keyword.keys()
       |> Enum.uniq()
 
-    missing_keys =
-      (@required_keys -- keys)
-      |> Enum.map(&Atom.to_string/1)
-      |> Enum.map(fn str -> ":#{str}" end)
+    missing_keys = @required_keys -- keys
 
     unless Enum.empty?(missing_keys) do
+      missing_keys_str =
+        for key <- missing_keys, do: inspect(key)
+        |> Enum.join(", ")
       raise ArgumentError,
-            "missing required option(s) #{missing_keys |> Enum.join(", ")} on " <>
+            "missing required option(s) #{missing_keys_str} on " <>
               "`use Ornitho.Importer`"
     end
 
