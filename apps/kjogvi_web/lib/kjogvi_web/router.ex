@@ -7,7 +7,9 @@ defmodule KjogviWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {KjogviWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers, %{"content-security-policy" => "default-src 'self'"}
+    plug :put_secure_browser_headers,
+      %{"content-security-policy-report-only" =>
+      "default-src 'self' https:; img-src 'self' https: data:; font-src 'self' https: data:"}
   end
 
   pipeline :api do
