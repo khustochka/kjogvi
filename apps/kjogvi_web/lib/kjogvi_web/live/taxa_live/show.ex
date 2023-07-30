@@ -16,7 +16,7 @@ defmodule KjogviWeb.TaxaLive.Show do
   @impl true
   def handle_params(%{"slug" => _slug, "version" => _version, "code" => code}, _, socket) do
     taxon =
-      Ornitho.Finder.Taxon.by_code(socket.assigns.book, code)
+      Ornitho.Finder.Taxon.by_code!(socket.assigns.book, code)
       |> Ornitho.Finder.Taxon.with_parent_species()
       |> Ornitho.Finder.Taxon.with_child_taxa()
 

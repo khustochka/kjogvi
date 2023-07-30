@@ -6,7 +6,7 @@ defmodule KjogviWeb.BookLive.Show do
 
   @impl true
   def mount(%{"slug" => slug, "version" => version}, _session, socket) do
-    book = Ornitho.Finder.Book.by_signature(slug, version)
+    book = Ornitho.Finder.Book.by_signature!(slug, version)
     taxa_count = Ornitho.Finder.Book.taxa_count(book)
 
     {:ok,

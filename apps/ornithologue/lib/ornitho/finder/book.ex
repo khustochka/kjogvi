@@ -27,6 +27,12 @@ defmodule Ornitho.Finder.Book do
     |> Repo.one()
   end
 
+  def by_signature!(slug, version) do
+    Query.Book.base_book()
+    |> Query.Book.by_signature(slug, version)
+    |> Repo.one!()
+  end
+
   @spec taxa_count(Book.t()) :: Integer
   def taxa_count(book) do
     Ecto.assoc(book, :taxa)

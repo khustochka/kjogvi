@@ -26,6 +26,12 @@ defmodule Ornitho.Finder.Taxon do
     |> Repo.one()
   end
 
+  def by_code!(book, name_sci) do
+    Query.Taxon.base_taxon(book)
+    |> where(code: ^name_sci)
+    |> Repo.one!()
+  end
+
   def page(book, page_num, opts \\ []) do
     per_page = opts[:per_page] || @default_per_page
     off = per_page * (page_num - 1)

@@ -28,5 +28,12 @@ defmodule KjogviWeb.TaxaLive.ShowTest do
       assert html =~ child_taxon.name_sci
       assert html =~ child_taxon.name_en
     end
+
+    test "taxon does not exist", %{conn: conn} do
+      book = insert(:book)
+      assert_raise Ecto.NoResultsError, fn ->
+        get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/taxon")
+      end
+    end
   end
 end

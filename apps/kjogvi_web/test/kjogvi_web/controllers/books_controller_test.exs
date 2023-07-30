@@ -52,6 +52,12 @@ defmodule KjogviWeb.BooksControllerTest do
       resp = html_response(conn, 200)
       assert resp =~ book.name
     end
+
+    test "Book does not exist", %{conn: conn} do
+      assert_raise Ecto.NoResultsError, fn ->
+        get(conn, ~p"/taxonomy/nonexistent/v1")
+      end
+    end
   end
 
   describe "GET /taxonomy/:slug/:version/page/:n" do
