@@ -1,12 +1,19 @@
 import Config
 
+if System.get_env("PHX_SERVER") do
+  config :kjogvi_web, KjogviWeb.Endpoint, server: true
+end
+
 if config_env() == :dev && System.get_env("BIND_PUBLIC") in ~w(true 1) do
   config :kjogvi_web, KjogviWeb.Endpoint, http: [ip: {0, 0, 0, 0}, port: "4000"]
 end
 
+maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
+
 config :ornithologue, Ornitho.Repo,
   url: System.get_env("ORNITHO_DATABASE_URL"),
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
+  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+  socket_options: maybe_ipv6
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
