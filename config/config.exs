@@ -9,6 +9,10 @@
 # move said applications out of the umbrella.
 import Config
 
+# Configure Mix tasks and generators
+config :kjogvi,
+  ecto_repos: [Ornitho.Repo]
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
@@ -18,18 +22,19 @@ import Config
 # at the `config/runtime.exs`.
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Local
 
-config :ornitho_web,
-  generators: [context_app: :ornithologue]
+config :kjogvi_web,
+  ecto_repos: [Ornitho.Repo],
+  generators: [context_app: :kjogvi]
 
 # Configures the endpoint
-config :ornitho_web, OrnithoWeb.Endpoint,
+config :kjogvi_web, KjogviWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
-    formats: [html: OrnithoWeb.ErrorHTML, json: OrnithoWeb.ErrorJSON],
+    formats: [html: KjogviWeb.ErrorHTML, json: KjogviWeb.ErrorJSON],
     layout: false
   ],
   pubsub_server: Kjogvi.PubSub,
-  live_view: [signing_salt: "eF5FDOBp"]
+  live_view: [signing_salt: "2bJWIBy2"]
 
 # Configure esbuild (the version is required)
 config :esbuild,
@@ -37,7 +42,7 @@ config :esbuild,
   default: [
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../apps/ornitho_web/assets", __DIR__),
+    cd: Path.expand("../apps/kjogvi_web/assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
 
@@ -50,7 +55,7 @@ config :tailwind,
       --input=css/app.css
       --output=../priv/static/assets/app.css
     ),
-    cd: Path.expand("../apps/ornitho_web/assets", __DIR__)
+    cd: Path.expand("../apps/kjogvi_web/assets", __DIR__)
   ]
 
 # Configures Elixir's Logger

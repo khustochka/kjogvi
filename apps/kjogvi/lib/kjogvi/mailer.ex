@@ -1,7 +1,5 @@
 defmodule Kjogvi.Mailer do
-  @moduledoc """
-  Mailer.
-  """
+  @moduledoc false
 
   use Swoosh.Mailer, otp_app: :kjogvi
 end

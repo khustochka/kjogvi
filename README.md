@@ -1,3 +1,3 @@
 # Kjógvi [^1]
 
-[^1]: Pronounced as [ˈtʃɛkvɪ].
+[^1]: Pronounced [ˈtʃɛkvɪ].

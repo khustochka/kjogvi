@@ -24,4 +24,3 @@ erl_crash.dump
 .DS_Store
 .elixir_ls
 
-/apps/ornithologue/priv/import/

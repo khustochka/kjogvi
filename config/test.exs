@@ -2,9 +2,9 @@ import Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :ornitho_web, OrnithoWeb.Endpoint,
+config :kjogvi_web, KjogviWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "1XMI8u7qQMxqxIuprg1NQhz/50IjX3H45WZGXghEDwDRgrXssjo7ZaXD1gNjn714",
+  secret_key_base: "UmkHcoh5lgBLnHPzVjYjZuLHAsBc6XBp1io8Q9vpaC20VdHbsxdF/BKnhIWsumO3",
   server: false
 
 # Print only warnings and errors during test (set DEBUG env var to print debug messages)
