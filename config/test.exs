@@ -2,7 +2,7 @@ import Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :kjogvi_web, KjogviWeb.Endpoint,
+config :ornitho_web, OrnithoWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "1XMI8u7qQMxqxIuprg1NQhz/50IjX3H45WZGXghEDwDRgrXssjo7ZaXD1gNjn714",
   server: false

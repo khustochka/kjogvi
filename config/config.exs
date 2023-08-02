@@ -18,14 +18,14 @@ import Config
 # at the `config/runtime.exs`.
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Local
 
-config :kjogvi_web,
-  generators: [context_app: :kjogvi]
+config :ornitho_web,
+  generators: [context_app: :ornithologue]
 
 # Configures the endpoint
-config :kjogvi_web, KjogviWeb.Endpoint,
+config :ornitho_web, OrnithoWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
-    formats: [html: KjogviWeb.ErrorHTML, json: KjogviWeb.ErrorJSON],
+    formats: [html: OrnithoWeb.ErrorHTML, json: OrnithoWeb.ErrorJSON],
     layout: false
   ],
   pubsub_server: Kjogvi.PubSub,
@@ -37,7 +37,7 @@ config :esbuild,
   default: [
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../apps/kjogvi_web/assets", __DIR__),
+    cd: Path.expand("../apps/ornitho_web/assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
 
@@ -50,7 +50,7 @@ config :tailwind,
       --input=css/app.css
       --output=../priv/static/assets/app.css
     ),
-    cd: Path.expand("../apps/kjogvi_web/assets", __DIR__)
+    cd: Path.expand("../apps/ornitho_web/assets", __DIR__)
   ]
 
 # Configures Elixir's Logger
