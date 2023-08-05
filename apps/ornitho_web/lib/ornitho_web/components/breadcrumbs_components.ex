@@ -11,7 +11,7 @@ defmodule OrnithoWeb.BreadcrumbsComponents do
   ## Examples
 
       <.breadcrumbs>
-        <:crumb><b><.link href={~p"/taxonomy"}>Taxonomy</.link></b></:crumb>
+        <:crumb><b><.link href={OrnithoWeb.LinkHelper.path(@conn, "/")}>Taxonomy</.link></b></:crumb>
         <:crumb><%= @book.name %></:crumb>
       </.breadcrumbs>
   """

@@ -11,7 +11,7 @@ defmodule OrnithoWeb.Application do
       # Start the Telemetry supervisor
       OrnithoWeb.Telemetry,
       # Start the Endpoint (http/https)
-      OrnithoWeb.Endpoint
+      # OrnithoWeb.Endpoint
       # Start a worker by calling: OrnithoWeb.Worker.start_link(arg)
       # {OrnithoWeb.Worker, arg}
     ]
@@ -24,9 +24,9 @@ defmodule OrnithoWeb.Application do
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
-  @impl true
-  def config_change(changed, _new, removed) do
-    OrnithoWeb.Endpoint.config_change(changed, removed)
-    :ok
-  end
+  # @impl true
+  # def config_change(changed, _new, removed) do
+  #   OrnithoWeb.Endpoint.config_change(changed, removed)
+  #   :ok
+  # end
 end

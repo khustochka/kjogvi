@@ -1,7 +1,7 @@
-defmodule OrnithoWeb.PageHTML do
-  @moduledoc false
+# defmodule OrnithoWeb.PageHTML do
+#   @moduledoc false
 
-  use OrnithoWeb, :html
+#   use OrnithoWeb, :html
 
-  embed_templates "page_html/*"
-end
+#   embed_templates "page_html/*"
+# end

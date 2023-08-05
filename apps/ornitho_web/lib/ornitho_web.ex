@@ -19,17 +19,6 @@ defmodule OrnithoWeb do
 
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
 
-  def router do
-    quote do
-      use Phoenix.Router, helpers: false
-
-      # Import common connection and controller functions to use in pipelines
-      import Plug.Conn
-      import Phoenix.Controller
-      import Phoenix.LiveView.Router
-    end
-  end
-
   def channel do
     quote do
       use Phoenix.Channel
@@ -45,7 +34,7 @@ defmodule OrnithoWeb do
       import Plug.Conn
       import OrnithoWeb.Gettext
 
-      unquote(verified_routes())
+      # unquote(verified_routes())
     end
   end
 
@@ -91,18 +80,18 @@ defmodule OrnithoWeb do
       alias Phoenix.LiveView.JS
 
       # Routes generation with the ~p sigil
-      unquote(verified_routes())
+      # unquote(verified_routes())
     end
   end
 
-  def verified_routes do
-    quote do
-      use Phoenix.VerifiedRoutes,
-        endpoint: OrnithoWeb.Endpoint,
-        router: OrnithoWeb.Router,
-        statics: OrnithoWeb.static_paths()
-    end
-  end
+  # def verified_routes do
+  #   quote do
+  #     use Phoenix.VerifiedRoutes,
+  #       endpoint: OrnithoWeb.Endpoint,
+  #       router: OrnithoWeb.Router,
+  #       statics: OrnithoWeb.static_paths()
+  #   end
+  # end
 
   @doc """
   When used, dispatch to the appropriate controller/view/etc.

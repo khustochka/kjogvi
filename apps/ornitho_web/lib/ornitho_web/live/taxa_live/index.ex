@@ -54,7 +54,7 @@ defmodule OrnithoWeb.TaxaLive.Index do
       <.simple_pagination
         :if={!@search_enabled}
         page_num={@page_num}
-        url_generator={&~p"/taxonomy/#{@book.slug}/#{@book.version}/page/#{&1}"}
+        url_generator={&OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}/page/#{&1}")}
       />
     </div>
     """

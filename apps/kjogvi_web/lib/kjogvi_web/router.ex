@@ -1,6 +1,8 @@
 defmodule KjogviWeb.Router do
   use KjogviWeb, :router
 
+  import OrnithoWeb.Router
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -18,6 +20,8 @@ defmodule KjogviWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    ornitho_web "/taxonomy"
   end
 
   # Other scopes may use custom stacks.

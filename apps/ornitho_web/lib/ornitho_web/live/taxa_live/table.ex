@@ -52,7 +52,7 @@ defmodule OrnithoWeb.TaxaLive.Table do
                   <div>
                     <div>
                       <strong>
-                        <.link navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon}"}>
+                        <.link navigate={OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}/#{taxon.code}")}>
                           <.sci_name taxon={taxon} />
                         </.link>
                       </strong>
@@ -72,7 +72,7 @@ defmodule OrnithoWeb.TaxaLive.Table do
               <td :if={!@skip_parent_species} class="p-0 py-4 pr-6 text-center">
                 <.link
                   :if={taxon.parent_species}
-                  navigate={~p"/taxonomy/#{@book.slug}/#{@book.version}/#{taxon.parent_species}"}
+                  navigate={OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}/#{taxon.parent_species.code}")}
                 >
                   <.sci_name taxon={taxon.parent_species} />
                 </.link>

@@ -49,6 +49,7 @@ defmodule KjogviWeb.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:kjogvi, in_umbrella: true},
+      {:ornitho_web, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"}
     ]
