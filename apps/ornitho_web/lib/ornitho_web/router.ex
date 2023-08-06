@@ -17,6 +17,10 @@ defmodule OrnithoWeb.Router do
           import Phoenix.LiveView.Router, only: [live: 4, live_session: 3]
 
           live_session session_name, session_opts do
+            # Assets
+            get "/css-:md5", OrnithoWeb.Assets, :css, as: :ornitho_web_asset
+            get "/js-:md5", OrnithoWeb.Assets, :js, as: :ornitho_web_asset
+
             get "/", OrnithoWeb.BooksController, :index, route_opts
 
             live "/:slug/:version", OrnithoWeb.BookLive.Show, nil, route_opts
