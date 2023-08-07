@@ -1,18 +1,44 @@
 # OrnithoWeb
 
-To start your Phoenix server:
+OrnithoWeb is the dashboard UI for Ornithologue application.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server`
+## Usage
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+LiveView should be configured in your app.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+Add to your router:
 
-## Learn more
+```elixir
+# lib/my_app_web/router.ex
+use MyAppWeb, :router
+import OrnithoWeb.Router
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+...
+
+scope "/" do
+  pipe_through :browser
+  ornitho_web "/taxonomy"
+end
+```
+
+Do not forget to protect your app with authentication.
+
+## Development
+
+Run:
+
+    $ mix setup
+    $ mix dev
+
+You can also run via `iex`:
+
+    $ iex -S mix dev
+
+### Environment variables:
+
+* `PG_URL`: Postgres database URL
+* `PG_DATABASE`: Database name
+
+## Acknowledgements
+
+This project is heavily based on techniques adopted/copied from [phoenix_live_dashboard](https://github.com/phoenixframework/phoenix_live_dashboard).

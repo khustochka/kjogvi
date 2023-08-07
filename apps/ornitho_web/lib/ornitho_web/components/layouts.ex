@@ -11,7 +11,7 @@ defmodule OrnithoWeb.Layouts do
   end
 
   defp asset_path(conn, asset) when asset in [:css, :js] do
-    hash = Phoenix.LiveDashboard.Assets.current_hash(asset)
+    hash = OrnithoWeb.Assets.current_hash(asset)
 
     if function_exported?(conn.private.phoenix_router, :__ornitho_web_prefix__, 0) do
       prefix = conn.private.phoenix_router.__ornitho_web_prefix__()
@@ -24,7 +24,7 @@ defmodule OrnithoWeb.Layouts do
     else
       apply(
         conn.private.phoenix_router.__helpers__(),
-        :live_dashboard_asset_path,
+        :ornitho_web_asset_path,
         [conn, asset, hash]
       )
     end
