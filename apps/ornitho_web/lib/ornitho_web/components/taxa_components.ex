@@ -81,7 +81,7 @@ defmodule OrnithoWeb.TaxaComponents do
       :if={@category}
       class={[
         category_to_color(@category),
-        "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg"
+        "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg whitespace-nowrap"
       ]}
     >
       <span class="sr-only">[</span><%= @category %><span class="sr-only">]</span>
