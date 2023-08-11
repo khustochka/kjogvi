@@ -2,10 +2,14 @@ Logger.configure(level: :debug)
 
 _argv = System.argv()
 
-pg_url = System.get_env("PG_URL") || "postgres:postgres@127.0.0.1"
-pg_db = System.get_env("PG_DATABASE") || "ornithologue_dev"
-
-Application.put_env(:ornithologue, Ornitho.Repo, url: "ecto://#{pg_url}/#{pg_db}")
+Application.put_env(:ornithologue, Ornitho.Repo,
+  url: System.get_env("ORNITHO_DATABASE_URL"),
+  database: "ornithologue_dev",
+  hostname: "localhost",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+)
 
 _ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
 

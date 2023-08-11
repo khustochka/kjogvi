@@ -1,16 +1,17 @@
-pg_url = System.get_env("PG_URL") || "postgres:postgres@127.0.0.1"
-
 Application.put_env(:ornithologue, Ornitho.Repo,
-  url: "ecto://#{pg_url}/ornithologue_test",
-  pool: Ecto.Adapters.SQL.Sandbox
+  url: System.get_env("ORNITHO_DATABASE_URL"),
+  hostname: "localhost",
+  database: "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 10
 )
 
 _ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
 
 Application.put_env(:ornitho_web, OrnithoWebTest.Endpoint,
   url: [host: "localhost", port: 4000],
-  secret_key_base: "Hu4qQN3iKzTV4fJxhorPQlA/osH9fAMtbtjVS58PFgfw3ja5Z18Q/WSNR9wP4OfW",
-  live_view: [signing_salt: "hMegieSe"],
+  secret_key_base: "byRSu+biw0VoGmlLh9e7qDL9GzOOYSFF7qk9+DzHVwiCbw43umbQOekDmcyPLcRd",
+  live_view: [signing_salt: "VJdZQEK4tfjtXQ+3Ior32wClz7KWqwom"],
   render_errors: [view: OrnithoWebTest.ErrorView],
   check_origin: false,
   pubsub_server: OrnithoWebTest.PubSub
@@ -46,7 +47,7 @@ defmodule OrnithoWebTest.Endpoint do
   plug Plug.Session,
     store: :cookie,
     key: "_live_view_key",
-    signing_salt: "/VEDsdfsffMnp5"
+    signing_salt: "M3bi3fuhwkhD3V/VFvNW6s2ODP04+3Mf"
 
   plug OrnithoWebTest.Router
 end
