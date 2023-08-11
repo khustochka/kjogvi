@@ -24,3 +24,5 @@ erl_crash.dump
 .DS_Store
 .elixir_ls
 
+# User files
+.envrc

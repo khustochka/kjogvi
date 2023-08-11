@@ -6,13 +6,13 @@ defmodule OrnithoWeb.BooksControllerTest do
 
   describe "GET /taxonomy" do
     test "No books", %{conn: conn} do
-      conn = get(conn, ~p"/taxonomy")
+      conn = get(conn, "/taxonomy")
       assert html_response(conn, 200) =~ "slug"
     end
 
     test "Book with no taxa", %{conn: conn} do
       book = insert(:book)
-      conn = get(conn, ~p"/taxonomy")
+      conn = get(conn, "/taxonomy")
       resp = html_response(conn, 200)
       assert resp =~ book.slug
       assert resp =~ book.version
@@ -25,7 +25,7 @@ defmodule OrnithoWeb.BooksControllerTest do
       insert(:taxon, book: book)
       Ops.Book.mark_book_imported(book)
 
-      conn = get(conn, ~p"/taxonomy")
+      conn = get(conn, "/taxonomy")
       resp = html_response(conn, 200)
       assert resp =~ book.slug
       assert resp =~ book.version
@@ -38,7 +38,7 @@ defmodule OrnithoWeb.BooksControllerTest do
   describe "GET /taxonomy/:slug/:version" do
     test "Book with no taxa", %{conn: conn} do
       book = insert(:book)
-      conn = get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      conn = get(conn, "/taxonomy/#{book.slug}/#{book.version}")
       resp = html_response(conn, 200)
       assert resp =~ book.name
     end
@@ -48,14 +48,14 @@ defmodule OrnithoWeb.BooksControllerTest do
       insert(:taxon, book: book)
       insert(:taxon, book: book)
 
-      conn = get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      conn = get(conn, "/taxonomy/#{book.slug}/#{book.version}")
       resp = html_response(conn, 200)
       assert resp =~ book.name
     end
 
     test "Book does not exist", %{conn: conn} do
       assert_raise Ecto.NoResultsError, fn ->
-        get(conn, ~p"/taxonomy/nonexistent/v1")
+        get(conn, "/taxonomy/nonexistent/v1")
       end
     end
   end
@@ -66,7 +66,7 @@ defmodule OrnithoWeb.BooksControllerTest do
 
       taxa = insert_list(26, :taxon, book: book)
 
-      conn = get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/page/2")
+      conn = get(conn, "/taxonomy/#{book.slug}/#{book.version}/page/2")
       resp = html_response(conn, 200)
       assert resp =~ List.last(taxa).name_sci
     end

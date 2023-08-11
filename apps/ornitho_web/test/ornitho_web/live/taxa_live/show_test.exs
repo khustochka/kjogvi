@@ -9,7 +9,7 @@ defmodule OrnithoWeb.TaxaLive.ShowTest do
       taxon = insert(:taxon)
       book = taxon.book
 
-      {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/#{taxon}")
+      {:ok, _show_live, html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}/#{taxon.code}")
 
       assert html =~ book.slug
       assert html =~ book.version
@@ -23,7 +23,7 @@ defmodule OrnithoWeb.TaxaLive.ShowTest do
       book = taxon.book
       child_taxon = insert(:taxon, book: book, parent_species: taxon)
 
-      {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/#{taxon}")
+      {:ok, _show_live, html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}/#{taxon.code}")
 
       assert html =~ child_taxon.name_sci
       assert html =~ child_taxon.name_en
@@ -32,7 +32,7 @@ defmodule OrnithoWeb.TaxaLive.ShowTest do
     test "taxon does not exist", %{conn: conn} do
       book = insert(:book)
       assert_raise Ecto.NoResultsError, fn ->
-        get(conn, ~p"/taxonomy/#{book.slug}/#{book.version}/taxon")
+        get(conn, "/taxonomy/#{book.slug}/#{book.version}/taxon")
       end
     end
   end

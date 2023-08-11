@@ -11,7 +11,7 @@ defmodule OrnithoWeb.TaxaLive.IndexTest do
       insert(:taxon, book: book)
       insert(:taxon, book: book)
 
-      {:ok, _show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      {:ok, _show_live, html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
       assert html =~ taxon.name_sci
     end
@@ -21,7 +21,7 @@ defmodule OrnithoWeb.TaxaLive.IndexTest do
       insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
       insert(:taxon, book: book)
 
-      {:ok, show_live, _html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
       html2 =
         show_live
@@ -37,7 +37,7 @@ defmodule OrnithoWeb.TaxaLive.IndexTest do
       insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
       insert(:taxon, book: book)
 
-      {:ok, show_live, _html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
       html2 =
         show_live
@@ -53,7 +53,7 @@ defmodule OrnithoWeb.TaxaLive.IndexTest do
       insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
       insert(:taxon, book: book)
 
-      {:ok, show_live, html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      {:ok, show_live, html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
       assert html =~ "Acrocephalus palustris"
       assert html =~ "Cuculus canorus"
@@ -72,7 +72,7 @@ defmodule OrnithoWeb.TaxaLive.IndexTest do
       insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
       insert(:taxon, book: book)
 
-      {:ok, show_live, _html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
       html2 =
         show_live

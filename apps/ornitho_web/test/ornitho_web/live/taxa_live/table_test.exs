@@ -9,7 +9,7 @@ defmodule OrnithoWeb.TaxaLive.TableTest do
       book = insert(:book)
       insert(:taxon, book: book)
 
-      {:ok, show_live, _html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
       show_live |> element("span[phx-click]", "Expand") |> render_click()
 
@@ -29,7 +29,7 @@ defmodule OrnithoWeb.TaxaLive.TableTest do
       parent = insert(:taxon, book: book)
       insert(:taxon, book: book, category: "issf", parent_species: parent)
 
-      {:ok, show_live, _html} = live(conn, ~p"/taxonomy/#{book.slug}/#{book.version}")
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
       assert show_live |> has_element?("td:nth-child(4) a", parent.name_sci)
     end

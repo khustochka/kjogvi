@@ -8,6 +8,7 @@ defmodule OrnithoWeb.LinkHelper do
   end
 
   defp path_from_router(router, path) do
+    # TODO: check if path is prefixed with `/`
     prefix = router.__ornitho_web_prefix__()
     "#{prefix}/#{path}"
   end
