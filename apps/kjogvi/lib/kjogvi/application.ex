@@ -8,6 +8,8 @@ defmodule Kjogvi.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      # Start the Ecto repository
+      Kjogvi.Repo,
       # Start the PubSub system
       {Phoenix.PubSub, name: Kjogvi.PubSub},
       # Start Finch

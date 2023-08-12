@@ -36,13 +36,13 @@ defmodule Ornithologue.MixProject do
   defp deps do
     [
       {:ecto_sql, "~> 3.10"},
-      {:ex_machina, "~> 2.7.0", only: :test},
       {:postgrex, ">= 0.0.0"},
       # For jsonb columns
       {:jason, "~> 1.0"},
       {:csv, "~> 3.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.15", only: [:test], runtime: false}
+      {:excoveralls, "~> 0.15", only: [:test], runtime: false},
+      {:ex_machina, "~> 2.7.0", only: :test}
     ]
   end
 

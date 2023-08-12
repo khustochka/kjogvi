@@ -36,10 +36,18 @@ defmodule Kjogvi.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ecto_sql, "~> 3.10"},
+      {:ecto_psql_extras, "~> 0.7"},
+      {:postgrex, ">= 0.0.0"},
+      # For jsonb columns
+      {:jason, "~> 1.0"},
       {:phoenix_pubsub, "~> 2.1"},
       {:swoosh, "~> 1.3"},
       {:finch, "~> 0.13"},
-      {:ornithologue, in_umbrella: true}
+      {:ornithologue, in_umbrella: true},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.15", only: [:test], runtime: false},
+      {:ex_machina, "~> 2.7.0", only: :test}
     ]
   end
 
