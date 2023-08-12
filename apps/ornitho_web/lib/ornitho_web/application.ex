@@ -9,7 +9,7 @@ defmodule OrnithoWeb.Application do
   def start(_type, _args) do
     children = [
       # Start the Telemetry supervisor
-      OrnithoWeb.Telemetry,
+      # OrnithoWeb.Telemetry,
       # Start a worker by calling: OrnithoWeb.Worker.start_link(arg)
       # {OrnithoWeb.Worker, arg}
     ]
