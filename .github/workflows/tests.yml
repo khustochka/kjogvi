@@ -24,7 +24,7 @@ jobs:
           --health-retries 5
         env:
           POSTGRES_USER: kjogvi
-          POSTGRES_DB: ornithologue_test
+          POSTGRES_DB: kjogvi_test
           POSTGRES_PASSWORD: "kjogvi"
 
     steps:
@@ -48,6 +48,6 @@ jobs:
       run: MIX_ENV=test mix compile
     - name: Run tests
       env:
-        ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
         DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
+        ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
       run: mix test
