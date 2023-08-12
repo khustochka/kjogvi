@@ -1,16 +1,16 @@
 Application.put_env(:ornithologue, Ornitho.Repo,
   url: System.get_env("ORNITHO_DATABASE_URL"),
   hostname: "localhost",
-  database: "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}",
+  database: "ornitho_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
 )
 
 _ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
 
-for repo <- [Ornitho.Repo] do
-  {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
-end
+# for repo <- [Ornitho.Repo] do
+#   {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+# end
 
 Application.put_env(:ornitho_web, OrnithoWebTest.Endpoint,
   url: [host: "localhost", port: 4000],
