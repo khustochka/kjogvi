@@ -49,4 +49,5 @@ jobs:
     - name: Run tests
       env:
         ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
+        DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
       run: mix test

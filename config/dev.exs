@@ -1,5 +1,13 @@
 import Config
 
+# Configure your database
+config :kjogvi, Kjogvi.Repo,
+  hostname: "localhost",
+  database: "kjogvi_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -13,7 +21,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "m5GX9jE3ttqneCg6maGzFKredplPPzbmbY1uFETuL8epUIpCEXml2unrm5/F1KCO",
+  secret_key_base: "Sr/NUHLLmYIqi8RvF+w31wYVljGktNRD+PFxz2MUnXeCwD0HlDD/dpMDachBo5JU",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}

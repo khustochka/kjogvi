@@ -7,7 +7,7 @@ defmodule KjogviWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_kjogvi_web_key",
-    signing_salt: "7KtFy6zH",
+    signing_salt: "zJZSUPCi",
     same_site: "Lax"
   ]
 

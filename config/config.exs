@@ -11,7 +11,7 @@ import Config
 
 # Configure Mix tasks and generators
 config :kjogvi,
-  ecto_repos: [Ornitho.Repo]
+  ecto_repos: [Ornitho.Repo, Kjogvi.Repo]
 
 # Configures the mailer
 #
@@ -23,7 +23,7 @@ config :kjogvi,
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Local
 
 config :kjogvi_web,
-  ecto_repos: [Ornitho.Repo],
+  ecto_repos: [Ornitho.Repo, Kjogvi.Repo],
   generators: [context_app: :kjogvi]
 
 # Configures the endpoint

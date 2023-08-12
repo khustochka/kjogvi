@@ -36,12 +36,11 @@ defmodule Kjogvi.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:phoenix_pubsub, "~> 2.1"},
       {:ecto_sql, "~> 3.10"},
       {:ecto_psql_extras, "~> 0.7"},
       {:postgrex, ">= 0.0.0"},
-      # For jsonb columns
-      {:jason, "~> 1.0"},
-      {:phoenix_pubsub, "~> 2.1"},
+      {:jason, "~> 1.2"},
       {:swoosh, "~> 1.3"},
       {:finch, "~> 0.13"},
       {:ornithologue, in_umbrella: true},
@@ -56,7 +55,10 @@ defmodule Kjogvi.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get"]
+      setup: ["deps.get", "ecto.setup"],
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
 end
