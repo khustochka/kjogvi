@@ -13,6 +13,10 @@ Application.put_env(:ornithologue, Ornitho.Repo,
 
 _ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
 
+for repo <- [Ornitho.Repo] do
+  {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+end
+
 # Configures the endpoint
 Application.put_env(:ornitho_web, DemoWeb.Endpoint,
   url: [host: "localhost"],
