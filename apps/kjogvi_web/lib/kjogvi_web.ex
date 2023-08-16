@@ -21,7 +21,8 @@ defmodule KjogviWeb do
 
   def router do
     quote do
-      use Phoenix.Router, helpers: false
+      # TODO: remove when scrivener patched/removed
+      use Phoenix.Router, helpers: true
 
       # Import common connection and controller functions to use in pipelines
       import Plug.Conn

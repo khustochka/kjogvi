@@ -37,6 +37,13 @@ defmodule KjogviWeb.Router do
     live "/", LocationLive.Index, :index
   end
 
+  scope "/cards", KjogviWeb do
+    pipe_through :browser
+
+    live "/", CardLive.Index, :index
+    live "/page/:page", CardLive.Index, :index, as: :card_page
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", KjogviWeb do
   #   pipe_through :api

@@ -1,10 +1,13 @@
 defmodule Kjogvi.Repo.Migrations.CreateLocations do
   use Ecto.Migration
 
+  # Not restricting strings length, because as per PostgreSQL documentation, there is
+  # no performance gain from this: https://www.postgresql.org/docs/15/datatype-character.html
+
   def change do
     create table(:locations) do
       add :slug, :string, size: 64, null: false
-      add :name_en, :string, size: 256, null: false
+      add :name_en, :string, null: false
       add :location_type, :string, size: 32
       add :ancestry, {:array, :bigint}
       add :iso_code, :string, size: 3
