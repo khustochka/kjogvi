@@ -26,6 +26,8 @@ defmodule Kjogvi.Schema.Card do
     field :ebird_id, :string
 
     timestamps()
+
+    has_many(:observations, Kjogvi.Schema.Observation)
   end
 
   @doc false

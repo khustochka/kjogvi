@@ -42,6 +42,7 @@ defmodule KjogviWeb.Router do
 
     live "/", CardLive.Index, :index
     live "/page/:page", CardLive.Index, :index, as: :card_page
+    live "/:id", CardLive.Show, :show
   end
 
   # Other scopes may use custom stacks.

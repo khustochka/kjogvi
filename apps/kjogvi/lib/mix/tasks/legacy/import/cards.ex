@@ -18,10 +18,6 @@ defmodule Mix.Tasks.Legacy.Import.Cards do
         Enum.zip(columns, row)
         |> Enum.into(%{})
         |> transform_keys
-        # |> Map.drop([:ebird_location_id, :name_ru, :name_uk])
-        # |> convert_ancestry
-        # |> Map.put(:inserted_at, time)
-        # |> Map.put(:updated_at, time)
       end
 
       Kjogvi.Repo.insert_all(Kjogvi.Schema.Card, cards)

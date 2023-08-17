@@ -7,5 +7,6 @@ defmodule Mix.Tasks.Legacy.Import do
     Mix.Task.run("ecto.migrate", ["-r", "Kjogvi.Repo"])
     Mix.Task.run("legacy.import.locations")
     Mix.Task.run("legacy.import.cards")
+    Mix.Task.run("legacy.import.observations")
   end
 end

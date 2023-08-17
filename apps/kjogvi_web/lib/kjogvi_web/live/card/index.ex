@@ -45,7 +45,9 @@ defmodule KjogviWeb.CardLive.Index do
     </.header>
 
     <.table id="cards" rows={@cards}>
-      <:col :let={card} label="id"><%= card.id %></:col>
+      <:col :let={card} label="id">
+      <.link navigate={~p"/cards/#{card.id}"}><%= card.id %></.link>
+      </:col>
       <:col :let={card} label="Location"><%= card.location.name_en %></:col>
       <:col :let={card} label="Date"><%= card.observ_date %></:col>
       <:col :let={card} label="Start time"><%= card.start_time %></:col>
