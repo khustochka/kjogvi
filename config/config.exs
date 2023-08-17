@@ -66,6 +66,9 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :scrivener_phoenix,
+  template: KjogviWeb.Scrivener.Template.Tailwind
+
 # ORNITHOLOGUE
 
 config :ornithologue,
