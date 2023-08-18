@@ -9,28 +9,31 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   import Scrivener.Phoenix.Page
   import Scrivener.Phoenix.Gettext
 
-  @shared_li_wrap_class "page-item py-2 px-4"
-  @default_page_class "border"
-  @default_gap_class "disabled border-0"
+  @shared_wrap_class "page-item text-center my-2"
+  @link_wrap_class "border"
+  @gap_wrap_class "disabled border-0"
+  @shared_page_num_class "page-link inline-block whitespace-nowrap py-2 px-4 w-full h-full"
+  @link_class "#{@shared_page_num_class} hover:bg-zinc-200"
+  @gap_class "inline-block py-2 px-2"
 
   defp li_wrap(content, options) do
     {_old_value, options} =
       options
-      |> Keyword.get_and_update(:class, fn current -> {current, Enum.join([@shared_li_wrap_class, current], " ")} end)
+      |> Keyword.get_and_update(:class, fn current -> {current, Enum.join([@shared_wrap_class, current], " ")} end)
 
     content_tag(:li, content, options)
   end
 
   defp build_element(text, href, options, child_html_attrs, parent_html_attrs \\ []) do
     text
-    |> link_callback(options).(Keyword.merge(child_html_attrs, [to: href, class: "page-link"]))
+    |> link_callback(options).(Keyword.merge(child_html_attrs, [to: href, class: @link_class]))
     |> li_wrap(parent_html_attrs)
   end
 
   def build_page_element(text, href, options, child_html_attrs, parent_html_attrs \\ []) do
     {_old_value, parent_html_attrs} =
       parent_html_attrs
-      |> Keyword.get_and_update(:class, fn current -> {current, Enum.join([@default_page_class, current], " ")} end)
+      |> Keyword.get_and_update(:class, fn current -> {current, Enum.join([@link_wrap_class, current], " ")} end)
 
     build_element(text, href, options, child_html_attrs, parent_html_attrs)
   end
@@ -43,18 +46,10 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   end
 
   @impl Scrivener.Phoenix.Template
-  if false do
-    def last_page(page = %Page{}, spage = %Scrivener.Page{}, options = %{}) do
-      unless Page.last_page?(page, spage) do
-        build_page_element(options.labels.last, page.href, options, title: dgettext("scrivener_phoenix", "Last page"))
-      end
-    end
-  else
-    def last_page(%Page{}, %Scrivener.Page{page_number: no, total_pages: no}, %{}), do: nil
+  def last_page(%Page{}, %Scrivener.Page{page_number: no, total_pages: no}, %{}), do: nil
 
-    def last_page(page = %Page{}, _spage, options = %{}) do
-      build_page_element(options.labels.last, page.href, options, title: dgettext("scrivener_phoenix", "Last page"))
-    end
+  def last_page(page = %Page{}, _spage, options = %{}) do
+    build_page_element(options.labels.last, page.href, options, title: dgettext("scrivener_phoenix", "Last page"))
   end
 
   @impl Scrivener.Phoenix.Template
@@ -72,32 +67,29 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   end
 
   @impl Scrivener.Phoenix.Template
-  if false do
-    def page(page = %Page{}, spage = %Scrivener.Page{}, options = %{}) do
-      if Page.current?(page, spage) do
-        build_page_element(page.no, "#", options, [], class: "active")
-      else
-        build_page_element(page.no, page.href, options, handle_rel(page, spage))
-      end
+  def page(page = %Page{no: no}, %Scrivener.Page{page_number: no}, options = %{}) do
+    content_tag(:span, class: "#{@shared_page_num_class} active font-bold") do
+      page.no
     end
-  else
-    def page(page = %Page{no: no}, %Scrivener.Page{page_number: no}, options = %{}) do
-      build_page_element(page.no, "#", options, [], class: "active")
-    end
-
-    def page(page = %Page{}, spage = %Scrivener.Page{}, options = %{}) do
-      build_page_element(page.no, page.href, options, handle_rel(page, spage))
-    end
+    |> li_wrap(class: @link_wrap_class)
+    # build_page_element(page.no, page.href, options, [], class: "active font-bold")
   end
 
-  def page(%Gap{}, %Scrivener.Page{}, options = %{}) do
-    build_element("…", "#", options, [], class: @default_gap_class)
+  def page(page = %Page{}, spage = %Scrivener.Page{}, options = %{}) do
+    build_page_element(page.no, page.href, options, handle_rel(page, spage))
+  end
+
+  def page(%Gap{}, %Scrivener.Page{}, _options = %{}) do
+    content_tag(:span, class: @gap_class) do
+      "…"
+    end
+    |> li_wrap(class: @gap_wrap_class)
   end
 
   @impl Scrivener.Phoenix.Template
   def wrap(links) do
     content_tag(:nav) do
-      content_tag(:ul, class: "pagination flex gap-2") do
+      content_tag(:ul, class: "pagination sm:flex gap-2 mt-4") do
         links
       end
     end

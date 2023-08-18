@@ -67,6 +67,7 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 config :scrivener_phoenix,
+  window: 2,
   template: KjogviWeb.Scrivener.Template.Tailwind
 
 # ORNITHOLOGUE
