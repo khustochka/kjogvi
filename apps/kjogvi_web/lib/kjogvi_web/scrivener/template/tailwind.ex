@@ -24,7 +24,7 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
     content_tag(:li, content, options)
   end
 
-  defp build_element(text, href, options, child_html_attrs, parent_html_attrs \\ []) do
+  defp build_element(text, href, options, child_html_attrs, parent_html_attrs) do
     text
     |> link_callback(options).(Keyword.merge(child_html_attrs, [to: href, class: @link_class]))
     |> li_wrap(parent_html_attrs)
@@ -67,7 +67,7 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   end
 
   @impl Scrivener.Phoenix.Template
-  def page(page = %Page{no: no}, %Scrivener.Page{page_number: no}, options = %{}) do
+  def page(page = %Page{no: no}, %Scrivener.Page{page_number: no}, _options = %{}) do
     content_tag(:span, class: "#{@shared_page_num_class} active font-bold") do
       page.no
     end
