@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
         |> transform_keys
       end
 
-    Kjogvi.Repo.insert_all(Kjogvi.Schema.Location, locations)
+    Kjogvi.Repo.insert_all(Kjogvi.Birding.Location, locations)
   end
 
   defp convert_ancestry(%{ancestry: nil} = loc) do

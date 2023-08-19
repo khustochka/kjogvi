@@ -31,7 +31,7 @@ defmodule Mix.Tasks.Legacy.Import.Observations do
           |> transform_keys
         end
 
-      Kjogvi.Repo.insert_all(Kjogvi.Schema.Observation, obs)
+      Kjogvi.Repo.insert_all(Kjogvi.Birding.Observation, obs)
     end
   end
 

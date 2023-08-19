@@ -1,7 +1,7 @@
 defmodule KjogviWeb.LocationLive.Index do
   use KjogviWeb, :live_view
 
-  alias Kjogvi.Schema.Location
+  alias Kjogvi.Birding.Location
 
   @impl true
   def mount(_params, _session, socket) do

@@ -1,4 +1,4 @@
-defmodule Kjogvi.Schema.Location do
+defmodule Kjogvi.Birding.Location do
   use Kjogvi.Schema
   import Ecto.Changeset
 
@@ -14,10 +14,10 @@ defmodule Kjogvi.Schema.Location do
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
-    belongs_to(:cached_parent, Kjogvi.Schema.Location)
-    belongs_to(:cached_city, Kjogvi.Schema.Location)
-    belongs_to(:cached_subdivision, Kjogvi.Schema.Location)
-    belongs_to(:cached_country, Kjogvi.Schema.Location)
+    belongs_to(:cached_parent, Kjogvi.Birding.Location)
+    belongs_to(:cached_city, Kjogvi.Birding.Location)
+    belongs_to(:cached_subdivision, Kjogvi.Birding.Location)
+    belongs_to(:cached_country, Kjogvi.Birding.Location)
 
     timestamps()
   end

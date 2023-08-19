@@ -4,7 +4,7 @@ defmodule KjogviWeb.CardLive.Index do
   import Ecto.Query
   import Scrivener.PhoenixView
 
-  alias Kjogvi.Schema.Card
+  alias Kjogvi.Birding.Card
 
   @cards_per_page 50
 

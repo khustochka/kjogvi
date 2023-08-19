@@ -22,7 +22,7 @@ defmodule Mix.Tasks.Legacy.Import.Cards do
           |> transform_keys
         end
 
-      Kjogvi.Repo.insert_all(Kjogvi.Schema.Card, cards)
+      Kjogvi.Repo.insert_all(Kjogvi.Birding.Card, cards)
     end
   end
 

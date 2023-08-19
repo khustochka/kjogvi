@@ -1,10 +1,10 @@
-defmodule Kjogvi.Schema.Card do
+defmodule Kjogvi.Birding.Card do
   use Kjogvi.Schema
   import Ecto.Changeset
 
   schema "cards" do
     field :observ_date, :date
-    belongs_to(:location, Kjogvi.Schema.Location)
+    belongs_to(:location, Kjogvi.Birding.Location)
 
     field :effort_type, :string
     field :start_time, :time
@@ -27,7 +27,7 @@ defmodule Kjogvi.Schema.Card do
 
     timestamps()
 
-    has_many(:observations, Kjogvi.Schema.Observation)
+    has_many(:observations, Kjogvi.Birding.Observation)
   end
 
   @doc false

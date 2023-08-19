@@ -3,8 +3,8 @@ defmodule KjogviWeb.CardLive.Show do
 
   import Ecto.Query
 
-  alias Kjogvi.Schema.Card
-  alias Kjogvi.Schema.Observation
+  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding.Observation
 
   @impl true
   def mount(_params, _session, socket) do
