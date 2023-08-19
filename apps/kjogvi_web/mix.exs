@@ -53,7 +53,7 @@ defmodule KjogviWeb.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:scrivener_ecto, "~> 2.7"},
-      {:scrivener_phoenix, "~> 0.3.2"},
+      {:scrivener_phoenix, "~> 0.3.2"}
     ]
   end
 

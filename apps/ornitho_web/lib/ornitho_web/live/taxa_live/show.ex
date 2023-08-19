@@ -33,7 +33,9 @@ defmodule OrnithoWeb.TaxaLive.Show do
       <:crumb><b><.link href={OrnithoWeb.LinkHelper.path(@socket, "/")}>Taxonomy</.link></b></:crumb>
       <:crumb>
         <b>
-          <.link navigate={OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}")}><%= @book.name %></.link>
+          <.link navigate={OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}")}>
+            <%= @book.name %>
+          </.link>
         </b>
       </:crumb>
       <:crumb><.sci_name taxon={@taxon} /></:crumb>
@@ -56,7 +58,12 @@ defmodule OrnithoWeb.TaxaLive.Show do
         </:item>
         <:item title="Code"><span class="font-mono"><%= @taxon.code %></span></:item>
         <:item :if={@taxon.parent_species} title="Parent species">
-          <.link patch={OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}")}>
+          <.link patch={
+            OrnithoWeb.LinkHelper.path(
+              @socket,
+              "/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}"
+            )
+          }>
             <.sci_name taxon={@taxon.parent_species} />
           </.link>
         </:item>

@@ -9,7 +9,7 @@ defmodule KjogviWeb.LocationLive.Index do
       :ok,
       socket
       |> assign(:page_title, "Locations")
-      |> assign(:locations, Location |> Kjogvi.Repo.all)
+      |> assign(:locations, Location |> Kjogvi.Repo.all())
     }
   end
 
@@ -17,7 +17,7 @@ defmodule KjogviWeb.LocationLive.Index do
   def render(assigns) do
     ~H"""
     <.header>
-    Locations
+      Locations
     </.header>
 
     <.table id="locations" rows={@locations}>

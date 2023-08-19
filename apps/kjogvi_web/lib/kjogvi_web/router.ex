@@ -28,7 +28,7 @@ defmodule KjogviWeb.Router do
     get "/", PageController, :home
 
     live_dashboard "/dashboard", metrics: KjogviWeb.Telemetry
-    ornitho_web "/taxonomy"
+    ornitho_web("/taxonomy")
   end
 
   scope "/locations", KjogviWeb do
@@ -52,7 +52,6 @@ defmodule KjogviWeb.Router do
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:kjogvi_web, :dev_routes) do
-
     scope "/dev" do
       pipe_through :browser
 

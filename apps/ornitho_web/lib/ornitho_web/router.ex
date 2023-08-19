@@ -26,7 +26,6 @@ defmodule OrnithoWeb.Router do
             live "/:slug/:version", OrnithoWeb.BookLive.Show, nil, route_opts
             live "/:slug/:version/page/:page", OrnithoWeb.BookLive.Show, nil, route_opts
             live "/:slug/:version/:code", OrnithoWeb.TaxaLive.Show, nil, route_opts
-
           end
         end
       end
@@ -85,7 +84,6 @@ defmodule OrnithoWeb.Router do
         conn,
         csp_nonce_assign_key
       ) do
-
     %{
       "csp_nonces" => %{
         img: conn.assigns[csp_nonce_assign_key[:img]],

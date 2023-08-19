@@ -7,8 +7,14 @@
     <.live_title suffix=" · Ornithologue">
       <%= assigns[:page_title] || "" %>
     </.live_title>
-    <link phx-track-static rel="stylesheet" nonce={csp_nonce(@conn, :style)} href={asset_path(@conn, :css)}>
-    <script phx-track-static nonce={csp_nonce(@conn, :script)} src={asset_path(@conn, :js)} defer></script>
+    <link
+      phx-track-static
+      rel="stylesheet"
+      nonce={csp_nonce(@conn, :style)}
+      href={asset_path(@conn, :css)}
+    />
+    <script phx-track-static nonce={csp_nonce(@conn, :script)} src={asset_path(@conn, :js)} defer>
+    </script>
   </head>
   <body class="bg-white antialiased">
     <%= @inner_content %>

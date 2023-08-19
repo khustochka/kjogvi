@@ -51,8 +51,17 @@ defmodule OrnithoWeb.TaxaLive.Table do
                 <div class="text-zinc-900">
                   <div>
                     <div>
-                      <strong><.link navigate={OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}/#{taxon.code}")}>
-                          <.sci_name taxon={taxon} /></.link></strong>
+                      <strong>
+                        <.link
+                          navigate={
+                            OrnithoWeb.LinkHelper.path(
+                              @socket,
+                              "/#{@book.slug}/#{@book.version}/#{taxon.code}"
+                            )
+                          }
+                          phx-no-format
+                        ><.sci_name taxon={taxon} /></.link>
+                      </strong>
                       <.category_tag :if={taxon.category} category={taxon.category} />
                       <.extinct_tag taxon={taxon} />
                     </div>
@@ -69,7 +78,12 @@ defmodule OrnithoWeb.TaxaLive.Table do
               <td :if={!@skip_parent_species} class="p-0 py-4 pr-6 text-center">
                 <.link
                   :if={taxon.parent_species}
-                  navigate={OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}/#{taxon.parent_species.code}")}
+                  navigate={
+                    OrnithoWeb.LinkHelper.path(
+                      @socket,
+                      "/#{@book.slug}/#{@book.version}/#{taxon.parent_species.code}"
+                    )
+                  }
                 >
                   <.sci_name taxon={taxon.parent_species} />
                 </.link>

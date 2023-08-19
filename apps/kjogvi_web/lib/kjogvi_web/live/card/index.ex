@@ -24,9 +24,10 @@ defmodule KjogviWeb.CardLive.Index do
       Map.get(params, "page", "1")
       |> String.to_integer()
 
-    {:noreply,
-     socket
-     |> assign(:cards, get_cards(%{page: page}))
+    {
+      :noreply,
+      socket
+      |> assign(:cards, get_cards(%{page: page}))
     }
   end
 
@@ -41,12 +42,12 @@ defmodule KjogviWeb.CardLive.Index do
   def render(assigns) do
     ~H"""
     <.header>
-    Cards
+      Cards
     </.header>
 
     <.table id="cards" rows={@cards}>
       <:col :let={card} label="id">
-      <.link navigate={~p"/cards/#{card.id}"}><%= card.id %></.link>
+        <.link navigate={~p"/cards/#{card.id}"}><%= card.id %></.link>
       </:col>
       <:col :let={card} label="Location"><%= card.location.name_en %></:col>
       <:col :let={card} label="Date"><%= card.observ_date %></:col>

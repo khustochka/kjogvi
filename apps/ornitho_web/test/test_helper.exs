@@ -41,7 +41,7 @@ defmodule OrnithoWebTest.Router do
   scope "/", ThisWontBeUsed, as: :this_wont_be_used do
     pipe_through :browser
 
-    ornitho_web "/taxonomy"
+    ornitho_web("/taxonomy")
   end
 end
 

@@ -19,21 +19,25 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   defp li_wrap(content, options) do
     {_old_value, options} =
       options
-      |> Keyword.get_and_update(:class, fn current -> {current, Enum.join([@shared_wrap_class, current], " ")} end)
+      |> Keyword.get_and_update(:class, fn current ->
+        {current, Enum.join([@shared_wrap_class, current], " ")}
+      end)
 
     content_tag(:li, content, options)
   end
 
   defp build_element(text, href, options, child_html_attrs, parent_html_attrs) do
     text
-    |> link_callback(options).(Keyword.merge(child_html_attrs, [to: href, class: @link_class]))
+    |> link_callback(options).(Keyword.merge(child_html_attrs, to: href, class: @link_class))
     |> li_wrap(parent_html_attrs)
   end
 
   def build_page_element(text, href, options, child_html_attrs, parent_html_attrs \\ []) do
     {_old_value, parent_html_attrs} =
       parent_html_attrs
-      |> Keyword.get_and_update(:class, fn current -> {current, Enum.join([@link_wrap_class, current], " ")} end)
+      |> Keyword.get_and_update(:class, fn current ->
+        {current, Enum.join([@link_wrap_class, current], " ")}
+      end)
 
     build_element(text, href, options, child_html_attrs, parent_html_attrs)
   end
@@ -42,28 +46,38 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   def first_page(_page, %Scrivener.Page{page_number: 1}, %{}), do: nil
 
   def first_page(page = %Page{}, _spage, options = %{}) do
-    build_page_element(options.labels.first, page.href, options, title: dgettext("scrivener_phoenix", "First page"))
+    build_page_element(options.labels.first, page.href, options,
+      title: dgettext("scrivener_phoenix", "First page")
+    )
   end
 
   @impl Scrivener.Phoenix.Template
   def last_page(%Page{}, %Scrivener.Page{page_number: no, total_pages: no}, %{}), do: nil
 
   def last_page(page = %Page{}, _spage, options = %{}) do
-    build_page_element(options.labels.last, page.href, options, title: dgettext("scrivener_phoenix", "Last page"))
+    build_page_element(options.labels.last, page.href, options,
+      title: dgettext("scrivener_phoenix", "Last page")
+    )
   end
 
   @impl Scrivener.Phoenix.Template
   def prev_page(nil, %{}), do: nil
 
   def prev_page(page = %Page{}, options = %{}) do
-    build_page_element(options.labels.prev, page.href, options, title: dgettext("scrivener_phoenix", "Previous page"), rel: "prev")
+    build_page_element(options.labels.prev, page.href, options,
+      title: dgettext("scrivener_phoenix", "Previous page"),
+      rel: "prev"
+    )
   end
 
   @impl Scrivener.Phoenix.Template
   def next_page(nil, %{}), do: nil
 
   def next_page(page = %Page{}, options = %{}) do
-    build_page_element(options.labels.next, page.href, options, title: dgettext("scrivener_phoenix", "Next page"), rel: "next")
+    build_page_element(options.labels.next, page.href, options,
+      title: dgettext("scrivener_phoenix", "Next page"),
+      rel: "next"
+    )
   end
 
   @impl Scrivener.Phoenix.Template
@@ -72,6 +86,7 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
       page.no
     end
     |> li_wrap(class: @link_wrap_class)
+
     # build_page_element(page.no, page.href, options, [], class: "active font-bold")
   end
 

@@ -19,11 +19,13 @@ defmodule KjogviWeb.CardLive.Show do
     card =
       Card
       |> Kjogvi.Repo.get!(id)
-      |> Kjogvi.Repo.preload([observations: from(obs in Observation, order_by: obs.id)])
-    {:noreply,
-     socket
-     |> assign(:page_title, "Card ##{card.id}")
-     |> assign(:card, card)
+      |> Kjogvi.Repo.preload(observations: from(obs in Observation, order_by: obs.id))
+
+    {
+      :noreply,
+      socket
+      |> assign(:page_title, "Card ##{card.id}")
+      |> assign(:card, card)
     }
   end
 
@@ -31,11 +33,11 @@ defmodule KjogviWeb.CardLive.Show do
   def render(assigns) do
     ~H"""
     <.header>
-    Card #<%= @card.id %>
+      Card #<%= @card.id %>
     </.header>
     <h2 class="py-4">Notes</h2>
     <p>
-    <%= @card.notes %>
+      <%= @card.notes %>
     </p>
     <h2 class="py-4">Observations</h2>
     <.table id="cards" rows={@card.observations}>

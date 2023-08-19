@@ -25,8 +25,11 @@ defmodule Ornitho.Importer do
 
     unless Enum.empty?(missing_keys) do
       missing_keys_str =
-        for key <- missing_keys, do: inspect(key)
-        |> Enum.join(", ")
+        for key <- missing_keys, reduce: "" do
+          "" -> inspect(key)
+          acc -> "#{acc}, #{inspect(key)}"
+        end
+
       raise ArgumentError,
             "missing required option(s) #{missing_keys_str} on " <>
               "`use Ornitho.Importer`"

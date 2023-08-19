@@ -15,7 +15,10 @@ defmodule OrnithoWeb.BooksHTML do
     </.header>
     <.simpler_table id="books" rows={@books}>
       <:col :let={{book, _}} label="slug">
-        <a href={OrnithoWeb.LinkHelper.path(@conn, "/#{book.slug}/#{book.version}")} class="font-semibold text-zinc-900">
+        <a
+          href={OrnithoWeb.LinkHelper.path(@conn, "/#{book.slug}/#{book.version}")}
+          class="font-semibold text-zinc-900"
+        >
           <%= book.slug %>
         </a>
       </:col>

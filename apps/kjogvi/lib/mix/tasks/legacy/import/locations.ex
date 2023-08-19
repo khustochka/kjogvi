@@ -8,12 +8,13 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
 
     columns = results.columns |> Enum.map(&String.to_atom/1)
 
-    locations = for row <- results.rows do
-      Enum.zip(columns, row)
-      |> Enum.into(%{})
-      |> convert_ancestry
-      |> transform_keys
-    end
+    locations =
+      for row <- results.rows do
+        Enum.zip(columns, row)
+        |> Enum.into(%{})
+        |> convert_ancestry
+        |> transform_keys
+      end
 
     Kjogvi.Repo.insert_all(Kjogvi.Schema.Location, locations)
   end
@@ -31,18 +32,32 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
       ancestry_str
       |> String.split("/")
       |> Enum.map(&String.to_integer/1)
+
     %{loc | ancestry: ancestors}
   end
 
-  defp transform_keys(%{five_mile_radius: is_5mr, loc_type: loc_type, patch: is_patch, private_loc: is_private} = loc) do
-    location_type = case loc_type do
-      "" -> nil
-      _ -> loc_type
-    end
+  defp transform_keys(
+         %{five_mile_radius: is_5mr, loc_type: loc_type, patch: is_patch, private_loc: is_private} =
+           loc
+       ) do
+    location_type =
+      case loc_type do
+        "" -> nil
+        _ -> loc_type
+      end
+
     time = DateTime.utc_now()
 
     loc
-    |> Map.drop([:five_mile_radius, :loc_type, :patch, :private_loc, :ebird_location_id, :name_ru, :name_uk])
+    |> Map.drop([
+      :five_mile_radius,
+      :loc_type,
+      :patch,
+      :private_loc,
+      :ebird_location_id,
+      :name_ru,
+      :name_uk
+    ])
     |> Map.put(:is_5mr, is_5mr)
     |> Map.put(:location_type, location_type)
     |> Map.put(:is_patch, is_patch)
