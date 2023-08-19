@@ -1,10 +1,7 @@
 defmodule KjogviWeb.CardLive.Show do
   use KjogviWeb, :live_view
 
-  import Ecto.Query
-
-  alias Kjogvi.Birding.Card
-  alias Kjogvi.Birding.Observation
+  alias Kjogvi.Birding
 
   @impl true
   def mount(_params, _session, socket) do
@@ -16,10 +13,7 @@ defmodule KjogviWeb.CardLive.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _url, socket) do
-    card =
-      Card
-      |> Kjogvi.Repo.get!(id)
-      |> Kjogvi.Repo.preload(observations: from(obs in Observation, order_by: obs.id))
+    card = Birding.fetch_card(id)
 
     {
       :noreply,

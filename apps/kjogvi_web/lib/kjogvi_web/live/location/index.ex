@@ -1,7 +1,7 @@
 defmodule KjogviWeb.LocationLive.Index do
   use KjogviWeb, :live_view
 
-  alias Kjogvi.Birding.Location
+  alias Kjogvi.Birding
 
   @impl true
   def mount(_params, _session, socket) do
@@ -9,7 +9,7 @@ defmodule KjogviWeb.LocationLive.Index do
       :ok,
       socket
       |> assign(:page_title, "Locations")
-      |> assign(:locations, Location |> Kjogvi.Repo.all())
+      |> assign(:locations, Birding.get_locations())
     }
   end
 

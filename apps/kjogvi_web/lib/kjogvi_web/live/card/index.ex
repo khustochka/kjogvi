@@ -1,10 +1,9 @@
 defmodule KjogviWeb.CardLive.Index do
   use KjogviWeb, :live_view
 
-  import Ecto.Query
   import Scrivener.PhoenixView
 
-  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding
 
   @cards_per_page 50
 
@@ -27,15 +26,8 @@ defmodule KjogviWeb.CardLive.Index do
     {
       :noreply,
       socket
-      |> assign(:cards, get_cards(%{page: page}))
+      |> assign(:cards, Birding.get_cards(%{page: page, page_size: @cards_per_page}))
     }
-  end
-
-  defp get_cards(%{page: page}) do
-    Card
-    |> order_by([{:desc, :observ_date}, {:desc, :id}])
-    |> preload(:location)
-    |> Kjogvi.Repo.paginate(page: page, page_size: @cards_per_page)
   end
 
   @impl true
