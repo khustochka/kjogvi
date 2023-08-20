@@ -30,6 +30,8 @@ defmodule Ornitho.Schema.Book do
     has_many(:taxa, Ornitho.Schema.Taxon)
 
     timestamps()
+
+    field :taxa_count, :integer, virtual: true
   end
 
   def default_order do

@@ -14,7 +14,7 @@ defmodule OrnithoWeb.BooksHTML do
       <%= assigns[:page_title] %>
     </.header>
     <.simpler_table id="books" rows={@books}>
-      <:col :let={{book, _}} label="slug">
+      <:col :let={book} label="slug">
         <a
           href={OrnithoWeb.LinkHelper.path(@conn, "/#{book.slug}/#{book.version}")}
           class="font-semibold text-zinc-900"
@@ -22,11 +22,11 @@ defmodule OrnithoWeb.BooksHTML do
           <%= book.slug %>
         </a>
       </:col>
-      <:col :let={{book, _}} label="version"><%= book.version %></:col>
-      <:col :let={{book, _}} label="name"><%= book.name %></:col>
-      <:col :let={{book, _}} label="description"><%= book.description %></:col>
-      <:col :let={{_, %{taxa_count: taxa_count}}} label="taxa"><%= taxa_count %></:col>
-      <:col :let={{book, _}} label="imported">
+      <:col :let={book} label="version"><%= book.version %></:col>
+      <:col :let={book} label="name"><%= book.name %></:col>
+      <:col :let={book} label="description"><%= book.description %></:col>
+      <:col :let={book} label="taxa"><%= book.taxa_count %></:col>
+      <:col :let={book} label="imported">
         <.datetime time={book.imported_at} />
       </:col>
     </.simpler_table>

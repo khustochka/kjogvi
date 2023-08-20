@@ -31,8 +31,8 @@ defmodule Ornitho.Finder.BookTest do
       insert(:taxon, book: book1)
 
       result = Ornitho.Finder.Book.with_taxa_count()
-      assert {book1, %{taxa_count: 2}} in result
-      assert {book2, %{taxa_count: 0}} in result
+      assert %{book1 | taxa_count: 2} in result
+      assert %{book2 | taxa_count: 0} in result
     end
   end
 

@@ -29,7 +29,7 @@ defmodule Ornitho.Query.Book do
     from([..., book: b] in query,
       left_join: t in assoc(b, :taxa),
       group_by: b.id,
-      select: {b, %{taxa_count: count(t.id)}}
+      select_merge: %{taxa_count: count(t.id)}
     )
   end
 
