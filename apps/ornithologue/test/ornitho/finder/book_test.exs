@@ -36,15 +36,15 @@ defmodule Ornitho.Finder.BookTest do
     end
   end
 
-  describe "taxa_count" do
-    test "returns the number of taxa in the book" do
+  describe "load_taxa_count" do
+    test "loads the number of taxa in the book" do
       book1 = insert(:book)
       book2 = insert(:book)
       insert(:taxon, book: book1)
       insert(:taxon, book: book1)
 
-      assert Ornitho.Finder.Book.taxa_count(book1) == 2
-      assert Ornitho.Finder.Book.taxa_count(book2) == 0
+      assert %{taxa_count: 2} = Ornitho.Finder.Book.load_taxa_count(book1)
+      assert %{taxa_count: 0} = Ornitho.Finder.Book.load_taxa_count(book2)
     end
   end
 end

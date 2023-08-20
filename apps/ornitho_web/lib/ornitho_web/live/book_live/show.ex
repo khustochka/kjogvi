@@ -6,13 +6,13 @@ defmodule OrnithoWeb.BookLive.Show do
 
   @impl true
   def mount(%{"slug" => slug, "version" => version}, _session, socket) do
-    book = Ornitho.Finder.Book.by_signature!(slug, version)
-    taxa_count = Ornitho.Finder.Book.taxa_count(book)
+    book =
+      Ornitho.Finder.Book.by_signature!(slug, version)
+      |> Ornitho.Finder.Book.load_taxa_count
 
     {:ok,
      socket
      |> assign(:book, book)
-     |> assign(:taxa_count, taxa_count)
      |> assign(:page_title, book.name)}
   end
 
@@ -50,7 +50,7 @@ defmodule OrnithoWeb.BookLive.Show do
     <div class="mt-8">
       <.list>
         <:item title="Imported at"><.datetime time={@book.imported_at} /></:item>
-        <:item title="Taxa"><%= @taxa_count %></:item>
+        <:item title="Taxa"><%= @book.taxa_count %></:item>
         <:item :for={{key, value} <- @book.extras || %{}} title={key}>
           <%= value %>
         </:item>

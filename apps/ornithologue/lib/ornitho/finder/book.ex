@@ -33,10 +33,12 @@ defmodule Ornitho.Finder.Book do
     |> Repo.one!()
   end
 
-  @spec taxa_count(Book.t()) :: Integer
-  def taxa_count(book) do
-    Ecto.assoc(book, :taxa)
-    |> Repo.aggregate(:count)
+  @spec load_taxa_count(Book.t()) :: Book.t()
+  def load_taxa_count(book) do
+    taxa_count =
+      Ecto.assoc(book, :taxa)
+      |> Repo.aggregate(:count)
+    %{book | taxa_count: taxa_count}
   end
 
   def exists?(slug, version) do
