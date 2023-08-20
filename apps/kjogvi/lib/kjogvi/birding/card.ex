@@ -25,9 +25,11 @@ defmodule Kjogvi.Birding.Card do
 
     field :ebird_id, :string
 
+    has_many(:observations, Kjogvi.Birding.Observation)
+
     timestamps()
 
-    has_many(:observations, Kjogvi.Birding.Observation)
+    field :observation_count, :integer, virtual: true
   end
 
   @doc false

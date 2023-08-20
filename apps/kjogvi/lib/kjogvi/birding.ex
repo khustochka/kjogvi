@@ -11,6 +11,7 @@ defmodule Kjogvi.Birding do
     Card
     |> order_by([{:desc, :observ_date}, {:desc, :id}])
     |> preload(:location)
+    |> load_observation_count()
     |> Repo.paginate(page: page, page_size: page_size)
   end
 
@@ -22,5 +23,13 @@ defmodule Kjogvi.Birding do
 
   def get_locations do
     Location |> Repo.all()
+  end
+
+  def load_observation_count(query) do
+    from(c in query,
+      left_join: obs in assoc(c, :observations),
+      group_by: c.id,
+      select_merge: %{observation_count: count(obs.id)}
+    )
   end
 end
