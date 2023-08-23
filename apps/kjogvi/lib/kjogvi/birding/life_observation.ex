@@ -11,6 +11,8 @@ defmodule Kjogvi.Birding.LifeObservation do
 
     belongs_to(:location, Kjogvi.Birding.Location)
     belongs_to(:card, Kjogvi.Birding.Card)
+
+    field :taxon, :map, virtual: true
   end
 
   @doc false

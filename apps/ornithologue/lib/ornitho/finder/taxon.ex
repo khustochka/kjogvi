@@ -20,15 +20,21 @@ defmodule Ornitho.Finder.Taxon do
   end
 
   @spec by_code(Book.t(), String.t()) :: Taxon.t() | nil
-  def by_code(book, name_sci) do
+  def by_code(book, code) do
     Query.Taxon.base_taxon(book)
-    |> where(code: ^name_sci)
+    |> where(code: ^code)
     |> Repo.one()
   end
 
-  def by_code!(book, name_sci) do
+  def by_codes(book, codes) do
     Query.Taxon.base_taxon(book)
-    |> where(code: ^name_sci)
+    |> where(code: ^codes)
+    |> Repo.all()
+  end
+
+  def by_code!(book, code) do
+    Query.Taxon.base_taxon(book)
+    |> where(code: ^code)
     |> Repo.one!()
   end
 

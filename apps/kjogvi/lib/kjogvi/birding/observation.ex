@@ -14,6 +14,8 @@ defmodule Kjogvi.Birding.Observation do
     field :ebird_obs_id, :string
 
     timestamps()
+
+    field :taxon, :map, virtual: true
   end
 
   @doc false

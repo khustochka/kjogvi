@@ -43,6 +43,10 @@ defmodule Ornitho.Schema.Taxon do
     timestamps()
   end
 
+  def key(%{book: %{slug: slug, version: version}, code: code}) do
+    "/#{slug}/#{version}/#{code}"
+  end
+
   def default_order do
     @default_order
   end

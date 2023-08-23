@@ -37,7 +37,7 @@ defmodule KjogviWeb.CardLive.Show do
     <.table id="observation" rows={@card.observations}>
       <:col :let={obs} label="id"><%= obs.id %></:col>
       <:col :let={obs} label="Quantity"><%= obs.quantity %></:col>
-      <:col :let={obs} label="Taxon"><%= obs.taxon_key %></:col>
+      <:col :let={obs} label="Taxon"><%= obs.taxon.name_en %></:col>
       <:col :let={obs} label="Voice only"><%= obs.voice %></:col>
     </.table>
     """

@@ -31,7 +31,7 @@ defmodule KjogviWeb.LifelistLive.Index do
     Total of <%= length(@lifelist) %> taxa.
     </p>
     <.table id="lifers" rows={@lifelist}>
-      <:col :let={lifer} label="Taxon"><%= lifer.taxon_key %></:col>
+      <:col :let={lifer} label="Taxon"><%= lifer.taxon.name_en %></:col>
       <:col :let={lifer} label="Date"><%= lifer.observ_date %></:col>
       <:col :let={lifer} label="Time"><%= lifer.start_time %></:col>
       <:col :let={lifer} label="Location"><%= lifer.location.name_en %></:col>
