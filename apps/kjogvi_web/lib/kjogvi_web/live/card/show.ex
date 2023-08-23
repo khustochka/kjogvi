@@ -34,7 +34,7 @@ defmodule KjogviWeb.CardLive.Show do
       <%= @card.notes %>
     </p>
     <h2 class="py-4">Observations</h2>
-    <.table id="cards" rows={@card.observations}>
+    <.table id="observation" rows={@card.observations}>
       <:col :let={obs} label="id"><%= obs.id %></:col>
       <:col :let={obs} label="Quantity"><%= obs.quantity %></:col>
       <:col :let={obs} label="Taxon"><%= obs.taxon_key %></:col>

@@ -45,6 +45,12 @@ defmodule KjogviWeb.Router do
     live "/:id", CardLive.Show, :show
   end
 
+  scope "/lifelist", KjogviWeb do
+    pipe_through :browser
+
+    live "/", LifelistLive.Index, :index
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", KjogviWeb do
   #   pipe_through :api

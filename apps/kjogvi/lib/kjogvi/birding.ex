@@ -3,6 +3,11 @@ defmodule Kjogvi.Birding do
 
   alias Kjogvi.Repo
 
+  alias __MODULE__.Observation
+  alias __MODULE__.Card
+  alias __MODULE__.Location
+  alias __MODULE__.LifeObservation
+
   alias Kjogvi.Birding.Card
   alias Kjogvi.Birding.Location
   alias Kjogvi.Birding.Observation
@@ -22,7 +27,8 @@ defmodule Kjogvi.Birding do
   end
 
   def get_locations do
-    Location |> Repo.all()
+    Location
+    |> Repo.all()
   end
 
   def load_observation_count(query) do
@@ -31,5 +37,33 @@ defmodule Kjogvi.Birding do
       group_by: c.id,
       select_merge: %{observation_count: count(obs.id)}
     )
+  end
+
+  def lifelist do
+    lifelist_query()
+    |> Repo.all
+    |> Enum.map(&(Repo.load(LifeObservation, &1)))
+    |> Repo.preload(:location)
+  end
+
+  defp lifelist_query do
+    from l in subquery(lifers_query()),
+      order_by: [asc: l.observ_date, asc_nulls_last: l.start_time, asc: l.id]
+  end
+
+  defp lifers_query do
+    from o in Observation,
+      distinct: o.taxon_key,
+      join: c in assoc(o, :card),
+      where: o.unreported == false,
+      order_by: [asc: o.taxon_key, asc: c.observ_date, asc_nulls_last: c.start_time, asc: o.id],
+      select: %{
+        id: o.id,
+        card_id: c.id,
+        taxon_key: o.taxon_key,
+        observ_date: c.observ_date,
+        start_time: c.start_time,
+        location_id: coalesce(o.patch_id, c.location_id)
+      }
   end
 end
