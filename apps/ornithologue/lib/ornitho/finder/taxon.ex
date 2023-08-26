@@ -28,7 +28,7 @@ defmodule Ornitho.Finder.Taxon do
 
   def by_codes(book, codes) do
     Query.Taxon.base_taxon(book)
-    |> where(code: ^codes)
+    |> where([t], t.code in ^codes)
     |> Repo.all()
   end
 

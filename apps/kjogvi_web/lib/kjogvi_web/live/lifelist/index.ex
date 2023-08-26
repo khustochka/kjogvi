@@ -17,7 +17,7 @@ defmodule KjogviWeb.LifelistLive.Index do
     {
       :noreply,
       socket
-      |> assign(:lifelist, Birding.lifelist)
+      |> assign(:lifelist, Birding.lifelist())
     }
   end
 
@@ -28,7 +28,7 @@ defmodule KjogviWeb.LifelistLive.Index do
       Lifelist
     </.header>
     <p>
-    Total of <%= length(@lifelist) %> taxa.
+      Total of <%= length(@lifelist) %> taxa.
     </p>
     <.table id="lifers" rows={@lifelist}>
       <:col :let={lifer} label="Taxon"><%= lifer.taxon.name_en %></:col>

@@ -21,9 +21,11 @@ defmodule Kjogvi.Birding do
   end
 
   def fetch_card(id) do
-    card = Card
+    card =
+      Card
       |> Repo.get!(id)
       |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
+
     %{card | observations: preload_taxa_and_species(card.observations)}
   end
 
@@ -42,8 +44,8 @@ defmodule Kjogvi.Birding do
 
   def lifelist do
     lifelist_query()
-    |> Repo.all
-    |> Enum.map(&(Repo.load(LifeObservation, &1)))
+    |> Repo.all()
+    |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Repo.preload(:location)
     |> preload_taxa_and_species
   end
@@ -74,7 +76,7 @@ defmodule Kjogvi.Birding do
       for obs <- observations, uniq: true do
         obs.taxon_key
       end
-      |> Ornithologue.get_taxa_and_species
+      |> Ornithologue.get_taxa_and_species()
 
     for obs <- observations do
       %{obs | taxon: taxa[obs.taxon_key]}

@@ -38,6 +38,7 @@ defmodule Ornitho.Finder.Book do
     taxa_count =
       Ecto.assoc(book, :taxa)
       |> Repo.aggregate(:count)
+
     %{book | taxa_count: taxa_count}
   end
 
