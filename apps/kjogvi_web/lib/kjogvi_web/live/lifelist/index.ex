@@ -33,23 +33,26 @@ defmodule KjogviWeb.LifelistLive.Index do
     <table id="lifers" class="mt-11 w-full">
       <thead class="text-sm text-left leading-6 text-zinc-500">
         <tr>
-          <th class="p-0 pr-6 pb-4 font-normal">&nbsp;</th>
+          <th class="p-0 pr-6 pb-4 font-normal"></th>
           <th class="p-0 pr-6 pb-4 font-normal">Species</th>
-          <th class="p-0 pr-6 pb-4 font-normal">Date</th>
-          <th class="p-0 pr-6 pb-4 font-normal">Time</th>
+          <th class="p-0 pr-6 pb-4 font-normal text-center">Date</th>
           <th class="p-0 pr-6 pb-4 font-normal">Location</th>
-          <th class="p-0 pr-6 pb-4 font-normal">Card</th>
+          <th class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
         <%= for {lifer, i} <- Enum.with_index(@lifelist) do %>
-          <tr class="divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
+          <tr>
             <td class="p-0 py-4 pr-6 text-right"><%= i + 1 %>.</td>
-            <td class="p-0 py-4 pr-6"><%= lifer.species.name_en %></td>
-            <td class="p-0 py-4 pr-6"><%= lifer.observ_date %></td>
-            <td class="p-0 py-4 pr-6"><%= lifer.start_time %></td>
-            <td class="p-0 py-4 pr-6"><%= lifer.location.name_en %></td>
             <td class="p-0 py-4 pr-6">
+              <strong><%= lifer.species.name_en %></strong>
+              <i><%= lifer.species.name_sci %></i>
+            </td>
+            <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
+              <%= lifer.observ_date %>
+            </td>
+            <td class="p-0 py-4 pr-6"><%= lifer.location.name_en %></td>
+            <td class="p-0 py-4 pr-6 text-center">
               <.link navigate={~p"/cards/#{lifer.card_id}"}>
                 <.icon name="hero-clipboard-document-list" class="w-[18px]" />
               </.link>
