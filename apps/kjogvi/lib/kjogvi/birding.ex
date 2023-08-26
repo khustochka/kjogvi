@@ -48,6 +48,8 @@ defmodule Kjogvi.Birding do
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Repo.preload(:location)
     |> preload_taxa_and_species
+    |> Enum.filter(fn rec -> rec.species end)
+    |> Enum.uniq_by(fn rec -> rec.species.code end)
   end
 
   defp lifelist_query do
@@ -79,7 +81,8 @@ defmodule Kjogvi.Birding do
       |> Ornithologue.get_taxa_and_species()
 
     for obs <- observations do
-      %{obs | taxon: taxa[obs.taxon_key]}
+      taxon = taxa[obs.taxon_key]
+      %{obs | taxon: taxon, species: Ornitho.Schema.Taxon.species(taxon)}
     end
   end
 end

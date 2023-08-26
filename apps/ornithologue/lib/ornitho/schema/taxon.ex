@@ -47,6 +47,14 @@ defmodule Ornitho.Schema.Taxon do
     "/#{slug}/#{version}/#{code}"
   end
 
+  def species(%{category: "species"} = taxon) do
+    taxon
+  end
+
+  def species(%{parent_species: parent_species}) do
+    parent_species
+  end
+
   def default_order do
     @default_order
   end

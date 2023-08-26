@@ -33,6 +33,7 @@ defmodule Ornithologue do
     |> Enum.reduce(%{}, fn book, acc ->
       grouped =
         Ornitho.Finder.Taxon.by_codes(book, by_book[{book.slug, book.version}])
+        |> Repo.preload(:parent_species)
         |> Enum.group_by(&Taxon.key(%{&1 | book: book}))
         |> Enum.map(fn {key, [val | _]} -> {key, val} end)
         |> Enum.into(%{})
