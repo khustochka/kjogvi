@@ -14,12 +14,6 @@
         Kjogvi
       </p>
       <a
-        href={~p"/taxonomy"}
-        class="rounded-lg bg-zinc-100 px-2 py-1 text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:bg-zinc-200/80 active:text-zinc-900/70"
-      >
-        Taxonomy
-      </a>
-      <a
         href={~p"/locations"}
         class="rounded-lg bg-zinc-100 px-2 py-1 text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:bg-zinc-200/80 active:text-zinc-900/70"
       >
@@ -39,20 +33,17 @@
       </a>
     </div>
     <div class="flex items-center gap-4">
-      <%= if Application.get_env(:kjogvi_web, :dev_routes) do %>
-        <a
-          href={~p"/dashboard"}
-          class="text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-        >
-          Dashboard
-        </a>
-      <% end %>
       <a
-        href="https://github.com/khustochka/kjogvi"
-        class="text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-        target="_blank"
+        href={~p"/taxonomy"}
+        class="rounded-lg bg-zinc-100 px-2 py-1 text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:bg-zinc-200/80 active:text-zinc-900/70"
       >
-        GitHub
+        Taxonomy
+      </a>
+      <a
+        href={~p"/dashboard"}
+        class="text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+      >
+        Dashboard
       </a>
     </div>
   </div>

@@ -54,7 +54,7 @@ defmodule Kjogvi.Birding do
 
   defp lifelist_query do
     from l in subquery(lifers_query()),
-      order_by: [asc: l.observ_date, asc_nulls_last: l.start_time, asc: l.id]
+      order_by: [desc: l.observ_date, desc_nulls_first: l.start_time, desc: l.id]
   end
 
   defp lifers_query do

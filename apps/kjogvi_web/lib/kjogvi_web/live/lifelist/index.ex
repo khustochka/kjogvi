@@ -14,10 +14,13 @@ defmodule KjogviWeb.LifelistLive.Index do
 
   @impl true
   def handle_params(_params, _url, socket) do
+    lifelist = Birding.lifelist()
+
     {
       :noreply,
       socket
-      |> assign(:lifelist, Birding.lifelist())
+      |> assign(:lifelist, lifelist)
+      |> assign(:total, length(lifelist))
     }
   end
 
@@ -28,7 +31,7 @@ defmodule KjogviWeb.LifelistLive.Index do
       Lifelist
     </.header>
     <p>
-      Total of <%= length(@lifelist) %> taxa.
+      Total of <%= @total %> species.
     </p>
     <table id="lifers" class="mt-11 w-full">
       <thead class="text-sm text-left leading-6 text-zinc-500">
@@ -43,7 +46,7 @@ defmodule KjogviWeb.LifelistLive.Index do
       <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
         <%= for {lifer, i} <- Enum.with_index(@lifelist) do %>
           <tr>
-            <td class="p-0 py-4 pr-6 text-right"><%= i + 1 %>.</td>
+            <td class="p-0 py-4 pr-6 text-right"><%= @total - i %>.</td>
             <td class="p-0 py-4 pr-6">
               <strong><%= lifer.species.name_en %></strong>
               <i><%= lifer.species.name_sci %></i>
