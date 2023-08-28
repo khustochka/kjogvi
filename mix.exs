@@ -32,7 +32,7 @@ defmodule Kjogvi.Umbrella.MixProject do
       # Required to run "mix format" on ~H/.heex files from the umbrella root
       {:phoenix_live_view, ">= 0.0.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -48,7 +48,13 @@ defmodule Kjogvi.Umbrella.MixProject do
   defp aliases do
     [
       # run `mix setup` in all child apps
-      setup: ["cmd mix setup"]
+      setup: ["cmd mix setup"],
+      lint: [
+        "format --check-formatted",
+        "deps.unlock --check-unused",
+        "credo --format oneline --ignore design,refactor,readability,consistency",
+        "dialyzer --format dialyxir --quiet"
+      ]
     ]
   end
 end

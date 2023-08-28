@@ -52,7 +52,8 @@ defmodule OrnithoWeb.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false}
+      {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 

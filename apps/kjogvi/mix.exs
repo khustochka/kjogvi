@@ -46,7 +46,8 @@ defmodule Kjogvi.MixProject do
       {:ornithologue, in_umbrella: true},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
-      {:ex_machina, "~> 2.7.0", only: :test}
+      {:ex_machina, "~> 2.7.0", only: :test},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
