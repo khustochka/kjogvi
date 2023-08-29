@@ -11,8 +11,13 @@ defmodule Kjogvi.Umbrella.MixProject do
       dialyzer: [
         plt_add_deps: :app_tree,
         plt_add_apps: [:mix]
-      ]
+      ],
+      test_coverage: [tool: ExCoveralls]
     ]
+  end
+
+  def cli do
+    [preferred_envs: ["coveralls.github": :test, "coveralls.html": :test]]
   end
 
   # Dependencies can be Hex packages:
