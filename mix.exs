@@ -17,7 +17,7 @@ defmodule Kjogvi.Umbrella.MixProject do
   end
 
   def cli do
-    [preferred_envs: ["coveralls.github": :test, "coveralls.html": :test]]
+    [preferred_envs: ["coveralls": :test, "coveralls.html": :test]]
   end
 
   # Dependencies can be Hex packages:

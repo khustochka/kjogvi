@@ -56,5 +56,4 @@ jobs:
       env:
         DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
         ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: mix coveralls --umbrella
+      run: MIX_ENV=test mix coveralls --umbrella
