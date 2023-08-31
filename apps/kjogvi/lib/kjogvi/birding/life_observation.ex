@@ -1,4 +1,9 @@
 defmodule Kjogvi.Birding.LifeObservation do
+  @moduledoc """
+  Represents a lifelist observation: mixes attributes from the observation (taxon)
+  and card (date, location)
+  """
+
   use Kjogvi.Schema
   import Ecto.Changeset
 

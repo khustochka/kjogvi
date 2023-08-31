@@ -1,4 +1,8 @@
 defmodule Kjogvi.Birding.Card do
+  @moduledoc """
+  Card schema (equivalent to eBird checklist).
+  """
+
   use Kjogvi.Schema
   import Ecto.Changeset
 

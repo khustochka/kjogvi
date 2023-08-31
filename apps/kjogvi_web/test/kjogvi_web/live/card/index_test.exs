@@ -10,4 +10,12 @@ defmodule KjogviWeb.CardLive.IndexTest do
            |> element("h1", "Cards")
            |> render()
   end
+
+  test "renders with cards present", %{conn: conn} do
+    insert(:card)
+
+    {:ok, _index_live, html} = live(conn, ~p"/cards")
+
+    assert html =~ "Winnipeg"
+  end
 end

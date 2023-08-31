@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Legacy.Import.Cards do
+  @moduledoc false
+
   use Mix.Task
 
   def run(_args) do

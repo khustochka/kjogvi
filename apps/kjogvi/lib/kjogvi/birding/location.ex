@@ -1,4 +1,8 @@
 defmodule Kjogvi.Birding.Location do
+  @moduledoc """
+  Location schema.
+  """
+
   use Kjogvi.Schema
   import Ecto.Changeset
 

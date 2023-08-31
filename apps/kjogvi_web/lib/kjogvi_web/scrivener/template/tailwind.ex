@@ -45,7 +45,7 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   @impl Scrivener.Phoenix.Template
   def first_page(_page, %Scrivener.Page{page_number: 1}, %{}), do: nil
 
-  def first_page(page = %Page{}, _spage, options = %{}) do
+  def first_page(%Page{} = page, _spage, %{} = options) do
     build_page_element(options.labels.first, page.href, options,
       title: dgettext("scrivener_phoenix", "First page")
     )
@@ -54,7 +54,7 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   @impl Scrivener.Phoenix.Template
   def last_page(%Page{}, %Scrivener.Page{page_number: no, total_pages: no}, %{}), do: nil
 
-  def last_page(page = %Page{}, _spage, options = %{}) do
+  def last_page(%Page{} = page, _spage, %{} = options) do
     build_page_element(options.labels.last, page.href, options,
       title: dgettext("scrivener_phoenix", "Last page")
     )
@@ -63,7 +63,7 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   @impl Scrivener.Phoenix.Template
   def prev_page(nil, %{}), do: nil
 
-  def prev_page(page = %Page{}, options = %{}) do
+  def prev_page(%Page{} = page, %{} = options) do
     build_page_element(options.labels.prev, page.href, options,
       title: dgettext("scrivener_phoenix", "Previous page"),
       rel: "prev"
@@ -73,7 +73,7 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   @impl Scrivener.Phoenix.Template
   def next_page(nil, %{}), do: nil
 
-  def next_page(page = %Page{}, options = %{}) do
+  def next_page(%Page{} = page, %{} = options) do
     build_page_element(options.labels.next, page.href, options,
       title: dgettext("scrivener_phoenix", "Next page"),
       rel: "next"
@@ -81,7 +81,7 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
   end
 
   @impl Scrivener.Phoenix.Template
-  def page(page = %Page{no: no}, %Scrivener.Page{page_number: no}, _options = %{}) do
+  def page(%Page{no: no} = page, %Scrivener.Page{page_number: no}, %{} = _options) do
     content_tag(:span, class: "#{@shared_page_num_class} active font-bold") do
       page.no
     end
@@ -90,11 +90,11 @@ defmodule KjogviWeb.Scrivener.Template.Tailwind do
     # build_page_element(page.no, page.href, options, [], class: "active font-bold")
   end
 
-  def page(page = %Page{}, spage = %Scrivener.Page{}, options = %{}) do
+  def page(%Page{} = page, %Scrivener.Page{} = spage, %{} = options) do
     build_page_element(page.no, page.href, options, handle_rel(page, spage))
   end
 
-  def page(%Gap{}, %Scrivener.Page{}, _options = %{}) do
+  def page(%Gap{}, %Scrivener.Page{}, %{} = _options) do
     content_tag(:span, class: @gap_class) do
       "…"
     end

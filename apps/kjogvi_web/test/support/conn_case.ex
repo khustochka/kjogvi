@@ -28,6 +28,7 @@ defmodule KjogviWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import KjogviWeb.ConnCase
+      import Kjogvi.Factory
     end
   end
 

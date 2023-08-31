@@ -1,4 +1,8 @@
 defmodule Kjogvi.Birding.Observation do
+  @moduledoc """
+  Observation schema.
+  """
+
   use Kjogvi.Schema
   import Ecto.Changeset
 

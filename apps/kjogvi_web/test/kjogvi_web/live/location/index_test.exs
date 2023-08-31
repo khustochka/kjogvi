@@ -10,4 +10,12 @@ defmodule KjogviWeb.LocationLive.IndexTest do
            |> element("h1", "Locations")
            |> render()
   end
+
+  test "renders with locations present", %{conn: conn} do
+    insert(:location)
+
+    {:ok, _index_live, html} = live(conn, ~p"/locations")
+
+    assert html =~ "Winnipeg"
+  end
 end

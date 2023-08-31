@@ -1,4 +1,8 @@
 defmodule Mix.Tasks.Legacy.Import do
+  @moduledoc """
+  Import legacy records.
+  """
+
   use Mix.Task
 
   def run(_args) do

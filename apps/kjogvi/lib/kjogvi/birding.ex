@@ -1,4 +1,8 @@
 defmodule Kjogvi.Birding do
+  @moduledoc """
+  Birding related functionality (locations, cards, observations).
+  """
+
   import Ecto.Query
 
   alias Kjogvi.Repo

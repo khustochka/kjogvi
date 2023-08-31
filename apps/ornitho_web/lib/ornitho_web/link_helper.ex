@@ -1,4 +1,8 @@
 defmodule OrnithoWeb.LinkHelper do
+  @moduledoc """
+  Helpers to create links to OrnithoWeb pages.
+  """
+
   def path(%{router: router}, path) do
     path_from_router(router, path)
   end
