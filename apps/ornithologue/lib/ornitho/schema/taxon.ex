@@ -47,6 +47,11 @@ defmodule Ornitho.Schema.Taxon do
     "/#{slug}/#{version}/#{code}"
   end
 
+  # FIXME: try to get rid of this
+  def species(nil = _taxon) do
+    nil
+  end
+
   def species(%{category: "species"} = taxon) do
     taxon
   end

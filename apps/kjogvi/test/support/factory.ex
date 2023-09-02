@@ -17,4 +17,10 @@ defmodule Kjogvi.Factory do
       location: build(:location)
     }
   end
+
+  def observation_factory do
+    %Kjogvi.Birding.Observation{
+      card: build(:card)
+    }
+  end
 end

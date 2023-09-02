@@ -30,7 +30,7 @@ defmodule Kjogvi.Birding do
       |> Repo.get!(id)
       |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
 
-    %{card | observations: preload_taxa_and_species(card.observations)}
+    %{card | observations: card.observations}
   end
 
   def get_locations do
