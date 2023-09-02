@@ -19,6 +19,8 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
       end
 
     Kjogvi.Repo.insert_all(Kjogvi.Birding.Location, locations)
+
+    Kjogvi.Repo.query!("SELECT setval('locations_id_seq', (SELECT MAX(id) FROM locations));")
   end
 
   defp convert_ancestry(%{ancestry: nil} = loc) do

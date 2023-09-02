@@ -25,6 +25,8 @@ defmodule Mix.Tasks.Legacy.Import.Cards do
         end
 
       Kjogvi.Repo.insert_all(Kjogvi.Birding.Card, cards)
+
+      Kjogvi.Repo.query!("SELECT setval('cards_id_seq', (SELECT MAX(id) FROM cards));")
     end
   end
 
