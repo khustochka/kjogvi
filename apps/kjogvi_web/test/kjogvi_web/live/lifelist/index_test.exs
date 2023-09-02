@@ -8,7 +8,6 @@ defmodule KjogviWeb.LifelistLive.IndexTest do
     assert html =~ "Total of 0 species."
   end
 
-  # FIXME: test fails when run from the app folder
   test "renders with species observation", %{conn: conn} do
     taxon = Ornitho.Factory.insert(:taxon, category: "species")
     insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
@@ -25,7 +24,6 @@ defmodule KjogviWeb.LifelistLive.IndexTest do
     assert html =~ "Total of 0 species."
   end
 
-  # FIXME: test fails when run from the app folder
   test "renders with subspecies observation", %{conn: conn} do
     book = Ornitho.Factory.insert(:book)
     species = Ornitho.Factory.insert(:taxon, book: book, category: "species")
