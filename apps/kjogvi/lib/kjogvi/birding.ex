@@ -10,11 +10,6 @@ defmodule Kjogvi.Birding do
   alias __MODULE__.Observation
   alias __MODULE__.Card
   alias __MODULE__.Location
-  alias __MODULE__.LifeObservation
-
-  alias Kjogvi.Birding.Card
-  alias Kjogvi.Birding.Location
-  alias Kjogvi.Birding.Observation
 
   def get_cards(%{page: page, page_size: page_size}) do
     Card
@@ -46,38 +41,7 @@ defmodule Kjogvi.Birding do
     )
   end
 
-  def lifelist do
-    lifelist_query()
-    |> Repo.all()
-    |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Repo.preload(:location)
-    |> preload_taxa_and_species
-    |> Enum.filter(fn rec -> rec.species end)
-    |> Enum.uniq_by(fn rec -> rec.species.code end)
-  end
-
-  defp lifelist_query do
-    from l in subquery(lifers_query()),
-      order_by: [desc: l.observ_date, desc_nulls_first: l.start_time, desc: l.id]
-  end
-
-  defp lifers_query do
-    from o in Observation,
-      distinct: o.taxon_key,
-      join: c in assoc(o, :card),
-      where: o.unreported == false,
-      order_by: [asc: o.taxon_key, asc: c.observ_date, asc_nulls_last: c.start_time, asc: o.id],
-      select: %{
-        id: o.id,
-        card_id: c.id,
-        taxon_key: o.taxon_key,
-        observ_date: c.observ_date,
-        start_time: c.start_time,
-        location_id: coalesce(o.patch_id, c.location_id)
-      }
-  end
-
-  defp preload_taxa_and_species(observations) do
+  def preload_taxa_and_species(observations) do
     taxa =
       for obs <- observations, uniq: true do
         obs.taxon_key

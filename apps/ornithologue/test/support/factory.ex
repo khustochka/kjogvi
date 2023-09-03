@@ -20,7 +20,7 @@ defmodule Ornitho.Factory do
     %Ornitho.Schema.Taxon{
       book: build(:book),
       name_sci: sequence(:taxon_code, &"Cuculus canorus - #{&1}"),
-      name_en: "Common Cuckoo",
+      name_en: sequence(:taxon_code, &"Common Cuckoo - #{&1}"),
       code: sequence(:taxon_code, &"comcuc#{&1}"),
       category: "species",
       authority: "Linnaeus, 1758",

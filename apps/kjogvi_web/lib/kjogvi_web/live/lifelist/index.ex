@@ -8,19 +8,30 @@ defmodule KjogviWeb.LifelistLive.Index do
     {
       :ok,
       socket
-      |> assign(:page_title, "Lifelist")
     }
   end
 
   @impl true
-  def handle_params(_params, _url, socket) do
-    lifelist = Birding.lifelist()
+  def handle_params(params, _url, socket) do
+    year =
+      case params["year"] do
+        str when is_binary(str) -> String.to_integer(str)
+        val when is_integer(val) or is_nil(val) -> val
+      end
+
+    lifelist = Birding.Lifelist.generate(year: year)
+    title = lifelist_title(params)
+    years = Birding.Lifelist.years(year: year)
 
     {
       :noreply,
       socket
       |> assign(:lifelist, lifelist)
       |> assign(:total, length(lifelist))
+      |> assign(:year, year)
+      |> assign(:years, years)
+      |> assign(:page_header, title)
+      |> assign(:page_title, title)
     }
   end
 
@@ -28,11 +39,25 @@ defmodule KjogviWeb.LifelistLive.Index do
   def render(assigns) do
     ~H"""
     <.header>
-      Lifelist
+      <%= @page_header %>
     </.header>
-    <p>
+    <p class="mt-4">
       Total of <%= @total %> species.
     </p>
+
+    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
+      <li class="whitespace-nowrap">
+        <b :if={is_nil(@year)}>All years</b>
+        <.link :if={not is_nil(@year)} patch={~p"/lifelist"}>All years</.link>
+      </li>
+      <%= for year <- @years do %>
+        <li>
+          <b :if={@year == year}><%= year %></b>
+          <.link :if={@year != year} patch={~p"/lifelist/#{year}"}><%= year %></.link>
+        </li>
+      <% end %>
+    </ul>
+
     <table id="lifers" class="mt-11 w-full">
       <thead class="text-sm text-left leading-6 text-zinc-500">
         <tr>
@@ -65,5 +90,13 @@ defmodule KjogviWeb.LifelistLive.Index do
       </tbody>
     </table>
     """
+  end
+
+  def lifelist_title(%{"year" => year} = _params) when not is_nil(year) do
+    "#{year} Year List"
+  end
+
+  def lifelist_title(_) do
+    "Lifelist"
   end
 end
