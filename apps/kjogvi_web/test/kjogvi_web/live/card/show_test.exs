@@ -6,18 +6,10 @@ defmodule KjogviWeb.CardLive.ShowTest do
   test "renders with no observations", %{conn: conn} do
     card = insert(:card)
 
-    conn = get(conn, ~p"/cards/#{card.id}")
-
-    resp = html_response(conn, 200)
-    assert resp =~ "Card ##{card.id}"
-  end
-
-  test "live renders with no observations", %{conn: conn} do
-    card = insert(:card)
-
     {:ok, _show_live, html} = live(conn, ~p"/cards/#{card.id}")
 
     assert html =~ "Card ##{card.id}"
+    assert html =~ "This card has no observations."
   end
 
   test "renders with observations present", %{conn: conn} do

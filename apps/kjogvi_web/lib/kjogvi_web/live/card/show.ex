@@ -34,7 +34,10 @@ defmodule KjogviWeb.CardLive.Show do
       <%= @card.notes %>
     </p>
     <h2 class="py-4">Observations</h2>
-    <.table id="observation" rows={@card.observations}>
+    <p :if={length(@card.observations) == 0}>
+      This card has no observations.
+    </p>
+    <.table :if={length(@card.observations) > 0} id="observation" rows={@card.observations}>
       <:col :let={obs} label="id"><%= obs.id %></:col>
       <:col :let={obs} label="Quantity"><%= obs.quantity %></:col>
       <:col :let={obs} label="Taxon key"><%= obs.taxon_key %></:col>

@@ -18,4 +18,13 @@ defmodule KjogviWeb.CardLive.IndexTest do
 
     assert html =~ "Winnipeg"
   end
+
+  test "pagination with multiple cards", %{conn: conn} do
+    location = insert(:location)
+    insert_list(51, :card, location: location)
+
+    {:ok, _index_live, html} = live(conn, ~p"/cards")
+
+    assert html =~ "/cards/page/2"
+  end
 end
