@@ -23,6 +23,7 @@ defmodule Kjogvi.DataCase do
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
+      import Kjogvi.Factory
       import Kjogvi.DataCase
     end
   end

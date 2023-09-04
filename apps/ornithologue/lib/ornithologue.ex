@@ -9,25 +9,22 @@ defmodule Ornithologue do
   alias Ornitho.Schema.Book
   alias Ornitho.Schema.Taxon
 
-  def get_taxa_and_species(keys_list) do
-    by_book =
-      keys_list
-      |> Enum.reduce(%{}, fn key, acc ->
-        ["", book_slug, book_version, taxon_code] = String.split(key, "/")
+  @spec get_taxa_and_species([String.t()]) :: %{String.t() => Ornitho.Schema.Taxon.t() | nil}
 
-        book_sig = {book_slug, book_version}
-        list = acc[book_sig] || []
+  # This is not required, but helps avoid unnecessary SQL query
+  def get_taxa_and_species([]) do
+    %{}
+  end
 
-        Map.put(acc, book_sig, [taxon_code | list])
+  def get_taxa_and_species(key_list) do
+    by_book = extract_books_and_codes(key_list)
+
+    # No books is a starting point
+    books =
+      Enum.reduce(Map.keys(by_book), where(Book, fragment("1 = 0")), fn {slug, version}, query ->
+        query |> or_where(slug: ^slug, version: ^version)
       end)
-
-    book_query =
-      Enum.reduce(Map.keys(by_book), Book, fn {slug, version}, query ->
-        query
-        |> or_where(slug: ^slug, version: ^version)
-      end)
-
-    books = book_query |> Repo.all()
+      |> Repo.all()
 
     books
     |> Enum.reduce(%{}, fn book, acc ->
@@ -40,6 +37,19 @@ defmodule Ornithologue do
 
       acc
       |> Map.merge(grouped)
+    end)
+  end
+
+  @spec extract_books_and_codes([String.t()]) :: %{{String.t(), String.t()} => [String.t()]}
+  defp extract_books_and_codes(key_list) do
+    key_list
+    |> Enum.reduce(%{}, fn key, acc ->
+      ["", book_slug, book_version, taxon_code] = String.split(key, "/")
+
+      book_sig = {book_slug, book_version}
+      list = acc[book_sig] || []
+
+      Map.put(acc, book_sig, [taxon_code | list])
     end)
   end
 end
