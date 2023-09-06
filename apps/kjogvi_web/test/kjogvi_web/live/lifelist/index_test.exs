@@ -48,4 +48,24 @@ defmodule KjogviWeb.LifelistLive.IndexTest do
     assert html =~ species2.name_en
     assert not (html =~ species1.name_en)
   end
+
+  test "unacceptable year segment - string", %{conn: conn} do
+    assert_raise KjogviWeb.Exception.BadParams, fn ->
+      get(conn, "/lifelist/abc")
+    end
+  end
+
+  test "unacceptable year segment - number", %{conn: conn} do
+    assert_raise KjogviWeb.Exception.BadParams, fn ->
+      get(conn, "/lifelist/20233")
+    end
+  end
+
+  @tag :skip
+  test "empty lifelist", %{conn: conn} do
+    conn = get(conn, "/lifelist/2022")
+    resp = html_response(conn, 404)
+
+    assert resp =~ "Total of 0 species."
+  end
 end

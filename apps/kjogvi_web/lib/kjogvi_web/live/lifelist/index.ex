@@ -13,6 +13,10 @@ defmodule KjogviWeb.LifelistLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
+    if params["year"] && !(params["year"] =~ ~r/\A\d{4}\Z/) do
+      raise KjogviWeb.Exception.BadParams
+    end
+
     year =
       case params["year"] do
         str when is_binary(str) -> String.to_integer(str)
@@ -22,6 +26,10 @@ defmodule KjogviWeb.LifelistLive.Index do
     lifelist = Birding.Lifelist.generate(year: year)
     title = lifelist_title(params)
     years = Birding.Lifelist.years(year: year)
+
+    # if Enum.empty?(lifelist) do
+    #   IEx.pry()
+    # end
 
     {
       :noreply,

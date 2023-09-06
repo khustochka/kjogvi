@@ -34,10 +34,10 @@ defmodule KjogviWeb.CardLive.Show do
       <%= @card.notes %>
     </p>
     <h2 class="py-4">Observations</h2>
-    <p :if={length(@card.observations) == 0}>
+    <p :if={Enum.empty?(@card.observations)}>
       This card has no observations.
     </p>
-    <.table :if={length(@card.observations) > 0} id="observation" rows={@card.observations}>
+    <.table :if={!Enum.empty?(@card.observations)} id="observation" rows={@card.observations}>
       <:col :let={obs} label="id"><%= obs.id %></:col>
       <:col :let={obs} label="Quantity"><%= obs.quantity %></:col>
       <:col :let={obs} label="Taxon key"><%= obs.taxon_key %></:col>
