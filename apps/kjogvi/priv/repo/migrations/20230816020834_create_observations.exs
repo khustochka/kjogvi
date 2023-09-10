@@ -9,7 +9,6 @@ defmodule Kjogvi.Repo.Migrations.CreateObservations do
       add :voice, :boolean, default: false, null: false
       add :notes, :text
       add :private_notes, :text
-      add :patch_id, references("locations", on_delete: :restrict)
       add :unreported, :boolean, default: false, null: false
       add :ebird_obs_id, :string
 
@@ -18,6 +17,5 @@ defmodule Kjogvi.Repo.Migrations.CreateObservations do
 
     create index(:observations, [:card_id])
     create index(:observations, [:taxon_key])
-    create index(:observations, [:patch_id])
   end
 end
