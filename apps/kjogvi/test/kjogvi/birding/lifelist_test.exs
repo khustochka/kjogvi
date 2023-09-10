@@ -63,6 +63,22 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert hd(result).species.name_sci == species.name_sci
     end
 
+    test "uses subspecies observation date if it is earlier than the full species" do
+      book = Ornitho.Factory.insert(:book)
+      species = Ornitho.Factory.insert(:taxon, book: book, category: "species")
+      subspecies =
+        Ornitho.Factory.insert(:taxon, book: book, category: "issf", parent_species: species)
+
+      card1 = insert(:card, observ_date: ~D[2022-06-11])
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(subspecies))
+      card2 = insert(:card, observ_date: ~D[2023-08-19])
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(species))
+
+      result = Kjogvi.Birding.Lifelist.generate()
+      assert length(result)
+      assert hd(result).observ_date == card1.observ_date
+    end
+
     test "does not include spuh observation" do
       taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
       insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))

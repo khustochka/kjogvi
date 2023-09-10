@@ -18,6 +18,7 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Kjogvi.Birding.preload_taxa_and_species()
     |> Enum.filter(fn rec -> rec.species end)
     |> Enum.uniq_by(fn rec -> rec.species.code end)
+    |> Enum.reverse()
   end
 
   def years(_params \\ %{}) do
@@ -30,7 +31,7 @@ defmodule Kjogvi.Birding.Lifelist do
 
   defp lifelist_query(params) do
     from l in subquery(lifers_query(params)),
-      order_by: [desc: l.observ_date, desc_nulls_first: l.start_time, desc: l.id]
+      order_by: [asc: l.observ_date, asc_nulls_last: l.start_time, asc: l.id]
   end
 
   defp lifers_query(params) do
