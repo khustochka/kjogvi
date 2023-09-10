@@ -44,7 +44,7 @@ defmodule Kjogvi.Birding.Lifelist do
           taxon_key: o.taxon_key,
           observ_date: c.observ_date,
           start_time: c.start_time,
-          location_id: coalesce(o.patch_id, c.location_id)
+          location_id: c.location_id
         }
 
     Enum.reduce(params, base, fn {k, val}, query ->

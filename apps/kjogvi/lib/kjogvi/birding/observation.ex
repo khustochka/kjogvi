@@ -13,7 +13,6 @@ defmodule Kjogvi.Birding.Observation do
     field :voice, :boolean, default: false
     field :notes, :string
     field :private_notes, :string
-    belongs_to(:patch, Kjogvi.Birding.Location)
     field :unreported, :boolean, default: false
     field :ebird_obs_id, :string
 
