@@ -66,6 +66,7 @@ defmodule Kjogvi.Birding.LifelistTest do
     test "uses subspecies observation date if it is earlier than the full species" do
       book = Ornitho.Factory.insert(:book)
       species = Ornitho.Factory.insert(:taxon, book: book, category: "species")
+
       subspecies =
         Ornitho.Factory.insert(:taxon, book: book, category: "issf", parent_species: species)
 

@@ -23,7 +23,11 @@ defmodule Kjogvi.Birding.Location do
     belongs_to(:cached_subdivision, Kjogvi.Birding.Location)
     belongs_to(:cached_country, Kjogvi.Birding.Location)
 
+    has_many(:cards, Kjogvi.Birding.Card)
+
     timestamps()
+
+    field :cards_count, :integer, virtual: true
   end
 
   @doc false

@@ -30,6 +30,7 @@ defmodule Kjogvi.Birding do
 
   def get_locations do
     Location
+    |> load_cards_count()
     |> Repo.all()
   end
 
@@ -38,6 +39,14 @@ defmodule Kjogvi.Birding do
       left_join: obs in assoc(c, :observations),
       group_by: c.id,
       select_merge: %{observation_count: count(obs.id)}
+    )
+  end
+
+  defp load_cards_count(query) do
+    from(l in query,
+      left_join: c in assoc(l, :cards),
+      group_by: l.id,
+      select_merge: %{cards_count: count(c.id)}
     )
   end
 
