@@ -9,8 +9,11 @@ defmodule KjogviWeb.Router do
   # as long as you are also using SSL (which you should anyway).
   import Phoenix.LiveDashboard.Router
 
+  import KjogviWeb.Plug
+
   pipeline :browser do
     plug :accepts, ["html"]
+    plug :remove_trailing_slash
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {KjogviWeb.Layouts, :root}
