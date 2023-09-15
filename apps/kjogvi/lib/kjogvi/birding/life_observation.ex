@@ -5,7 +5,6 @@ defmodule Kjogvi.Birding.LifeObservation do
   """
 
   use Kjogvi.Schema
-  import Ecto.Changeset
 
   @primary_key false
   embedded_schema do
@@ -19,12 +18,5 @@ defmodule Kjogvi.Birding.LifeObservation do
 
     field :taxon, :map, virtual: true
     field :species, :map, virtual: true
-  end
-
-  @doc false
-  def changeset(card, attrs) do
-    card
-    |> cast(attrs, [])
-    |> validate_required([])
   end
 end

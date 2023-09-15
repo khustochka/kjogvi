@@ -26,6 +26,11 @@ defmodule Kjogvi.Birding.Observation do
   def changeset(card, attrs) do
     card
     |> cast(attrs, [])
-    |> validate_required([])
+    |> validate_required([
+      :card_id,
+      :taxon_key,
+      :voice,
+      :unreported
+    ])
   end
 end

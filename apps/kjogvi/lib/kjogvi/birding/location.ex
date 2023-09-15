@@ -34,6 +34,13 @@ defmodule Kjogvi.Birding.Location do
   def changeset(location, attrs) do
     location
     |> cast(attrs, [])
-    |> validate_required([])
+    |> validate_required([
+      :slug,
+      :name_en,
+      :ancestry,
+      :is_private,
+      :is_patch,
+      :is_5mr
+    ])
   end
 end
