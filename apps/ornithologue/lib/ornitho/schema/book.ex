@@ -13,6 +13,7 @@ defmodule Ornitho.Schema.Book do
   use Ornitho.Schema
 
   alias __MODULE__
+  alias Ornitho.Schema.Taxon
 
   @default_order [asc: :slug, asc: :version]
 
@@ -27,7 +28,7 @@ defmodule Ornitho.Schema.Book do
     # Time when the taxa were imported
     field(:imported_at, :utc_datetime_usec)
 
-    has_many(:taxa, Ornitho.Schema.Taxon)
+    has_many(:taxa, Taxon, preload_order: [asc: :sort_order])
 
     timestamps()
 
