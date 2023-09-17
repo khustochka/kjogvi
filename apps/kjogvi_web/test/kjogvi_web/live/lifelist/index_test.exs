@@ -62,10 +62,40 @@ defmodule KjogviWeb.LifelistLive.IndexTest do
   end
 
   @tag :skip
-  test "empty lifelist", %{conn: conn} do
+  test "empty year lifelist returns Not Found, but still renders", %{conn: conn} do
     conn = get(conn, "/lifelist/2022")
     resp = html_response(conn, 404)
 
     assert resp =~ "Total of 0 species."
+  end
+
+  test "empty full lifelist is indexed", %{conn: conn} do
+    conn = get(conn, "/lifelist")
+    resp = html_response(conn, 200)
+
+    {:ok, html} = Floki.parse_document(resp)
+
+    assert Enum.empty?(Floki.find(html, "meta[name=robots]"))
+  end
+
+  test "non-empty year list is indexed", %{conn: conn} do
+    species = Ornitho.Factory.insert(:taxon, category: "species")
+    card = insert(:card, observ_date: ~D[2023-06-07])
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(species))
+    conn = get(conn, "/lifelist/2023")
+    resp = html_response(conn, 200)
+
+    {:ok, html} = Floki.parse_document(resp)
+
+    assert Enum.empty?(Floki.find(html, "meta[name=robots]"))
+  end
+
+  test "empty year list is not indexed", %{conn: conn} do
+    conn = get(conn, "/lifelist/2022")
+    resp = html_response(conn, 200)
+
+    {:ok, html} = Floki.parse_document(resp)
+
+    assert Floki.attribute(html, "meta[name=robots]", "content") == ["noindex"]
   end
 end

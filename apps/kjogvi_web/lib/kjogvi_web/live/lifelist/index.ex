@@ -13,33 +13,22 @@ defmodule KjogviWeb.LifelistLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    if params["year"] && !(params["year"] =~ ~r/\A\d{4}\Z/) do
-      raise KjogviWeb.Exception.BadParams
-    end
-
-    year =
-      case params["year"] do
-        str when is_binary(str) -> String.to_integer(str)
-        val when is_integer(val) or is_nil(val) -> val
-      end
-
+    year = validate_and_convert_year(params["year"])
     lifelist = Birding.Lifelist.generate(year: year)
-    title = lifelist_title(params)
     years = Birding.Lifelist.years(year: year)
-
-    # if Enum.empty?(lifelist) do
-    #   IEx.pry()
-    # end
 
     {
       :noreply,
       socket
-      |> assign(:lifelist, lifelist)
-      |> assign(:total, length(lifelist))
-      |> assign(:year, year)
-      |> assign(:years, years)
-      |> assign(:page_header, title)
-      |> assign(:page_title, title)
+      |> assign(
+        lifelist: lifelist,
+        total: length(lifelist),
+        year: year,
+        years: years
+      )
+      |> derive_page_header()
+      |> derive_page_title()
+      |> derive_robots()
     }
   end
 
@@ -100,11 +89,50 @@ defmodule KjogviWeb.LifelistLive.Index do
     """
   end
 
-  def lifelist_title(%{"year" => year} = _params) when not is_nil(year) do
+  defp validate_and_convert_year(nil = _year) do
+    nil
+  end
+
+  defp validate_and_convert_year(year) when is_binary(year) do
+    if year =~ ~r/\A\d{4}\Z/ do
+      String.to_integer(year)
+    else
+      raise KjogviWeb.Exception.BadParams
+    end
+  end
+
+  defp validate_and_convert_year(_year) do
+    raise KjogviWeb.Exception.BadParams
+  end
+
+  defp lifelist_title(%{year: nil}) do
+    "Lifelist"
+  end
+
+  defp lifelist_title(%{year: year}) when is_integer(year) do
     "#{year} Year List"
   end
 
-  def lifelist_title(_) do
-    "Lifelist"
+  defp derive_page_header(socket) do
+    socket
+    |> assign(:page_header, lifelist_title(socket.assigns))
+  end
+
+  defp derive_page_title(%{assigns: assigns} = socket) do
+    socket
+    |> assign(:page_title, assigns[:page_header] || lifelist_title(assigns))
+  end
+
+  defp derive_robots(%{assigns: %{year: nil}} = socket) do
+    socket
+  end
+
+  defp derive_robots(%{assigns: %{lifelist: []}} = socket) do
+    socket
+    |> assign(:robots, [:noindex])
+  end
+
+  defp derive_robots(socket) do
+    socket
   end
 end
