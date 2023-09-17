@@ -98,4 +98,22 @@ defmodule KjogviWeb.LifelistLive.IndexTest do
 
     assert Floki.attribute(html, "meta[name=robots]", "content") == ["noindex"]
   end
+
+  @tag skip: "False negative test (passing when it should fail)"
+  test "noindex disappears when navigating from empty to non-empty year list", %{conn: conn} do
+    species = Ornitho.Factory.insert(:taxon, category: "species")
+    card = insert(:card, observ_date: ~D[2023-06-07])
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(species))
+
+    {:ok, index_live, doc} = live(conn, ~p"/lifelist/2022")
+    {:ok, html} = Floki.parse_document(doc)
+
+    assert Floki.attribute(html, "meta[name=robots]", "content") == ["noindex"]
+
+    doc2 = index_live |> element("a", "2023") |> render_click()
+
+    {:ok, html2} = Floki.parse_document(doc2)
+
+    assert Enum.empty?(Floki.find(html2, "meta[name=robots]"))
+  end
 end
