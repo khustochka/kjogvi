@@ -4,13 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-
-    <%= if assigns[:robots] do %>
-      <meta name="robots" content={robots(assigns[:robots])} />
-    <% end %>
-
-    <%!-- <.live_meta meta={assigns[:meta]} /> --%>
-
+    <!-- This section is not Live-refreshed, so in Dev Tools it may show the data for the initial page -->
+    <.meta_robots content={assigns[:robots]} />
+    <!-- End of not Live-refreshed section -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

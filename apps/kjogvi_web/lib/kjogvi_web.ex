@@ -98,6 +98,7 @@ defmodule KjogviWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import KjogviWeb.CoreComponents
+      import KjogviWeb.MetaComponents
       import KjogviWeb.Gettext
 
       # Shortcut for generating JS commands
