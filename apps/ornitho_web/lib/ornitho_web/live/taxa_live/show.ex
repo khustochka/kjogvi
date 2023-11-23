@@ -57,6 +57,7 @@ defmodule OrnithoWeb.TaxaLive.Show do
           <%= @taxon.order %> / <%= @taxon.family %>
         </:item>
         <:item title="Code"><span class="font-mono"><%= @taxon.code %></span></:item>
+        <:item title="Taxon Concept ID"><%= @taxon.taxon_concept_id %></:item>
         <:item :if={@taxon.parent_species} title="Parent species">
           <.link patch={
             OrnithoWeb.LinkHelper.path(
