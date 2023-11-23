@@ -21,6 +21,10 @@ defmodule KjogviWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  pipeline :lifelist do
+    plug :validate_lifelist_params
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -50,6 +54,7 @@ defmodule KjogviWeb.Router do
 
   scope "/lifelist", KjogviWeb do
     pipe_through :browser
+    pipe_through :lifelist
 
     live "/", LifelistLive.Index, :index
     live "/:year", LifelistLive.Index, :index

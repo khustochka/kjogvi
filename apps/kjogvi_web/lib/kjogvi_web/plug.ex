@@ -25,4 +25,25 @@ defmodule KjogviWeb.Plug do
       conn
     end
   end
+
+  def validate_lifelist_params(%{path_params: path_params} = conn, _opts) do
+    conn
+    |> assign(:year, validate_and_convert_year(path_params[:year]))
+  end
+
+  defp validate_and_convert_year(nil = _year) do
+    nil
+  end
+
+  defp validate_and_convert_year(year) when is_binary(year) do
+    if year =~ ~r/\A\d{4}\Z/ do
+      String.to_integer(year)
+    else
+      raise KjogviWeb.Exception.BadParams
+    end
+  end
+
+  defp validate_and_convert_year(_year) do
+    raise KjogviWeb.Exception.BadParams
+  end
 end
