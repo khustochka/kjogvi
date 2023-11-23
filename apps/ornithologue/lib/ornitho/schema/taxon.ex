@@ -21,6 +21,7 @@ defmodule Ornitho.Schema.Taxon do
     field(:name_sci, :string)
     field(:name_en, :string)
     field(:code, :string)
+    field(:taxon_concept_id, :string)
     field(:category, :string)
     field(:authority, :string)
     field(:authority_brackets, :boolean)
