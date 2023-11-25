@@ -1,6 +1,6 @@
 defmodule Kjogvi.Birding do
   @moduledoc """
-  Birding related functionality (locations, cards, observations).
+  Birding related functionality (cards, observations).
   """
 
   import Ecto.Query
@@ -9,7 +9,6 @@ defmodule Kjogvi.Birding do
 
   alias __MODULE__.Observation
   alias __MODULE__.Card
-  alias __MODULE__.Location
 
   def get_cards(%{page: page, page_size: page_size}) do
     Card
@@ -28,25 +27,11 @@ defmodule Kjogvi.Birding do
     %{card | observations: card.observations}
   end
 
-  def get_locations do
-    Location
-    |> load_cards_count()
-    |> Repo.all()
-  end
-
   def load_observation_count(query) do
     from(c in query,
       left_join: obs in assoc(c, :observations),
       group_by: c.id,
       select_merge: %{observation_count: count(obs.id)}
-    )
-  end
-
-  defp load_cards_count(query) do
-    from(l in query,
-      left_join: c in assoc(l, :cards),
-      group_by: l.id,
-      select_merge: %{cards_count: count(c.id)}
     )
   end
 

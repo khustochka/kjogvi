@@ -8,7 +8,7 @@ defmodule Kjogvi.Birding.Card do
 
   schema "cards" do
     field :observ_date, :date
-    belongs_to(:location, Kjogvi.Birding.Location)
+    belongs_to(:location, Kjogvi.Geo.Location)
 
     field :effort_type, :string
     field :start_time, :time

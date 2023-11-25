@@ -4,7 +4,7 @@ defmodule Kjogvi.Factory do
   use ExMachina.Ecto, repo: Kjogvi.Repo
 
   def location_factory do
-    %Kjogvi.Birding.Location{
+    %Kjogvi.Geo.Location{
       slug: sequence(:slug, &"winnipeg#{&1}"),
       name_en: sequence(:slug, &"Winnipeg - #{&1}")
     }

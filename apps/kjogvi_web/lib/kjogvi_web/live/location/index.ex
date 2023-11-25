@@ -1,11 +1,11 @@
 defmodule KjogviWeb.LocationLive.Index do
   use KjogviWeb, :live_view
 
-  alias Kjogvi.Birding
+  alias Kjogvi.Geo
 
   @impl true
   def mount(_params, _session, socket) do
-    locations = Birding.get_locations()
+    locations = Geo.get_locations()
 
     top_locations =
       locations

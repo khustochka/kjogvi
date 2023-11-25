@@ -13,7 +13,7 @@ defmodule Kjogvi.Birding.LifeObservation do
     field :observ_date, :date
     field :start_time, :time
 
-    belongs_to(:location, Kjogvi.Birding.Location)
+    belongs_to(:location, Kjogvi.Geo.Location)
     belongs_to(:card, Kjogvi.Birding.Card)
 
     field :taxon, :map, virtual: true
