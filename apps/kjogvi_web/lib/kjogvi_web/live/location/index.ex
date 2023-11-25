@@ -21,6 +21,14 @@ defmodule KjogviWeb.LocationLive.Index do
   end
 
   @impl true
+  def handle_params(_params, _url, socket) do
+    {
+      :noreply,
+      socket
+    }
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <.header>
