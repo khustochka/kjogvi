@@ -41,7 +41,9 @@ defmodule KjogviWeb.CardLive.Index do
       <:col :let={card} label="id">
         <.link navigate={~p"/cards/#{card.id}"}><%= card.id %></.link>
       </:col>
-      <:col :let={card} label="Location"><%= card.location.name_en %></:col>
+      <:col :let={card} label="Location">
+        <%= location_with_country(card.location) %>
+      </:col>
       <:col :let={card} label="Date"><%= card.observ_date %></:col>
       <:col :let={card} label="Start time"><%= card.start_time %></:col>
       <:col :let={card} label="Effort"><%= card.effort_type %></:col>
@@ -50,5 +52,12 @@ defmodule KjogviWeb.CardLive.Index do
 
     <%= paginate(@socket, @cards, &KjogviWeb.Router.Helpers.card_page_path/4, [:index], live: true) %>
     """
+  end
+
+  defp location_with_country(location) do
+    [location, location.country]
+    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.map(& &1.name_en)
+    |> Enum.join(", ")
   end
 end

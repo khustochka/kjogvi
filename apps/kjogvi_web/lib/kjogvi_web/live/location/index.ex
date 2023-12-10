@@ -31,22 +31,15 @@ defmodule KjogviWeb.LocationLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
+    <%!-- FIXME: Extract to partial --%>
+    <.link patch={~p{/locations/countries}}>Countries</.link>
+    <.link patch={~p{/locations}}>Locations</.link>
+
     <.header>
       Locations
     </.header>
 
     <%= render_with_children(%{locations: @top_locations, all_locations: @locations}) %>
-
-    <%!-- <.table id="locations" rows={@locations}>
-      <:col :let={location} label="id"><%= location.id %></:col>
-      <:col :let={location} label="slug"><%= location.slug %></:col>
-      <:col :let={location} label="name"><%= location.name_en %></:col>
-      <:col :let={location} label="type"><%= location.location_type %></:col>
-      <:col :let={location} label="iso"><%= location.iso_code %></:col>
-      <:col :let={location} label="private?"><%= location.is_private %></:col>
-      <:col :let={location} label="5MR"><%= location.is_5mr %></:col>
-      <:col :let={location} label="patch?"><%= location.is_patch %></:col>
-    </.table> --%>
     """
   end
 

@@ -62,6 +62,7 @@ defmodule KjogviWeb.LifelistLive.Index do
           <th class="p-0 pr-6 pb-4 font-normal">Species</th>
           <th class="p-0 pr-6 pb-4 font-normal text-center">Date</th>
           <th class="p-0 pr-6 pb-4 font-normal">Location</th>
+          <th class="p-0 pr-6 pb-4 font-normal">Country</th>
           <th class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
         </tr>
       </thead>
@@ -77,6 +78,11 @@ defmodule KjogviWeb.LifelistLive.Index do
               <%= lifer.observ_date %>
             </td>
             <td class="p-0 py-4 pr-6"><%= lifer.location.name_en %></td>
+            <td class="p-0 py-4 pr-6">
+              <%= if lifer.location.country do %>
+                <%= lifer.location.country.name_en %>
+              <% end %>
+            </td>
             <td class="p-0 py-4 pr-6 text-center">
               <.link navigate={~p"/cards/#{lifer.card_id}"}>
                 <.icon name="hero-clipboard-document-list" class="w-[18px]" />

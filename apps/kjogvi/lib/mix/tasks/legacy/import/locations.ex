@@ -40,10 +40,7 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
     %{loc | ancestry: ancestors}
   end
 
-  defp transform_keys(
-         %{five_mile_radius: is_5mr, loc_type: loc_type, patch: is_patch, private_loc: is_private} =
-           loc
-       ) do
+  defp transform_keys(%{loc_type: loc_type} = loc) do
     location_type =
       case loc_type do
         "" -> nil
@@ -60,12 +57,14 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
       :private_loc,
       :ebird_location_id,
       :name_ru,
-      :name_uk
+      :name_uk,
+      :cached_country_id
     ])
-    |> Map.put(:is_5mr, is_5mr)
+    |> Map.put(:is_5mr, loc.five_mile_radius)
     |> Map.put(:location_type, location_type)
-    |> Map.put(:is_patch, is_patch)
-    |> Map.put(:is_private, is_private)
+    |> Map.put(:is_patch, loc.patch)
+    |> Map.put(:is_private, loc.private_loc)
+    |> Map.put(:country_id, loc.cached_country_id)
     |> Map.put(:inserted_at, time)
     |> Map.put(:updated_at, time)
   end

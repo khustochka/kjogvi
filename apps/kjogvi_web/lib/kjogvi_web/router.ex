@@ -42,6 +42,7 @@ defmodule KjogviWeb.Router do
     pipe_through :browser
 
     live "/", LocationLive.Index, :index
+    live "/countries", CountryLive.Index, :index
   end
 
   scope "/cards", KjogviWeb do

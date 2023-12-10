@@ -18,10 +18,11 @@ defmodule Kjogvi.Geo.Location do
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
+    belongs_to(:country, Kjogvi.Geo.Location)
+
     belongs_to(:cached_parent, Kjogvi.Geo.Location)
     belongs_to(:cached_city, Kjogvi.Geo.Location)
     belongs_to(:cached_subdivision, Kjogvi.Geo.Location)
-    belongs_to(:cached_country, Kjogvi.Geo.Location)
 
     has_many(:cards, Kjogvi.Birding.Card)
 

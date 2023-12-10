@@ -9,6 +9,12 @@ defmodule Kjogvi.Geo do
 
   alias __MODULE__.Location
 
+  def get_countries do
+    Location
+    |> where(location_type: "country")
+    |> Repo.all()
+  end
+
   def get_locations do
     Location
     |> load_cards_count()
