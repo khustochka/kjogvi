@@ -53,6 +53,9 @@ defmodule Kjogvi.Birding.Lifelist do
         :year when not is_nil(val) ->
           query |> where(fragment("EXTRACT(year from observ_date)::integer = ?", ^val))
 
+        :location when not is_nil(val) ->
+          filter_by_location(query, val)
+
         _ ->
           query
       end
@@ -63,5 +66,17 @@ defmodule Kjogvi.Birding.Lifelist do
     from o in Observation,
       join: c in assoc(o, :card),
       where: o.unreported == false
+  end
+
+  defp filter_by_location(query, %{id: id, locus_type: "country"}) do
+    from [_, c] in query,
+      join: l in assoc(c, :location),
+      where: l.country_id == ^id or l.id == ^id
+  end
+
+  defp filter_by_location(query, %{id: id}) do
+    from [_, c] in query,
+      join: l in assoc(c, :location),
+      where: ^id in l.ancestry or l.id == ^id
   end
 end

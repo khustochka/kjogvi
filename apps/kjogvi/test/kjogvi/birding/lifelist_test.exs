@@ -89,25 +89,78 @@ defmodule Kjogvi.Birding.LifelistTest do
     end
 
     test "filtered by year" do
-      taxon = Ornitho.Factory.insert(:taxon)
+      taxon1 = Ornitho.Factory.insert(:taxon)
       card1 = insert(:card, observ_date: ~D"2022-11-18")
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      taxon2 = Ornitho.Factory.insert(:taxon)
       card2 = insert(:card, observ_date: ~D"2023-07-16")
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(%{year: 2022})
       assert length(result) == 1
     end
 
     test "filtered by missing year" do
-      taxon = Ornitho.Factory.insert(:taxon)
+      taxon1 = Ornitho.Factory.insert(:taxon)
       card1 = insert(:card, observ_date: ~D"2022-11-18")
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      taxon2 = Ornitho.Factory.insert(:taxon)
       card2 = insert(:card, observ_date: ~D"2023-07-16")
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(%{year: 2005})
       assert result == []
+    end
+
+    test "filtered by country" do
+      ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
+      usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+      brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, location: brovary)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, location: usa)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      result = Kjogvi.Birding.Lifelist.generate(%{location: ukraine})
+      assert length(result) == 1
+    end
+
+    test "filtered by location" do
+      ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
+      usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+      brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, location: brovary)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, location: usa)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      result = Kjogvi.Birding.Lifelist.generate(%{location: brovary})
+      assert length(result) == 1
+    end
+
+    test "filtered by year and country" do
+      ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
+      usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+      brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2022-11-18", location: brovary)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, observ_date: ~D"2023-07-16", location: brovary)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      taxon3 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, observ_date: ~D"2022-07-16", location: usa)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+
+      result = Kjogvi.Birding.Lifelist.generate(%{location: ukraine, year: 2022})
+      assert length(result) == 1
     end
   end
 end
