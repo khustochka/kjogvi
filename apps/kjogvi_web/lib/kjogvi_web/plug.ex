@@ -28,7 +28,7 @@ defmodule KjogviWeb.Plug do
 
   def validate_lifelist_params(%{path_params: path_params} = conn, _opts) do
     conn
-    |> assign(:year, validate_and_convert_year(path_params[:year]))
+    |> assign(:year, validate_and_convert_year(path_params["year"]))
   end
 
   defp validate_and_convert_year(nil = _year) do

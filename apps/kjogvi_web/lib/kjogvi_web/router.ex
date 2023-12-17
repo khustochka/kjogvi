@@ -22,7 +22,7 @@ defmodule KjogviWeb.Router do
   end
 
   pipeline :lifelist do
-    plug :validate_lifelist_params
+    # plug :validate_lifelist_params
   end
 
   pipeline :api do
