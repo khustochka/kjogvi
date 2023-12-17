@@ -81,6 +81,5 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
 
     create index(:observations, [:card_id])
     create index(:observations, [:taxon_key])
-
   end
 end
