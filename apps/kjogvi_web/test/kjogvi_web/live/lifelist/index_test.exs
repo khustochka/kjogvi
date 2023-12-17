@@ -1,4 +1,4 @@
-defmodule KjogviWeb.LifelistLive.IndexTest do
+defmodule KjogviWeb.Live.Lifelist.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest

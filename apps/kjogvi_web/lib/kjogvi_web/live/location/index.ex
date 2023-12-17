@@ -1,4 +1,4 @@
-defmodule KjogviWeb.LocationLive.Index do
+defmodule KjogviWeb.Live.Location.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Geo

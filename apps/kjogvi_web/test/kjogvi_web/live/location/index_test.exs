@@ -1,4 +1,4 @@
-defmodule KjogviWeb.LocationLive.IndexTest do
+defmodule KjogviWeb.Live.Location.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest

@@ -1,4 +1,4 @@
-defmodule OrnithoWeb.BookLive.Show do
+defmodule OrnithoWeb.Live.Book.Show do
   use OrnithoWeb, :live_view
 
   import OrnithoWeb.BreadcrumbsComponents
@@ -57,7 +57,7 @@ defmodule OrnithoWeb.BookLive.Show do
       </.list>
     </div>
     <.live_component
-      module={OrnithoWeb.TaxaLive.Index}
+      module={OrnithoWeb.Live.Taxa.Index}
       id="taxa-index"
       book={@book}
       page_num={@page_num}

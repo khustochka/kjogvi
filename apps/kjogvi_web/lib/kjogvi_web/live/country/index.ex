@@ -1,4 +1,4 @@
-defmodule KjogviWeb.CountryLive.Index do
+defmodule KjogviWeb.Live.Country.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Geo

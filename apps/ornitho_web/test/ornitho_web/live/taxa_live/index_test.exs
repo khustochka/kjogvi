@@ -1,4 +1,4 @@
-defmodule OrnithoWeb.TaxaLive.IndexTest do
+defmodule OrnithoWeb.Live.Taxa.IndexTest do
   use OrnithoWeb.ConnCase
   use OrnithoWeb.OrnithoCase
 

@@ -1,4 +1,4 @@
-defmodule KjogviWeb.CardLive.Show do
+defmodule KjogviWeb.Live.Card.Show do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Birding

@@ -1,4 +1,4 @@
-defmodule KjogviWeb.CardLive.IndexTest do
+defmodule KjogviWeb.Live.Card.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest

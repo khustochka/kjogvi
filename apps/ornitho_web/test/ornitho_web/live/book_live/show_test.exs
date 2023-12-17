@@ -1,4 +1,4 @@
-defmodule OrnithoWeb.BookLive.ShowTest do
+defmodule OrnithoWeb.Live.Book.ShowTest do
   use OrnithoWeb.ConnCase
   use OrnithoWeb.OrnithoCase
 

@@ -1,4 +1,4 @@
-defmodule KjogviWeb.LifelistLive.Index do
+defmodule KjogviWeb.Live.Lifelist.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Birding

@@ -23,9 +23,9 @@ defmodule OrnithoWeb.Router do
 
             get "/", OrnithoWeb.BooksController, :index, route_opts
 
-            live "/:slug/:version", OrnithoWeb.BookLive.Show, nil, route_opts
-            live "/:slug/:version/page/:page", OrnithoWeb.BookLive.Show, nil, route_opts
-            live "/:slug/:version/:code", OrnithoWeb.TaxaLive.Show, nil, route_opts
+            live "/:slug/:version", OrnithoWeb.Live.Book.Show, nil, route_opts
+            live "/:slug/:version/page/:page", OrnithoWeb.Live.Book.Show, nil, route_opts
+            live "/:slug/:version/:code", OrnithoWeb.Live.Taxa.Show, nil, route_opts
           end
         end
       end

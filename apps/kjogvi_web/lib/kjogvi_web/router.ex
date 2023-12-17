@@ -41,24 +41,24 @@ defmodule KjogviWeb.Router do
   scope "/locations", KjogviWeb do
     pipe_through :browser
 
-    live "/", LocationLive.Index, :index
-    live "/countries", CountryLive.Index, :index
+    live "/", Live.Location.Index, :index
+    live "/countries", Live.Country.Index, :index
   end
 
   scope "/cards", KjogviWeb do
     pipe_through :browser
 
-    live "/", CardLive.Index, :index
-    live "/page/:page", CardLive.Index, :index, as: :card_page
-    live "/:id", CardLive.Show, :show
+    live "/", Live.Card.Index, :index
+    live "/page/:page", Live.Card.Index, :index, as: :card_page
+    live "/:id", Live.Card.Show, :show
   end
 
   scope "/lifelist", KjogviWeb do
     pipe_through :browser
     pipe_through :lifelist
 
-    live "/", LifelistLive.Index, :index
-    live "/:year", LifelistLive.Index, :index
+    live "/", Live.Lifelist.Index, :index
+    live "/:year", Live.Lifelist.Index, :index
   end
 
   # Other scopes may use custom stacks.

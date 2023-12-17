@@ -1,4 +1,4 @@
-defmodule OrnithoWeb.TaxaLive.Show do
+defmodule OrnithoWeb.Live.Taxa.Show do
   use OrnithoWeb, :live_view
 
   import OrnithoWeb.BreadcrumbsComponents
@@ -76,7 +76,7 @@ defmodule OrnithoWeb.TaxaLive.Show do
     <div :if={@taxon.child_taxa != []} class="mt-6">
       <h2>Child taxa</h2>
       <.live_component
-        module={OrnithoWeb.TaxaLive.Table}
+        module={OrnithoWeb.Live.Taxa.Table}
         id="child-taxa-table"
         book={@book}
         taxa={@taxon.child_taxa}

@@ -1,4 +1,4 @@
-defmodule OrnithoWeb.TaxaLive.Index do
+defmodule OrnithoWeb.Live.Taxa.Index do
   use OrnithoWeb, :live_component
 
   import OrnithoWeb.PaginationComponents
@@ -49,7 +49,7 @@ defmodule OrnithoWeb.TaxaLive.Index do
         />
       </form>
 
-      <.live_component module={OrnithoWeb.TaxaLive.Table} id="taxa-table" book={@book} taxa={@taxa} />
+      <.live_component module={OrnithoWeb.Live.Taxa.Table} id="taxa-table" book={@book} taxa={@taxa} />
 
       <.simple_pagination
         :if={!@search_enabled}
