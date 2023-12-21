@@ -49,18 +49,6 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert not (html =~ species1.name_en)
   end
 
-  test "unacceptable year segment - string", %{conn: conn} do
-    assert_raise KjogviWeb.Exception.BadParams, fn ->
-      get(conn, "/lifelist/abc")
-    end
-  end
-
-  test "unacceptable year segment - number", %{conn: conn} do
-    assert_raise KjogviWeb.Exception.BadParams, fn ->
-      get(conn, "/lifelist/20233")
-    end
-  end
-
   @tag :skip
   # See branch empty_lifelist_404
   test "empty year lifelist returns Not Found, but still renders", %{conn: conn} do
@@ -116,5 +104,50 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     {:ok, html2} = Floki.parse_document(doc2)
 
     assert Enum.empty?(Floki.find(html2, "meta[name=robots]"))
+  end
+
+  test "lifelist filtered by location", %{conn: conn} do
+    ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
+    usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+    taxon1 = Ornitho.Factory.insert(:taxon)
+    card1 = insert(:card, location: brovary)
+    insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    taxon2 = Ornitho.Factory.insert(:taxon)
+    card2 = insert(:card, location: usa)
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+    conn = get(conn, "/lifelist/ukraine")
+    resp = html_response(conn, 200)
+
+    assert resp =~ "Total of 1 species."
+  end
+
+  test "lifelist filtered by year and location", %{conn: conn} do
+    ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
+    usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+    taxon1 = Ornitho.Factory.insert(:taxon)
+    card1 = insert(:card, observ_date: ~D"2022-11-18", location: brovary)
+    insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    taxon2 = Ornitho.Factory.insert(:taxon)
+    card2 = insert(:card, observ_date: ~D"2023-07-16", location: brovary)
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    taxon3 = Ornitho.Factory.insert(:taxon)
+    card2 = insert(:card, observ_date: ~D"2022-07-16", location: usa)
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+
+    conn = get(conn, "/lifelist/2022/ukraine")
+    resp = html_response(conn, 200)
+
+    assert resp =~ "Total of 1 species."
+  end
+
+  test "lifelist with valid year and invalid location", %{conn: conn} do
+    assert_raise Ecto.NoResultsError, fn ->
+      get(conn, "/lifelist/2022/testtest")
+    end
   end
 end

@@ -58,7 +58,8 @@ defmodule KjogviWeb.Router do
     pipe_through :lifelist
 
     live "/", Live.Lifelist.Index, :index
-    live "/:year", Live.Lifelist.Index, :index
+    live "/:year_or_location", Live.Lifelist.Index, :index
+    live "/:year/:location", Live.Lifelist.Index, :index
   end
 
   # Other scopes may use custom stacks.

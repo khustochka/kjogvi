@@ -13,9 +13,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    year = validate_and_convert_year(params["year"])
-    lifelist = Birding.Lifelist.generate(year: year)
-    years = Birding.Lifelist.years(year: year)
+    filter = KjogviWeb.Live.Lifelist.Params.to_filter(params)
+    lifelist = Birding.Lifelist.generate(filter)
 
     {
       :noreply,
@@ -23,8 +22,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       |> assign(
         lifelist: lifelist,
         total: length(lifelist),
-        year: year,
-        years: years
+        year: filter[:year],
+        location: filter[:location],
+        years: Birding.Lifelist.years(Map.delete(filter, :year)),
+        locations: Kjogvi.Geo.get_countries()
       )
       |> derive_page_header()
       |> derive_page_title()
@@ -45,12 +46,25 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
         <b :if={is_nil(@year)}>All years</b>
-        <.link :if={not is_nil(@year)} patch={~p"/lifelist"}>All years</.link>
+        <.link :if={not is_nil(@year)} patch={lifelist_path(nil, @location)}>All years</.link>
       </li>
       <%= for year <- @years do %>
         <li>
           <b :if={@year == year}><%= year %></b>
-          <.link :if={@year != year} patch={~p"/lifelist/#{year}"}><%= year %></.link>
+          <.link :if={@year != year} patch={lifelist_path(year, @location)}><%= year %></.link>
+        </li>
+      <% end %>
+    </ul>
+
+    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
+      <li class="whitespace-nowrap">
+        <b :if={is_nil(@location)}>All countries</b>
+        <.link :if={not is_nil(@location)} patch={lifelist_path(@year, nil)}>All countries</.link>
+      </li>
+      <%= for location <- @locations do %>
+        <li>
+          <b :if={@location == location}><%= location.name_en %></b>
+          <.link :if={@location != location} patch={lifelist_path(@year, location)}><%= location.name_en %></.link>
         </li>
       <% end %>
     </ul>
@@ -95,28 +109,20 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  defp validate_and_convert_year(nil = _year) do
-    nil
-  end
-
-  defp validate_and_convert_year(year) when is_binary(year) do
-    if year =~ ~r/\A\d{4}\Z/ do
-      String.to_integer(year)
-    else
-      raise KjogviWeb.Exception.BadParams
-    end
-  end
-
-  defp validate_and_convert_year(_year) do
-    raise KjogviWeb.Exception.BadParams
-  end
-
-  defp lifelist_title(%{year: nil}) do
+  defp lifelist_title(%{year: nil, location: nil}) do
     "Lifelist"
   end
 
-  defp lifelist_title(%{year: year}) when is_integer(year) do
+  defp lifelist_title(%{year: year, location: nil}) when is_integer(year) do
     "#{year} Year List"
+  end
+
+  defp lifelist_title(%{year: nil, location: location}) do
+    "#{location.name_en} Life List"
+  end
+
+  defp lifelist_title(%{year: year, location: location}) when is_integer(year) do
+    "#{year} #{location.name_en} List"
   end
 
   defp derive_page_header(socket) do
@@ -140,5 +146,21 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp derive_robots(socket) do
     socket
+  end
+
+  defp lifelist_path(_year = nil, _location = nil) do
+    ~p"/lifelist"
+  end
+
+  defp lifelist_path(year, _location = nil) do
+    ~p"/lifelist/#{year}"
+  end
+
+  defp lifelist_path(_year = nil, location) do
+    ~p"/lifelist/#{location.slug}"
+  end
+
+  defp lifelist_path(year, location) do
+    ~p"/lifelist/#{year}/#{location.slug}"
   end
 end
