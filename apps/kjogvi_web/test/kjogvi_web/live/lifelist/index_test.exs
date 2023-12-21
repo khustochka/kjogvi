@@ -62,6 +62,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   @tag :skip
+  # See branch empty_lifelist_404
   test "empty year lifelist returns Not Found, but still renders", %{conn: conn} do
     conn = get(conn, "/lifelist/2022")
     resp = html_response(conn, 404)
