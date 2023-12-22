@@ -6,6 +6,7 @@ defmodule Kjogvi.Birding.Lifelist do
   import Ecto.Query
 
   alias Kjogvi.Repo
+  alias Kjogvi.Query
 
   alias Kjogvi.Birding.Observation
   alias Kjogvi.Birding.LifeObservation
@@ -42,7 +43,7 @@ defmodule Kjogvi.Birding.Lifelist do
     Enum.reduce(params, base, fn {k, val}, query ->
       case k do
         :year when not is_nil(val) ->
-          filter_by_year(query, val)
+          Query.Card.by_year(query, val)
 
         :location when not is_nil(val) ->
           filter_by_location(query, val)
@@ -76,11 +77,6 @@ defmodule Kjogvi.Birding.Lifelist do
     from o in Observation,
       join: c in assoc(o, :card),
       where: o.unreported == false
-  end
-
-  defp filter_by_year(query, year) do
-    query
-    |> where(fragment("EXTRACT(year from observ_date)::integer = ?", ^year))
   end
 
   defp filter_by_location(query, %{id: id, locus_type: "country"}) do
