@@ -79,15 +79,24 @@ defmodule Kjogvi.Birding.Lifelist do
       where: o.unreported == false
   end
 
-  defp filter_by_location(query, %{id: id, locus_type: "country"}) do
+  # Performance is roughly the same but we avoid joining with locations
+  defp filter_by_location(query, %{id: id}) do
+    loc_ids = from l in Kjogvi.Geo.Location,
+      where: ^id in l.ancestry or ^id == l.id,
+      select: l.id
     from [_, c] in query,
-      join: l in assoc(c, :location),
-      where: l.country_id == ^id or l.id == ^id
+      where: c.location_id in subquery(loc_ids)
   end
 
-  defp filter_by_location(query, %{id: id}) do
-    from [_, c] in query,
-      join: l in assoc(c, :location),
-      where: ^id in l.ancestry or l.id == ^id
-  end
+  # defp filter_by_location(query, %{id: id, location_type: "country"}) do
+  #   from [_, c] in query,
+  #     join: l in assoc(c, :location),
+  #     where: l.country_id == ^id or l.id == ^id
+  # end
+
+  # defp filter_by_location(query, %{id: id}) do
+  #   from [_, c] in query,
+  #     join: l in assoc(c, :location),
+  #     where: ^id in l.ancestry or l.id == ^id
+  # end
 end
