@@ -3,8 +3,6 @@ defmodule KjogviWeb.Live.Lifelist.Params do
   Normalizing parameters for Lifelist controller.
   """
 
-  import Ecto.Query
-
   def to_filter(%{"year_or_location" => year_or_location}) do
     if year_or_location =~ ~r/\A\d{4}\Z/ do
       %{year: String.to_integer(year_or_location)}
@@ -26,9 +24,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
   end
 
   defp validate_and_convert_location(location_slug) do
-    from(Kjogvi.Geo.Location)
-    |> where(slug: ^location_slug)
-    |> Kjogvi.Repo.one!()
+    Kjogvi.Geo.location_by_slug!(location_slug)
   end
 
   defp validate_and_convert_year(year) do

@@ -21,6 +21,11 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
+  def location_by_slug!(slug) do
+    Location
+    |> Repo.get_by!(slug: slug)
+  end
+
   defp load_cards_count(query) do
     from(l in query,
       left_join: c in assoc(l, :cards),

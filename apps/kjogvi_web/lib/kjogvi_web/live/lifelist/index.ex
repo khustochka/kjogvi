@@ -64,7 +64,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <%= for location <- @locations do %>
         <li>
           <b :if={@location == location}><%= location.name_en %></b>
-          <.link :if={@location != location} patch={lifelist_path(@year, location)}><%= location.name_en %></.link>
+          <.link :if={@location != location} patch={lifelist_path(@year, location)}>
+            <%= location.name_en %>
+          </.link>
         </li>
       <% end %>
     </ul>

@@ -37,7 +37,7 @@ defmodule Kjogvi.Birding.Lifelist do
   # end
 
   def observations_filtered(params) do
-    base = from [o, c] in observation_base()
+    base = from([o, c] in observation_base())
 
     Enum.reduce(params, base, fn {k, val}, query ->
       case k do
