@@ -24,6 +24,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         total: length(lifelist),
         year: filter[:year],
         location: filter[:location],
+        all_years: Birding.Lifelist.years(),
         years: Birding.Lifelist.years(Map.delete(filter, :year)),
         locations: Kjogvi.Geo.get_countries()
       )
@@ -48,10 +49,17 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <b :if={is_nil(@year)}>All years</b>
         <.link :if={not is_nil(@year)} patch={lifelist_path(nil, @location)}>All years</.link>
       </li>
-      <%= for year <- @years do %>
+      <%= for year <- @all_years do %>
         <li>
-          <b :if={@year == year}><%= year %></b>
-          <.link :if={@year != year} patch={lifelist_path(year, @location)}><%= year %></.link>
+          <%= if @year == year do %>
+            <b><%= year %></b>
+          <% else %>
+            <%= if year in @years do %>
+              <.link patch={lifelist_path(year, @location)}><%= year %></.link>
+            <% else %>
+              <span class="text-gray-500"><%= year %></span>
+            <% end %>
+          <% end %>
         </li>
       <% end %>
     </ul>
