@@ -44,4 +44,17 @@ defmodule Kjogvi.Geo.Location do
       :is_5mr
     ])
   end
+
+  def long_name(%{name_en: name, loc_type: "country"}) do
+    name
+  end
+
+  def long_name(%{name_en: name, country: nil}) do
+    name
+  end
+
+  def long_name(%{name_en: name, country: country}) do
+    [name, country.name_en]
+    |> Enum.join(", ")
+  end
 end
