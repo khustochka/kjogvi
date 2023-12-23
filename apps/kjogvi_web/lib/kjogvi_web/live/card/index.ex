@@ -47,7 +47,11 @@ defmodule KjogviWeb.Live.Card.Index do
       <:col :let={card} label="Date"><%= card.observ_date %></:col>
       <:col :let={card} label="Start time"><%= card.start_time %></:col>
       <:col :let={card} label="Effort"><%= card.effort_type %></:col>
-      <:col :let={card} label="Obs"><%= card.observation_count %></:col>
+      <:col :let={card} label="Obs">
+        <span class="tabular-nums">
+          <%= card.observation_count %>
+        </span>
+      </:col>
     </.table>
 
     <%= paginate(@socket, @cards, &KjogviWeb.Router.Helpers.card_page_path/4, [:index], live: true) %>
