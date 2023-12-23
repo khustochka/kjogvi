@@ -5,6 +5,8 @@ defmodule Kjogvi.Query.Location do
 
   import Ecto.Query
 
+  alias Kjogvi.Geo.Location
+
   def by_slug(query, slug) do
     from l in query, where: l.slug == ^slug
   end
@@ -15,5 +17,10 @@ defmodule Kjogvi.Query.Location do
       group_by: l.id,
       select_merge: %{cards_count: count(c.id)}
     )
+  end
+
+  def child_locations(%{id: id}) do
+    from l in Location,
+      where: ^id in l.ancestry or ^id == l.id
   end
 end

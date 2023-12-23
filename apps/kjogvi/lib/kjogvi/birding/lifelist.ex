@@ -40,13 +40,13 @@ defmodule Kjogvi.Birding.Lifelist do
   def observations_filtered(params) do
     base = from([o, c] in observation_base())
 
-    Enum.reduce(params, base, fn {k, val}, query ->
-      case k do
-        :year when not is_nil(val) ->
-          Query.Card.by_year(query, val)
+    Enum.reduce(params, base, fn filter, query ->
+      case filter do
+        {:year, year} when not is_nil(year) ->
+          Query.Card.by_year(query, year)
 
-        :location when not is_nil(val) ->
-          filter_by_location(query, val)
+        {:location, location} when not is_nil(location) ->
+          Query.Card.by_location_with_descendants(query, location)
 
         _ ->
           query
@@ -78,25 +78,4 @@ defmodule Kjogvi.Birding.Lifelist do
       join: c in assoc(o, :card),
       where: o.unreported == false
   end
-
-  # Performance is roughly the same but we avoid joining with locations
-  defp filter_by_location(query, %{id: id}) do
-    loc_ids = from l in Kjogvi.Geo.Location,
-      where: ^id in l.ancestry or ^id == l.id,
-      select: l.id
-    from [_, c] in query,
-      where: c.location_id in subquery(loc_ids)
-  end
-
-  # defp filter_by_location(query, %{id: id, location_type: "country"}) do
-  #   from [_, c] in query,
-  #     join: l in assoc(c, :location),
-  #     where: l.country_id == ^id or l.id == ^id
-  # end
-
-  # defp filter_by_location(query, %{id: id}) do
-  #   from [_, c] in query,
-  #     join: l in assoc(c, :location),
-  #     where: ^id in l.ancestry or l.id == ^id
-  # end
 end

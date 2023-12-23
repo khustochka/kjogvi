@@ -25,6 +25,6 @@ defmodule Kjogvi.Geo do
   def location_by_slug!(slug) do
     Location
     |> Query.Location.by_slug(slug)
-    |> Repo.one!
+    |> Repo.one!()
   end
 end
