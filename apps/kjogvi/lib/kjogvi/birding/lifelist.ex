@@ -30,12 +30,19 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.sort()
   end
 
-  # def countries(params \\ %{}) do
-  #   observations_filtered(params)
-  #   |> distinct(true)
-  #   |> select([_, c], c.location_id)
-  #   |> Repo.all()
-  # end
+  def country_ids(params \\ %{}) do
+    location_ids =
+      observations_filtered(params)
+      |> distinct(true)
+      |> select([_o, c], [c.location_id])
+
+    from(c in Kjogvi.Geo.Location)
+    |> Query.Location.countries()
+    |> join(:inner, [c], l in Kjogvi.Geo.Location, on: c.id == l.country_id or c.id == l.id)
+    |> where([_c, l], l.id in subquery(location_ids))
+    |> select([c], c.id)
+    |> Repo.all()
+  end
 
   def observations_filtered(params) do
     base = from([o, c] in observation_base())

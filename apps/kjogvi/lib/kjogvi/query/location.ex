@@ -11,12 +11,16 @@ defmodule Kjogvi.Query.Location do
     from l in query, where: l.slug == ^slug
   end
 
+  def countries(query) do
+    from [..., l] in query,
+      where: l.location_type == "country"
+  end
+
   def load_cards_count(query) do
-    from(l in query,
+    from l in query,
       left_join: c in assoc(l, :cards),
       group_by: l.id,
       select_merge: %{cards_count: count(c.id)}
-    )
   end
 
   def child_locations(%{id: id}) do

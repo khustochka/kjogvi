@@ -3,7 +3,7 @@ defmodule Kjogvi.Geo do
   Geography related functionality (countries, regions, locations).
   """
 
-  import Ecto.Query
+  # import Ecto.Query
 
   alias Kjogvi.Repo
   alias Kjogvi.Query
@@ -12,7 +12,7 @@ defmodule Kjogvi.Geo do
 
   def get_countries do
     Location
-    |> where(location_type: "country")
+    |> Query.Location.countries()
     |> Repo.all()
   end
 

@@ -16,6 +16,22 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     filter = KjogviWeb.Live.Lifelist.Params.to_filter(params)
     lifelist = Birding.Lifelist.generate(filter)
 
+    all_years = Birding.Lifelist.years()
+    years =
+      if is_nil(filter[:location]) do
+        all_years
+      else
+        Birding.Lifelist.years(Map.delete(filter, :year))
+      end
+
+    all_countries = Kjogvi.Geo.get_countries()
+    country_ids =
+      if is_nil(filter[:year]) do
+        Enum.map(all_countries, & &1.id)
+      else
+        Birding.Lifelist.country_ids(Map.delete(filter, :location))
+      end
+
     {
       :noreply,
       socket
@@ -24,9 +40,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         total: length(lifelist),
         year: filter[:year],
         location: filter[:location],
-        all_years: Birding.Lifelist.years(),
-        years: Birding.Lifelist.years(Map.delete(filter, :year)),
-        locations: Kjogvi.Geo.get_countries()
+        all_years: all_years,
+        years: years,
+        all_locations: all_countries,
+        location_ids: country_ids
       )
       |> derive_page_header()
       |> derive_page_title()
@@ -69,12 +86,17 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <b :if={is_nil(@location)}>All countries</b>
         <.link :if={not is_nil(@location)} patch={lifelist_path(@year, nil)}>All countries</.link>
       </li>
-      <%= for location <- @locations do %>
+      <%= for location <- @all_locations do %>
         <li>
-          <b :if={@location == location}><%= location.name_en %></b>
-          <.link :if={@location != location} patch={lifelist_path(@year, location)}>
-            <%= location.name_en %>
-          </.link>
+          <%= if @location == location do %>
+            <b><%= location.name_en %></b>
+          <% else %>
+            <%= if location.id in @location_ids do %>
+              <.link patch={lifelist_path(@year, location)}><%= location.name_en %></.link>
+            <% else %>
+              <span class="text-gray-500"><%= location.name_en %></span>
+            <% end %>
+          <% end %>
         </li>
       <% end %>
     </ul>
