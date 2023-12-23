@@ -1,4 +1,4 @@
-defmodule Kjogvi.Query.Location do
+defmodule Kjogvi.Geo.Location.Query do
   @moduledoc """
   Queries for Locations.
   """

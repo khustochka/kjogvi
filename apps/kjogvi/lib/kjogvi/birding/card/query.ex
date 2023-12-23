@@ -1,11 +1,11 @@
-defmodule Kjogvi.Query.Card do
+defmodule Kjogvi.Birding.Card.Query do
   @moduledoc """
   Queries for Cards.
   """
 
   import Ecto.Query
 
-  alias Kjogvi.Query
+  alias Kjogvi.Geo
 
   def by_year(query, year) when is_integer(year) do
     query
@@ -15,7 +15,7 @@ defmodule Kjogvi.Query.Card do
   # Performance is roughly the same but we avoid joining with locations
   def by_location_with_descendants(query, location) do
     child_ids =
-      from(Query.Location.child_locations(location))
+      from(Geo.Location.Query.child_locations(location))
       |> select([l], l.id)
 
     from [..., c] in query,

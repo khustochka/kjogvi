@@ -6,13 +6,12 @@ defmodule Kjogvi.Geo do
   import Ecto.Query
 
   alias Kjogvi.Repo
-  alias Kjogvi.Query
 
   alias __MODULE__.Location
 
   def get_countries do
     Location
-    |> Query.Location.countries()
+    |> Location.Query.countries()
     |> Repo.all()
   end
 
@@ -37,19 +36,19 @@ defmodule Kjogvi.Geo do
 
   def get_locations do
     Location
-    |> Query.Location.load_cards_count()
+    |> Location.Query.load_cards_count()
     |> Repo.all()
   end
 
   def get_specials do
     Location
-    |> Query.Location.specials()
+    |> Location.Query.specials()
     |> Repo.all()
   end
 
   def location_by_slug!(slug) do
     Location
-    |> Query.Location.by_slug(slug)
+    |> Location.Query.by_slug(slug)
     |> Repo.one!()
   end
 end

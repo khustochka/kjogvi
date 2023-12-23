@@ -6,10 +6,11 @@ defmodule Kjogvi.Birding.Lifelist do
   import Ecto.Query
 
   alias Kjogvi.Repo
-  alias Kjogvi.Query
 
-  alias Kjogvi.Birding.Observation
+  alias Kjogvi.Birding.Card
   alias Kjogvi.Birding.LifeObservation
+  alias Kjogvi.Birding.Observation
+  alias Kjogvi.Geo
 
   def generate(params \\ %{}) do
     lifelist_query(params)
@@ -37,7 +38,7 @@ defmodule Kjogvi.Birding.Lifelist do
       |> select([_o, c], [c.location_id])
 
     from(c in Kjogvi.Geo.Location)
-    |> Query.Location.countries()
+    |> Geo.Location.Query.countries()
     |> join(:inner, [c], l in Kjogvi.Geo.Location, on: c.id == l.country_id or c.id == l.id)
     |> where([_c, l], l.id in subquery(location_ids))
     |> select([c], c.id)
@@ -50,10 +51,10 @@ defmodule Kjogvi.Birding.Lifelist do
     Enum.reduce(params, base, fn filter, query ->
       case filter do
         {:year, year} when not is_nil(year) ->
-          Query.Card.by_year(query, year)
+          Card.Query.by_year(query, year)
 
         {:location, location} when not is_nil(location) ->
-          Query.Card.by_location_with_descendants(query, location)
+          Card.Query.by_location_with_descendants(query, location)
 
         _ ->
           query

@@ -6,7 +6,6 @@ defmodule Kjogvi.Birding do
   import Ecto.Query
 
   alias Kjogvi.Repo
-  alias Kjogvi.Query
 
   alias __MODULE__.Observation
   alias __MODULE__.Card
@@ -15,7 +14,7 @@ defmodule Kjogvi.Birding do
     Card
     |> order_by([{:desc, :observ_date}, {:desc, :id}])
     |> preload(location: :country)
-    |> Query.Card.load_observation_count()
+    |> Card.Query.load_observation_count()
     |> Repo.paginate(page: page, page_size: page_size)
   end
 
