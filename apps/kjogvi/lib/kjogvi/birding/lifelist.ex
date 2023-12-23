@@ -4,6 +4,7 @@ defmodule Kjogvi.Birding.Lifelist do
   """
 
   import Ecto.Query
+  import Kjogvi.Query.API
 
   alias Kjogvi.Repo
 
@@ -26,7 +27,7 @@ defmodule Kjogvi.Birding.Lifelist do
   def years(params \\ %{}) do
     observations_filtered(params)
     |> distinct(true)
-    |> select([..., c], type(fragment("EXTRACT(year from ?)", c.observ_date), :integer))
+    |> select([..., c], extract_year(c.observ_date))
     |> Repo.all()
     |> Enum.sort()
   end

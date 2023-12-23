@@ -4,12 +4,13 @@ defmodule Kjogvi.Birding.Card.Query do
   """
 
   import Ecto.Query
+  import Kjogvi.Query.API
 
   alias Kjogvi.Geo
 
   def by_year(query, year) when is_integer(year) do
     query
-    |> where([..., c], type(fragment("EXTRACT(year from ?)", c.observ_date), :integer) == ^year)
+    |> where([..., c], extract_year(c.observ_date) == ^year)
   end
 
   # Performance is roughly the same but we avoid joining with locations
