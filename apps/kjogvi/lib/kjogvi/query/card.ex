@@ -9,7 +9,7 @@ defmodule Kjogvi.Query.Card do
 
   def by_year(query, year) when is_integer(year) do
     query
-    |> where(fragment("EXTRACT(year from observ_date)::integer = ?", ^year))
+    |> where([..., c], type(fragment("EXTRACT(year from ?)", c.observ_date), :integer) == ^year)
   end
 
   # Performance is roughly the same but we avoid joining with locations

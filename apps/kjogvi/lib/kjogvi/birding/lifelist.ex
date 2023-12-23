@@ -25,7 +25,7 @@ defmodule Kjogvi.Birding.Lifelist do
   def years(params \\ %{}) do
     observations_filtered(params)
     |> distinct(true)
-    |> select(fragment("EXTRACT(year from observ_date)::integer"))
+    |> select([..., c], type(fragment("EXTRACT(year from ?)", c.observ_date), :integer))
     |> Repo.all()
     |> Enum.sort()
   end
