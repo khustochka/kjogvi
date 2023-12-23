@@ -17,6 +17,8 @@ defmodule KjogviWeb do
   those modules here.
   """
 
+  use Boundary, deps: [Kjogvi], exports: [Endpoint]
+
   def static_paths, do: ~w(
     assets
     fonts
