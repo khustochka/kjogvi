@@ -5,7 +5,7 @@ defmodule KjogviWeb.Live.Location.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    locations = Geo.get_locations()
+    locations = Geo.get_upper_level_locations()
 
     top_locations =
       locations
@@ -17,6 +17,7 @@ defmodule KjogviWeb.Live.Location.Index do
       |> assign(:page_title, "Locations")
       |> assign(:locations, locations)
       |> assign(:top_locations, top_locations)
+      |> assign(:specials, Geo.get_specials())
     }
   end
 
@@ -39,29 +40,48 @@ defmodule KjogviWeb.Live.Location.Index do
       Locations
     </.header>
 
-    <%= render_with_children(%{locations: @top_locations, all_locations: @locations}) %>
+    <div class="mb-3">
+      <%= render_with_children(%{locations: @top_locations, all_locations: @locations}) %>
+    </div>
+
+    <h2 class="text-lg font-semibold">Special locations</h2>
+
+    <ul>
+      <%= for location <- @specials do %>
+        <li>
+          <div class="flex gap-2">
+            <div><%= location.id %></div>
+            <div><%= location.slug %></div>
+            <div><%= location.name_en %></div>
+            <div><%= location.cards_count %></div>
+          </div>
+        </li>
+      <% end %>
+    </ul>
     """
   end
 
   def render_with_children(assigns) do
     ~H"""
-    <%= for location <- @locations do %>
-      <div>
-        <div class="flex gap-2">
-          <div><%= location.id %></div>
-          <div><%= location.slug %></div>
-          <div><%= location.name_en %></div>
-          <div><%= location.cards_count %></div>
-        </div>
-        <div class="ml-8">
-          <%= render_with_children(%{
-            locations:
-              Enum.filter(@all_locations, fn loc -> List.last(loc.ancestry) == location.id end),
-            all_locations: @all_locations
-          }) %>
-        </div>
-      </div>
-    <% end %>
+    <ul>
+      <%= for location <- @locations do %>
+        <li>
+          <div class="flex gap-2">
+            <div><%= location.id %></div>
+            <div><%= location.slug %></div>
+            <div><%= location.name_en %></div>
+            <div><%= location.cards_count %></div>
+          </div>
+          <div class="ml-8">
+            <%= render_with_children(%{
+              locations:
+                Enum.filter(@all_locations, fn loc -> List.last(loc.ancestry) == location.id end),
+              all_locations: @all_locations
+            }) %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
     """
   end
 end

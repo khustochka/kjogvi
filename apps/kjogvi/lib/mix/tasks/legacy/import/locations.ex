@@ -40,11 +40,18 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
     %{loc | ancestry: ancestors}
   end
 
-  defp transform_keys(%{loc_type: loc_type} = loc) do
+  defp transform_keys(%{loc_type: loc_type, slug: slug} = loc) do
     location_type =
-      case loc_type do
-        "" -> nil
-        _ -> loc_type
+      if slug in ["5mr", "arabat_spit"] do
+        "special"
+      else
+        case loc_type do
+          "" -> nil
+          "subcountry" -> "region"
+          "state" -> "region"
+          "oblast" -> "region"
+          _ -> loc_type
+        end
       end
 
     time = DateTime.utc_now()

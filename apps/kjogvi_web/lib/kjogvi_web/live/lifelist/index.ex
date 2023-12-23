@@ -17,6 +17,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     lifelist = Birding.Lifelist.generate(filter)
 
     all_years = Birding.Lifelist.years()
+
     years =
       if is_nil(filter[:location]) do
         all_years
@@ -25,6 +26,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       end
 
     all_countries = Kjogvi.Geo.get_countries()
+
     country_ids =
       if is_nil(filter[:year]) do
         Enum.map(all_countries, & &1.id)

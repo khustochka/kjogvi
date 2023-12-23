@@ -3,6 +3,9 @@ defmodule Kjogvi.Query.Location do
   Queries for Locations.
   """
 
+  @country_location_type "country"
+  @special_location_type "special"
+
   import Ecto.Query
 
   alias Kjogvi.Geo.Location
@@ -13,7 +16,12 @@ defmodule Kjogvi.Query.Location do
 
   def countries(query) do
     from [..., l] in query,
-      where: l.location_type == "country"
+      where: l.location_type == @country_location_type
+  end
+
+  def specials(query) do
+    from [..., l] in query,
+      where: l.location_type == @special_location_type
   end
 
   def load_cards_count(query) do
