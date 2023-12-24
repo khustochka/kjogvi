@@ -4,7 +4,10 @@ defmodule Kjogvi.Geo.Location do
   """
 
   use Kjogvi.Schema
+
   import Ecto.Changeset
+
+  alias Kjogvi.Geo.Location
 
   schema "locations" do
     field :slug, :string
@@ -18,13 +21,17 @@ defmodule Kjogvi.Geo.Location do
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
-    belongs_to(:country, Kjogvi.Geo.Location)
+    belongs_to(:country, Location)
 
-    belongs_to(:cached_parent, Kjogvi.Geo.Location)
-    belongs_to(:cached_city, Kjogvi.Geo.Location)
-    belongs_to(:cached_subdivision, Kjogvi.Geo.Location)
+    belongs_to(:cached_parent, Location)
+    belongs_to(:cached_city, Location)
+    belongs_to(:cached_subdivision, Location)
 
     has_many(:cards, Kjogvi.Birding.Card)
+
+    many_to_many :special_child_locations, Location,
+      join_through: "special_locations",
+      join_keys: [parent_location_id: :id, child_location_id: :id]
 
     timestamps()
 

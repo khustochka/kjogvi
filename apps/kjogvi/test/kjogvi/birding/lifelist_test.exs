@@ -162,5 +162,39 @@ defmodule Kjogvi.Birding.LifelistTest do
       result = Kjogvi.Birding.Lifelist.generate(%{location: ukraine, year: 2022})
       assert length(result) == 1
     end
+
+    test "filtered by special location" do
+      locus1 = insert(:location, slug: "bunns_creek", name_en: "Bunn's Creek")
+      locus2 = insert(:location, slug: "kildonan_park", name_en: "Kildonan Park")
+
+      locus3 =
+        insert(:location, slug: "witches_hut", name_en: "Witch's Hut", ancestry: [locus2.id])
+
+      locus4 = insert(:location, slug: "assiniboine_park", name_en: "Assiniboine Park")
+
+      locus_5mr =
+        insert(:location,
+          slug: "5mr",
+          name_en: "5MR",
+          location_type: "special",
+          special_child_locations: [locus1, locus2]
+        )
+
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2022-11-18", location: locus1)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+
+      # Locus 3 is a child of locus 2, so it should be included
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, observ_date: ~D"2023-07-16", location: locus3)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      taxon3 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, observ_date: ~D"2022-07-16", location: locus4)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+
+      result = Kjogvi.Birding.Lifelist.generate(%{location: locus_5mr})
+      assert length(result) == 2
+    end
   end
 end

@@ -13,6 +13,21 @@ defmodule Kjogvi.Birding.Card.Query do
     |> where([..., c], extract_year(c.observ_date) == ^year)
   end
 
+  def by_location_with_descendants(query, %{location_type: "special", id: id}) do
+    specials_ids =
+      from("special_locations")
+      |> where([l], l.parent_location_id == ^id)
+      |> select([l], l.child_location_id)
+
+    child_ids =
+      from(Geo.Location)
+      |> join(:inner, [l], s in subquery(specials_ids), on: s.child_location_id == l.id or s.child_location_id in l.ancestry)
+      |> select([l], l.id)
+
+    from [..., c] in query,
+      where: c.location_id in subquery(child_ids)
+  end
+
   # Performance is roughly the same but we avoid joining with locations
   def by_location_with_descendants(query, location) do
     child_ids =

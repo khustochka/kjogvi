@@ -3,6 +3,8 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
 
   use Mix.Task
 
+  import Ecto.Query
+
   def run(_args) do
     Mix.Task.run("app.start")
     {:ok, pid} = Postgrex.start_link(hostname: "localhost", database: "quails_development")
@@ -18,9 +20,41 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
         |> transform_keys
       end
 
+    five_mr_slugs =
+      locations
+      |> Enum.filter(& &1.is_5mr)
+      |> Enum.map(& &1.slug)
+
     Kjogvi.Repo.insert_all(Kjogvi.Geo.Location, locations)
 
     Kjogvi.Repo.query!("SELECT setval('locations_id_seq', (SELECT MAX(id) FROM locations));")
+
+    five_mr_loc =
+      from(l in Kjogvi.Geo.Location, where: l.slug == "5mr")
+      |> preload(:special_child_locations)
+      |> Kjogvi.Repo.one()
+
+    five_mr_children =
+      from(l in Kjogvi.Geo.Location, where: l.slug in ^five_mr_slugs)
+      |> Kjogvi.Repo.all()
+
+    five_mr_loc
+    |> Ecto.Changeset.change(%{special_child_locations: five_mr_children})
+    |> Kjogvi.Repo.update()
+
+    arabat_loc =
+      from(l in Kjogvi.Geo.Location, where: l.slug == "arabat_spit")
+      |> preload(:special_child_locations)
+      |> Kjogvi.Repo.one()
+
+    arabat_children =
+      from(l in Kjogvi.Geo.Location, where: l.slug in ["arabatska_khersonska", "arabatska_krym"])
+      |> Kjogvi.Repo.all()
+
+      arabat_loc
+    |> Ecto.Changeset.change(%{special_child_locations: arabat_children})
+    |> Kjogvi.Repo.update()
+
   end
 
   defp convert_ancestry(%{ancestry: nil} = loc) do
