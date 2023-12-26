@@ -21,7 +21,9 @@ defmodule Kjogvi.Birding.Card.Query do
 
     child_ids =
       from(Geo.Location)
-      |> join(:inner, [l], s in subquery(specials_ids), on: s.child_location_id == l.id or s.child_location_id in l.ancestry)
+      |> join(:inner, [l], s in subquery(specials_ids),
+        on: s.child_location_id == l.id or s.child_location_id in l.ancestry
+      )
       |> select([l], l.id)
 
     from [..., c] in query,

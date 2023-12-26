@@ -51,10 +51,9 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
       from(l in Kjogvi.Geo.Location, where: l.slug in ["arabatska_khersonska", "arabatska_krym"])
       |> Kjogvi.Repo.all()
 
-      arabat_loc
+    arabat_loc
     |> Ecto.Changeset.change(%{special_child_locations: arabat_children})
     |> Kjogvi.Repo.update()
-
   end
 
   defp convert_ancestry(%{ancestry: nil} = loc) do
