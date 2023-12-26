@@ -42,10 +42,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         total: length(lifelist),
         year: filter[:year],
         location: filter[:location],
-        all_years: all_years,
-        years: years,
-        all_locations: all_countries,
-        location_ids: country_ids
+        years: Kjogvi.Util.Enum.zip_inclusion(all_years, years),
+        locations: all_countries |> Enum.map(fn el -> {el, el.id in country_ids} end)
       )
       |> derive_page_header()
       |> derive_page_title()
@@ -68,12 +66,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <b :if={is_nil(@year)}>All years</b>
         <.link :if={not is_nil(@year)} patch={lifelist_path(nil, @location)}>All years</.link>
       </li>
-      <%= for year <- @all_years do %>
+      <%= for {year, active} <- @years do %>
         <li>
           <%= if @year == year do %>
             <b><%= year %></b>
           <% else %>
-            <%= if year in @years do %>
+            <%= if active do %>
               <.link patch={lifelist_path(year, @location)}><%= year %></.link>
             <% else %>
               <span class="text-gray-500"><%= year %></span>
@@ -88,12 +86,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <b :if={is_nil(@location)}>All countries</b>
         <.link :if={not is_nil(@location)} patch={lifelist_path(@year, nil)}>All countries</.link>
       </li>
-      <%= for location <- @all_locations do %>
+      <%= for {location, active} <- @locations do %>
         <li>
           <%= if @location == location do %>
             <b><%= location.name_en %></b>
           <% else %>
-            <%= if location.id in @location_ids do %>
+            <%= if active do %>
               <.link patch={lifelist_path(@year, location)}><%= location.name_en %></.link>
             <% else %>
               <span class="text-gray-500"><%= location.name_en %></span>
