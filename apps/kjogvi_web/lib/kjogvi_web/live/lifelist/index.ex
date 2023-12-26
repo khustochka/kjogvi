@@ -1,6 +1,7 @@
 defmodule KjogviWeb.Live.Lifelist.Index do
   use KjogviWeb, :live_view
 
+  alias Kjogvi.Util
   alias Kjogvi.Birding
 
   @impl true
@@ -42,7 +43,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         total: length(lifelist),
         year: filter[:year],
         location: filter[:location],
-        years: Kjogvi.Util.Enum.zip_inclusion(all_years, years),
+        years: Util.Enum.zip_inclusion(all_years, years),
         locations: all_countries |> Enum.map(fn el -> {el, el.id in country_ids} end)
       )
       |> derive_page_header()

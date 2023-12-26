@@ -7,5 +7,5 @@ defmodule Kjogvi do
   if it comes from the database, an external API or others.
   """
 
-  use Boundary, deps: [], exports: [{Birding, except: []}, Geo]
+  use Boundary, deps: [], exports: [{Birding, except: []}, Geo, Util.Enum]
 end
