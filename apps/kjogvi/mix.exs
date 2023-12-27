@@ -14,8 +14,7 @@ defmodule Kjogvi.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      test_coverage: [tool: ExCoveralls],
-      compilers: [:boundary] ++ Mix.compilers()
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -49,8 +48,7 @@ defmodule Kjogvi.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:ex_machina, "~> 2.7.0", only: :test},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:boundary, "~> 0.10", runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
