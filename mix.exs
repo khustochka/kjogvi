@@ -12,7 +12,12 @@ defmodule Kjogvi.Umbrella.MixProject do
         plt_add_deps: :app_tree,
         plt_add_apps: [:mix]
       ],
-      test_coverage: [tool: ExCoveralls]
+      test_coverage: [tool: ExCoveralls],
+      releases: [
+        kjogvi_web: [
+          applications: [kjogvi_web: :permanent]
+        ]
+      ]
     ]
   end
 
