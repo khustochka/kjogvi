@@ -18,4 +18,6 @@
    docker compose exec web bin/migrate
    ```
 
+Application will be available on http://localhost:5040.
+
 [^1]: Pronounced [ˈtʃɛkvɪ].
