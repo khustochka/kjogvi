@@ -10,10 +10,10 @@ defmodule KjogviWeb.Application do
     children = [
       # Start the Telemetry supervisor
       KjogviWeb.Telemetry,
-      # Start the Endpoint (http/https)
-      KjogviWeb.Endpoint
       # Start a worker by calling: KjogviWeb.Worker.start_link(arg)
       # {KjogviWeb.Worker, arg}
+      # Start to serve requests, typically the last entry
+      KjogviWeb.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

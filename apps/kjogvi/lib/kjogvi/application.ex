@@ -8,11 +8,10 @@ defmodule Kjogvi.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Start the Ecto repository
       Kjogvi.Repo,
-      # Start the PubSub system
+      {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Kjogvi.PubSub},
-      # Start Finch
+      # Start the Finch HTTP client for sending emails
       {Finch, name: Kjogvi.Finch}
       # Start a worker by calling: Kjogvi.Worker.start_link(arg)
       # {Kjogvi.Worker, arg}

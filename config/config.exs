@@ -11,7 +11,8 @@ import Config
 
 # Configure Mix tasks and generators
 config :kjogvi,
-  ecto_repos: [Ornitho.Repo, Kjogvi.Repo]
+  ecto_repos: [Ornitho.Repo, Kjogvi.Repo],
+  generators: [timestamp_type: :utc_datetime]
 
 # Configures the mailer
 #
@@ -29,6 +30,7 @@ config :kjogvi_web,
 # Configures the endpoint
 config :kjogvi_web, KjogviWeb.Endpoint,
   url: [host: "localhost"],
+  adapter: Phoenix.Endpoint.Cowboy2Adapter,
   render_errors: [
     formats: [html: KjogviWeb.ErrorHTML, json: KjogviWeb.ErrorJSON],
     layout: false

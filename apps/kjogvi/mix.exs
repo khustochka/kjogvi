@@ -37,6 +37,7 @@ defmodule Kjogvi.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:dns_cluster, "~> 0.1.1"},
       {:phoenix_pubsub, "~> 2.1"},
       {:ecto_sql, "~> 3.10"},
       {:ecto_psql_extras, "~> 0.7"},
