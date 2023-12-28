@@ -51,11 +51,18 @@ RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
-COPY apps/kjogvi_web/priv apps/kjogvi_web/priv
+COPY apps/kjogvi/lib apps/kjogvi/lib
+COPY apps/kjogvi_web/lib apps/kjogvi_web/lib
+COPY apps/ornithologue/lib apps/ornithologue/lib
+COPY apps/ornitho_web/lib apps/ornitho_web/lib
 
-COPY apps apps
+COPY apps/kjogvi/priv apps/kjogvi/priv
+COPY apps/kjogvi_web/priv apps/kjogvi_web/priv
+COPY apps/ornithologue/priv apps/ornithologue/priv
+COPY apps/ornitho_web/priv apps/ornitho_web/priv
 
 COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
+COPY apps/ornitho_web/dist apps/ornitho_web/dist
 
 # compile assets
 RUN mix assets.deploy
