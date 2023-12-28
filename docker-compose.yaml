@@ -8,6 +8,7 @@ services:
       SECRET_KEY_BASE: M0wBY/H0jPgHjM2ml/wTYn/HKsIopIlsvQvP3MJTXNSptX20f3BcFyjH5MtsFRJW
       DATABASE_URL: postgres://kjogvi:kjogvi@kjogvi_database/kjogvi_docker
       ORNITHO_DATABASE_URL: postgres://kjogvi:kjogvi@ornitho_database/ornitho_docker
+      PHX_PORT: 5040
 #    env_file:
 #      # In the env file do not use quotes (neither single nor double)!!!
 #      - .env.docker

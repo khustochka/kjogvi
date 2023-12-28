@@ -39,7 +39,12 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
+  host = System.get_env("PHX_HOST") || "localhost"
+  # Port in the URL can be different from the one the server runs on
+  url_port = String.to_integer(System.get_env("PHX_PORT") || "80")
+
   config :kjogvi_web, KjogviWeb.Endpoint,
+    url: [host: host, port: url_port],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
