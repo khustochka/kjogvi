@@ -11,7 +11,7 @@ import Config
 
 # Configure Mix tasks and generators
 config :kjogvi,
-  ecto_repos: [Ornitho.Repo, Kjogvi.Repo],
+  ecto_repos: [Kjogvi.Repo, Ornitho.Repo],
   generators: [timestamp_type: :utc_datetime_usec]
 
 config :kjogvi, Kjogvi.Repo, migration_timestamps: [type: :utc_datetime_usec]
@@ -26,7 +26,7 @@ config :kjogvi, Kjogvi.Repo, migration_timestamps: [type: :utc_datetime_usec]
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Local
 
 config :kjogvi_web,
-  ecto_repos: [Ornitho.Repo, Kjogvi.Repo],
+  ecto_repos: [Kjogvi.Repo, Ornitho.Repo],
   generators: [context_app: :kjogvi]
 
 # Configures the endpoint

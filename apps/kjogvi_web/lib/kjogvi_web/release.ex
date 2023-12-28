@@ -9,6 +9,8 @@ defmodule KjogviWeb.Release do
     load_app()
 
     for repo <- repos() do
+      # Create the DB if it does not exist.
+      _ = Ecto.Adapters.Postgres.storage_up(repo.config())
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
     end
   end

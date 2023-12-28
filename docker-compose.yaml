@@ -1,51 +1,33 @@
 services:
   web:
-    container_name: kjogvi_web
     build:
       context: .
     image: kjogvi-web
     environment:
       SECRET_KEY_BASE: M0wBY/H0jPgHjM2ml/wTYn/HKsIopIlsvQvP3MJTXNSptX20f3BcFyjH5MtsFRJW
-      DATABASE_URL: postgres://kjogvi:kjogvi@kjogvi_database/kjogvi_docker
-      ORNITHO_DATABASE_URL: postgres://kjogvi:kjogvi@ornitho_database/ornitho_docker
+      DATABASE_URL: postgres://kjogvi:kjogvi@database/kjogvi_docker
+      ORNITHO_DATABASE_URL: postgres://kjogvi:kjogvi@database/ornitho_docker
       PHX_PORT: 5040
 #    env_file:
-#      # In the env file do not use quotes (neither single nor double)!!!
 #      - .env.docker
-    # command: bin/rails s
+#   command: 
     ports:
       - "5040:4000"
     depends_on:
-      - kjogvi_database
-      - ornitho_database
+      - database
 
-  kjogvi_database:
-    container_name: kjogvi_database
+  database:
     image: bitnami/postgresql:15-debian-11
     environment:
       POSTGRES_USER: kjogvi
       POSTGRES_PASSWORD: kjogvi
-      POSTGRES_DB: kjogvi_docker
-    # Temporarily to seed database
-    ports:
-      - "5499:5432"
-    volumes:
-      - kjogvi_db_data15:/var/lib/postgresql/data
-
-  ornitho_database:
-    container_name: ornitho_database
-    image: bitnami/postgresql:15-debian-11
-    environment:
-      POSTGRES_USER: kjogvi
-      POSTGRES_PASSWORD: kjogvi
-      POSTGRES_DB: ornitho_docker
+      # POSTGRES_DB: kjogvi_docker
     # Temporarily to seed database
     # ports:
     #   - "5499:5432"
     volumes:
-      - ornitho_db_data15:/var/lib/postgresql/data    
+      - db_data15:/var/lib/postgresql/data 
 
 # Declare the volumes that our application uses.
 volumes:
-  ornitho_db_data15:
-  kjogvi_db_data15:
+  db_data15:
