@@ -25,9 +25,7 @@ services:
     # Temporarily to seed database
     ports:
       - "5498:5432"
-    volumes:
-      - db_data15:/var/lib/postgresql/data 
 
 # Declare the volumes that our application uses.
-volumes:
-  db_data15:
+volumes: {}
+  # db_data15:
