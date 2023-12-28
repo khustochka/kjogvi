@@ -6,7 +6,7 @@ services:
     environment:
       SECRET_KEY_BASE: M0wBY/H0jPgHjM2ml/wTYn/HKsIopIlsvQvP3MJTXNSptX20f3BcFyjH5MtsFRJW
       DATABASE_URL: postgres://kjogvi:kjogvi@database/kjogvi_docker
-      ORNITHO_DATABASE_URL: postgres://kjogvi:kjogvi@database/ornitho_docker
+      ORNITHO_DATABASE_URL: postgres://kjogvi:kjogvi@database/ornithologue_docker
       PHX_PORT: 5040
 #    env_file:
 #      - .env.docker
@@ -23,8 +23,8 @@ services:
       POSTGRES_PASSWORD: kjogvi
       # POSTGRES_DB: kjogvi_docker
     # Temporarily to seed database
-    # ports:
-    #   - "5499:5432"
+    ports:
+      - "5498:5432"
     volumes:
       - db_data15:/var/lib/postgresql/data 
 
