@@ -12,7 +12,9 @@ import Config
 # Configure Mix tasks and generators
 config :kjogvi,
   ecto_repos: [Ornitho.Repo, Kjogvi.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime_usec]
+
+config :kjogvi, Kjogvi.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 # Configures the mailer
 #
