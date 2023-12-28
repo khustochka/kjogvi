@@ -57,10 +57,6 @@ COPY apps apps
 
 COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
 
-# Workaround! Get rid of scrivener.
-RUN mix deps.clean scrivener
-RUN mix deps.get
-
 # compile assets
 RUN mix assets.deploy
 
