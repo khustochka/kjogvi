@@ -53,12 +53,13 @@ RUN mix deps.compile
 
 COPY apps/kjogvi_web/priv apps/kjogvi_web/priv
 
-COPY apps/kjogvi_web/lib apps/kjogvi_web/lib
-COPY apps/kjogvi/lib apps/kjogvi/lib
-COPY apps/ornithologue/lib apps/ornithologue/lib
-# COPY apps/ornitho_web/lib apps/ornitho_web/lib
+COPY apps apps
 
 COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
+
+# Workaround! Get rid of scrivener.
+RUN mix deps.clean scrivener
+RUN mix deps.get
 
 # compile assets
 RUN mix assets.deploy
