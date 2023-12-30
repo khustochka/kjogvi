@@ -25,9 +25,9 @@ defmodule Mix.Tasks.Legacy.Import.Locations do
       |> Enum.filter(& &1.is_5mr)
       |> Enum.map(& &1.slug)
 
-    Kjogvi.Repo.insert_all(Kjogvi.Geo.Location, locations)
+    _ = Kjogvi.Repo.insert_all(Kjogvi.Geo.Location, locations)
 
-    Kjogvi.Repo.query!("SELECT setval('locations_id_seq', (SELECT MAX(id) FROM locations));")
+    _ = Kjogvi.Repo.query!("SELECT setval('locations_id_seq', (SELECT MAX(id) FROM locations));")
 
     five_mr_loc =
       from(l in Kjogvi.Geo.Location, where: l.slug == "5mr")

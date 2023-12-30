@@ -1,0 +1,32 @@
+# fly.toml app configuration file generated for kjogvi on 2023-12-28T18:39:11-06:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "kjogvi"
+primary_region = "ord"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  ECTO_IPV6 = true
+  PORT = 8080
+  DNS_CLUSTER_QUERY = "kjogvi.internal"
+  PHX_HOST = "kjogvi.fly.dev"
+
+[deploy]
+  release_command = "bin/migrate"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

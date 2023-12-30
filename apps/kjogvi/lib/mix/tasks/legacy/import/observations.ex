@@ -33,7 +33,7 @@ defmodule Mix.Tasks.Legacy.Import.Observations do
           |> transform_keys
         end
 
-      Kjogvi.Repo.insert_all(Kjogvi.Birding.Observation, obs)
+      _ = Kjogvi.Repo.insert_all(Kjogvi.Birding.Observation, obs)
 
       Kjogvi.Repo.query!(
         "SELECT setval('observations_id_seq', (SELECT MAX(id) FROM observations));"

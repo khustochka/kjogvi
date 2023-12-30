@@ -10,9 +10,23 @@ defmodule Kjogvi.Umbrella.MixProject do
       aliases: aliases(),
       dialyzer: [
         plt_add_deps: :app_tree,
-        plt_add_apps: [:mix]
+        plt_add_apps: [:mix],
+        flags: [
+          :unmatched_returns,
+          :error_handling,
+          :no_opaque,
+          :unknown,
+          :no_return
+        ]
       ],
       test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        lint: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
       releases: [
         kjogvi_web: [
           applications: [kjogvi_web: :permanent]
