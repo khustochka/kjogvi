@@ -14,7 +14,8 @@ services:
     ports:
       - "5040:4000"
     depends_on:
-      - database
+      database:
+        condition: service_healthy  
 
   database:
     image: bitnami/postgresql:15-debian-11
@@ -25,6 +26,9 @@ services:
     # Temporarily to seed database
     ports:
       - "5498:5432"
+    healthcheck:
+      test: pg_isready -U kjogvi -h 127.0.0.1
+      interval: 3s
 
 # Declare the volumes that our application uses.
 volumes: {}
