@@ -22,14 +22,16 @@ services:
     environment:
       POSTGRES_USER: kjogvi
       POSTGRES_PASSWORD: kjogvi
-      # POSTGRES_DB: kjogvi_docker
+      POSTGRES_DB: kjogvi_docker
     # Temporarily to seed database
     ports:
       - "5498:5432"
+    volumes:
+      - pg_data15:/bitnami/postgresql
     healthcheck:
       test: pg_isready -U kjogvi -h 127.0.0.1
       interval: 3s
 
 # Declare the volumes that our application uses.
-volumes: {}
-  # db_data15:
+volumes:
+  pg_data15:

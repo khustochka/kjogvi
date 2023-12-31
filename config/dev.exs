@@ -2,8 +2,11 @@ import Config
 
 # Configure your database
 config :kjogvi, Kjogvi.Repo,
-  hostname: "localhost",
-  database: "kjogvi_dev",
+  hostname: System.get_env("DATABASE_HOST", "localhost"),
+  port: System.get_env("DATABASE_PORT"),
+  user: System.get_env("DATABASE_USER"),
+  password: System.get_env("DATABASE_PASSWORD"),
+  database: System.get_env("DATABASE_NAME", "kjogvi_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -21,7 +24,9 @@ config :kjogvi_web, KjogviWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "Sr/NUHLLmYIqi8RvF+w31wYVljGktNRD+PFxz2MUnXeCwD0HlDD/dpMDachBo5JU",
+  secret_key_base:
+    System.get_env("SECRET_KEY_BASE") ||
+      "Sr/NUHLLmYIqi8RvF+w31wYVljGktNRD+PFxz2MUnXeCwD0HlDD/dpMDachBo5JU",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
@@ -82,8 +87,11 @@ config :phoenix, :stacktrace_depth, 20
 # ORNITHOLOGUE
 
 config :ornithologue, Ornitho.Repo,
-  database: "ornithologue_dev",
-  hostname: "localhost",
+  hostname: System.get_env("ORNITHO_DATABASE_HOST", "localhost"),
+  port: System.get_env("ORNITHO_DATABASE_PORT"),
+  user: System.get_env("ORNITHO_DATABASE_USER"),
+  password: System.get_env("ORNITHO_DATABASE_PASSWORD"),
+  database: System.get_env("ORNITHO_DATABASE_NAME", "ornithologue_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

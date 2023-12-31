@@ -6,8 +6,11 @@ import Config
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :kjogvi, Kjogvi.Repo,
-  hostname: "localhost",
-  database: "kjogvi_test#{System.get_env("MIX_TEST_PARTITION")}",
+  hostname: System.get_env("DATABASE_HOST", "localhost"),
+  port: System.get_env("DATABASE_PORT"),
+  user: System.get_env("DATABASE_USER"),
+  password: System.get_env("DATABASE_PASSWORD"),
+  database: System.get_env("DATABASE_NAME", "kjogvi_test#{System.get_env("MIX_TEST_PARTITION")}"),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
 
@@ -15,7 +18,9 @@ config :kjogvi, Kjogvi.Repo,
 # you can enable the server option below.
 config :kjogvi_web, KjogviWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "jLXo2VmGjoSu38kAI1A5a2G3KlSBPPqphTpCju+fXZmRX7qzcOT+ilFHuab6rsOy",
+  secret_key_base:
+    System.get_env("SECRET_KEY_BASE") ||
+      "jLXo2VmGjoSu38kAI1A5a2G3KlSBPPqphTpCju+fXZmRX7qzcOT+ilFHuab6rsOy",
   server: false
 
 # Print only warnings and errors during test (set DEBUG env var to print debug messages)
@@ -33,7 +38,14 @@ config :phoenix, :plug_init_mode, :runtime
 # ORNITHOLOGUE
 
 config :ornithologue, Ornitho.Repo,
-  hostname: "localhost",
-  database: "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}",
+  hostname: System.get_env("ORNITHO_DATABASE_HOST", "localhost"),
+  port: System.get_env("ORNITHO_DATABASE_PORT"),
+  user: System.get_env("ORNITHO_DATABASE_USER"),
+  password: System.get_env("ORNITHO_DATABASE_PASSWORD"),
+  database:
+    System.get_env(
+      "ORNITHO_DATABASE_NAME",
+      "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}"
+    ),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10

@@ -14,7 +14,9 @@ _ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
 
 Application.put_env(:ornitho_web, OrnithoWebTest.Endpoint,
   url: [host: "localhost", port: 4000],
-  secret_key_base: "byRSu+biw0VoGmlLh9e7qDL9GzOOYSFF7qk9+DzHVwiCbw43umbQOekDmcyPLcRd",
+  secret_key_base:
+    System.get_env("SECRET_KEY_BASE") ||
+      "byRSu+biw0VoGmlLh9e7qDL9GzOOYSFF7qk9+DzHVwiCbw43umbQOekDmcyPLcRd",
   live_view: [signing_salt: "VJdZQEK4tfjtXQ+3Ior32wClz7KWqwom"],
   render_errors: [view: OrnithoWebTest.ErrorView],
   check_origin: false,
