@@ -6,7 +6,7 @@ defmodule KjogviWeb.Release do
   @app :kjogvi_web
 
   def migrate do
-    :ok = load_app()
+    _ = load_app()
 
     for repo <- repos() do
       # Create the DB if it does not exist.
@@ -16,7 +16,7 @@ defmodule KjogviWeb.Release do
   end
 
   def rollback(repo, version) do
-    :ok = load_app()
+    _ = load_app()
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
   end
 
