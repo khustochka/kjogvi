@@ -34,7 +34,10 @@ defmodule KjogviWeb.Router do
 
     get "/", PageController, :home
 
-    live_dashboard "/dashboard", metrics: KjogviWeb.Telemetry
+    live_dashboard "/dashboard",
+      metrics: KjogviWeb.Telemetry,
+      env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY"]
+
     ornitho_web("/taxonomy")
   end
 
