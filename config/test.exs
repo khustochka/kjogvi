@@ -8,11 +8,17 @@ import Config
 config :kjogvi, Kjogvi.Repo,
   hostname: System.get_env("DATABASE_HOST", "localhost"),
   port: System.get_env("DATABASE_PORT"),
-  user: System.get_env("DATABASE_USER"),
   password: System.get_env("DATABASE_PASSWORD"),
   database: System.get_env("DATABASE_NAME", "kjogvi_test#{System.get_env("MIX_TEST_PARTITION")}"),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
+
+# nil username fails, no username uses the current user
+db_user = System.get_env("DATABASE_USER")
+
+if db_user do
+  config :kjogvi, Kjogvi.Repo, username: db_user
+end
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
@@ -40,7 +46,6 @@ config :phoenix, :plug_init_mode, :runtime
 config :ornithologue, Ornitho.Repo,
   hostname: System.get_env("ORNITHO_DATABASE_HOST", "localhost"),
   port: System.get_env("ORNITHO_DATABASE_PORT"),
-  user: System.get_env("ORNITHO_DATABASE_USER"),
   password: System.get_env("ORNITHO_DATABASE_PASSWORD"),
   database:
     System.get_env(
@@ -49,3 +54,10 @@ config :ornithologue, Ornitho.Repo,
     ),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
+
+# nil username fails, no username uses the current user
+ornitho_db_user = System.get_env("ORNITHO_DATABASE_USER")
+
+if ornitho_db_user do
+  config :ornithologue, Ornitho.Repo, username: ornitho_db_user
+end

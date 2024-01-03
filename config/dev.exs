@@ -4,12 +4,18 @@ import Config
 config :kjogvi, Kjogvi.Repo,
   hostname: System.get_env("DATABASE_HOST", "localhost"),
   port: System.get_env("DATABASE_PORT"),
-  user: System.get_env("DATABASE_USER"),
   password: System.get_env("DATABASE_PASSWORD"),
   database: System.get_env("DATABASE_NAME", "kjogvi_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
+
+# nil username fails, no username uses the current user
+db_user = System.get_env("DATABASE_USER")
+
+if db_user do
+  config :kjogvi, Kjogvi.Repo, username: db_user
+end
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -89,9 +95,15 @@ config :phoenix, :stacktrace_depth, 20
 config :ornithologue, Ornitho.Repo,
   hostname: System.get_env("ORNITHO_DATABASE_HOST", "localhost"),
   port: System.get_env("ORNITHO_DATABASE_PORT"),
-  user: System.get_env("ORNITHO_DATABASE_USER"),
   password: System.get_env("ORNITHO_DATABASE_PASSWORD"),
   database: System.get_env("ORNITHO_DATABASE_NAME", "ornithologue_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
+
+# nil username fails, no username uses the current user
+ornitho_db_user = System.get_env("ORNITHO_DATABASE_USER")
+
+if ornitho_db_user do
+  config :ornithologue, Ornitho.Repo, username: ornitho_db_user
+end
