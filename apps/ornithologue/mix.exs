@@ -55,6 +55,7 @@ defmodule Ornithologue.MixProject do
 
   defp aliases do
     [
+      setup: ["deps.get"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
