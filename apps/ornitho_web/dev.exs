@@ -25,7 +25,7 @@ Application.put_env(:ornitho_web, DemoWeb.Endpoint,
       "HsxaPv+VXm1JucXuaysVuvP8CuZsPpTM0y4IxDag0eFp1HZzWoMYcUKXIYKnAYxF",
   live_view: [signing_salt: "SooO5k66WSs9Hx3nEh7Y1EiDe+LV9Hkr"],
   http: [port: System.get_env("PORT") || 4000],
-  debug_errors: true,
+  debug_errors: System.get_env("SHOW_ERROR_PAGES") not in ~w{true 1},
   check_origin: false,
   pubsub_server: Demo.PubSub,
   watchers: [

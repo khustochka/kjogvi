@@ -29,7 +29,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4000],
   check_origin: false,
   code_reloader: true,
-  debug_errors: true,
+  debug_errors: System.get_env("SHOW_ERROR_PAGES") not in ~w{true 1},
   secret_key_base:
     System.get_env("SECRET_KEY_BASE") ||
       "Sr/NUHLLmYIqi8RvF+w31wYVljGktNRD+PFxz2MUnXeCwD0HlDD/dpMDachBo5JU",

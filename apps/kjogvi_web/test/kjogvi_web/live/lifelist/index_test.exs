@@ -146,7 +146,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "lifelist with valid year and invalid location", %{conn: conn} do
-    assert_raise Ecto.NoResultsError, fn ->
+    assert_error_sent :not_found, fn ->
       get(conn, "/lifelist/2022/testtest")
     end
   end
