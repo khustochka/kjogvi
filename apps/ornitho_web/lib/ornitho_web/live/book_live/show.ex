@@ -1,4 +1,6 @@
 defmodule OrnithoWeb.Live.Book.Show do
+  @moduledoc false
+
   use OrnithoWeb, :live_view
 
   import OrnithoWeb.BreadcrumbsComponents

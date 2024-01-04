@@ -97,7 +97,7 @@ defmodule OrnithoWeb.TaxaComponents do
   def extinct_tag(assigns) do
     ~H"""
     <span
-      :if={Ornitho.Schema.Taxon.is_extinct?(@taxon)}
+      :if={Ornitho.Schema.Taxon.extinct?(@taxon)}
       class="text-white bg-black px-1.5 pt-0.5 pb-1 mx-1 font-semibold text-xs rounded-lg"
       title="Extinct"
     >

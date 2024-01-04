@@ -61,7 +61,6 @@ defmodule KjogviWeb.Live.Card.Index do
   defp location_with_country(location) do
     [location, location.country]
     |> Enum.filter(&(!is_nil(&1)))
-    |> Enum.map(& &1.name_en)
-    |> Enum.join(", ")
+    |> Enum.map_join(", ", & &1.name_en)
   end
 end

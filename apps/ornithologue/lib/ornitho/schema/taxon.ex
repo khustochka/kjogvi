@@ -77,7 +77,7 @@ defmodule Ornitho.Schema.Taxon do
     authority
   end
 
-  def is_extinct?(%Taxon{extras: extras}) do
+  def extinct?(%Taxon{extras: extras}) do
     extras["extinct"]
   end
 

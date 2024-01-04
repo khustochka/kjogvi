@@ -1,4 +1,8 @@
 defmodule Kjogvi.Query.API do
+  @moduledoc """
+  Macros to be used in Ecto queries.
+  """
+
   defmacro extract(segment, field) do
     quote do
       fragment("extract(? from ?)", unquote(segment), unquote(field))

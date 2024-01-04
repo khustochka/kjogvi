@@ -1,4 +1,6 @@
 defmodule OrnithoWeb.Live.Taxa.Table do
+  @moduledoc false
+
   use OrnithoWeb, :live_component
 
   import OrnithoWeb.TaxaComponents

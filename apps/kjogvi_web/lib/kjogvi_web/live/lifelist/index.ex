@@ -181,15 +181,15 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     socket
   end
 
-  defp lifelist_path(_year = nil, _location = nil) do
+  defp lifelist_path(nil = _year, nil = _location) do
     ~p"/lifelist"
   end
 
-  defp lifelist_path(year, _location = nil) do
+  defp lifelist_path(year, nil = _location) do
     ~p"/lifelist/#{year}"
   end
 
-  defp lifelist_path(_year = nil, location) do
+  defp lifelist_path(nil = _year, location) do
     ~p"/lifelist/#{location.slug}"
   end
 
