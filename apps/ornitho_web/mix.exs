@@ -29,7 +29,8 @@ defmodule OrnithoWeb.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {OrnithoWeb.Application, []},
+      # See OrnithoWeb.Application for explanation.
+      # mod: {OrnithoWeb.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
