@@ -58,9 +58,6 @@ defmodule OrnithoWebTest.Endpoint do
   plug OrnithoWebTest.Router
 end
 
-Application.stop(:ssh)
-Application.unload(:ssh)
-
 Supervisor.start_link(
   [
     {Phoenix.PubSub, name: OrnithoWebTest.PubSub, adapter: Phoenix.PubSub.PG2},
