@@ -11,6 +11,8 @@ Application.put_env(:ornithologue, Ornitho.Repo,
   pool_size: 10
 )
 
+{:ok, _} = Application.ensure_all_started(:ornithologue)
+
 _ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
 
 for repo <- [Ornitho.Repo] do

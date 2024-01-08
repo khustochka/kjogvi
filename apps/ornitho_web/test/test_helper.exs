@@ -6,8 +6,13 @@ Application.put_env(:ornithologue, Ornitho.Repo,
   pool_size: 10
 )
 
+{:ok, _} = Application.ensure_all_started(:ornithologue)
+
 _ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
 
+# This is commented out because it breaks umbrella tests.
+# When running standalone tests you may have to uncomment once, to
+# run migrations.
 # for repo <- [Ornitho.Repo] do
 #   {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
 # end
