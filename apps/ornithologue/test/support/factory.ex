@@ -1,7 +1,7 @@
 defmodule Ornitho.Factory do
   @moduledoc false
 
-  use ExMachina.Ecto, repo: Ornitho.Repo
+  use ExMachina.Ecto, repo: Ornitho.TestRepo
 
   def book_factory do
     %Ornitho.Schema.Book{

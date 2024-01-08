@@ -5,7 +5,6 @@ defmodule Ornitho.Finder.Taxon do
 
   import Ecto.Query
 
-  alias Ornitho.Repo
   alias Ornitho.Query
   alias Ornitho.Schema.{Book, Taxon}
 
@@ -16,26 +15,26 @@ defmodule Ornitho.Finder.Taxon do
   def by_name_sci(book, name_sci) do
     Query.Taxon.base_taxon(book)
     |> where(name_sci: ^name_sci)
-    |> Repo.one()
+    |> repo().one()
   end
 
   @spec by_code(Book.t(), String.t()) :: Taxon.t() | nil
   def by_code(book, code) do
     Query.Taxon.base_taxon(book)
     |> where(code: ^code)
-    |> Repo.one()
+    |> repo().one()
   end
 
   def by_codes(book, codes) do
     Query.Taxon.base_taxon(book)
     |> where([t], t.code in ^codes)
-    |> Repo.all()
+    |> repo().all()
   end
 
   def by_code!(book, code) do
     Query.Taxon.base_taxon(book)
     |> where(code: ^code)
-    |> Repo.one!()
+    |> repo().one!()
   end
 
   def page(book, page_num, opts \\ []) do
@@ -46,7 +45,7 @@ defmodule Ornitho.Finder.Taxon do
     |> Query.Taxon.ordered()
     |> offset(^off)
     |> limit(^per_page)
-    |> Repo.all()
+    |> repo().all()
   end
 
   def search(book, search_term, opts \\ []) do
@@ -56,16 +55,20 @@ defmodule Ornitho.Finder.Taxon do
     |> Query.Taxon.ordered()
     |> limit(^limit)
     |> Query.Taxon.search(search_term)
-    |> Repo.all()
+    |> repo().all()
   end
 
   def with_parent_species(taxon_or_taxa) do
     taxon_or_taxa
-    |> Repo.preload(:parent_species)
+    |> repo().preload(:parent_species)
   end
 
   def with_child_taxa(taxon_or_taxa) do
     taxon_or_taxa
-    |> Repo.preload(:child_taxa)
+    |> repo().preload(:child_taxa)
+  end
+
+  defp repo() do
+    Application.fetch_env!(:ornithologue, :repo)
   end
 end

@@ -5,7 +5,6 @@ defmodule Ornithologue do
 
   import Ecto.Query
 
-  alias Ornitho.Repo
   alias Ornitho.Schema.Book
   alias Ornitho.Schema.Taxon
 
@@ -24,13 +23,13 @@ defmodule Ornithologue do
       Enum.reduce(Map.keys(by_book), where(Book, fragment("1 = 0")), fn {slug, version}, query ->
         query |> or_where(slug: ^slug, version: ^version)
       end)
-      |> Repo.all()
+      |> repo().all()
 
     books
     |> Enum.reduce(%{}, fn book, acc ->
       grouped =
         Ornitho.Finder.Taxon.by_codes(book, by_book[{book.slug, book.version}])
-        |> Repo.preload(:parent_species)
+        |> repo().preload(:parent_species)
         |> Enum.group_by(&Taxon.key(%{&1 | book: book}))
         |> Enum.map(fn {key, [val | _]} -> {key, val} end)
         |> Enum.into(%{})
@@ -51,5 +50,9 @@ defmodule Ornithologue do
 
       Map.put(acc, book_sig, [taxon_code | list])
     end)
+  end
+
+  defp repo() do
+    Application.fetch_env!(:ornithologue, :repo)
   end
 end

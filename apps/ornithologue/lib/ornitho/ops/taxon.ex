@@ -8,12 +8,12 @@ defmodule Ornitho.Ops.Taxon do
 
   def create(%Book{} = book, attrs) do
     Taxon.creation_changeset(book, attrs)
-    |> Ornitho.Repo.insert()
+    |> repo().insert()
   end
 
   def create!(%Book{} = book, attrs) do
     Taxon.creation_changeset(book, attrs)
-    |> Ornitho.Repo.insert!()
+    |> repo().insert!()
   end
 
   def create_many(%Book{} = book, attrs_list) do
@@ -22,11 +22,15 @@ defmodule Ornitho.Ops.Taxon do
       multi
       |> Multi.insert(attrs, Taxon.creation_changeset(book, attrs))
     end)
-    |> Ornitho.Repo.transaction()
+    |> repo().transaction()
   end
 
   # def update_taxon(taxon, attrs) do
   #   Taxon.updating_changeset(taxon, attrs)
-  #   |> Ornitho.Repo.update()
+  #   |> repo().update()
   # end
+
+  defp repo() do
+    Application.fetch_env!(:ornithologue, :repo)
+  end
 end

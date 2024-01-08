@@ -8,7 +8,7 @@ defmodule Ornitho.Schema.BookTest do
     test "is valid" do
       book = insert(:book)
 
-      assert Repo.all(Book) == [book]
+      assert TestRepo.all(Book) == [book]
     end
   end
 end
