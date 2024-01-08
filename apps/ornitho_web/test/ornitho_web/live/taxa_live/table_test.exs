@@ -1,6 +1,6 @@
 defmodule OrnithoWeb.Live.Taxa.TableTest do
   use OrnithoWeb.ConnCase
-  use OrnithoWeb.OrnithoCase
+  use OrnithoWeb.OrnithoCase, async: true
 
   import Phoenix.LiveViewTest
 

@@ -1,6 +1,6 @@
 defmodule OrnithoWeb.BooksControllerTest do
   use OrnithoWeb.ConnCase, async: true
-  use OrnithoWeb.OrnithoCase
+  use OrnithoWeb.OrnithoCase, async: true
 
   alias Ornitho.Ops
 

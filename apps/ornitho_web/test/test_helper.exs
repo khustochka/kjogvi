@@ -72,3 +72,5 @@ Supervisor.start_link(
 )
 
 ExUnit.start(exclude: :integration)
+
+Ecto.Adapters.SQL.Sandbox.mode(Ornitho.Repo, :manual)
