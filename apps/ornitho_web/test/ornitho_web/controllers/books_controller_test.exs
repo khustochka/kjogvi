@@ -54,7 +54,7 @@ defmodule OrnithoWeb.BooksControllerTest do
     end
 
     test "Book does not exist", %{conn: conn} do
-      assert_error_sent :not_found, fn ->
+      assert_raise Ecto.NoResultsError, fn ->
         get(conn, "/taxonomy/nonexistent/v1")
       end
     end

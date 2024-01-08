@@ -32,7 +32,7 @@ defmodule OrnithoWeb.Live.Taxa.ShowTest do
     test "taxon does not exist", %{conn: conn} do
       book = insert(:book)
 
-      assert_error_sent :not_found, fn ->
+      assert_raise Ecto.NoResultsError, fn ->
         get(conn, "/taxonomy/#{book.slug}/#{book.version}/taxon")
       end
     end
