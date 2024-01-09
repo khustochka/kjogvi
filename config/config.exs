@@ -16,6 +16,8 @@ config :kjogvi,
 
 config :kjogvi, Kjogvi.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
+config :kjogvi, Kjogvi.OrnithoRepo, migration_timestamps: [type: :utc_datetime_usec]
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
@@ -77,8 +79,6 @@ config :scrivener_phoenix,
 # ORNITHOLOGUE
 
 config :ornithologue, repo: Kjogvi.OrnithoRepo
-
-config :ornithologue, Ornitho.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
