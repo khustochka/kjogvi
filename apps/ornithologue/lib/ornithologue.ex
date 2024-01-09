@@ -52,7 +52,7 @@ defmodule Ornithologue do
     end)
   end
 
-  defp repo() do
+  def repo() do
     Application.fetch_env!(:ornithologue, :repo)
   end
 end
