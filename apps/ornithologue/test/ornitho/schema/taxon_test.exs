@@ -7,7 +7,7 @@ defmodule Ornitho.Schema.TaxonTest do
   describe "Taxon factory" do
     test "is valid" do
       taxon = insert(:taxon)
-      repo_tx = TestRepo.all(Taxon)
+      repo_tx = OrnithoRepo.all(Taxon)
 
       assert length(repo_tx) == 1
       assert hd(repo_tx).code == taxon.code
@@ -41,7 +41,7 @@ defmodule Ornitho.Schema.TaxonTest do
   describe "changeset" do
     test "cannot be saved wihout book" do
       taxon_attrs = params_for(:taxon, book_id: nil)
-      assert {:error, _} = Taxon.creation_changeset(%Taxon{}, taxon_attrs) |> TestRepo.insert()
+      assert {:error, _} = Taxon.creation_changeset(%Taxon{}, taxon_attrs) |> OrnithoRepo.insert()
     end
   end
 end

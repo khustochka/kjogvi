@@ -1,4 +1,4 @@
-Application.put_env(:ornithologue, Ornitho.Repo,
+Application.put_env(:ornithologue, Kjogvi.OrnithoRepo,
   url: System.get_env("ORNITHO_DATABASE_URL"),
   hostname: "localhost",
   database: "ornitho_test#{System.get_env("MIX_TEST_PARTITION")}",
@@ -8,7 +8,7 @@ Application.put_env(:ornithologue, Ornitho.Repo,
 
 {:ok, _} = Application.ensure_all_started(:ornithologue)
 
-_ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
+_ = Ecto.Adapters.Postgres.storage_up(Kjogvi.OrnithoRepo.config())
 
 # This is commented out because it breaks umbrella tests.
 # When running standalone tests you may have to uncomment once, to
@@ -73,4 +73,4 @@ Supervisor.start_link(
 
 ExUnit.start(exclude: :integration)
 
-Ecto.Adapters.SQL.Sandbox.mode(Ornitho.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Kjogvi.OrnithoRepo, :manual)

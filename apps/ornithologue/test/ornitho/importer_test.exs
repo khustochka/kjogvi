@@ -48,7 +48,7 @@ defmodule Ornitho.ImporterTest do
 
       @importer.process_import(force: true)
 
-      assert Ornitho.TestRepo.reload(taxon) == nil
+      assert Kjogvi.OrnithoRepo.reload(taxon) == nil
     end
 
     @importer Importer.Test.NoTaxa
@@ -79,7 +79,7 @@ defmodule Ornitho.ImporterTest do
     test "creates new taxa" do
       @importer.process_import()
       book = Ornitho.Finder.Book.by_signature(@importer.slug(), @importer.version())
-      taxa = Ecto.assoc(book, :taxa) |> Ornitho.TestRepo.all()
+      taxa = Ecto.assoc(book, :taxa) |> Kjogvi.OrnithoRepo.all()
       assert length(taxa) > 0
     end
 

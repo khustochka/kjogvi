@@ -78,9 +78,6 @@ config :scrivener_phoenix,
 
 config :ornithologue, repo: Kjogvi.OrnithoRepo
 
-# config :ornithologue,
-#   ecto_repos: [Kjogvi.OrnithoRepo]
-
 config :ornithologue, Ornitho.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 # Import environment specific config. This must remain at the bottom
