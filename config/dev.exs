@@ -17,6 +17,22 @@ if db_user do
   config :kjogvi, Kjogvi.Repo, username: db_user
 end
 
+config :kjogvi, Kjogvi.OrnithoRepo,
+  hostname: System.get_env("ORNITHO_DATABASE_HOST", "localhost"),
+  port: System.get_env("ORNITHO_DATABASE_PORT"),
+  password: System.get_env("ORNITHO_DATABASE_PASSWORD"),
+  database: System.get_env("ORNITHO_DATABASE_NAME", "ornithologue_dev"),
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
+# nil username fails, no username uses the current user
+ornitho_db_user = System.get_env("ORNITHO_DATABASE_USER")
+
+if ornitho_db_user do
+  config :kjogvi, Kjogvi.OrnithoRepo, username: ornitho_db_user
+end
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -89,21 +105,3 @@ config :swoosh, :api_client, false
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
-
-# ORNITHOLOGUE
-
-config :ornithologue, Ornitho.Repo,
-  hostname: System.get_env("ORNITHO_DATABASE_HOST", "localhost"),
-  port: System.get_env("ORNITHO_DATABASE_PORT"),
-  password: System.get_env("ORNITHO_DATABASE_PASSWORD"),
-  database: System.get_env("ORNITHO_DATABASE_NAME", "ornithologue_dev"),
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
-
-# nil username fails, no username uses the current user
-ornitho_db_user = System.get_env("ORNITHO_DATABASE_USER")
-
-if ornitho_db_user do
-  config :ornithologue, Ornitho.Repo, username: ornitho_db_user
-end

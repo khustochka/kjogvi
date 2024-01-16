@@ -1,5 +1,5 @@
-defmodule Ornitho.Repo do
+defmodule Kjogvi.OrnithoRepo do
   use Ecto.Repo,
-    otp_app: :ornithologue,
+    otp_app: :kjogvi,
     adapter: Ecto.Adapters.Postgres
 end

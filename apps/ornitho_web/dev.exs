@@ -1,23 +1,23 @@
-Logger.configure(level: :debug)
+# Logger.configure(level: :debug)
 
-_argv = System.argv()
+# _argv = System.argv()
 
-Application.put_env(:ornithologue, Ornitho.Repo,
-  url: System.get_env("ORNITHO_DATABASE_URL"),
-  database: "ornithologue_dev",
-  hostname: "localhost",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
-)
+# Application.put_env(:ornithologue, Kjogvi.OrnithoRepo,
+#   url: System.get_env("ORNITHO_DATABASE_URL"),
+#   database: "ornithologue_dev",
+#   hostname: "localhost",
+#   stacktrace: true,
+#   show_sensitive_data_on_connection_error: true,
+#   pool_size: 10
+# )
 
-{:ok, _} = Application.ensure_all_started(:ornithologue)
+# {:ok, _} = Application.ensure_all_started(:ornithologue)
 
-_ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
+# _ = Ecto.Adapters.Postgres.storage_up(Kjogvi.OrnithoRepo.config())
 
-for repo <- [Ornitho.Repo] do
-  {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
-end
+# for repo <- [Kjogvi.OrnithoRepo] do
+#   {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+# end
 
 # Configures the endpoint
 Application.put_env(:ornitho_web, DemoWeb.Endpoint,

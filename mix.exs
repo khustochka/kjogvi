@@ -12,11 +12,11 @@ defmodule Kjogvi.Umbrella.MixProject do
         plt_add_deps: :app_tree,
         plt_add_apps: [:mix],
         flags: [
-          :unmatched_returns,
           :error_handling,
           :no_opaque,
           :unknown,
-          :no_return
+          :no_return,
+          :missing_return
         ]
       ],
       test_coverage: [tool: ExCoveralls],

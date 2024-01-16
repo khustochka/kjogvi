@@ -9,6 +9,7 @@ defmodule Kjogvi.Application do
   def start(_type, _args) do
     children = [
       Kjogvi.Repo,
+      Kjogvi.OrnithoRepo,
       {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Kjogvi.PubSub},
       # Start the Finch HTTP client for sending emails

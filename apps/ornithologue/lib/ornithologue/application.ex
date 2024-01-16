@@ -8,7 +8,7 @@ defmodule Ornithologue.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Ornitho.Repo, []}
+      # {Ornitho.Repo, []}
       # Starts a worker by calling: Ornithologue.Worker.start_link(arg)
       # {Ornithologue.Worker, arg}
     ]

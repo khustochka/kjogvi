@@ -5,7 +5,7 @@ defmodule Ornitho.RepoCase do
 
   using do
     quote do
-      alias Ornitho.Repo
+      alias Kjogvi.OrnithoRepo
 
       import Ecto
       import Ecto.Query
@@ -15,10 +15,10 @@ defmodule Ornitho.RepoCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Ornitho.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Kjogvi.OrnithoRepo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Ornitho.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Kjogvi.OrnithoRepo, {:shared, self()})
     end
 
     :ok

@@ -1,4 +1,4 @@
-Application.put_env(:ornithologue, Ornitho.Repo,
+Application.put_env(:ornitho_web, Kjogvi.OrnithoRepo,
   url: System.get_env("ORNITHO_DATABASE_URL"),
   hostname: "localhost",
   database: "ornitho_test#{System.get_env("MIX_TEST_PARTITION")}",
@@ -6,14 +6,25 @@ Application.put_env(:ornithologue, Ornitho.Repo,
   pool_size: 10
 )
 
-{:ok, _} = Application.ensure_all_started(:ornithologue)
+Application.put_env(:ornithologue, :repo, Kjogvi.OrnithoRepo)
 
-_ = Ecto.Adapters.Postgres.storage_up(Ornitho.Repo.config())
+if !function_exported?(Kjogvi.OrnithoRepo, :__info__, 1) do
+  defmodule Kjogvi.OrnithoRepo do
+    use Ecto.Repo,
+      otp_app: :ornitho_web,
+      adapter: Ecto.Adapters.Postgres
+  end
+
+  _ = Ecto.Adapters.Postgres.storage_up(Kjogvi.OrnithoRepo.config())
+
+  opts = [strategy: :one_for_one, name: OrnithologueTest.Supervisor]
+  Supervisor.start_link([Kjogvi.OrnithoRepo], opts)
+end
 
 # This is commented out because it breaks umbrella tests.
 # When running standalone tests you may have to uncomment once, to
 # run migrations.
-# for repo <- [Ornitho.Repo] do
+# for repo <- [Kjogvi.OrnithoRepo] do
 #   {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
 # end
 
@@ -73,4 +84,4 @@ Supervisor.start_link(
 
 ExUnit.start(exclude: :integration)
 
-Ecto.Adapters.SQL.Sandbox.mode(Ornitho.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Kjogvi.OrnithoRepo, :manual)
