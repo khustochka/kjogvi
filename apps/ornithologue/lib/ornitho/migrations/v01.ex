@@ -1,7 +1,11 @@
-defmodule Ornitho.Repo.Migrations.V01 do
+defmodule Ornitho.Migrations.V01 do
   use Ecto.Migration
 
-  def change do
+  def up do
+    create table(:ornitho_migrations) do
+      add :version, :string, null: false, size: 16
+    end
+
     # BOOKS
     create table(:books) do
       add :slug, :string, null: false, size: 16
@@ -49,5 +53,11 @@ defmodule Ornitho.Repo.Migrations.V01 do
              unique: false,
              where: "parent_species_id IS NOT NULL"
            )
+  end
+
+  def down do
+    drop table(:taxa)
+    drop table(:books)
+    drop table(:ornitho_migrations)
   end
 end
