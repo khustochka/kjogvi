@@ -52,6 +52,11 @@ jobs:
       run: mix deps.get
     - name: Compile
       run: MIX_ENV=test mix compile
+    - name: Create ornitho DB (should happen automatically)
+      run: MIX_ENV=test mix do ecto.create -r Kjogvi.OrnithoRepo, ecto.migrate -r Kjogvi.OrnithoRepo
+      env:
+        DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
+        ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
     - name: Run tests with coverage
       env:
         DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
