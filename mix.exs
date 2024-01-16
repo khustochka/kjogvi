@@ -78,7 +78,8 @@ defmodule Kjogvi.Umbrella.MixProject do
         "deps.unlock --check-unused",
         "credo --format oneline --ignore design,refactor,readability,consistency",
         "dialyzer --format dialyxir --quiet"
-      ]
+      ],
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
 end
