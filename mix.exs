@@ -73,13 +73,13 @@ defmodule Kjogvi.Umbrella.MixProject do
     [
       # run `mix setup` in all child apps
       setup: ["cmd mix setup"],
+      "ecto.setup": ["ecto.create --quiet", "ecto.migrate --quiet"],
       lint: [
         "format --check-formatted",
         "deps.unlock --check-unused",
         "credo --format oneline --ignore design,refactor,readability,consistency",
         "dialyzer --format dialyxir --quiet"
-      ],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
+      ]
     ]
   end
 end
