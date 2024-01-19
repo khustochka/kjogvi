@@ -13,25 +13,19 @@ defmodule Ornitho.Importer do
   @required_keys [:slug, :version, :name]
 
   defmacro __using__(opts) do
-    {keys, _} = opts |> Keyword.split(@required_keys)
+    missing_keys =
+      for key <- @required_keys, reduce: [] do
+        acc ->
+          if opts[key] in [nil, ""] do
+            [inspect(key) | acc]
+          else
+            acc
+          end
+      end
 
-    keys =
-      keys
-      |> Enum.filter(fn {_, v} -> not is_nil(v) end)
-      |> Keyword.keys()
-      |> Enum.uniq()
-
-    missing_keys = @required_keys -- keys
-
-    unless Enum.empty?(missing_keys) do
-      missing_keys_str =
-        for key <- missing_keys, reduce: "" do
-          "" -> inspect(key)
-          acc -> "#{acc}, #{inspect(key)}"
-        end
-
+    if !Enum.empty?(missing_keys) do
       raise ArgumentError,
-            "missing required option(s) #{missing_keys_str} on " <>
+            "empty required option(s) #{Enum.join(missing_keys, ", ")} on " <>
               "`use Ornitho.Importer`"
     end
 
@@ -47,7 +41,7 @@ defmodule Ornitho.Importer do
       @description opts[:description]
       @extras opts[:extras]
 
-      @callback create_taxa(book :: %Book{}) :: {:ok, any()} | {:error, any()}
+      @callback create_taxa(book :: Book) :: {:ok, any()} | {:error, any()}
 
       @spec slug() :: String.t()
       def slug(), do: @slug

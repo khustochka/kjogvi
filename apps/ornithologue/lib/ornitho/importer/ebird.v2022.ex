@@ -13,15 +13,11 @@ defmodule Ornitho.Importer.Ebird.V2022 do
         "The eBird/Clements checklist of Birds of the World: v2022.\n" <>
         "Downloaded from https://www.birds.cornell.edu/clementschecklist/download/"
 
-  @prepared_taxonomy_file "priv/import/ebird/v2022/ornithologue_ebird_v2022.csv"
+  use Ornitho.StreamImporter,
+    file_path: "/import/ebird/v2022/ornithologue_ebird_v2022.csv"
 
-  def create_taxa(book) do
-    create_taxa_from_csv(book, @prepared_taxonomy_file)
-  end
-
-  def create_taxa_from_csv(book, csv_file) do
-    csv_file
-    |> File.stream!([:trim_bom])
+  def create_taxa_from_stream(book, stream) do
+    stream
     |> CSV.decode(headers: true)
     |> Enum.reduce({0, %{}}, fn {:ok, row}, {num_saved, species_cache} ->
       {:ok, extras} = Jason.decode(row["extras"])
