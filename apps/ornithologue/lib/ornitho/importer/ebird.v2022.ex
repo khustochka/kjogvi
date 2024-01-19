@@ -14,7 +14,7 @@ defmodule Ornitho.Importer.Ebird.V2022 do
         "Downloaded from https://www.birds.cornell.edu/clementschecklist/download/"
 
   use Ornitho.StreamImporter,
-    file_path: "/import/ebird/v2022/ornithologue_ebird_v2022.csv"
+    file_path: "import/ebird/v2022/ornithologue_ebird_v2022.csv"
 
   def create_taxa_from_stream(book, stream) do
     stream
