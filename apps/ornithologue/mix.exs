@@ -46,6 +46,11 @@ defmodule Ornithologue.MixProject do
       # For jsonb columns
       {:jason, "~> 1.0"},
       {:csv, "~> 3.0"},
+      {:ex_aws, "~> 2.1"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:hackney, "~> 1.9"},
+      {:sweet_xml, "~> 0.6"},
+      {:configparser_ex, "~> 4.0", only: :dev},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:ex_machina, "~> 2.7.0", only: :test},

@@ -105,3 +105,17 @@ config :swoosh, :api_client, false
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
+
+# config :ex_aws,
+#   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, {:awscli, "default", 30}, :instance_role],
+#   secret_access_key: [
+#     {:system, "AWS_SECRET_ACCESS_KEY"},
+#     {:awscli, "default", 30},
+#     :instance_role
+#   ],
+#   region: {:system, "AWS_REGION"}
+
+# config :ornithologue, Ornitho.StreamImporter,
+#   adapter: Ornitho.StreamImporter.S3Adapter,
+#   bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
+#   region: System.get_env("ORNITHO_IMPORTER_S3_REGION")

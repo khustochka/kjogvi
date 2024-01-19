@@ -44,8 +44,15 @@ defmodule Ornitho.StreamImporter do
       end
 
       defp file_streamer(path) do
-        ("priv" <> path)
-        |> File.stream!([:trim_bom])
+        adapter().file_streamer(path)
+      end
+
+      defp config() do
+        Application.get_env(:ornithologue, Ornitho.StreamImporter)
+      end
+
+      defp adapter() do
+        config()[:adapter]
       end
     end
   end

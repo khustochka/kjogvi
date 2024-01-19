@@ -111,4 +111,11 @@ if config_env() == :prod do
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 
   config :kjogvi, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+
+  # ORNITHOLOGUE IMPORTER
+
+  config :ornithologue, Ornitho.StreamImporter,
+    adapter: Ornitho.StreamImporter.S3Adapter,
+    bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
+    region: System.get_env("ORNITHO_IMPORTER_S3_REGION")
 end
