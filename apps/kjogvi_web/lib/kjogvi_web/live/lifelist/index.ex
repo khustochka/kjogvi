@@ -110,7 +110,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <th class="p-0 pr-6 pb-4 font-normal text-center">Date</th>
           <th class="p-0 pr-6 pb-4 font-normal">Location</th>
           <th class="p-0 pr-6 pb-4 font-normal">Country</th>
-          <th class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
+          <th :if={@current_user} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
@@ -130,7 +130,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                 <%= lifer.location.country.name_en %>
               <% end %>
             </td>
-            <td class="p-0 py-4 pr-6 text-center">
+            <td :if={@current_user} class="p-0 py-4 pr-6 text-center">
               <.link navigate={~p"/cards/#{lifer.card_id}"}>
                 <.icon name="hero-clipboard-document-list" class="w-[18px]" />
               </.link>

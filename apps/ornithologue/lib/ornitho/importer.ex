@@ -60,17 +60,18 @@ defmodule Ornitho.Importer do
 
       def process_import(opts \\ []) do
         force = opts[:force]
-        Ops.transaction fn ->
+
+        Ops.transaction(fn ->
           with {:ok, _} <- prepare_repo(force: force),
-              {:ok, book} <- create_book(),
-              {:ok, _} = result <- create_taxa(book),
-              {1, _} <- update_imported_time(book) do
+               {:ok, book} <- create_book(),
+               {:ok, _} = result <- create_taxa(book),
+               {1, _} <- update_imported_time(book) do
             result
           else
             {:error, e} when is_binary(e) -> raise(e)
             {:error, e} -> raise(inspect(e))
           end
-        end
+        end)
       end
 
       defp prepare_repo(opts \\ []) do

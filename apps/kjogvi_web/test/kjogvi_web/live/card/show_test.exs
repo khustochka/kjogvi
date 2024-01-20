@@ -2,6 +2,11 @@ defmodule KjogviWeb.Live.Card.ShowTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
+  import Kjogvi.UsersFixtures
+
+  setup %{conn: conn} do
+    %{conn: log_in_user(conn, user_fixture())}
+  end
 
   test "renders with no observations", %{conn: conn} do
     card = insert(:card)
