@@ -30,7 +30,7 @@ defmodule KjogviWeb.MixProject do
   def application do
     [
       mod: {KjogviWeb.Application, []},
-      extra_applications: [:logger, :runtime_tools, :os_mon]
+      extra_applications: extra_apps(Mix.env())
     ]
   end
 
@@ -41,6 +41,9 @@ defmodule KjogviWeb.MixProject do
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp extra_apps(:test), do: [:logger, :runtime_tools]
+  defp extra_apps(_), do: [:logger, :runtime_tools, :os_mon]
 
   # Specifies your project dependencies.
   #
