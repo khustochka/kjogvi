@@ -13,7 +13,7 @@ defmodule OrnithoWeb.Router do
           {session_name, session_opts, route_opts} =
             OrnithoWeb.Router.__options__(opts)
 
-          import Phoenix.Router, only: [get: 3, get: 4]
+          import Phoenix.Router, only: [get: 3, get: 4, post: 3, post: 4]
           import Phoenix.LiveView.Router, only: [live: 4, live_session: 3]
 
           live_session session_name, session_opts do
@@ -22,6 +22,7 @@ defmodule OrnithoWeb.Router do
             get "/js-:md5", OrnithoWeb.Assets, :js, as: :ornitho_web_asset
 
             get "/", OrnithoWeb.BooksController, :index, route_opts
+            post "/books", OrnithoWeb.BooksController, :import, route_opts
 
             live "/:slug/:version", OrnithoWeb.Live.Book.Show, nil, route_opts
             live "/:slug/:version/page/:page", OrnithoWeb.Live.Book.Show, nil, route_opts

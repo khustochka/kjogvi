@@ -30,6 +30,29 @@ defmodule OrnithoWeb.BooksHTML do
         <.datetime time={book.imported_at} />
       </:col>
     </.simpler_table>
+    <h2>Import</h2>
+
+    <.simpler_table id="importers" rows={@importers}>
+      <:col :let={importer} label="slug">
+        <%= importer.slug %>
+      </:col>
+      <:col :let={importer} label="version">
+        <%= importer.version %>
+      </:col>
+      <:col :let={importer} label="name">
+        <%= importer.name %>
+      </:col>
+      <:col :let={importer} label="description">
+        <%= importer.description %>
+      </:col>
+      <:col :let={importer} label="import">
+      <.simple_form for={nil} phx-submit="import" action={OrnithoWeb.LinkHelper.path(@conn, "/books?importer=#{importer}")}>
+        <:actions>
+          <.button>Import</.button>
+        </:actions>
+      </.simple_form>
+      </:col>
+    </.simpler_table>
     """
   end
 end
