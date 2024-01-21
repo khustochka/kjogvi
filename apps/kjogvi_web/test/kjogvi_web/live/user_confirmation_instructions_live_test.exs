@@ -1,68 +1,70 @@
-defmodule KjogviWeb.UserConfirmationInstructionsLiveTest do
-  use KjogviWeb.ConnCase
-  @moduletag :skip
+if Application.compile_env(:kjogvi, :allow_user_registration, false) do
+  defmodule KjogviWeb.UserConfirmationInstructionsLiveTest do
+    use KjogviWeb.ConnCase
+    @moduletag :skip
 
-  import Phoenix.LiveViewTest
-  import Kjogvi.UsersFixtures
+    import Phoenix.LiveViewTest
+    import Kjogvi.UsersFixtures
 
-  alias Kjogvi.Users
-  alias Kjogvi.Repo
+    alias Kjogvi.Users
+    alias Kjogvi.Repo
 
-  setup do
-    %{user: user_fixture()}
-  end
-
-  describe "Resend confirmation" do
-    test "renders the resend confirmation page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/users/confirm")
-      assert html =~ "Resend confirmation instructions"
+    setup do
+      %{user: user_fixture()}
     end
 
-    test "sends a new confirmation token", %{conn: conn, user: user} do
-      {:ok, lv, _html} = live(conn, ~p"/users/confirm")
+    describe "Resend confirmation" do
+      test "renders the resend confirmation page", %{conn: conn} do
+        {:ok, _lv, html} = live(conn, ~p"/users/confirm")
+        assert html =~ "Resend confirmation instructions"
+      end
 
-      {:ok, conn} =
-        lv
-        |> form("#resend_confirmation_form", user: %{email: user.email})
-        |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+      test "sends a new confirmation token", %{conn: conn, user: user} do
+        {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+        {:ok, conn} =
+          lv
+          |> form("#resend_confirmation_form", user: %{email: user.email})
+          |> render_submit()
+          |> follow_redirect(conn, ~p"/")
 
-      assert Repo.get_by!(Users.UserToken, user_id: user.id).context == "confirm"
-    end
+        assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+                 "If your email is in our system"
 
-    test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
-      Repo.update!(Users.User.confirm_changeset(user))
+        assert Repo.get_by!(Users.UserToken, user_id: user.id).context == "confirm"
+      end
 
-      {:ok, lv, _html} = live(conn, ~p"/users/confirm")
+      test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
+        Repo.update!(Users.User.confirm_changeset(user))
 
-      {:ok, conn} =
-        lv
-        |> form("#resend_confirmation_form", user: %{email: user.email})
-        |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+        {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+        {:ok, conn} =
+          lv
+          |> form("#resend_confirmation_form", user: %{email: user.email})
+          |> render_submit()
+          |> follow_redirect(conn, ~p"/")
 
-      refute Repo.get_by(Users.UserToken, user_id: user.id)
-    end
+        assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+                 "If your email is in our system"
 
-    test "does not send confirmation token if email is invalid", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/confirm")
+        refute Repo.get_by(Users.UserToken, user_id: user.id)
+      end
 
-      {:ok, conn} =
-        lv
-        |> form("#resend_confirmation_form", user: %{email: "unknown@example.com"})
-        |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+      test "does not send confirmation token if email is invalid", %{conn: conn} do
+        {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+        {:ok, conn} =
+          lv
+          |> form("#resend_confirmation_form", user: %{email: "unknown@example.com"})
+          |> render_submit()
+          |> follow_redirect(conn, ~p"/")
 
-      assert Repo.all(Users.UserToken) == []
+        assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+                 "If your email is in our system"
+
+        assert Repo.all(Users.UserToken) == []
+      end
     end
   end
 end

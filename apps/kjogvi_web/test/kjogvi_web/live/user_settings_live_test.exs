@@ -158,56 +158,58 @@ defmodule KjogviWeb.UserSettingsLiveTest do
     end
   end
 
-  describe "confirm email" do
-    setup %{conn: conn} do
-      user = user_fixture()
-      email = unique_user_email()
+  if Application.compile_env(:kjogvi, :allow_user_registration, false) do
+    describe "confirm email" do
+      setup %{conn: conn} do
+        user = user_fixture()
+        email = unique_user_email()
 
-      token =
-        extract_user_token(fn url ->
-          Users.deliver_user_update_email_instructions(%{user | email: email}, user.email, url)
-        end)
+        token =
+          extract_user_token(fn url ->
+            Users.deliver_user_update_email_instructions(%{user | email: email}, user.email, url)
+          end)
 
-      %{conn: log_in_user(conn, user), token: token, email: email, user: user}
-    end
+        %{conn: log_in_user(conn, user), token: token, email: email, user: user}
+      end
 
-    @tag :skip
-    test "updates the user email once", %{conn: conn, user: user, token: token, email: email} do
-      {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
+      @tag :skip
+      test "updates the user email once", %{conn: conn, user: user, token: token, email: email} do
+        {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
 
-      assert {:live_redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/settings"
-      assert %{"info" => message} = flash
-      assert message == "Email changed successfully."
-      refute Users.get_user_by_email(user.email)
-      assert Users.get_user_by_email(email)
+        assert {:live_redirect, %{to: path, flash: flash}} = redirect
+        assert path == ~p"/users/settings"
+        assert %{"info" => message} = flash
+        assert message == "Email changed successfully."
+        refute Users.get_user_by_email(user.email)
+        assert Users.get_user_by_email(email)
 
-      # use confirm token again
-      {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
-      assert {:live_redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/settings"
-      assert %{"error" => message} = flash
-      assert message == "Email change link is invalid or it has expired."
-    end
+        # use confirm token again
+        {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
+        assert {:live_redirect, %{to: path, flash: flash}} = redirect
+        assert path == ~p"/users/settings"
+        assert %{"error" => message} = flash
+        assert message == "Email change link is invalid or it has expired."
+      end
 
-    @tag :skip
-    test "does not update email with invalid token", %{conn: conn, user: user} do
-      {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/oops")
-      assert {:live_redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/settings"
-      assert %{"error" => message} = flash
-      assert message == "Email change link is invalid or it has expired."
-      assert Users.get_user_by_email(user.email)
-    end
+      @tag :skip
+      test "does not update email with invalid token", %{conn: conn, user: user} do
+        {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/oops")
+        assert {:live_redirect, %{to: path, flash: flash}} = redirect
+        assert path == ~p"/users/settings"
+        assert %{"error" => message} = flash
+        assert message == "Email change link is invalid or it has expired."
+        assert Users.get_user_by_email(user.email)
+      end
 
-    @tag :skip
-    test "redirects if user is not logged in", %{token: token} do
-      conn = build_conn()
-      {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
-      assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/log_in"
-      assert %{"error" => message} = flash
-      assert message == "You must log in to access this page."
+      @tag :skip
+      test "redirects if user is not logged in", %{token: token} do
+        conn = build_conn()
+        {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
+        assert {:redirect, %{to: path, flash: flash}} = redirect
+        assert path == ~p"/users/log_in"
+        assert %{"error" => message} = flash
+        assert message == "You must log in to access this page."
+      end
     end
   end
 end

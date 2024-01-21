@@ -57,33 +57,35 @@ defmodule KjogviWeb.UserLoginLiveTest do
     end
   end
 
-  describe "login navigation" do
-    @tag :skip
-    test "redirects to registration page when the Register button is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+  if Application.compile_env(:kjogvi, :allow_user_registration, false) do
+    describe "login navigation" do
+      @tag :skip
+      test "redirects to registration page when the Register button is clicked", %{conn: conn} do
+        {:ok, lv, _html} = live(conn, ~p"/users/log_in")
 
-      {:ok, _login_live, login_html} =
-        lv
-        |> element(~s|main a:fl-contains("Sign up")|)
-        |> render_click()
-        |> follow_redirect(conn, ~p"/users/register")
+        {:ok, _login_live, login_html} =
+          lv
+          |> element(~s|main a:fl-contains("Sign up")|)
+          |> render_click()
+          |> follow_redirect(conn, ~p"/users/register")
 
-      assert login_html =~ "Register"
-    end
+        assert login_html =~ "Register"
+      end
 
-    @tag :skip
-    test "redirects to forgot password page when the Forgot Password button is clicked", %{
-      conn: conn
-    } do
-      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+      @tag :skip
+      test "redirects to forgot password page when the Forgot Password button is clicked", %{
+        conn: conn
+      } do
+        {:ok, lv, _html} = live(conn, ~p"/users/log_in")
 
-      {:ok, conn} =
-        lv
-        |> element(~s|main a:fl-contains("Forgot your password?")|)
-        |> render_click()
-        |> follow_redirect(conn, ~p"/users/reset_password")
+        {:ok, conn} =
+          lv
+          |> element(~s|main a:fl-contains("Forgot your password?")|)
+          |> render_click()
+          |> follow_redirect(conn, ~p"/users/reset_password")
 
-      assert conn.resp_body =~ "Forgot your password?"
+        assert conn.resp_body =~ "Forgot your password?"
+      end
     end
   end
 end

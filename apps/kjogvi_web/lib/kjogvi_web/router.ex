@@ -36,6 +36,8 @@ defmodule KjogviWeb.Router do
     plug :accepts, ["json"]
   end
 
+  allow_user_registration = Application.compile_env(:kjogvi, :allow_user_registration, false)
+
   scope "/", KjogviWeb do
     pipe_through :browser
 
@@ -103,7 +105,7 @@ defmodule KjogviWeb.Router do
       on_mount: [{KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/users/log_in", UserLoginLive, :new
 
-      if Kjogvi.Config.allow_user_registration() do
+      if allow_user_registration do
         live "/users/register", UserRegistrationLive, :new
         live "/users/reset_password", UserForgotPasswordLive, :new
         live "/users/reset_password/:token", UserResetPasswordLive, :edit
@@ -120,7 +122,7 @@ defmodule KjogviWeb.Router do
       on_mount: [{KjogviWeb.UserAuth, :ensure_authenticated}] do
       live "/users/settings", UserSettingsLive, :edit
 
-      if Kjogvi.Config.allow_user_registration() do
+      if allow_user_registration do
         live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
       end
     end
@@ -131,7 +133,7 @@ defmodule KjogviWeb.Router do
 
     delete "/users/log_out", UserSessionController, :delete
 
-    if Kjogvi.Config.allow_user_registration() do
+    if allow_user_registration do
       live_session :current_user,
         on_mount: [{KjogviWeb.UserAuth, :mount_current_user}] do
         live "/users/confirm/:token", UserConfirmationLive, :edit
