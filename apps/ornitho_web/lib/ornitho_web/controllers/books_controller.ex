@@ -1,11 +1,6 @@
 defmodule OrnithoWeb.BooksController do
   use OrnithoWeb, :controller
 
-  @importers [
-    Ornitho.Importer.Ebird.V2022,
-    Ornitho.Importer.Ebird.V2023
-  ]
-
   plug :put_root_layout, html: {OrnithoWeb.Layouts, :root}
 
   def index(conn, _params) do
@@ -14,7 +9,7 @@ defmodule OrnithoWeb.BooksController do
     conn
     |> assign(:books, books)
     |> assign(:page_title, "Books")
-    |> assign(:importers, @importers)
+    |> assign(:importers, Ornitho.Importer.unimported())
     |> render(:index)
   end
 
@@ -22,7 +17,7 @@ defmodule OrnithoWeb.BooksController do
     importer = String.to_atom(importer_string)
 
     conn =
-      if importer in @importers do
+      if importer in Ornitho.Importer.legit_importers() do
         importer.process_import
         conn
       else

@@ -6,9 +6,17 @@ defmodule Ornitho.Finder.Book do
   alias Ornitho.Query
   alias Ornitho.Schema.Book
 
+  import Ecto.Query
+
   def all() do
     Query.Book.base_book()
     |> Query.Book.ordered()
+    |> Ornithologue.repo().all()
+  end
+
+  def all_signatures() do
+    Query.Book.base_book()
+    |> select([b], [b.slug, b.version])
     |> Ornithologue.repo().all()
   end
 

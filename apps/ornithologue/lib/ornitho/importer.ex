@@ -11,6 +11,10 @@ defmodule Ornitho.Importer do
   """
 
   @required_keys [:slug, :version, :name]
+  @legit_importers [
+    Ornitho.Importer.Ebird.V2022,
+    Ornitho.Importer.Ebird.V2023
+  ]
 
   defmacro __using__(opts) do
     missing_keys =
@@ -62,17 +66,20 @@ defmodule Ornitho.Importer do
       def process_import(opts \\ []) do
         force = opts[:force]
 
-        Ops.transaction(fn ->
-          with {:ok, _} <- prepare_repo(force: force),
-               {:ok, book} <- create_book(),
-               {:ok, _} = result <- create_taxa(book),
-               {1, _} <- update_imported_time(book) do
-            result
-          else
-            {:error, e} when is_binary(e) -> raise(e)
-            {:error, e} -> raise(inspect(e))
-          end
-        end, timeout: @default_timeout)
+        Ops.transaction(
+          fn ->
+            with {:ok, _} <- prepare_repo(force: force),
+                 {:ok, book} <- create_book(),
+                 {:ok, _} = result <- create_taxa(book),
+                 {1, _} <- update_imported_time(book) do
+              result
+            else
+              {:error, e} when is_binary(e) -> raise(e)
+              {:error, e} -> raise(inspect(e))
+            end
+          end,
+          timeout: @default_timeout
+        )
       end
 
       defp prepare_repo(opts \\ []) do
@@ -112,5 +119,18 @@ defmodule Ornitho.Importer do
         Ops.Book.mark_book_imported(book)
       end
     end
+  end
+
+  def legit_importers() do
+    @legit_importers
+  end
+
+  def unimported() do
+    imported = Ornitho.Finder.Book.all_signatures()
+
+    @legit_importers
+    |> Enum.reject(fn importer ->
+      [importer.slug, importer.version] in imported
+    end)
   end
 end
