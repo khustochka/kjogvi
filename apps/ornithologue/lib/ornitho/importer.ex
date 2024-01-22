@@ -35,6 +35,7 @@ defmodule Ornitho.Importer do
       alias Ornitho.Schema.{Book, Taxon}
       alias Ornitho.Ops
 
+      @default_timeout 30_000
       @slug opts[:slug]
       @version opts[:version]
       @name opts[:name]
@@ -71,7 +72,7 @@ defmodule Ornitho.Importer do
             {:error, e} when is_binary(e) -> raise(e)
             {:error, e} -> raise(inspect(e))
           end
-        end)
+        end, timeout: @default_timeout)
       end
 
       defp prepare_repo(opts \\ []) do
