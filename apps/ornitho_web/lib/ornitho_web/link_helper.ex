@@ -12,8 +12,8 @@ defmodule OrnithoWeb.LinkHelper do
   end
 
   defp path_from_router(router, path) do
-    # TODO: check if path is prefixed with `/`
+    norm_path = String.trim_leading(path, "/")
     prefix = router.__ornitho_web_prefix__()
-    "#{prefix}/#{path}"
+    "#{prefix}/#{norm_path}"
   end
 end
