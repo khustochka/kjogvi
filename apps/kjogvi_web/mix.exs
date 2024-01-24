@@ -65,7 +65,7 @@ defmodule KjogviWeb.MixProject do
       {:kjogvi, in_umbrella: true},
       {:ornitho_web, in_umbrella: true},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"},
+      {:bandit, "~> 1.0"},
       {:scrivener_phoenix, "~> 0.3.2"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}

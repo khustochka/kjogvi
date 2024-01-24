@@ -34,7 +34,7 @@ config :kjogvi_web,
 # Configures the endpoint
 config :kjogvi_web, KjogviWeb.Endpoint,
   url: [host: "localhost"],
-  adapter: Phoenix.Endpoint.Cowboy2Adapter,
+  adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: KjogviWeb.ErrorHTML, json: KjogviWeb.ErrorJSON],
     layout: false
