@@ -44,23 +44,28 @@ defmodule OrnithoWeb.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # Deps
+      {:phoenix_live_view, "~> 0.20"},
+      {:ornithologue, in_umbrella: true},
+      {:jason, "~> 1.2"},
+
+      # Assets
+      {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
+
+      # Dev/test
       {:phoenix, "~> 1.7.7", only: [:dev, :test]},
       {:phoenix_html, "~> 3.3", only: [:dev, :test]},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.20.0", only: [:dev, :test]},
-      {:floki, ">= 0.30.0", only: :test},
-      {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
-      {:telemetry_metrics, "~> 0.6"},
-      {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.20"},
-      {:ornithologue, in_umbrella: true},
-      {:jason, "~> 1.2"},
+      {:telemetry_metrics, "~> 0.6", only: [:dev, :test]},
+      {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
+      {:gettext, "~> 0.20", only: [:dev, :test]},
       {:bandit, "~> 1.0", only: [:dev, :test]},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:floki, ">= 0.30.0", only: :test}
     ]
   end
 
