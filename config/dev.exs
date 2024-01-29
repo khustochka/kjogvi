@@ -106,6 +106,8 @@ config :swoosh, :api_client, false
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
 
+# ORNITHOLOGUE
+
 # config :ex_aws,
 #   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, {:awscli, "default", 30}, :instance_role],
 #   secret_access_key: [
@@ -119,3 +121,9 @@ config :phoenix, :stacktrace_depth, 20
 #   adapter: Ornitho.StreamImporter.S3Adapter,
 #   bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
 #   region: System.get_env("ORNITHO_IMPORTER_S3_REGION")
+
+# KJOGVI
+
+config :kjogvi, :legacy,
+  adapter: Kjogvi.Legacy.Adapters.Local,
+  database: "quails_development"

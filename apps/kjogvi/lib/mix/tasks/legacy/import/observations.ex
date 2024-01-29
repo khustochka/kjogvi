@@ -6,6 +6,6 @@ defmodule Mix.Tasks.Legacy.Import.Observations do
   def run(_args) do
     Mix.Task.run("app.start")
 
-    Kjogvi.Legacy.Import.import_observations()
+    Kjogvi.Legacy.Import.perform_import(:observations)
   end
 end

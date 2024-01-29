@@ -3,9 +3,9 @@ defmodule Kjogvi.Legacy.Import do
 
   def run do
     prepare_import()
-    import_locations()
-    import_cards()
-    import_observations()
+    perform_import(:locations)
+    perform_import(:cards)
+    perform_import(:observations)
   end
 
   def prepare_import do
@@ -16,47 +16,38 @@ defmodule Kjogvi.Legacy.Import do
     :ok
   end
 
-  def import_locations do
-    {:ok, pid} = Postgrex.start_link(hostname: "localhost", database: "quails_development")
-    results = Postgrex.query!(pid, "SELECT * FROM loci ORDER BY id", [])
-
-    Kjogvi.Legacy.Import.Locations.import(results.columns, results.rows)
+  def perform_import(object_type) do
+    load(object_type, adapter().init, 1)
   end
 
-  def import_cards do
-    {:ok, pid} = Postgrex.start_link(hostname: "localhost", database: "quails_development")
+  defp load(object_type, fetcher, page) do
+    results = adapter().fetch_page(object_type, fetcher, page)
 
-    %{rows: [[cards_num]]} = Postgrex.query!(pid, "SELECT count(id) FROM cards", [])
-
-    for i <- 0..div(cards_num - 1, 1000) do
-      results =
-        Postgrex.query!(pid, "SELECT * FROM cards ORDER BY id LIMIT 1000 OFFSET #{1000 * i}", [])
-
-      Kjogvi.Legacy.Import.Cards.import(results.columns, results.rows)
+    if Enum.empty?(results.rows) do
+      :ok
+    else
+      put_loaded(object_type, results.columns, results.rows)
+      load(object_type, fetcher, page + 1)
     end
   end
 
-  def import_observations do
-    {:ok, pid} = Postgrex.start_link(hostname: "localhost", database: "quails_development")
+  defp put_loaded(:locations, columns, rows) do
+    Kjogvi.Legacy.Import.Locations.import(columns, rows)
+  end
 
-    %{rows: [[obs_num]]} = Postgrex.query!(pid, "SELECT count(id) FROM observations", [])
+  defp put_loaded(:cards, columns, rows) do
+    Kjogvi.Legacy.Import.Cards.import(columns, rows)
+  end
 
-    for i <- 0..div(obs_num - 1, 1000) do
-      results =
-        Postgrex.query!(
-          pid,
-          """
-          SELECT observations.*, taxa.ebird_code
-          FROM observations
-          LEFT OUTER JOIN taxa ON taxa.id = taxon_id
-          ORDER BY id
-          LIMIT 1000
-          OFFSET #{1000 * i}
-          """,
-          []
-        )
+  defp put_loaded(:observations, columns, rows) do
+    Kjogvi.Legacy.Import.Observations.import(columns, rows)
+  end
 
-      Kjogvi.Legacy.Import.Observations.import(results.columns, results.rows)
-    end
+  def config do
+    Application.get_env(:kjogvi, :legacy)
+  end
+
+  defp adapter do
+    config()[:adapter]
   end
 end
