@@ -126,4 +126,4 @@ config :phoenix, :stacktrace_depth, 20
 
 config :kjogvi, :legacy,
   adapter: Kjogvi.Legacy.Adapters.Local,
-  database: "quails_development"
+  database: System.get_env("LEGACY_DATABASE")
