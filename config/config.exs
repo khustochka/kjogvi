@@ -88,6 +88,10 @@ config :ornithologue, Ornitho.StreamImporter,
 
 config :kjogvi, allow_user_registration: false
 
+config :kjogvi, :legacy,
+  adapter: Kjogvi.Legacy.Adapters.Local,
+  database: System.get_env("LEGACY_DATABASE")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
