@@ -54,7 +54,7 @@ defmodule OrnithoWeb.BooksHTML do
             action={OrnithoWeb.LinkHelper.path(@conn, "/books?importer=#{importer}")}
           >
             <:actions>
-              <.button>Import</.button>
+              <.button phx-disable-with="processing...">Import</.button>
             </:actions>
           </.simple_form>
         </:col>

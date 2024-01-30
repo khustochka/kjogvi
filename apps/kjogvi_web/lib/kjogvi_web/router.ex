@@ -67,6 +67,9 @@ defmodule KjogviWeb.Router do
       live "/cards", Live.Card.Index, :index
       live "/cards/page/:page", Live.Card.Index, :index, as: :card_page
       live "/cards/:id", Live.Card.Show, :show
+
+      get "/admin/tasks", Admin.TasksController, :index
+      post "/admin/tasks/legacy_import", Admin.TasksController, :legacy_import
     end
   end
 
