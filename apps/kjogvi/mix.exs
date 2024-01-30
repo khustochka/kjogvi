@@ -52,6 +52,7 @@ defmodule Kjogvi.MixProject do
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.3"},
       {:finch, "~> 0.13"},
+      {:req, "~> 0.4.0"},
       {:scrivener_ecto, "~> 2.7"},
       {:ornithologue, in_umbrella: true},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},

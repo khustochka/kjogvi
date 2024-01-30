@@ -43,8 +43,14 @@ defmodule Kjogvi.Legacy.Import.Observations do
     nil
   end
 
-  defp convert_timestamp(time) do
+  defp convert_timestamp(%NaiveDateTime{} = time) do
     {:ok, converted} = DateTime.from_naive(time, "Etc/UTC")
     converted
+  end
+
+  defp convert_timestamp(time) when is_binary(time) do
+    {:ok, dt, _} = DateTime.from_iso8601(time)
+    {usec, _} = dt.microsecond
+    %{dt | microsecond: {usec, 6}}
   end
 end

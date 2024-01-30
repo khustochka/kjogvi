@@ -118,4 +118,11 @@ if config_env() == :prod do
     adapter: Ornitho.StreamImporter.S3Adapter,
     bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
     region: System.get_env("ORNITHO_IMPORTER_S3_REGION")
+
+  # KJOGVI Legacy Import
+
+  config :kjogvi, :legacy,
+    adapter: Kjogvi.Legacy.Adapters.Download,
+    url: System.get_env("LEGACY_URL"),
+    api_key: System.get_env("LEGACY_API_KEY")
 end
