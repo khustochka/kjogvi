@@ -26,12 +26,8 @@ defmodule Kjogvi.Legacy.Adapters.Download do
     |> convert_body
   end
 
-  defp convert_body(%Req.Response{body: []}) do
-    %{columns: [], rows: []}
-  end
-
-  defp convert_body(%Req.Response{body: [fst | _] = body}) do
-    %{columns: Map.keys(fst), rows: Enum.map(body, &Map.values/1)}
+  defp convert_body(%Req.Response{body: %{"columns" => columns, "rows" => rows}}) do
+    %{columns: columns, rows: rows}
   end
 
   defp base_url do
