@@ -8,7 +8,7 @@ config :logger, :console, format: "[$level] $message\n"
 
 if config_env() == :dev do
   config :esbuild,
-    version: "0.19.11",
+    version: "0.20.0",
     default: [
       args:
         ~w(js/app.js --bundle --minify --target=es2017 --outdir=../dist/js --external:/fonts/* --external:/images/*),

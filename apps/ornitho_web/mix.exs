@@ -46,6 +46,8 @@ defmodule OrnithoWeb.MixProject do
     [
       # Deps
       {:phoenix_live_view, "~> 0.20"},
+      {:phoenix, "~> 1.7.7"},
+      {:phoenix_html, "~> 3.3"},
       {:ornithologue, in_umbrella: true},
       {:jason, "~> 1.2"},
 
@@ -54,8 +56,6 @@ defmodule OrnithoWeb.MixProject do
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
 
       # Dev/test
-      {:phoenix, "~> 1.7.7", only: [:dev, :test]},
-      {:phoenix_html, "~> 3.3", only: [:dev, :test]},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:telemetry_metrics, "~> 0.6", only: [:dev, :test]},
       {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
