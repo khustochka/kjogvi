@@ -28,7 +28,7 @@ jobs:
           POSTGRES_PASSWORD: "kjogvi"
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Elixir
       uses: erlef/setup-beam@v1
       with:
@@ -37,13 +37,13 @@ jobs:
         # elixir-version: '1.14.3' # Define the elixir version [required]
         # otp-version: '25.0' # Define the OTP version [required]
     - name: Restore dependencies cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: deps
         key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
         restore-keys: ${{ runner.os }}-mix-
     - name: Restore build cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: _build
         key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}
