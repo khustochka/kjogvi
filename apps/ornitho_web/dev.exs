@@ -40,12 +40,12 @@ Application.put_env(:ornitho_web, DemoWeb.Endpoint,
   check_origin: false,
   pubsub_server: Demo.PubSub,
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--watch)]},
-    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:ornitho_web, ~w(--watch)]},
+    tailwind: {Tailwind, :install_and_run, [:ornitho_web, ~w(--watch)]}
   ],
   live_reload: [
     patterns: [
-      ~r"dist/.*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"lib/ornitho_web/(live|views)/.*(ex)$",
       ~r"lib/ornitho_web/templates/.*(ex)$"
     ]

@@ -50,8 +50,8 @@ config :kjogvi_web, KjogviWeb.Endpoint,
     System.get_env("SECRET_KEY_BASE") ||
       "Sr/NUHLLmYIqi8RvF+w31wYVljGktNRD+PFxz2MUnXeCwD0HlDD/dpMDachBo5JU",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:kjogvi_web, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:kjogvi_web, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -81,7 +81,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 config :kjogvi_web, KjogviWeb.Endpoint,
   live_reload: [
     patterns: [
-      ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/kjogvi_web/(controllers|live|components)/.*(ex|heex)$"
     ]

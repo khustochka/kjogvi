@@ -3,7 +3,7 @@ Application.put_env(:ornitho_web, Kjogvi.OrnithoRepo,
   hostname: "localhost",
   database: "ornitho_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: System.schedulers_online() * 2
 )
 
 Application.put_env(:ornithologue, :repo, Kjogvi.OrnithoRepo)

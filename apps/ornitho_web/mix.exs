@@ -45,7 +45,7 @@ defmodule OrnithoWeb.MixProject do
   defp deps do
     [
       # Deps
-      {:phoenix_live_view, "~> 0.20"},
+      {:phoenix_live_view, "~> 0.20.2"},
       {:phoenix, "~> 1.7.7"},
       {:phoenix_html, "~> 3.3"},
       {:ornithologue, in_umbrella: true},
@@ -53,14 +53,21 @@ defmodule OrnithoWeb.MixProject do
 
       # Assets
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+      {:heroicons,
+       github: "tailwindlabs/heroicons",
+       tag: "v2.1.1",
+       sparse: "optimized",
+       app: false,
+       compile: false,
+       depth: 1},
 
       # Dev/test
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:telemetry_metrics, "~> 0.6", only: [:dev, :test]},
       {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
       {:gettext, "~> 0.20", only: [:dev, :test]},
-      {:bandit, "~> 1.0", only: [:dev, :test]},
+      {:bandit, "~> 1.2", only: [:dev, :test]},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
@@ -77,8 +84,12 @@ defmodule OrnithoWeb.MixProject do
       dev: "run --no-halt dev.exs",
       setup: ["deps.get", "assets.setup", "assets.build"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind default", "esbuild default"],
-      "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]
+      "assets.build": ["tailwind ornitho_web", "esbuild ornitho_web"],
+      # "assets.deploy": [
+      #   "tailwind ornitho_web --minify",
+      #   "esbuild ornitho_web --minify",
+      #   "phx.digest"
+      # ]
     ]
   end
 end

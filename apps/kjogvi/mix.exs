@@ -50,7 +50,7 @@ defmodule Kjogvi.MixProject do
       {:ecto_psql_extras, "~> 0.7"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.2"},
-      {:swoosh, "~> 1.3"},
+      {:swoosh, "~> 1.5"},
       {:finch, "~> 0.13"},
       {:req, "~> 0.4.0"},
       {:scrivener_ecto, "~> 2.7"},

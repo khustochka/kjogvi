@@ -45,7 +45,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.20.0",
-  default: [
+  kjogvi_web: [
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
     cd: Path.expand("../apps/kjogvi_web/assets", __DIR__),
@@ -55,7 +55,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "3.4.1",
-  default: [
+  kjogvi_web: [
     args: ~w(
       --config=tailwind.config.js
       --input=css/app.css

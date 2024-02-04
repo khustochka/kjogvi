@@ -14,7 +14,7 @@ config :kjogvi, Kjogvi.Repo,
   password: System.get_env("DATABASE_PASSWORD"),
   database: System.get_env("DATABASE_NAME", "kjogvi_test#{System.get_env("MIX_TEST_PARTITION")}"),
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: System.schedulers_online() * 2
 
 # nil username fails, no username uses the current user
 db_user = System.get_env("DATABASE_USER")
@@ -33,7 +33,7 @@ config :kjogvi, Kjogvi.OrnithoRepo,
       "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}"
     ),
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: System.schedulers_online() * 2
 
 # nil username fails, no username uses the current user
 ornitho_db_user = System.get_env("ORNITHO_DATABASE_USER")
