@@ -1,9 +1,9 @@
-defmodule KjogviWeb.Release do
+defmodule Kjogvi.Release do
   @moduledoc """
   Used for executing DB release tasks when run in production without Mix
   installed.
   """
-  @app :kjogvi_web
+  @app :kjogvi
 
   def migrate do
     _ = load_app()

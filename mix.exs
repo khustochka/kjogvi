@@ -28,7 +28,7 @@ defmodule Kjogvi.Umbrella.MixProject do
         "coveralls.html": :test
       ],
       releases: [
-        kjogvi_web: [
+        kjogvi: [
           applications: [kjogvi_web: :permanent]
         ]
       ]
