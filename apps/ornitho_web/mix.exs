@@ -84,7 +84,7 @@ defmodule OrnithoWeb.MixProject do
       dev: "run --no-halt dev.exs",
       setup: ["deps.get", "assets.setup", "assets.build"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind ornitho_web", "esbuild ornitho_web"],
+      "assets.build": ["tailwind ornitho_web", "esbuild ornitho_web"]
       # "assets.deploy": [
       #   "tailwind ornitho_web --minify",
       #   "esbuild ornitho_web --minify",

@@ -14,7 +14,7 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
 
     {:noreply,
      socket
-    |> put_flash(:info, "Legacy import processed.")}
+     |> put_flash(:info, "Legacy import processed.")}
   end
 
   def render(assigns) do
