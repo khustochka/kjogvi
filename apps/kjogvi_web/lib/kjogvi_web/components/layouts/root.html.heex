@@ -42,13 +42,13 @@
           </.link>
         </li>
         <li>
-          <.link
-            href={~p"/users/log_out"}
+          <.form_as_link
+            action={~p"/users/log_out"}
             method="delete"
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+            class="underline text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
           >
             Log out
-          </.link>
+          </.form_as_link>
         </li>
       <% else %>
         <li :if={Kjogvi.Config.allow_user_registration()}>

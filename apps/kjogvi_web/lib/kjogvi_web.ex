@@ -99,6 +99,7 @@ defmodule KjogviWeb do
       # Core UI components and translation
       import KjogviWeb.CoreComponents
       import KjogviWeb.MetaComponents
+      import KjogviWeb.NavigationComponents
       import KjogviWeb.Gettext
 
       # Shortcut for generating JS commands
