@@ -59,7 +59,7 @@ defmodule KjogviWeb.Router do
     pipe_through :browser
     pipe_through :admin
 
-    live_session :current_user,
+    live_session :admin_paths,
       on_mount: [{KjogviWeb.UserAuth, :mount_current_user}] do
       live "/locations", Live.Location.Index, :index
       live "/locations/countries", Live.Country.Index, :index
