@@ -98,6 +98,7 @@ defmodule KjogviWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import KjogviWeb.CoreComponents
+      import KjogviWeb.FlashComponents
       import KjogviWeb.MetaComponents
       import KjogviWeb.NavigationComponents
       import KjogviWeb.Gettext

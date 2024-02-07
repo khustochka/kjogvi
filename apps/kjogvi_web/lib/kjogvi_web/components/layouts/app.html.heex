@@ -52,7 +52,8 @@
 </header>
 <main class="px-4 py-4 sm:px-6 lg:px-8">
   <div class="mx-auto max-w-5xl">
+    <.main_flash flash={@flash} />
     <%= @inner_content %>
-    <.flash_group flash={@flash} />
+    <.hidden_flash />
   </div>
 </main>
