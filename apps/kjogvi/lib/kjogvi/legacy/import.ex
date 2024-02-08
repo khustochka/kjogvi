@@ -1,14 +1,14 @@
 defmodule Kjogvi.Legacy.Import do
   @moduledoc false
 
-  def run do
-    prepare_import()
-    perform_import(:locations)
-    perform_import(:cards)
-    perform_import(:observations)
+  def run(opts \\ []) do
+    prepare_import(opts)
+    perform_import(:locations, opts)
+    perform_import(:cards, opts)
+    perform_import(:observations, opts)
   end
 
-  def prepare_import do
+  def prepare_import(_opts \\ []) do
     Kjogvi.Legacy.Import.Observations.truncate()
     Kjogvi.Legacy.Import.Cards.truncate()
     Kjogvi.Legacy.Import.Locations.truncate()
@@ -16,8 +16,14 @@ defmodule Kjogvi.Legacy.Import do
     :ok
   end
 
-  def perform_import(object_type) do
+  def perform_import(object_type, opts \\ []) do
     load(object_type, adapter().init, 1)
+
+    if pid = opts[:pid] do
+      send(pid, {:legacy_import, {:done, object_type}})
+    end
+
+    :ok
   end
 
   defp load(object_type, fetcher, page) do

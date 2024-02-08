@@ -20,19 +20,20 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
   end
 
   defp start_legacy_import(socket) do
-    # live_view_pid = self()
+    live_view_pid = self()
 
     socket
     |> assign(:async_result, AsyncResult.loading())
     |> start_async(:legacy_import, fn ->
-      Kjogvi.Legacy.Import.run()
-      # Enum.each(1..5, fn n ->
-      #   Process.sleep(1_000)
-      #   IO.puts("SENDING ASYNC TASK MESSAGE #{n}")
-      #   send(live_view_pid, {:task_message, "Async work chunk #{n}"})
-      # end)
+      Kjogvi.Legacy.Import.run(pid: live_view_pid)
       :ok
     end)
+  end
+
+  def handle_info({:legacy_import, {:done, object_type}}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:info, "#{object_type} imported.")}
   end
 
   def handle_async(:legacy_import, {:ok, :ok = _success_result}, socket) do
