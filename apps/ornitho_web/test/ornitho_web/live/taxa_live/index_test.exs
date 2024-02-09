@@ -4,6 +4,16 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
 
   import Phoenix.LiveViewTest
 
+  defp extract_sci_names(html) do
+    {:ok, doc} = Floki.parse_document(html)
+
+    Floki.find(doc, "strong a em.sci_name")
+    |> Enum.map(fn ht ->
+      Floki.text(ht)
+      |> String.trim()
+    end)
+  end
+
   describe "Index" do
     test "displays taxa", %{conn: conn} do
       book = insert(:book)
@@ -19,7 +29,7 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
     test "spaces are trimmed from the beginning and end of the search term", %{conn: conn} do
       book = insert(:book)
       insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
-      insert(:taxon, book: book)
+      taxon2 = insert(:taxon, book: book)
 
       {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
@@ -28,14 +38,16 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
         |> form("#taxa-search")
         |> render_change(%{"search_term" => " acr"})
 
-      assert html2 =~ "Acrocephalus palustris"
-      assert not (html2 =~ "Cuculus canorus")
+        names = extract_sci_names(html2)
+
+        assert "Acrocephalus palustris" in names
+        assert taxon2.name_sci not in names
     end
 
     test "when search term is less than 3 letters, shows the page", %{conn: conn} do
       book = insert(:book)
       insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
-      insert(:taxon, book: book)
+      taxon2 = insert(:taxon, book: book)
 
       {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
@@ -44,8 +56,10 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
         |> form("#taxa-search")
         |> render_change(%{"search_term" => "ac"})
 
-      assert html2 =~ "Acrocephalus palustris"
-      assert html2 =~ "Cuculus canorus"
+      names = extract_sci_names(html2)
+
+      assert "Acrocephalus palustris" in names
+      assert taxon2.name_sci in names
     end
 
     test "when search term is 3 letters or more, shows the search results", %{conn: conn} do
@@ -63,14 +77,13 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
         |> form("#taxa-search")
         |> render_change(%{"search_term" => "acr"})
 
-      assert html2 =~ "Acrocephalus palustris"
-      assert not (html2 =~ "Cuculus canorus")
+      assert extract_sci_names(html2) == ["Acrocephalus palustris"]
     end
 
     test "when search term is cleared, shows the page", %{conn: conn} do
       book = insert(:book)
       insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
-      insert(:taxon, book: book)
+      taxon2 = insert(:taxon, book: book)
 
       {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
@@ -79,8 +92,10 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
         |> form("#taxa-search")
         |> render_change(%{"search_term" => "acr"})
 
-      assert html2 =~ "Acrocephalus palustris"
-      assert not (html2 =~ "Cuculus canorus")
+      names = extract_sci_names(html2)
+
+      assert "Acrocephalus palustris" in names
+      assert taxon2.name_sci not in names
 
       html3 =
         show_live

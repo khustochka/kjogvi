@@ -51,7 +51,13 @@ defmodule OrnithoWeb.Live.Taxa.Index do
         />
       </form>
 
-      <.live_component module={OrnithoWeb.Live.Taxa.Table} id="taxa-table" book={@book} taxa={@taxa} />
+      <.live_component
+        module={OrnithoWeb.Live.Taxa.Table}
+        id="taxa-table"
+        book={@book}
+        taxa={@taxa}
+        highlight_term={@search_term}
+      />
 
       <.simple_pagination
         :if={!@search_enabled}

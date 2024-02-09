@@ -112,11 +112,12 @@ defmodule OrnithoWeb.TaxaComponents do
   """
   attr :taxon, Ornitho.Schema.Taxon, required: true
   # TODO: merge classes
-  attr :rest, :global, default: %{class: "italic"}
+  attr :rest, :global, default: %{class: "italic sci_name"}
+  attr :highlight_term, :string, default: nil
 
   def sci_name(assigns) do
     ~H"""
-    <em {@rest}><%= @taxon.name_sci %></em>
+    <em {@rest}><.highlighted content={@taxon.name_sci} term={@highlight_term} /></em>
     """
   end
 
@@ -125,18 +126,22 @@ defmodule OrnithoWeb.TaxaComponents do
 
   def highlighted(assigns) do
     ~H"""
-    <%= if is_nil(@term) do %>
-      <%= assigns.content %>
+    <%= if is_nil(@term) || @term == "" do %>
+      <%= @content %>
     <% else %>
-      <%= for {type, text} <- split_for_highlight(assigns.content, assigns.term) do %>
-        <%= if type == :highlight do %>
-          <span class="bg-yellow-400"><%= text %></span>
-        <% else %>
-          <%= text %>
-        <% end %>
-      <% end %>
+      <span phx-no-format>
+      <%= for vals <- split_for_highlight(@content, @term) do %><%= maybe_highlighted(vals) %><% end %>
+      </span>
     <% end %>
     """
+  end
+
+  defp maybe_highlighted(%{type: :highlight, text: _text} = assigns) do
+    ~H(<span class="bg-yellow-200"><%= @text %></span>)
+  end
+
+  defp maybe_highlighted(%{type: _, text: _text} = assigns) do
+    ~H"<%= @text %>"
   end
 
   defp split_for_highlight(content, term) do
@@ -144,10 +149,13 @@ defmodule OrnithoWeb.TaxaComponents do
     |> String.split(~r{#{term}}i, include_captures: true)
     |> Enum.map(fn str ->
       if str =~ ~r{\A#{term}\Z}i do
-        {:highlight, str}
+        :highlight
       else
-        {:plain, str}
+        :plain
       end
+      |> then(fn type ->
+        %{type: type, text: str}
+      end)
     end)
   end
 
