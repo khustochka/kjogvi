@@ -1,4 +1,8 @@
 defmodule Ornitho.StreamImporter.LocalAdapter do
+  @moduledoc """
+  Adapter for taxonomy importer that load source files from disk.
+  """
+
   @default_path_prefix "priv"
 
   def file_streamer(path) do

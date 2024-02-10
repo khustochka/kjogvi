@@ -1,4 +1,6 @@
 defmodule Ornitho.Migrations.V01 do
+  @moduledoc false
+
   use Ecto.Migration
 
   def up do

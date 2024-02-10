@@ -1,4 +1,8 @@
 defmodule Ornitho.StreamImporter.S3Adapter do
+  @moduledoc """
+  Adapter for taxonomy importer that downloads source files from S3.
+  """
+
   def file_streamer(path) do
     resp =
       ExAws.S3.get_object(bucket(), path)

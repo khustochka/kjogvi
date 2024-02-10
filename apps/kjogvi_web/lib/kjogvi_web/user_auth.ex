@@ -1,4 +1,6 @@
 defmodule KjogviWeb.UserAuth do
+  @moduledoc false
+
   use KjogviWeb, :verified_routes
 
   import Plug.Conn
