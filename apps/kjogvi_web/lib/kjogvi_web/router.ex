@@ -4,11 +4,6 @@ defmodule KjogviWeb.Router do
   import KjogviWeb.UserAuth
 
   import OrnithoWeb.Router
-  # If you want to use the LiveDashboard in production, you should put
-  # it behind authentication and allow only admins to access it.
-  # If your application does not have an admins-only section yet,
-  # you can use Plug.BasicAuth to set up some basic authentication
-  # as long as you are also using SSL (which you should anyway).
   import Phoenix.LiveDashboard.Router
 
   import KjogviWeb.Plug
@@ -44,16 +39,7 @@ defmodule KjogviWeb.Router do
     get "/", PageController, :home
   end
 
-  scope "/", KjogviWeb do
-    pipe_through :browser
-    pipe_through :admin
-
-    live_dashboard "/dashboard",
-      metrics: KjogviWeb.Telemetry,
-      env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY"]
-
-    ornitho_web("/taxonomy")
-  end
+  # ADMIN ROUTES
 
   scope "/", KjogviWeb do
     pipe_through :browser
@@ -73,6 +59,21 @@ defmodule KjogviWeb.Router do
     end
   end
 
+  # MOUNTED APPS
+
+  scope "/", KjogviWeb do
+    pipe_through :browser
+    pipe_through :admin
+
+    ornitho_web "/taxonomy"
+
+    live_dashboard "/dashboard",
+      metrics: KjogviWeb.Telemetry,
+      env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY"]
+  end
+
+  # PUBLIC ROUTES
+
   scope "/lifelist", KjogviWeb do
     pipe_through :browser
     pipe_through :lifelist
@@ -89,15 +90,6 @@ defmodule KjogviWeb.Router do
   # scope "/api", KjogviWeb do
   #   pipe_through :api
   # end
-
-  # Enable LiveDashboard and Swoosh mailbox preview in development
-  if Application.compile_env(:kjogvi_web, :dev_routes) do
-    scope "/dev" do
-      pipe_through :browser
-
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
-  end
 
   ## Authentication routes
 
@@ -142,6 +134,17 @@ defmodule KjogviWeb.Router do
         live "/users/confirm/:token", UserConfirmationLive, :edit
         live "/users/confirm", UserConfirmationInstructionsLive, :new
       end
+    end
+  end
+
+  # DEV ROUTES
+
+  # Enable Swoosh mailbox preview in development
+  if Application.compile_env(:kjogvi_web, :dev_routes) do
+    scope "/dev" do
+      pipe_through :browser
+
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 end
