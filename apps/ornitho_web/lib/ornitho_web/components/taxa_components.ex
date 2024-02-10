@@ -129,9 +129,9 @@ defmodule OrnithoWeb.TaxaComponents do
     <%= if is_nil(@term) || @term == "" do %>
       <%= @content %>
     <% else %>
-      <span phx-no-format>
+      <.unchanged phx-no-format>
       <%= for vals <- split_for_highlight(@content, @term) do %><%= maybe_highlighted(vals) %><% end %>
-      </span>
+      </.unchanged>
     <% end %>
     """
   end

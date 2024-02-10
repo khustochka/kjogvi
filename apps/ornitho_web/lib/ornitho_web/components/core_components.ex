@@ -566,6 +566,21 @@ defmodule OrnithoWeb.CoreComponents do
   end
 
   @doc """
+  Renders the inner block unchanged.
+
+  The main use for this is to apply `phx-no-format`.
+
+  ## Examples
+
+      <.unchanged phx-no-format>Very long line.</.unchanged>
+  """
+  def unchanged(assigns) do
+    ~H"""
+    <%= render_slot(@inner_block) %>
+    """
+  end
+
+  @doc """
   Renders a [Heroicon](https://heroicons.com).
 
   Heroicons come in three styles – outline, solid, and mini.

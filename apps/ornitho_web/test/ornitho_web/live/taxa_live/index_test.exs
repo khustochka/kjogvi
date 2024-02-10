@@ -38,10 +38,10 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
         |> form("#taxa-search")
         |> render_change(%{"search_term" => " acr"})
 
-        names = extract_sci_names(html2)
+      names = extract_sci_names(html2)
 
-        assert "Acrocephalus palustris" in names
-        assert taxon2.name_sci not in names
+      assert "Acrocephalus palustris" in names
+      assert taxon2.name_sci not in names
     end
 
     test "when search term is less than 3 letters, shows the page", %{conn: conn} do
