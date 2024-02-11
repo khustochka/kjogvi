@@ -124,7 +124,13 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
               <%= lifer.observ_date %>
             </td>
-            <td class="p-0 py-4 pr-6"><%= lifer.location.name_en %></td>
+            <td class="p-0 py-4 pr-6">
+              <%= if @current_user do %>
+                <%= lifer.location.name_en %>
+              <% else %>
+                <%= Kjogvi.Geo.Location.public_location(lifer.location).name_en %>
+              <% end %>
+            </td>
             <td class="p-0 py-4 pr-6">
               <%= if lifer.location.country do %>
                 <%= lifer.location.country.name_en %>

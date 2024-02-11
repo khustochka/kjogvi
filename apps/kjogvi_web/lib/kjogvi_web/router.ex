@@ -65,7 +65,7 @@ defmodule KjogviWeb.Router do
     pipe_through :browser
     pipe_through :admin
 
-    ornitho_web "/taxonomy"
+    ornitho_web("/taxonomy")
 
     live_dashboard "/dashboard",
       metrics: KjogviWeb.Telemetry,

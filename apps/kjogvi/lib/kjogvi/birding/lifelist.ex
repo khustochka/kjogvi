@@ -6,6 +6,7 @@ defmodule Kjogvi.Birding.Lifelist do
   import Ecto.Query
   import Kjogvi.Query.API
 
+  alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
 
   alias Kjogvi.Birding.Card
@@ -18,6 +19,7 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Repo.preload(location: :country)
+    |> preload_location_ancestors
     |> Kjogvi.Birding.preload_taxa_and_species()
     |> Enum.filter(fn rec -> rec.species end)
     |> Enum.uniq_by(fn rec -> rec.species.code end)
@@ -86,5 +88,26 @@ defmodule Kjogvi.Birding.Lifelist do
     from o in Observation,
       join: c in assoc(o, :card),
       where: o.unreported == false
+  end
+
+  defp preload_location_ancestors(lifers) do
+    ancestor_loc_ids =
+      lifers
+      |> Enum.flat_map(fn lifer -> lifer.location.ancestry end)
+      |> Enum.uniq()
+
+    loci =
+      from(l in Location, where: l.id in ^ancestor_loc_ids)
+      |> Repo.all()
+      |> Enum.group_by(fn loc -> loc.id end)
+
+    lifers
+    |> Enum.map(fn lifer ->
+      lifer.location.ancestry
+      |> Enum.map(fn id -> List.first(loci[id]) end)
+      |> then(fn ancestors ->
+        put_in(lifer.location.ancestors, ancestors)
+      end)
+    end)
   end
 end

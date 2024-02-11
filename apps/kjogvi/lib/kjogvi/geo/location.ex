@@ -36,6 +36,9 @@ defmodule Kjogvi.Geo.Location do
     timestamps()
 
     field :cards_count, :integer, virtual: true
+    field :ancestors, :any,
+      virtual: true,
+      default: struct(Ecto.Association.NotLoaded, %{__field__: :ancestors})
   end
 
   @doc false
@@ -63,5 +66,17 @@ defmodule Kjogvi.Geo.Location do
   def long_name(%{name_en: name, country: country}) do
     [name, country.name_en]
     |> Enum.join(", ")
+  end
+
+  def public_location(%{is_private: false} = location) do
+    location
+  end
+
+  def public_location(%{ancestors: ancestors}) when is_list(ancestors) do
+    ancestors
+    |> Enum.reverse()
+    |> Enum.find(fn loc ->
+      !loc.is_private
+    end)
   end
 end
