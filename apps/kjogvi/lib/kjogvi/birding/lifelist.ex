@@ -90,23 +90,24 @@ defmodule Kjogvi.Birding.Lifelist do
       where: o.unreported == false
   end
 
-  defp preload_location_ancestors(lifers) do
+  # TODO: extract this to be usable universally
+  defp preload_location_ancestors(things) do
     ancestor_loc_ids =
-      lifers
-      |> Enum.flat_map(fn lifer -> lifer.location.ancestry end)
+      things
+      |> Enum.flat_map(fn thing -> thing.location.ancestry end)
       |> Enum.uniq()
 
     loci =
       from(l in Location, where: l.id in ^ancestor_loc_ids)
       |> Repo.all()
-      |> Enum.group_by(fn loc -> loc.id end)
+      |> Enum.reduce(%{}, fn loc, acc -> Map.put(acc, loc.id, loc) end)
 
-    lifers
-    |> Enum.map(fn lifer ->
-      lifer.location.ancestry
-      |> Enum.map(fn id -> List.first(loci[id]) end)
+    things
+    |> Enum.map(fn thing ->
+      thing.location.ancestry
+      |> Enum.map(fn id -> loci[id] end)
       |> then(fn ancestors ->
-        put_in(lifer.location.ancestors, ancestors)
+        put_in(thing.location.ancestors, ancestors)
       end)
     end)
   end
