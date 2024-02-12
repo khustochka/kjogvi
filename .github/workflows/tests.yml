@@ -54,7 +54,7 @@ jobs:
         mix deps.get
         mix deps.compile
     - name: Compile
-      run: MIX_ENV=test mix compile
+      run: mix compile
     - name: Run tests with coverage
       env:
         DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
