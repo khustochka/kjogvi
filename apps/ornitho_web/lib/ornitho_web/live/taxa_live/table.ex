@@ -23,7 +23,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
   attr :taxa, :list, required: true
   attr :skip_parent_species, :boolean, default: false
   attr :expanded_taxon, :string, default: nil
-  attr :highlight_term, :string, default: nil
+  attr :search_term, :string, default: nil
 
   def render(assigns) do
     ~H"""
@@ -49,7 +49,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
               </td>
               <td class="p-0 py-4 pr-6">
                 <span class="font-mono">
-                  <.highlighted content={taxon.code} term={@highlight_term} />
+                  <.highlighted content={taxon.code} term={@search_term} />
                 </span>
               </td>
               <td class="p-0 py-4 pr-6">
@@ -65,7 +65,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                             )
                           }
                           phx-no-format
-                        ><.sci_name taxon={taxon} highlight_term={@highlight_term} /></.link>
+                        ><.sci_name taxon={taxon} search_term={@search_term} /></.link>
                       </strong>
                       <.category_tag :if={taxon.category} category={taxon.category} />
                       <.extinct_tag taxon={taxon} />
@@ -76,7 +76,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                   </div>
                 </div>
                 <div>
-                  <.highlighted content={taxon.name_en} term={@highlight_term} />
+                  <.highlighted content={taxon.name_en} term={@search_term} />
                 </div>
               </td>
               <td :if={!@skip_parent_species} class="p-0 py-4 pr-6 text-center">

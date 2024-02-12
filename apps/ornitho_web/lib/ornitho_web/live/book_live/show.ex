@@ -27,15 +27,9 @@ defmodule OrnithoWeb.Live.Book.Show do
 
     {:noreply,
      socket
-     |> assign(:page_num, page)}
+     |> assign(:page_num, page)
+     |> assign(:search_term, params["search_term"])}
   end
-
-  # def handle_params(%{"slug" => slug, "version" => version}, _, socket) do
-  #   {:noreply,
-  #    socket
-  #    |> assign(:page_title, page_title(socket.assigns.live_action))
-  #    |> assign(:book, Bibliothek.get_book!(id))}
-  # end
 
   @impl true
   def render(assigns) do
@@ -63,6 +57,7 @@ defmodule OrnithoWeb.Live.Book.Show do
       id="taxa-index"
       book={@book}
       page_num={@page_num}
+      search_term={@search_term}
     />
     """
   end

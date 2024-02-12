@@ -113,11 +113,11 @@ defmodule OrnithoWeb.TaxaComponents do
   attr :taxon, Ornitho.Schema.Taxon, required: true
   # TODO: merge classes
   attr :rest, :global, default: %{class: "italic sci_name"}
-  attr :highlight_term, :string, default: nil
+  attr :search_term, :string, default: nil
 
   def sci_name(assigns) do
     ~H"""
-    <em {@rest}><.highlighted content={@taxon.name_sci} term={@highlight_term} /></em>
+    <em {@rest}><.highlighted content={@taxon.name_sci} term={@search_term} /></em>
     """
   end
 

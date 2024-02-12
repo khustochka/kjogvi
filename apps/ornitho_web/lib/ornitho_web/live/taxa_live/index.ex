@@ -8,12 +8,12 @@ defmodule OrnithoWeb.Live.Taxa.Index do
   @minimum_search_term_length 3
 
   @impl true
-  def update(%{book: book, page_num: page_num}, socket) do
+  def update(%{book: book, page_num: page_num, search_term: search_term}, socket) do
     {:ok,
      socket
      |> assign(:book, book)
      |> assign(:page_num, page_num)
-     |> assign_search_state(nil)
+     |> assign_search_state(search_term)
      |> assign_taxa}
   end
 
@@ -27,8 +27,9 @@ defmodule OrnithoWeb.Live.Taxa.Index do
 
   attr :book, Ornitho.Schema.Book, required: true
   attr :taxa, :list, required: true
-  attr :pagenum, :integer, default: 1
+  attr :page_num, :integer, default: 1
   attr :search_enabled, :boolean, default: false
+  attr :search_term, :string, default: nil
 
   def render(assigns) do
     ~H"""
@@ -56,7 +57,7 @@ defmodule OrnithoWeb.Live.Taxa.Index do
         id="taxa-table"
         book={@book}
         taxa={@taxa}
-        highlight_term={@search_term}
+        search_term={@search_term}
       />
 
       <.simple_pagination
