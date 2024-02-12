@@ -19,6 +19,9 @@ defmodule KjogviWeb.Live.Lifelist.Params do
 
         {"location", location_slug} ->
           Map.put(acc, :location, validate_and_convert_location(location_slug))
+
+        {_, _} ->
+          acc
       end
     end)
   end

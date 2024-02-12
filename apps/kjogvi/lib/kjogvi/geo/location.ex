@@ -36,6 +36,7 @@ defmodule Kjogvi.Geo.Location do
     timestamps()
 
     field :cards_count, :integer, virtual: true
+
     field :ancestors, :any,
       virtual: true,
       default: struct(Ecto.Association.NotLoaded, %{__field__: :ancestors})

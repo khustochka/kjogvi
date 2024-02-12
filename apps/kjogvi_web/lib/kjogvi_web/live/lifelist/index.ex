@@ -39,6 +39,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       :noreply,
       socket
       |> assign(
+        public_view: derive_public_view(socket, params),
         lifelist: lifelist,
         total: length(lifelist),
         year: filter[:year],
@@ -53,6 +54,14 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   @impl true
+  def handle_event("public_toggle", %{"_target" => ["public_view"]} = params, socket) do
+    {:noreply,
+     push_navigate(socket,
+       to: modify_lifelist_path_query(socket, %{public_view: derive_public_view(socket, params)})
+     )}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <.header>
@@ -61,6 +70,26 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     <p class="mt-4">
       Total of <%= @total %> species.
     </p>
+
+    <div :if={@current_user} class="flex items-center mt-4">
+      <form action="" phx-change="public_toggle">
+        <input type="hidden" name="public_view" />
+        <input
+          type="checkbox"
+          name="public_view"
+          value="true"
+          checked={@public_view}
+          id="hs-basic-with-description-unchecked"
+          class="relative w-[3.25rem] h-7 p-px bg-gray-100 border-transparent text-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:ring-blue-600 disabled:opacity-50 disabled:pointer-events-none checked:bg-none checked:text-blue-600 checked:border-blue-600 focus:checked:border-blue-600 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-600 before:inline-block before:w-6 before:h-6 before:bg-white checked:before:bg-blue-200 before:translate-x-0 checked:before:translate-x-full before:rounded-full before:shadow before:transform before:ring-0 before:transition before:ease-in-out before:duration-200 dark:before:bg-gray-400 dark:checked:before:bg-blue-200"
+        />
+        <label
+          for="hs-basic-with-description-unchecked"
+          class="text-sm text-gray-500 ms-3 dark:text-gray-400"
+        >
+          Public view
+        </label>
+      </form>
+    </div>
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
@@ -110,7 +139,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <th class="p-0 pr-6 pb-4 font-normal text-center">Date</th>
           <th class="p-0 pr-6 pb-4 font-normal">Location</th>
           <th class="p-0 pr-6 pb-4 font-normal">Country</th>
-          <th :if={@current_user} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
+          <th :if={!@public_view} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
@@ -125,10 +154,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
               <%= lifer.observ_date %>
             </td>
             <td class="p-0 py-4 pr-6">
-              <%= if @current_user do %>
-                <%= lifer.location.name_en %>
-              <% else %>
+              <%= if @public_view do %>
                 <%= Kjogvi.Geo.Location.public_location(lifer.location).name_en %>
+              <% else %>
+                <%= lifer.location.name_en %>
               <% end %>
             </td>
             <td class="p-0 py-4 pr-6">
@@ -136,7 +165,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                 <%= lifer.location.country.name_en %>
               <% end %>
             </td>
-            <td :if={@current_user} class="p-0 py-4 pr-6 text-center">
+            <td :if={!@public_view} class="p-0 py-4 pr-6 text-center">
               <.link navigate={~p"/cards/#{lifer.card_id}"}>
                 <.icon name="hero-clipboard-document-list" class="w-[18px]" />
               </.link>
@@ -187,19 +216,33 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     socket
   end
 
-  defp lifelist_path(nil = _year, nil = _location) do
-    ~p"/lifelist"
+  defp derive_public_view(socket, params) do
+    is_nil(socket.assigns.current_user) || params["public_view"] == "true"
   end
 
-  defp lifelist_path(year, nil = _location) do
-    ~p"/lifelist/#{year}"
+  defp modify_lifelist_path_query(socket, query) do
+    query
+    |> Enum.reject(fn {_, val} -> !val end)
+    |> then(fn new_query ->
+      lifelist_path(socket.assigns.year, socket.assigns.location, new_query)
+    end)
   end
 
-  defp lifelist_path(nil = _year, location) do
-    ~p"/lifelist/#{location.slug}"
+  defp lifelist_path(year, location, query \\ [])
+
+  defp lifelist_path(nil = _year, nil = _location, query) do
+    ~p"/lifelist?#{query}"
   end
 
-  defp lifelist_path(year, location) do
-    ~p"/lifelist/#{year}/#{location.slug}"
+  defp lifelist_path(year, nil = _location, query) do
+    ~p"/lifelist/#{year}?#{query}"
+  end
+
+  defp lifelist_path(nil = _year, location, query) do
+    ~p"/lifelist/#{location.slug}?#{query}"
+  end
+
+  defp lifelist_path(year, location, query) do
+    ~p"/lifelist/#{year}/#{location.slug}?#{query}"
   end
 end
