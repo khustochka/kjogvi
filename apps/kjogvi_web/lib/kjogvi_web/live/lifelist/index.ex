@@ -47,6 +47,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         years: Util.Enum.zip_inclusion(all_years, years),
         locations: all_countries |> Enum.map(fn el -> {el, el.id in country_ids} end)
       )
+      |> derive_current_path_query()
       |> derive_page_header()
       |> derive_page_title()
       |> derive_robots()
@@ -54,10 +55,23 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   @impl true
-  def handle_event("public_toggle", %{"_target" => ["public_view"]} = params, socket) do
+  def handle_event(
+        "public_toggle",
+        %{"_target" => ["public_view"]} = params,
+        %{assigns: assigns} = socket
+      ) do
     {:noreply,
      push_navigate(socket,
-       to: modify_lifelist_path_query(socket, %{public_view: derive_public_view(socket, params)})
+       to:
+         lifelist_path(
+           assigns.year,
+           assigns.location,
+           Keyword.put(
+             assigns.current_path_query,
+             :public_view,
+             derive_public_view(socket, params)
+           )
+         )
      )}
   end
 
@@ -94,7 +108,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
         <b :if={is_nil(@year)}>All years</b>
-        <.link :if={not is_nil(@year)} patch={lifelist_path(nil, @location)}>All years</.link>
+        <.link :if={not is_nil(@year)} patch={lifelist_path(nil, @location, @current_path_query)}>
+          All years
+        </.link>
       </li>
       <%= for {year, active} <- @years do %>
         <li>
@@ -102,7 +118,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <b><%= year %></b>
           <% else %>
             <%= if active do %>
-              <.link patch={lifelist_path(year, @location)}><%= year %></.link>
+              <.link patch={lifelist_path(year, @location, @current_path_query)}><%= year %></.link>
             <% else %>
               <span class="text-gray-500"><%= year %></span>
             <% end %>
@@ -114,7 +130,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
         <b :if={is_nil(@location)}>All countries</b>
-        <.link :if={not is_nil(@location)} patch={lifelist_path(@year, nil)}>All countries</.link>
+        <.link :if={not is_nil(@location)} patch={lifelist_path(@year, nil, @current_path_query)}>
+          All countries
+        </.link>
       </li>
       <%= for {location, active} <- @locations do %>
         <li>
@@ -122,7 +140,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <b><%= location.name_en %></b>
           <% else %>
             <%= if active do %>
-              <.link patch={lifelist_path(@year, location)}><%= location.name_en %></.link>
+              <.link patch={lifelist_path(@year, location, @current_path_query)}>
+                <%= location.name_en %>
+              </.link>
             <% else %>
               <span class="text-gray-500"><%= location.name_en %></span>
             <% end %>
@@ -193,6 +213,15 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     "#{year} #{location.name_en} List"
   end
 
+  defp derive_current_path_query(%{assigns: assigns} = socket) do
+    query =
+      [public_view: assigns.public_view]
+      |> Keyword.reject(fn {_, val} -> !val end)
+
+    socket
+    |> assign(:current_path_query, query)
+  end
+
   defp derive_page_header(socket) do
     socket
     |> assign(:page_header, lifelist_title(socket.assigns))
@@ -220,29 +249,27 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     is_nil(socket.assigns.current_user) || params["public_view"] == "true"
   end
 
-  defp modify_lifelist_path_query(socket, query) do
-    query
-    |> Enum.reject(fn {_, val} -> !val end)
-    |> then(fn new_query ->
-      lifelist_path(socket.assigns.year, socket.assigns.location, new_query)
-    end)
+  defp lifelist_path(year, location, query) do
+    lifelist_path_with_clean_query(year, location, clean_query(query))
   end
 
-  defp lifelist_path(year, location, query \\ [])
+  defp clean_query(query) do
+    Keyword.reject(query, fn {_, val} -> !val end)
+  end
 
-  defp lifelist_path(nil = _year, nil = _location, query) do
+  defp lifelist_path_with_clean_query(nil = _year, nil = _location, query) do
     ~p"/lifelist?#{query}"
   end
 
-  defp lifelist_path(year, nil = _location, query) do
+  defp lifelist_path_with_clean_query(year, nil = _location, query) do
     ~p"/lifelist/#{year}?#{query}"
   end
 
-  defp lifelist_path(nil = _year, location, query) do
+  defp lifelist_path_with_clean_query(nil = _year, location, query) do
     ~p"/lifelist/#{location.slug}?#{query}"
   end
 
-  defp lifelist_path(year, location, query) do
+  defp lifelist_path_with_clean_query(year, location, query) do
     ~p"/lifelist/#{year}/#{location.slug}?#{query}"
   end
 end
