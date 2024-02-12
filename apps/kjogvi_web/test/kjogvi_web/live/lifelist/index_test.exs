@@ -3,9 +3,16 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   import Phoenix.LiveViewTest
 
+  def get_number_of_species(html) do
+    {:ok, doc} = Floki.parse_document(html)
+
+    Floki.find(doc, "#lifers tbody tr")
+    |> length()
+  end
+
   test "renders with no observations", %{conn: conn} do
     {:ok, _index_live, html} = live(conn, ~p"/lifelist")
-    assert html =~ "Total of 0 species."
+    assert get_number_of_species(html) == 0
   end
 
   test "renders with species observation", %{conn: conn} do
@@ -13,7 +20,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
     {:ok, _index_live, html} = live(conn, ~p"/lifelist")
-    assert html =~ "Total of 1 species."
+    assert get_number_of_species(html) == 1
   end
 
   test "renders with spuh observation", %{conn: conn} do
@@ -21,7 +28,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
     {:ok, _index_live, html} = live(conn, ~p"/lifelist")
-    assert html =~ "Total of 0 species."
+    assert get_number_of_species(html) == 0
   end
 
   test "renders with subspecies observation", %{conn: conn} do
@@ -31,7 +38,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
     {:ok, _index_live, html} = live(conn, ~p"/lifelist")
-    assert html =~ "Total of 1 species."
+    assert get_number_of_species(html) == 1
   end
 
   test "filters by year", %{conn: conn} do
@@ -55,7 +62,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     conn = get(conn, "/lifelist/2022")
     resp = html_response(conn, 404)
 
-    assert resp =~ "Total of 0 species."
+    assert get_number_of_species(resp) == 0
   end
 
   test "empty full lifelist is indexed", %{conn: conn} do
@@ -121,7 +128,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     conn = get(conn, "/lifelist/ukraine")
     resp = html_response(conn, 200)
 
-    assert resp =~ "Total of 1 species."
+    assert get_number_of_species(resp) == 1
   end
 
   test "lifelist filtered by year and location", %{conn: conn} do
@@ -142,7 +149,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     conn = get(conn, "/lifelist/2022/ukraine")
     resp = html_response(conn, 200)
 
-    assert resp =~ "Total of 1 species."
+    assert get_number_of_species(resp) == 1
   end
 
   test "lifelist with valid year and invalid location", %{conn: conn} do

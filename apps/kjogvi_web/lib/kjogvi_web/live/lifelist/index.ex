@@ -77,14 +77,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   @impl true
+  @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
     <.header>
       <%= @page_header %>
     </.header>
-    <p class="mt-4">
-      Total of <%= @total %> species.
-    </p>
 
     <div :if={@current_user} class="flex items-center mt-4">
       <form action="" phx-change="public_toggle">
