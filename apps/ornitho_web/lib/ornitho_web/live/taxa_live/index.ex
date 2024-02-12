@@ -19,10 +19,8 @@ defmodule OrnithoWeb.Live.Taxa.Index do
 
   @impl true
   def handle_event("search_updated", %{"search_term" => search_term}, socket) do
-    {:noreply,
-     socket
-     |> assign_search_state(search_term)
-     |> assign_taxa}
+    send(self(), {:search_updated, search_term})
+    {:noreply, socket}
   end
 
   attr :book, Ornitho.Schema.Book, required: true

@@ -31,6 +31,20 @@ defmodule OrnithoWeb.Live.Book.Show do
      |> assign(:search_term, params["search_term"])}
   end
 
+  # FIXME: this is OK, but removes focus from the search field
+  @impl true
+  def handle_info({:search_updated, search_term}, %{assigns: assigns} = socket) do
+    {:noreply,
+     push_navigate(socket,
+       to:
+         OrnithoWeb.LinkHelper.path(
+           socket,
+           "/#{assigns.book.slug}/#{assigns.book.version}?search_term=#{search_term}"
+         ),
+         replace: true
+     )}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
