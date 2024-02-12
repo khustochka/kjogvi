@@ -48,6 +48,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         locations: all_countries |> Enum.map(fn el -> {el, el.id in country_ids} end)
       )
       |> derive_current_path_query()
+      |> derive_location_field()
       |> derive_page_header()
       |> derive_page_title()
       |> derive_robots()
@@ -174,15 +175,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
               <%= lifer.observ_date %>
             </td>
             <td class="p-0 py-4 pr-6">
-              <%= if @public_view do %>
-                <%= Kjogvi.Geo.Location.public_location(lifer.location).name_en %>
-              <% else %>
-                <%= lifer.location.name_en %>
-              <% end %>
+              <%= get_in(lifer, [Access.key!(@location_field)]).name_en %>
             </td>
             <td class="p-0 py-4 pr-6">
-              <%= if lifer.location.country do %>
-                <%= lifer.location.country.name_en %>
+              <%= if get_in(lifer, [Access.key!(@location_field)]).country do %>
+                <%= get_in(lifer, [Access.key!(@location_field)]).country.name_en %>
               <% end %>
             </td>
             <td :if={!@public_view} class="p-0 py-4 pr-6 text-center">
@@ -220,6 +217,18 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     socket
     |> assign(:current_path_query, query)
+  end
+
+  defp derive_location_field(%{assigns: assigns} = socket) do
+    socket
+    |> assign(
+      :location_field,
+      if assigns.public_view do
+        :public_location
+      else
+        :location
+      end
+    )
   end
 
   defp derive_page_header(socket) do

@@ -18,5 +18,9 @@ defmodule Kjogvi.Birding.LifeObservation do
 
     field :taxon, :map, virtual: true
     field :species, :map, virtual: true
+
+    field :public_location, :any,
+      virtual: true,
+      default: struct(Ecto.Association.NotLoaded, %{__field__: :public_location})
   end
 end

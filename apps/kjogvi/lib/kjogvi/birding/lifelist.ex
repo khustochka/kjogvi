@@ -19,7 +19,7 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Repo.preload(location: :country)
-    |> preload_location_ancestors
+    |> preload_public_location()
     |> Kjogvi.Birding.preload_taxa_and_species()
     |> Enum.filter(fn rec -> rec.species end)
     |> Enum.uniq_by(fn rec -> rec.species.code end)
@@ -91,6 +91,14 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   # TODO: extract this to be usable universally
+  def preload_public_location(things) do
+    things
+    |> preload_location_ancestors
+    |> Enum.map(fn thing ->
+      put_in(thing.public_location, Location.public_location(thing.location))
+    end)
+  end
+
   defp preload_location_ancestors(things) do
     ancestor_loc_ids =
       things
@@ -98,7 +106,7 @@ defmodule Kjogvi.Birding.Lifelist do
       |> Enum.uniq()
 
     loci =
-      from(l in Location, where: l.id in ^ancestor_loc_ids)
+      from(l in Location, where: l.id in ^ancestor_loc_ids, preload: [:country])
       |> Repo.all()
       |> Enum.reduce(%{}, fn loc, acc -> Map.put(acc, loc.id, loc) end)
 
