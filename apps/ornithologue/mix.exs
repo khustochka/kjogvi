@@ -15,13 +15,7 @@ defmodule Ornithologue.MixProject do
       deps: deps(),
       aliases: aliases(),
       description: "Ornithological taxonomy",
-      test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
-      ]
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -30,6 +24,18 @@ defmodule Ornithologue.MixProject do
     [
       extra_applications: [:logger, :runtime_tools],
       mod: {Ornithologue.Application, []}
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        test: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
