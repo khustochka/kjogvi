@@ -50,11 +50,16 @@ jobs:
     - name: Install dependencies
       run: mix deps.get
     - name: Compile deps
+      env:
+        MIX_ENV: test
       run: mix deps.compile
     - name: Compile
+      env:
+        MIX_ENV: test
       run: mix compile
     - name: Run tests with coverage
       env:
+        MIX_ENV: test
         DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
         ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
       run: mix ecto.setup && mix test
