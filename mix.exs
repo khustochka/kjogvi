@@ -19,6 +19,7 @@ defmodule Kjogvi.Umbrella.MixProject do
           :missing_return
         ]
       ],
+      test_coverage: [tool: ExCoveralls],
       releases: [
         kjogvi: [
           applications: [kjogvi_web: :permanent]
