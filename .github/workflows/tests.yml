@@ -48,10 +48,16 @@ jobs:
     #     path: _build
     #     key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}
     - name: Install dependencies
+      env:
+        MIX_ENV: test
       run: mix deps.get
     - name: Compile deps
+      env:
+        MIX_ENV: test
       run: mix deps.compile
     - name: Compile
+      env:
+        MIX_ENV: test
       run: mix compile
     - name: Run tests with coverage
       env:
