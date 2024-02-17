@@ -36,12 +36,12 @@ jobs:
         version-type: strict
         # elixir-version: '1.14.3' # Define the elixir version [required]
         # otp-version: '25.0' # Define the OTP version [required]
-    # - name: Restore dependencies cache
-    #   uses: actions/cache@v4
-    #   with:
-    #     path: deps
-    #     key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-    #     restore-keys: ${{ runner.os }}-mix-
+    - name: Restore dependencies cache
+      uses: actions/cache@v4
+      with:
+        path: deps
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        # restore-keys: ${{ runner.os }}-mix-
     # - name: Restore build cache
     #   uses: actions/cache@v4
     #   with:
@@ -50,17 +50,12 @@ jobs:
     - name: Install dependencies
       run: mix deps.get
     - name: Compile deps
-      env:
-        MIX_ENV: test
       run: mix deps.compile
     - name: Compile
-      env:
-        MIX_ENV: test
       run: mix compile
     - name: Run tests with coverage
       env:
         MIX_ENV: test
         DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
         ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
-      run: |
-        mix ecto.setup && mix test
+      run: mix ecto.setup && mix test
