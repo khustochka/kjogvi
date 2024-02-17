@@ -41,7 +41,7 @@ jobs:
       with:
         path: deps
         key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-        restore-keys: ${{ runner.os }}-mix-
+        # restore-keys: ${{ runner.os }}-mix-
     # - name: Restore build cache
     #   uses: actions/cache@v4
     #   with:
@@ -49,10 +49,13 @@ jobs:
     #     key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}
     - name: Install dependencies
       run: mix deps.get
+    - name: Compile deps
+      run: mix deps.compile
     - name: Compile
-      run: MIX_ENV=test mix compile
+      run: mix compile
     - name: Run tests with coverage
       env:
+        MIX_ENV: test
         DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
         ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
-      run: MIX_ENV=test mix do ecto.setup, coveralls --umbrella
+      run: mix ecto.setup && mix test

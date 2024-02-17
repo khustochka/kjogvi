@@ -20,13 +20,6 @@ defmodule Kjogvi.Umbrella.MixProject do
         ]
       ],
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        lint: :test,
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
-      ],
       releases: [
         kjogvi: [
           applications: [kjogvi_web: :permanent]
@@ -36,7 +29,15 @@ defmodule Kjogvi.Umbrella.MixProject do
   end
 
   def cli do
-    [preferred_envs: [coveralls: :test, "coveralls.html": :test]]
+    [
+      preferred_envs: [
+        test: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
+    ]
   end
 
   # Dependencies can be Hex packages:
