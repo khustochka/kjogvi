@@ -45,7 +45,7 @@ defmodule KjogviWeb.MixProject do
   defp elixirc_paths(_), do: ["lib"]
 
   defp extra_apps(:test), do: [:logger, :runtime_tools]
-  defp extra_apps(_), do: [:logger, :runtime_tools, :os_mon]
+  defp extra_apps(_), do: [:logger, :runtime_tools, :os_mon, :tls_certificate_check]
 
   # Specifies your project dependencies.
   #
@@ -77,7 +77,15 @@ defmodule KjogviWeb.MixProject do
       {:bandit, "~> 1.2"},
       {:scrivener_phoenix, "~> 0.3.2"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:opentelemetry_exporter, "~> 1.6"},
+      {:opentelemetry, "~> 1.3"},
+      {:opentelemetry_api, "~> 1.2"},
+      {:opentelemetry_phoenix, "~> 1.1",
+       github: "open-telemetry/opentelemetry-erlang-contrib",
+       subdir: "instrumentation/opentelemetry_phoenix"},
+      {:opentelemetry_bandit, "~> 0.1"},
+      {:opentelemetry_ecto, "~> 1.2"}
     ]
   end
 

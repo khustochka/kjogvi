@@ -7,6 +7,12 @@ defmodule KjogviWeb.Application do
 
   @impl true
   def start(_type, _args) do
+    OpentelemetryBandit.setup()
+    OpentelemetryPhoenix.setup(adapter: :bandit)
+    # FIXME: move to kjogvi?
+    OpentelemetryEcto.setup([:kjogvi, :repo])
+    OpentelemetryEcto.setup([:kjogvi, :ornitho_repo])
+
     children = [
       # Start the Telemetry supervisor
       KjogviWeb.Telemetry,
