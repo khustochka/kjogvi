@@ -56,6 +56,7 @@ defmodule OrnithoWeb.MixProject do
       {:phoenix_html, "~> 3.3"},
       {:ornithologue, in_umbrella: true},
       {:jason, "~> 1.2"},
+      {:floki, ">= 0.30.0"},
 
       # Assets
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
@@ -77,8 +78,7 @@ defmodule OrnithoWeb.MixProject do
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:floki, ">= 0.30.0", only: :test}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
