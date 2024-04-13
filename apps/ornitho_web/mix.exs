@@ -63,7 +63,7 @@ defmodule OrnithoWeb.MixProject do
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:heroicons,
        github: "tailwindlabs/heroicons",
-       tag: "v2.1.1",
+       tag: "v2.1.3",
        sparse: "optimized",
        app: false,
        compile: false,
@@ -71,7 +71,7 @@ defmodule OrnithoWeb.MixProject do
 
       # Dev/test
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:telemetry_metrics, "~> 0.6", only: [:dev, :test]},
+      {:telemetry_metrics, "~> 1.0", only: [:dev, :test]},
       {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
       {:gettext, "~> 0.20", only: [:dev, :test]},
       {:bandit, "~> 1.2", only: [:dev, :test]},
