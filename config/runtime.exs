@@ -114,6 +114,9 @@ if config_env() == :prod do
 
   # ORNITHOLOGUE IMPORTER
 
+  config :ornithologue, Ornitho.Importer,
+    import_timeout: String.to_integer(System.get_env("ORNITHO_IMPORTER_TIMEOUT", "30000"))
+
   config :ornithologue, Ornitho.StreamImporter,
     adapter: Ornitho.StreamImporter.S3Adapter,
     bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
