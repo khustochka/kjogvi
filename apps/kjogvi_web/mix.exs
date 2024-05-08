@@ -14,6 +14,7 @@ defmodule KjogviWeb.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      compilers: [:leex, :yecc] ++ Mix.compilers(),
       test_coverage: [tool: ExCoveralls]
     ]
   end
