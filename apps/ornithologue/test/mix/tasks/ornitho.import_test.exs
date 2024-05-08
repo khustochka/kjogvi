@@ -1,6 +1,5 @@
 defmodule Mix.Tasks.Ornitho.ImportTest do
-  use ExUnit.Case
-  use Ornitho.RepoCase, async: true
+  use Ornitho.RepoCase
 
   alias Ornitho.Importer
 
@@ -22,6 +21,6 @@ defmodule Mix.Tasks.Ornitho.ImportTest do
   end
 
   test "passes with correct importer" do
-    Mix.Task.rerun("ornitho.import", [Importer.Demo.V1])
+    Mix.Task.run("ornitho.import", [Importer.Demo.V1])
   end
 end
