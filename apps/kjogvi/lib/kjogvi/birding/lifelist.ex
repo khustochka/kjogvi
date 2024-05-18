@@ -18,7 +18,7 @@ defmodule Kjogvi.Birding.Lifelist do
     lifelist_query(params)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Repo.preload(location: :country)
+    |> Repo.preload(location: [:country, :cached_parent])
     |> preload_public_location()
     |> Kjogvi.Birding.preload_taxa_and_species()
     |> Enum.filter(fn rec -> rec.species end)
