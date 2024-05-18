@@ -53,7 +53,7 @@ defmodule Kjogvi.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:phoenix_pubsub, "~> 2.1"},
       {:ecto_sql, "~> 3.10"},
-      {:ecto_psql_extras, "~> 0.7"},
+      # {:ecto_psql_extras, "~> 0.7"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.5"},
