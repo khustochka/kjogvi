@@ -56,17 +56,18 @@ defmodule Kjogvi.Geo.Location do
     ])
   end
 
-  def full_name(%{is_patch: false, name_en: name}) do
-    name
+  def full_name(%{is_patch: false} = location) do
+    location.name_en
   end
 
-  def full_name(%{is_patch: true, name_en: name, cached_parent: cached_parent}) do
-    [cached_parent.name_en, name]
+  def full_name(%{is_patch: true, cached_parent: cached_parent} = location)
+      when not is_nil(cached_parent) do
+    [cached_parent.name_en, location.name_en]
     |> Enum.join(" - ")
   end
 
-  def long_name(%{name_en: name, loc_type: "country"}) do
-    name
+  def long_name(%{loc_type: "country"} = location) do
+    location.name_en
   end
 
   def long_name(%{country: nil} = location) do
