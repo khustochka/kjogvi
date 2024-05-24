@@ -36,16 +36,16 @@ defmodule OrnithoWeb.BooksHTML do
 
       <.simpler_table id="importers" rows={@importers}>
         <:col :let={importer} label="slug">
-          <%= importer.slug %>
+          <%= importer.slug() %>
         </:col>
         <:col :let={importer} label="version">
-          <%= importer.version %>
+          <%= importer.version() %>
         </:col>
         <:col :let={importer} label="name">
-          <%= importer.name %>
+          <%= importer.name() %>
         </:col>
         <:col :let={importer} label="description">
-          <%= importer.description %>
+          <%= importer.description() %>
         </:col>
         <:col :let={importer} label="import">
           <.simple_form

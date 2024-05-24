@@ -130,7 +130,7 @@ defmodule Ornitho.Importer do
 
     @legit_importers
     |> Enum.reject(fn importer ->
-      [importer.slug, importer.version] in imported
+      [importer.slug(), importer.version()] in imported
     end)
   end
 
