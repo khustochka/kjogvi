@@ -32,10 +32,10 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:15
+    image: postgres:16
     restart: unless-stopped
     volumes:
-      - postgres-data-15:/var/lib/postgresql/data
+      - postgres-data-16:/var/lib/postgresql/data
       - ./create-db-user.sql:/docker-entrypoint-initdb.d/create-db-user.sql
     environment:
       POSTGRES_USER: kjogvi
@@ -64,5 +64,5 @@ services:
       interval: 5s
 
 volumes:
-  postgres-data-15:
+  postgres-data-16:
   build:
