@@ -46,7 +46,7 @@ defmodule Kjogvi.MixProject do
 
   defp extra_apps(:default), do: [:logger, :tls_certificate_check, :runtime_tools]
   defp extra_apps(:test), do: extra_apps(:default)
-  defp extra_apps(_), do: extra_apps(:default) ++ [:tls_certificate_check]
+  defp extra_apps(_), do: extra_apps(:default)
 
   # Specifies your project dependencies.
   #
@@ -71,7 +71,8 @@ defmodule Kjogvi.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:opentelemetry, "~> 1.3"},
       {:opentelemetry_api, "~> 1.2"},
-      {:opentelemetry_ecto, "~> 1.2"}
+      {:opentelemetry_ecto, "~> 1.2"},
+      {:opentelemetry_exporter, "~> 1.6"}
     ]
   end
 

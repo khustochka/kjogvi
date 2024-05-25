@@ -45,8 +45,9 @@ defmodule KjogviWeb.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  defp extra_apps(:test), do: [:logger, :tls_certificate_check, :runtime_tools]
-  defp extra_apps(_), do: [:logger, :tls_certificate_check, :runtime_tools, :os_mon]
+  defp extra_apps(:default), do: [:logger, :runtime_tools]
+  defp extra_apps(:test), do: extra_apps(:default)
+  defp extra_apps(_), do: extra_apps(:default) ++ [:os_mon]
 
   # Specifies your project dependencies.
   #
@@ -83,8 +84,7 @@ defmodule KjogviWeb.MixProject do
       {:opentelemetry_api, "~> 1.2"},
       {:opentelemetry_phoenix, "~> 1.2"},
       {:opentelemetry_cowboy, ">= 0.0.0"},
-      {:opentelemetry_exporter, "~> 1.6"},
-      {:tls_certificate_check, "~> 1.13"}
+      {:opentelemetry_exporter, "~> 1.6"}
     ]
   end
 
