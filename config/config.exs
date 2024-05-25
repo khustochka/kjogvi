@@ -34,7 +34,7 @@ config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Local
 # Configures the endpoint
 config :kjogvi_web, KjogviWeb.Endpoint,
   url: [host: "localhost"],
-  adapter: Bandit.PhoenixAdapter,
+  adapter: Phoenix.Endpoint.Cowboy2Adapter,
   render_errors: [
     formats: [html: KjogviWeb.ErrorHTML, json: KjogviWeb.ErrorJSON],
     layout: false
