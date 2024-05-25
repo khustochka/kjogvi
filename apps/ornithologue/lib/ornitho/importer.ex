@@ -15,6 +15,7 @@ defmodule Ornitho.Importer do
     Ornitho.Importer.Ebird.V2022,
     Ornitho.Importer.Ebird.V2023
   ]
+  @default_import_timeout 30_000
 
   defmacro __using__(opts) do
     missing_keys =
@@ -39,7 +40,6 @@ defmodule Ornitho.Importer do
       alias Ornitho.Schema.{Book, Taxon}
       alias Ornitho.Ops
 
-      @default_timeout 30_000
       @slug opts[:slug]
       @version opts[:version]
       @name opts[:name]
@@ -78,7 +78,7 @@ defmodule Ornitho.Importer do
               {:error, e} -> raise(inspect(e))
             end
           end,
-          timeout: @default_timeout
+          timeout: Ornitho.Importer.import_timeout()
         )
       end
 
@@ -130,7 +130,11 @@ defmodule Ornitho.Importer do
 
     @legit_importers
     |> Enum.reject(fn importer ->
-      [importer.slug, importer.version] in imported
+      [importer.slug(), importer.version()] in imported
     end)
+  end
+
+  def import_timeout() do
+    Application.get_env(:ornithologue, __MODULE__)[:import_timeout] || @default_import_timeout
   end
 end

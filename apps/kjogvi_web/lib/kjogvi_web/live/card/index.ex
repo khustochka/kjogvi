@@ -4,6 +4,7 @@ defmodule KjogviWeb.Live.Card.Index do
   import Scrivener.PhoenixView
 
   alias Kjogvi.Birding
+  alias Kjogvi.Geo
 
   @cards_per_page 50
 
@@ -42,7 +43,7 @@ defmodule KjogviWeb.Live.Card.Index do
         <.link navigate={~p"/cards/#{card.id}"}><%= card.id %></.link>
       </:col>
       <:col :let={card} label="Location">
-        <%= location_with_country(card.location) %>
+        <%= Geo.Location.long_name(card.location) %>
       </:col>
       <:col :let={card} label="Date"><%= card.observ_date %></:col>
       <:col :let={card} label="Start time"><%= card.start_time %></:col>
@@ -56,11 +57,5 @@ defmodule KjogviWeb.Live.Card.Index do
 
     <%= paginate(@socket, @cards, &KjogviWeb.Router.Helpers.card_page_path/4, [:index], live: true) %>
     """
-  end
-
-  defp location_with_country(location) do
-    [location, location.country]
-    |> Enum.filter(&(!is_nil(&1)))
-    |> Enum.map_join(", ", & &1.name_en)
   end
 end

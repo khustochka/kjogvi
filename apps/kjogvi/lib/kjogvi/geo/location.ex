@@ -56,16 +56,30 @@ defmodule Kjogvi.Geo.Location do
     ])
   end
 
-  def long_name(%{name_en: name, loc_type: "country"}) do
-    name
+  def full_name(%{is_patch: true, cached_parent: cached_parent} = location)
+      when not is_nil(cached_parent) do
+    [cached_parent.name_en, location.name_en]
+    |> Enum.join(" - ")
   end
 
-  def long_name(%{name_en: name, country: nil}) do
-    name
+  def full_name(location) do
+    location.name_en
   end
 
-  def long_name(%{name_en: name, country: country}) do
-    [name, country.name_en]
+  def long_name(%{loc_type: "country"} = location) do
+    location.name_en
+  end
+
+  def long_name(location) do
+    %{cached_city: cached_city, cached_subdivision: cached_subdivision, country: country} =
+      location
+
+    postfix =
+      [cached_city, cached_subdivision, country]
+      |> Enum.reject(&is_nil(&1))
+      |> Enum.map(& &1.name_en)
+
+    [name_with_parent(location) | postfix]
     |> Enum.join(", ")
   end
 
@@ -79,5 +93,18 @@ defmodule Kjogvi.Geo.Location do
     |> Enum.find(fn loc ->
       !loc.is_private
     end)
+  end
+
+  defp name_with_parent(%{is_patch: true} = location) do
+    full_name(location)
+  end
+
+  defp name_with_parent(%{cached_parent: nil} = location) do
+    full_name(location)
+  end
+
+  defp name_with_parent(%{cached_parent: cached_parent} = location) do
+    [full_name(location), cached_parent.name_en]
+    |> Enum.join(", ")
   end
 end

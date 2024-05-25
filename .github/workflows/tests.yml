@@ -39,22 +39,26 @@ jobs:
     - name: Restore dependencies cache
       uses: actions/cache@v4
       with:
-        path: deps
-        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-        # restore-keys: ${{ runner.os }}-mix-
-    # - name: Restore build cache
-    #   uses: actions/cache@v4
-    #   with:
-    #     path: _build
-    #     key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}
+        path: '**/deps'
+        key: ${{ runner.os }}-deps-${{ hashFiles('**/mix.lock') }}
+        # restore-keys: ${{ runner.os }}-deps-
+    - name: Restore build cache
+      uses: actions/cache@v4
+      with:
+        path: '**/_build'
+        key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
+        # restore-keys: |
+        #   ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-
+        #   ${{ runner.os }}-build-
     - name: Install dependencies
       env:
         MIX_ENV: test
       run: mix deps.get
-    - name: Compile deps
-      env:
-        MIX_ENV: test
-      run: mix deps.compile
+    # See https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12  
+    # - name: Compile deps
+    #   env:
+    #     MIX_ENV: test
+    #   run: mix deps.compile
     - name: Compile
       env:
         MIX_ENV: test
@@ -64,4 +68,9 @@ jobs:
         MIX_ENV: test
         DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
         ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
-      run: mix ecto.setup && mix test
+      run: mix do ecto.setup, coveralls.html --umbrella
+    - name: Code coverage results
+      uses: actions/upload-artifact@v4
+      with:
+        name: Coverage
+        path: cover/  

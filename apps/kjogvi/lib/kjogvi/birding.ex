@@ -13,7 +13,7 @@ defmodule Kjogvi.Birding do
   def get_cards(%{page: page, page_size: page_size}) do
     Card
     |> order_by([{:desc, :observ_date}, {:desc, :id}])
-    |> preload(location: :country)
+    |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
     |> Card.Query.load_observation_count()
     |> Repo.paginate(page: page, page_size: page_size)
   end

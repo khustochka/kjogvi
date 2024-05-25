@@ -8,7 +8,7 @@ config :logger, :console, format: "[$level] $message\n"
 
 if config_env() == :dev do
   config :esbuild,
-    version: "0.20.1",
+    version: "0.21.3",
     ornitho_web: [
       args:
         ~w(js/app.js --bundle --minify --target=es2017 --outdir=../dist/js --external:/fonts/* --external:/images/*),
@@ -18,7 +18,7 @@ if config_env() == :dev do
 
   # Configure tailwind (the version is required)
   config :tailwind,
-    version: "3.4.1",
+    version: "3.4.3",
     ornitho_web: [
       args: ~w(
         --config=tailwind.config.js

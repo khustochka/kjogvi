@@ -3,6 +3,10 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
+# Deploy to fly with short image label, matching the commit sha:
+#
+# fly deploy --image-label deployment-$(git rev-parse --short HEAD)
+
 app = "kjogvi"
 primary_region = "ord"
 
@@ -14,6 +18,7 @@ primary_region = "ord"
   PORT = 8080
   DNS_CLUSTER_QUERY = "kjogvi.internal"
   PHX_HOST = "kjogvi.fly.dev"
+  ORNITHO_IMPORTER_TIMEOUT = 90000
 
 [deploy]
   release_command = "bin/migrate"

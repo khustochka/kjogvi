@@ -8,6 +8,7 @@ services:
 
     volumes:
       - ..:/workspaces/kjogvi:cached
+      - build:/workspaces/kjogvi/_build
 
     environment:
       DATABASE_HOST: db
@@ -31,10 +32,10 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:15
+    image: bitnami/postgresql:16-debian-12
     restart: unless-stopped
     volumes:
-      - postgres-data-15:/var/lib/postgresql/data
+      - postgres-data-16:/var/lib/postgresql/data
       - ./create-db-user.sql:/docker-entrypoint-initdb.d/create-db-user.sql
     environment:
       POSTGRES_USER: kjogvi
@@ -59,8 +60,9 @@ services:
       - "5482:5432"  
 
     healthcheck:
-      test: pg_isready -U postgres -h 127.0.0.1
+      test: pg_isready -U kjogvi -h 127.0.0.1
       interval: 5s
 
 volumes:
-  postgres-data-15:
+  postgres-data-16:
+  build:
