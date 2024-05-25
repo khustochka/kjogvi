@@ -9,9 +9,6 @@ defmodule KjogviWeb.Application do
   def start(_type, _args) do
     :opentelemetry_cowboy.setup()
     OpentelemetryPhoenix.setup(adapter: :cowboy2)
-    # FIXME: move to kjogvi?
-    OpentelemetryEcto.setup([:kjogvi, :repo])
-    OpentelemetryEcto.setup([:kjogvi, :ornitho_repo])
 
     children = [
       # Start the Telemetry supervisor

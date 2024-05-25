@@ -83,8 +83,7 @@ defmodule KjogviWeb.MixProject do
       {:opentelemetry, "~> 1.3"},
       {:opentelemetry_api, "~> 1.2"},
       {:opentelemetry_phoenix, "~> 1.2"},
-      {:opentelemetry_cowboy, ">= 0.0.0"},
-      {:opentelemetry_ecto, "~> 1.2"}
+      {:opentelemetry_cowboy, ">= 0.0.0"}
     ]
   end
 

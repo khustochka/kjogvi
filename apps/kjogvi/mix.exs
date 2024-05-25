@@ -64,7 +64,10 @@ defmodule Kjogvi.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:ex_machina, "~> 2.7.0", only: :test},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:opentelemetry, "~> 1.3"},
+      {:opentelemetry_api, "~> 1.2"},
+      {:opentelemetry_ecto, "~> 1.2"}
     ]
   end
 
