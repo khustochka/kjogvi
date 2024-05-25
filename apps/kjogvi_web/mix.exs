@@ -82,7 +82,7 @@ defmodule KjogviWeb.MixProject do
       {:opentelemetry_exporter, "~> 1.6"},
       {:opentelemetry, "~> 1.3"},
       {:opentelemetry_api, "~> 1.2"},
-      {:opentelemetry_phoenix, "~> 1.1",
+      {:opentelemetry_phoenix, "~> 1.2",
        github: "open-telemetry/opentelemetry-erlang-contrib",
        subdir: "instrumentation/opentelemetry_phoenix"},
       {:opentelemetry_bandit, "~> 0.1"},
