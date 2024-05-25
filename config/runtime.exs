@@ -22,7 +22,8 @@ cond do
   System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") ->
     config :opentelemetry,
       span_processor: :batch,
-      traces_exporter: :otlp
+      # traces_exporter: {:opentelemetry_exporter, []}
+      traces_exporter: {Kjogvi.Opentelemetry.Exporter, []}
 
   config_env() == :dev && System.get_env("OTEL_EXPORTER_STDOUT") in ~w(true 1) ->
     config :opentelemetry,
