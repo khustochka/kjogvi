@@ -8,7 +8,9 @@ defmodule Kjogvi.Opentelemetry.Ecto do
   end
 
   defp default_opts(repo_key) do
-    [db_statement: :enabled, service_addon: service_addon(repo_key)]
+    # Overwriting service name like this will only work in Datadog.
+    # Other OTEL services just treat this as a regular tag and use the global service name.
+    [db_statement: :enabled, additional_attributes: %{"service.name": service_name(repo_key)}]
   end
 
   defp split_repo_key(repo) do
@@ -21,7 +23,11 @@ defmodule Kjogvi.Opentelemetry.Ecto do
     end)
   end
 
-  def service_addon([_ | rest]) do
-    rest |> Enum.map(&Atom.to_string/1) |> Enum.join("-")
+  defp service_name(repo_key) do
+    repo_key |> Enum.map(&Atom.to_string/1) |> Enum.join("-")
   end
+
+  # defp service_addon([_ | rest]) do
+  #   rest |> Enum.map(&Atom.to_string/1) |> Enum.join("-")
+  # end
 end
