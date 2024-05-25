@@ -14,11 +14,11 @@ primary_region = "ord"
   dockerfile = "Dockerfile"
 
 [env]
-  ECTO_IPV6 = true
-  PORT = 8080
+  ECTO_IPV6 = "true"
+  PORT = "8080"
   DNS_CLUSTER_QUERY = "kjogvi.internal"
   PHX_HOST = "kjogvi.fly.dev"
-  ORNITHO_IMPORTER_TIMEOUT = 90000
+  ORNITHO_IMPORTER_TIMEOUT = "90000"
 
 [deploy]
   release_command = "bin/migrate"
