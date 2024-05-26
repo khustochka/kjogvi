@@ -42,7 +42,7 @@ defmodule TelemetryHelper do
   defp default_handler_fn(name, metadata, measure_or_fun) do
     # Print out telemetry info
     IO.puts(
-      "Telemetry event:#{inspect(name)}\nwith #{inspect(measure_or_fun)} and #{inspect(metadata)}"
+      "=== Telemetry event: #{inspect(name)} ===\n* measure_or_fun: #{inspect(measure_or_fun)}\n* metadata: #{inspect(metadata)}\n"
     )
   end
 end
