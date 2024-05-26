@@ -21,8 +21,8 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Repo.preload(location: [:country, :cached_parent])
     |> preload_public_location()
     |> Kjogvi.Birding.preload_taxa_and_species()
-    |> Enum.filter(fn rec -> rec.species end)
-    |> Enum.uniq_by(fn rec -> rec.species.code end)
+    |> Enum.filter(& &1.species)
+    |> Enum.uniq_by(& &1.species.code)
     |> Enum.reverse()
   end
 
@@ -102,7 +102,7 @@ defmodule Kjogvi.Birding.Lifelist do
   defp preload_location_ancestors(things) do
     ancestor_loc_ids =
       things
-      |> Enum.flat_map(fn thing -> thing.location.ancestry end)
+      |> Enum.flat_map(& &1.location.ancestry)
       |> Enum.uniq()
 
     loci =
