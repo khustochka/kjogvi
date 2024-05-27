@@ -158,7 +158,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <th class="p-0 pr-6 pb-4 font-normal">Species</th>
           <th class="p-0 pr-6 pb-4 font-normal text-center">Date</th>
           <th class="p-0 pr-6 pb-4 font-normal">Location</th>
-          <th class="p-0 pr-6 pb-4 font-normal">Country</th>
           <th :if={!@public_view} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
         </tr>
       </thead>
@@ -167,18 +166,22 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <tr>
             <td class="p-0 py-4 pr-6 text-right"><%= @total - i %>.</td>
             <td class="p-0 py-4 pr-6">
-              <strong><%= lifer.species.name_en %></strong>
-              <i><%= lifer.species.name_sci %></i>
+              <div><strong class="font-bold"><%= lifer.species.name_en %></strong></div>
+              <div><i><%= lifer.species.name_sci %></i></div>
             </td>
             <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
               <%= lifer.observ_date %>
             </td>
             <td class="p-0 py-4 pr-6">
-              <%= get_in(lifer, [Access.key!(@location_field)]) |> Geo.Location.full_name() %>
-            </td>
-            <td class="p-0 py-4 pr-6">
-              <%= if get_in(lifer, [Access.key!(@location_field)]).country do %>
-                <%= get_in(lifer, [Access.key!(@location_field)]).country.name_en %>
+              <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>
+                <div>
+                  <%= location |> Geo.Location.full_name() %>
+                </div>
+                <div>
+                  <%= with country when not is_nil(country) <- location.country do %>
+                    <span class="font-semibold"><%= country.name_en %></span>
+                  <% end %>
+                </div>
               <% end %>
             </td>
             <td :if={!@public_view} class="p-0 py-4 pr-6 text-center">
