@@ -21,6 +21,9 @@ defmodule TelemetryHelper do
          {_, _, _, {_mod, :execute, [name, measurement, metadata]}}, _state ->
            function.(name, metadata, measurement)
 
+         {_, _, _, {_mod, :execute, [name, measurement]}}, _state ->
+           function.(name, nil, measurement)
+
          {_, _, _, {_mod, :span, [name, metadata, span_fun]}}, _state ->
            function.(name, metadata, span_fun)
        end, nil}
@@ -30,6 +33,7 @@ defmodule TelemetryHelper do
     :dbg.p(:all, :c)
 
     # Trace calls to the functions used to emit telemetry events
+    :dbg.tp(:telemetry, :execute, 2, [])
     :dbg.tp(:telemetry, :execute, 3, [])
     :dbg.tp(:telemetry, :span, 3, [])
   end
