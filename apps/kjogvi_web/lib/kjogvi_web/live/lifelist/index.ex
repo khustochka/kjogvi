@@ -175,11 +175,13 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <td class="p-0 py-4 pr-6">
               <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>
                 <div>
-                  <%= location |> Geo.Location.full_name() %>
+                  <%= Geo.Location.name_local_part(location) %>
                 </div>
                 <div>
                   <%= with country when not is_nil(country) <- location.country do %>
-                    <span class="font-semibold"><%= country.name_en %></span>
+                    <span class="font-semibold">
+                      <%= Geo.Location.name_administrative_part(location) %>
+                    </span>
                   <% end %>
                 </div>
               <% end %>
