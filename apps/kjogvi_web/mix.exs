@@ -45,8 +45,9 @@ defmodule KjogviWeb.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  defp extra_apps(:test), do: [:logger, :runtime_tools]
-  defp extra_apps(_), do: [:logger, :runtime_tools, :os_mon, :tls_certificate_check]
+  defp extra_apps(:default), do: [:logger, :runtime_tools]
+  defp extra_apps(:test), do: extra_apps(:default)
+  defp extra_apps(_), do: extra_apps(:default) ++ [:os_mon]
 
   # Specifies your project dependencies.
   #
@@ -58,6 +59,7 @@ defmodule KjogviWeb.MixProject do
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.2"},
+      {:plug_cowboy, "~> 2.7"},
       {:floki, ">= 0.30.0"},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
@@ -75,18 +77,14 @@ defmodule KjogviWeb.MixProject do
       {:kjogvi, in_umbrella: true},
       {:ornitho_web, in_umbrella: true},
       {:jason, "~> 1.2"},
-      {:bandit, "~> 1.2"},
       {:scrivener_phoenix, "~> 0.3.2"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:opentelemetry_exporter, "~> 1.6"},
       {:opentelemetry, "~> 1.3"},
       {:opentelemetry_api, "~> 1.2"},
-      {:opentelemetry_phoenix, "~> 1.2",
-       github: "open-telemetry/opentelemetry-erlang-contrib",
-       subdir: "instrumentation/opentelemetry_phoenix"},
-      {:opentelemetry_bandit, "~> 0.1"},
-      {:opentelemetry_ecto, "~> 1.2"}
+      {:opentelemetry_phoenix, "~> 1.2"},
+      {:opentelemetry_cowboy, ">= 0.0.0"},
+      {:opentelemetry_exporter, "~> 1.6"}
     ]
   end
 

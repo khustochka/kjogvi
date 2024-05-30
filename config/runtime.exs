@@ -22,7 +22,8 @@ cond do
   System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") ->
     config :opentelemetry,
       span_processor: :batch,
-      traces_exporter: :otlp
+      # traces_exporter: {:opentelemetry_exporter, []}
+      traces_exporter: {Kjogvi.Opentelemetry.Exporter, []}
 
   config_env() == :dev && System.get_env("OTEL_EXPORTER_STDOUT") in ~w(true 1) ->
     config :opentelemetry,
@@ -32,7 +33,7 @@ cond do
     config :opentelemetry, traces_exporter: :none
 end
 
-# Also for dev 
+# Also for dev
 # config :opentelemetry_exporter,
 #   otlp_protocol: :http_protobuf,
 #   otlp_endpoint: "http://localhost:4318"
@@ -43,7 +44,7 @@ end
 # export OTEL_EXPORTER_OTLP_HEADERS="x-honeycomb-team=your-api-key"
 # export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 # export OTEL_EXPORTER_OTLP_COMPRESSION=gzip
-# if System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do 
+# if System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
 #   config :opentelemetry_exporter,
 #     otlp_protocol: :grpc,
 #     otlp_compression: :gzip,
