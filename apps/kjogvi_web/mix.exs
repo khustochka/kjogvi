@@ -69,6 +69,8 @@ defmodule KjogviWeb.MixProject do
        app: false,
        compile: false,
        depth: 1},
+      {:earmark, ">= 0.0.0", only: [:dev]},
+      {:dumper, "~> 0.1.0", only: [:dev]},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},

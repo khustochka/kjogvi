@@ -142,6 +142,9 @@ defmodule KjogviWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
+      get "/dumper", KjogviWeb.DumperController, :home
+      get "/dumper/*resource", KjogviWeb.DumperController, :resource
+
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
