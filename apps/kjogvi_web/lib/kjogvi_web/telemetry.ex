@@ -24,14 +24,7 @@ defmodule KjogviWeb.Telemetry do
   def metrics do
     [
       # Phoenix Metrics
-      summary("phoenix.endpoint.start.system_time",
-        unit: {:native, :millisecond}
-      ),
       summary("phoenix.endpoint.stop.duration",
-        unit: {:native, :millisecond}
-      ),
-      summary("phoenix.router_dispatch.start.system_time",
-        tags: [:route],
         unit: {:native, :millisecond}
       ),
       summary("phoenix.router_dispatch.exception.duration",
@@ -58,22 +51,22 @@ defmodule KjogviWeb.Telemetry do
         unit: {:native, :millisecond},
         description: "The sum of the other measurements"
       ),
-      summary("kjogvi.repo.query.decode_time",
+      summary("kjogvi.repo.query.idle_time",
         unit: {:native, :millisecond},
-        description: "The time spent decoding the data received from the database"
-      ),
-      summary("kjogvi.repo.query.query_time",
-        unit: {:native, :millisecond},
-        description: "The time spent executing the query"
+        description:
+          "The time the connection spent waiting before being checked out for the query"
       ),
       summary("kjogvi.repo.query.queue_time",
         unit: {:native, :millisecond},
         description: "The time spent waiting for a database connection"
       ),
-      summary("kjogvi.repo.query.idle_time",
+      summary("kjogvi.repo.query.query_time",
         unit: {:native, :millisecond},
-        description:
-          "The time the connection spent waiting before being checked out for the query"
+        description: "The time spent executing the query"
+      ),
+      summary("kjogvi.repo.query.decode_time",
+        unit: {:native, :millisecond},
+        description: "The time spent decoding the data received from the database"
       ),
 
       # Ornitho Database Metrics
@@ -81,22 +74,22 @@ defmodule KjogviWeb.Telemetry do
         unit: {:native, :millisecond},
         description: "The sum of the other measurements"
       ),
-      summary("kjogvi.ornitho_repo.query.decode_time",
+      summary("kjogvi.ornitho_repo.query.idle_time",
         unit: {:native, :millisecond},
-        description: "The time spent decoding the data received from the database"
-      ),
-      summary("kjogvi.ornitho_repo.query.query_time",
-        unit: {:native, :millisecond},
-        description: "The time spent executing the query"
+        description:
+          "The time the connection spent waiting before being checked out for the query"
       ),
       summary("kjogvi.ornitho_repo.query.queue_time",
         unit: {:native, :millisecond},
         description: "The time spent waiting for a database connection"
       ),
-      summary("kjogvi.ornitho_repo.query.idle_time",
+      summary("kjogvi.ornitho_repo.query.query_time",
         unit: {:native, :millisecond},
-        description:
-          "The time the connection spent waiting before being checked out for the query"
+        description: "The time spent executing the query"
+      ),
+      summary("kjogvi.ornitho_repo.query.decode_time",
+        unit: {:native, :millisecond},
+        description: "The time spent decoding the data received from the database"
       ),
 
       # VM Metrics

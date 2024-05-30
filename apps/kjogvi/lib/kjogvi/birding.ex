@@ -20,6 +20,7 @@ defmodule Kjogvi.Birding do
 
   def fetch_card(id) do
     Card
+    |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
     |> Repo.get!(id)
     |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
   end

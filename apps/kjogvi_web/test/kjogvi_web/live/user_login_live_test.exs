@@ -1,6 +1,8 @@
 defmodule KjogviWeb.UserLoginLiveTest do
   use KjogviWeb.ConnCase
 
+  require Kjogvi.Config
+
   import Phoenix.LiveViewTest
   import Kjogvi.UsersFixtures
 
@@ -57,7 +59,7 @@ defmodule KjogviWeb.UserLoginLiveTest do
     end
   end
 
-  if Application.compile_env(:kjogvi, :allow_user_registration, false) do
+  Kjogvi.Config.with_user_registration do
     describe "login navigation" do
       @tag :skip
       test "redirects to registration page when the Register button is clicked", %{conn: conn} do

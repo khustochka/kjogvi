@@ -152,33 +152,34 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     </ul>
 
     <table id="lifers" class="mt-11 w-full">
-      <thead class="text-sm text-left leading-6 text-zinc-500">
+      <thead class="text-sm text-left leading-snug text-zinc-500">
         <tr>
           <th class="p-0 pr-6 pb-4 font-normal"></th>
           <th class="p-0 pr-6 pb-4 font-normal">Species</th>
           <th class="p-0 pr-6 pb-4 font-normal text-center">Date</th>
           <th class="p-0 pr-6 pb-4 font-normal">Location</th>
-          <th class="p-0 pr-6 pb-4 font-normal">Country</th>
           <th :if={!@public_view} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
+      <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-snug text-zinc-700">
         <%= for {lifer, i} <- Enum.with_index(@lifelist) do %>
           <tr>
             <td class="p-0 py-4 pr-6 text-right"><%= @total - i %>.</td>
             <td class="p-0 py-4 pr-6">
-              <strong><%= lifer.species.name_en %></strong>
-              <i><%= lifer.species.name_sci %></i>
+              <strong class="font-bold"><%= lifer.species.name_en %></strong>
+              <i class="whitespace-nowrap"><%= lifer.species.name_sci %></i>
             </td>
             <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
               <%= lifer.observ_date %>
             </td>
             <td class="p-0 py-4 pr-6">
-              <%= get_in(lifer, [Access.key!(@location_field)]) |> Geo.Location.full_name() %>
-            </td>
-            <td class="p-0 py-4 pr-6">
-              <%= if get_in(lifer, [Access.key!(@location_field)]).country do %>
-                <%= get_in(lifer, [Access.key!(@location_field)]).country.name_en %>
+              <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>
+                <%= Geo.Location.name_local_part(location) %> ·
+                <%= with country when not is_nil(country) <- location.country do %>
+                  <span class="font-semibold whitespace-nowrap">
+                    <%= Geo.Location.name_administrative_part(location) %>
+                  </span>
+                <% end %>
               <% end %>
             </td>
             <td :if={!@public_view} class="p-0 py-4 pr-6 text-center">

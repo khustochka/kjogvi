@@ -18,11 +18,11 @@ defmodule Kjogvi.Birding.Lifelist do
     lifelist_query(params)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Repo.preload(location: [:country, :cached_parent])
+    |> Repo.preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
     |> preload_public_location()
     |> Kjogvi.Birding.preload_taxa_and_species()
-    |> Enum.filter(fn rec -> rec.species end)
-    |> Enum.uniq_by(fn rec -> rec.species.code end)
+    |> Enum.filter(& &1.species)
+    |> Enum.uniq_by(& &1.species.code)
     |> Enum.reverse()
   end
 
@@ -100,15 +100,22 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   defp preload_location_ancestors(things) do
+    # Only preload ancestors for private locations
     ancestor_loc_ids =
       things
-      |> Enum.flat_map(fn thing -> thing.location.ancestry end)
+      |> Enum.filter(fn lifer -> lifer.location.is_private end)
+      |> Enum.flat_map(& &1.location.ancestry)
       |> Enum.uniq()
 
     loci =
-      from(l in Location, where: l.id in ^ancestor_loc_ids, preload: [:country])
+      from(l in Location,
+        where: l.id in ^ancestor_loc_ids,
+        preload: [:cached_parent, :cached_city, :cached_subdivision, :country]
+      )
       |> Repo.all()
       |> Enum.reduce(%{}, fn loc, acc -> Map.put(acc, loc.id, loc) end)
+
+    # TODO: Preload ancestors for those that are private too
 
     things
     |> Enum.map(fn thing ->
