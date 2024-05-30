@@ -47,7 +47,7 @@ defmodule KjogviWeb.MixProject do
 
   defp extra_apps(:default), do: [:logger, :runtime_tools]
   defp extra_apps(:test), do: extra_apps(:default)
-  defp extra_apps(_), do: extra_apps(:default) ++ [:os_mon]
+  defp extra_apps(_), do: extra_apps(:default) ++ [:os_mon, :opentelemetry]
 
   # Specifies your project dependencies.
   #
@@ -80,12 +80,15 @@ defmodule KjogviWeb.MixProject do
       {:scrivener_phoenix, "~> 0.3.2"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:opentelemetry, "~> 1.3"},
       {:opentelemetry_api, "~> 1.2"},
       {:opentelemetry_phoenix, "~> 1.2",
-       github: "open-telemetry/opentelemetry-erlang-contrib",
+       github: "khustochka/opentelemetry-erlang-contrib",
+       branch: "main",
        subdir: "instrumentation/opentelemetry_phoenix"},
-      {:opentelemetry_bandit, "~> 0.1"},
+      {:opentelemetry_bandit, "~> 0.1",
+      github: "khustochka/opentelemetry-erlang-contrib",
+      branch: "fix-bandit-spans",
+      subdir: "instrumentation/opentelemetry_bandit"},
       {:opentelemetry_exporter, "~> 1.6"}
     ]
   end
