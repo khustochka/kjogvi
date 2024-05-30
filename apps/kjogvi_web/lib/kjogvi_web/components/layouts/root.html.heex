@@ -51,14 +51,16 @@
           </.form_as_link>
         </li>
       <% else %>
-        <li :if={Kjogvi.Config.allow_user_registration()}>
-          <.link
-            href={~p"/users/register"}
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Register
-          </.link>
-        </li>
+        <%= Kjogvi.Config.with_user_registration do %>
+          <li>
+            <.link
+              href={~p"/users/register"}
+              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+            >
+              Register
+            </.link>
+          </li>
+        <% end %>
         <li>
           <.link
             href={~p"/users/log_in"}

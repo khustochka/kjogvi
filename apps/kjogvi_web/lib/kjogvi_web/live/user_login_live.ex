@@ -1,17 +1,21 @@
 defmodule KjogviWeb.UserLoginLive do
   use KjogviWeb, :live_view
 
+  require Kjogvi.Config
+
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
         Sign in to account
-        <:subtitle :if={Kjogvi.Config.allow_user_registration()}>
-          Don't have an account?
-          <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
-            Sign up
-          </.link>
-          for an account now.
+        <:subtitle>
+          <%= Kjogvi.Config.with_user_registration do %>
+            Don't have an account?
+            <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
+              Sign up
+            </.link>
+            for an account now.
+          <% end %>
         </:subtitle>
       </.header>
 
@@ -21,13 +25,11 @@ defmodule KjogviWeb.UserLoginLive do
 
         <:actions>
           <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-          <.link
-            :if={Kjogvi.Config.allow_user_registration()}
-            href={~p"/users/reset_password"}
-            class="text-sm font-semibold"
-          >
-            Forgot your password?
-          </.link>
+          <%= Kjogvi.Config.with_user_registration do %>
+            <.link href={~p"/users/reset_password"} class="text-sm font-semibold">
+              Forgot your password?
+            </.link>
+          <% end %>
         </:actions>
         <:actions>
           <.button phx-disable-with="Signing in..." class="w-full">
