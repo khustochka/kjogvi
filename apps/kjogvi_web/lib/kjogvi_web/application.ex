@@ -7,8 +7,8 @@ defmodule KjogviWeb.Application do
 
   @impl true
   def start(_type, _args) do
-    :opentelemetry_cowboy.setup()
-    OpentelemetryPhoenix.setup(adapter: :cowboy2)
+    OpentelemetryBandit.setup()
+    OpentelemetryPhoenix.setup(adapter: :bandit)
 
     children = [
       # Start the Telemetry supervisor

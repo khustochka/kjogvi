@@ -30,7 +30,7 @@ end
 # Configures the endpoint
 Application.put_env(:ornitho_web, DemoWeb.Endpoint,
   url: [host: "localhost"],
-  adapter: Phoenix.Endpoint.Cowboy2Adapter,
+  adapter: Bandit.PhoenixAdapter,
   secret_key_base:
     System.get_env("SECRET_KEY_BASE") ||
       "HsxaPv+VXm1JucXuaysVuvP8CuZsPpTM0y4IxDag0eFp1HZzWoMYcUKXIYKnAYxF",
