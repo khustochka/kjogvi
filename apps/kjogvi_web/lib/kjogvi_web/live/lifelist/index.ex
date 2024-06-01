@@ -161,7 +161,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <th :if={!@public_view} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-snug text-zinc-700">
+      <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 leading-snug text-zinc-700">
         <%= for {lifer, i} <- Enum.with_index(@lifelist) do %>
           <tr>
             <td class="p-0 py-4 pr-6 text-right"><%= @total - i %>.</td>

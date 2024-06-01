@@ -2,6 +2,7 @@
 // https://tailwindcss.com/docs/configuration
 
 const plugin = require("tailwindcss/plugin")
+const defaultTheme = require('tailwindcss/defaultTheme')
 const fs = require("fs")
 const path = require("path")
 
@@ -15,7 +16,10 @@ module.exports = {
     extend: {
       colors: {
         brand: "#FD4F00",
-      }
+      },
+      fontFamily: {
+        'header': ['Rubik', ...defaultTheme.fontFamily.sans],
+      },
     },
   },
   plugins: [
@@ -30,6 +34,13 @@ module.exports = {
     plugin(({addVariant}) => addVariant("phx-click-loading", [".phx-click-loading&", ".phx-click-loading &"])),
     plugin(({addVariant}) => addVariant("phx-submit-loading", [".phx-submit-loading&", ".phx-submit-loading &"])),
     plugin(({addVariant}) => addVariant("phx-change-loading", [".phx-change-loading&", ".phx-change-loading &"])),
+
+    // Overrides base values
+    plugin(function({ addBase }) {
+      addBase({
+        //  'html': { fontSize: "18px" },
+       })
+     }),
 
     // Embeds Heroicons (https://heroicons.com) into your app.css bundle
     // See your `CoreComponents.icon/1` for more information.
