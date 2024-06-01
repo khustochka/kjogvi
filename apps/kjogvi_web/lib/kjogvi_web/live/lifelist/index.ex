@@ -81,9 +81,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <.header>
+    <.header_single style={header_style(assigns)}>
       <%= @page_header %>
-    </.header>
+    </.header_single>
 
     <div :if={@current_user} class="flex items-center mt-4">
       <form action="" phx-change="public_toggle">
@@ -107,7 +107,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
-        <b :if={is_nil(@year)}>All years</b>
+        <em :if={is_nil(@year)} class="font-semibold not-italic">All years</em>
         <.link :if={not is_nil(@year)} patch={lifelist_path(nil, @location, @current_path_query)}>
           All years
         </.link>
@@ -115,7 +115,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <%= for {year, active} <- @years do %>
         <li>
           <%= if @year == year do %>
-            <b><%= year %></b>
+            <em class="font-semibold not-italic"><%= year %></em>
           <% else %>
             <%= if active do %>
               <.link patch={lifelist_path(year, @location, @current_path_query)}><%= year %></.link>
@@ -129,7 +129,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
-        <b :if={is_nil(@location)}>All countries</b>
+        <em :if={is_nil(@location)} class="font-semibold not-italic">All countries</em>
         <.link :if={not is_nil(@location)} patch={lifelist_path(@year, nil, @current_path_query)}>
           All countries
         </.link>
@@ -137,7 +137,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <%= for {location, active} <- @locations do %>
         <li>
           <%= if @location == location do %>
-            <b><%= location.name_en %></b>
+            <em class="font-semibold not-italic"><%= location.name_en %></em>
           <% else %>
             <%= if active do %>
               <.link patch={lifelist_path(@year, location, @current_path_query)}>
@@ -280,5 +280,13 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp lifelist_path_with_clean_query(year, location, query) do
     ~p"/lifelist/#{year}/#{location.slug}?#{query}"
+  end
+
+  defp header_style(%{year: nil, location: nil}) do
+    "semibold"
+  end
+
+  defp header_style(_assigns) do
+    "medium"
   end
 end

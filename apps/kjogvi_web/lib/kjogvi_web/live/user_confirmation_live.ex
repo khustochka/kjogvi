@@ -9,14 +9,16 @@ Kjogvi.Config.with_user_registration do
     def render(%{live_action: :edit} = assigns) do
       ~H"""
       <div class="mx-auto max-w-sm">
-        <.header class="text-center">Confirm Account</.header>
+        <CoreComponents.header class="text-center">Confirm Account</CoreComponents.header>
 
-        <.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">
+        <CoreComponents.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">
           <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
           <:actions>
-            <.button phx-disable-with="Confirming..." class="w-full">Confirm my account</.button>
+            <CoreComponents.button phx-disable-with="Confirming..." class="w-full">
+              Confirm my account
+            </CoreComponents.button>
           </:actions>
-        </.simple_form>
+        </CoreComponents.simple_form>
 
         <p class="text-center mt-4">
           <.link href={~p"/users/register"}>Register</.link>

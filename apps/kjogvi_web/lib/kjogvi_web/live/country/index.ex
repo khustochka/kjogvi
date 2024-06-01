@@ -29,16 +29,16 @@ defmodule KjogviWeb.Live.Country.Index do
     <.link patch={~p{/locations/countries}}>Countries</.link>
     <.link patch={~p{/locations}}>Locations</.link>
 
-    <.header>
+    <.header_single>
       Countries
-    </.header>
+    </.header_single>
 
-    <.table id="countries" rows={@countries}>
+    <CoreComponents.table id="countries" rows={@countries}>
       <:col :let={country} label="id"><%= country.id %></:col>
       <:col :let={country} label="slug"><%= country.slug %></:col>
       <:col :let={country} label="name"><%= country.name_en %></:col>
       <:col :let={country} label="iso"><%= country.iso_code %></:col>
-    </.table>
+    </CoreComponents.table>
     """
   end
 end

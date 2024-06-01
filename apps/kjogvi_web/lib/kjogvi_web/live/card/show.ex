@@ -29,7 +29,7 @@ defmodule KjogviWeb.Live.Card.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <.header>
+    <CoreComponents.header>
       Card #<%= @card.id %>
       <:subtitle>
         <%= @card.observ_date %> · <%= Geo.Location.long_name(@card.location) %>
@@ -38,9 +38,9 @@ defmodule KjogviWeb.Live.Card.Show do
           <.icon name="hero-bug-ant-solid" class="h-4 w-4" />
         </span>
       </:subtitle>
-    </.header>
+    </CoreComponents.header>
 
-    <.list>
+    <CoreComponents.list>
       <:item title="Effort"><%= @card.effort_type %></:item>
       <:item title="Start time"><%= @card.start_time %></:item>
       <:item title="Duration">
@@ -61,7 +61,7 @@ defmodule KjogviWeb.Live.Card.Show do
       <:item title="Observers">
         <%= @card.observers %>
       </:item>
-    </.list>
+    </CoreComponents.list>
     <h2 class="py-4">Notes</h2>
     <p>
       <%= @card.notes %>
@@ -70,7 +70,11 @@ defmodule KjogviWeb.Live.Card.Show do
     <p :if={Enum.empty?(@card.observations)}>
       This card has no observations.
     </p>
-    <.table :if={!Enum.empty?(@card.observations)} id="observation" rows={@card.observations}>
+    <CoreComponents.table
+      :if={!Enum.empty?(@card.observations)}
+      id="observation"
+      rows={@card.observations}
+    >
       <:col :let={obs} label="id"><%= obs.id %></:col>
       <:col :let={obs} label="Quantity">
         <%= obs.quantity %>
@@ -89,7 +93,7 @@ defmodule KjogviWeb.Live.Card.Show do
           <i><%= obs.taxon.name_sci %></i>
         </div>
       </:col>
-    </.table>
+    </CoreComponents.table>
     """
   end
 end

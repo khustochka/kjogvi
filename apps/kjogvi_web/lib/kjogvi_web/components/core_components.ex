@@ -1,5 +1,8 @@
 defmodule KjogviWeb.CoreComponents do
   @moduledoc """
+  NOTE: CoreComponents are preserved for reference but should be slowly phazed out
+  in favour of BaseComponents.
+
   Provides core UI components.
 
   At the first glance, this module may seem daunting, but its goal is
@@ -431,7 +434,7 @@ defmodule KjogviWeb.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-5xl font-header font-semibold leading-8 text-zinc-600 mt-6 mb-8">
+        <h1 class="text-4xl font-header font-semibold leading-none text-zinc-600 mt-6 mb-8">
           <%= render_slot(@inner_block) %>
         </h1>
         <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">

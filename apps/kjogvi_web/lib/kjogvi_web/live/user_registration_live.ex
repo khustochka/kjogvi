@@ -10,7 +10,7 @@ Kjogvi.Config.with_user_registration do
     def render(assigns) do
       ~H"""
       <div class="mx-auto max-w-sm">
-        <.header class="text-center">
+        <CoreComponents.header class="text-center">
           Register for an account
           <:subtitle>
             Already registered?
@@ -19,9 +19,9 @@ Kjogvi.Config.with_user_registration do
             </.link>
             to your account now.
           </:subtitle>
-        </.header>
+        </CoreComponents.header>
 
-        <.simple_form
+        <CoreComponents.simple_form
           for={@form}
           id="registration_form"
           phx-submit="save"
@@ -34,13 +34,15 @@ Kjogvi.Config.with_user_registration do
             Oops, something went wrong! Please check the errors below.
           </.error>
 
-          <.input field={@form[:email]} type="email" label="Email" required />
-          <.input field={@form[:password]} type="password" label="Password" required />
+          <CoreComponents.input field={@form[:email]} type="email" label="Email" required />
+          <CoreComponents.input field={@form[:password]} type="password" label="Password" required />
 
           <:actions>
-            <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>
+            <CoreComponents.button phx-disable-with="Creating account..." class="w-full">
+              Create an account
+            </CoreComponents.button>
           </:actions>
-        </.simple_form>
+        </CoreComponents.simple_form>
       </div>
       """
     end
