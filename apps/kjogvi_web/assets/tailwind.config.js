@@ -10,7 +10,10 @@ module.exports = {
   content: [
     "./js/**/*.js",
     "../lib/kjogvi_web.ex",
-    "../lib/kjogvi_web/**/*.*ex"
+    "../lib/kjogvi_web/**/*.*ex",
+    "../../ornitho_web/assets/js/**/*.js",
+    "../../ornitho_web/lib/ornitho_web.ex",
+    "../../ornitho_web/lib/ornitho_web/**/*.*ex"
   ],
   theme: {
     extend: {

@@ -28,8 +28,8 @@ defmodule OrnithoWeb do
   def controller do
     quote do
       use Phoenix.Controller,
-        formats: [:html, :json],
-        layouts: [html: OrnithoWeb.Layouts]
+        # layouts: [html: OrnithoWeb.Layouts],
+        formats: [:html, :json]
 
       import Plug.Conn
       import OrnithoWeb.Gettext
@@ -40,8 +40,8 @@ defmodule OrnithoWeb do
 
   def live_view do
     quote do
-      use Phoenix.LiveView,
-        layout: {OrnithoWeb.Layouts, :app}
+      use Phoenix.LiveView
+      # layout: {OrnithoWeb.Layouts, :app}
 
       unquote(html_helpers())
     end
