@@ -99,9 +99,10 @@ defmodule KjogviWeb do
       # Core UI components and translation
       # CoreComponents preserved for reference but should be slowly phazed out
       # import KjogviWeb.CoreComponents
+      import KjogviWeb.AccessComponents
       import KjogviWeb.BaseComponents
-      import KjogviWeb.IconComponents
       import KjogviWeb.FlashComponents
+      import KjogviWeb.IconComponents
       import KjogviWeb.MetaComponents
       import KjogviWeb.NavigationComponents
       import KjogviWeb.Gettext
