@@ -42,3 +42,6 @@ liveSocket.connect()
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
+// Ornitho web
+
+import "../../../ornitho_web/assets/js/ornitho_web"
