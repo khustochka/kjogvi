@@ -45,7 +45,7 @@ Application.put_env(:ornitho_web, DemoWeb.Endpoint,
   ],
   live_reload: [
     patterns: [
-      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"dist/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"lib/ornitho_web/(live|views)/.*(ex)$",
       ~r"lib/ornitho_web/templates/.*(ex)$"
     ]
