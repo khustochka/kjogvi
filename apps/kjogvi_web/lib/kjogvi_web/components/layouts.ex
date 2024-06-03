@@ -13,5 +13,7 @@ defmodule KjogviWeb.Layouts do
 
   require Kjogvi.Config
 
+  alias KjogviWeb.AdminMenu
+
   embed_templates "layouts/*"
 end
