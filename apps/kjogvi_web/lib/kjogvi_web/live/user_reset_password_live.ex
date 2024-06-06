@@ -17,9 +17,9 @@ Kjogvi.Config.with_user_registration do
           phx-submit="reset_password"
           phx-change="validate"
         >
-          <.error :if={@form.errors != []}>
+          <CoreComponents.error :if={@form.errors != []}>
             Oops, something went wrong! Please check the errors below.
-          </.error>
+          </CoreComponents.error>
 
           <CoreComponents.input field={@form[:password]} type="password" label="New password" required />
           <CoreComponents.input

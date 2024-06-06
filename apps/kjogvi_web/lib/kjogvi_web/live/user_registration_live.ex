@@ -30,9 +30,9 @@ Kjogvi.Config.with_user_registration do
           action={~p"/users/log_in?_action=registered"}
           method="post"
         >
-          <.error :if={@check_errors}>
+          <CoreComponents.error :if={@check_errors}>
             Oops, something went wrong! Please check the errors below.
-          </.error>
+          </CoreComponents.error>
 
           <CoreComponents.input field={@form[:email]} type="email" label="Email" required />
           <CoreComponents.input field={@form[:password]} type="password" label="Password" required />
