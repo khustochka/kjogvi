@@ -1,0 +1,15 @@
+<ul class="flex justify-center">
+  <.admin_menu_item>
+    <.link href={~p"/users/log_in"} class="no-underline hover:underline">
+      Log in
+    </.link>
+  </.admin_menu_item>
+
+  <%= Kjogvi.Config.with_user_registration do %>
+    <.admin_menu_item>
+      <.link href={~p"/users/register"} class="no-underline hover:underline">
+        Register
+      </.link>
+    </.admin_menu_item>
+  <% end %>
+</ul>
