@@ -1,4 +1,4 @@
-<div class="md:flex justify-between items-center">
+<div :if={@current_user} class="md:flex justify-between items-center">
   <ul>
     <.admin_menu_item>
       <.link href={~p"/locations"} class="no-underline hover:underline">

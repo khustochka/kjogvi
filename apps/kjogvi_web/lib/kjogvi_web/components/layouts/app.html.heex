@@ -3,11 +3,9 @@
     <:guest_access>
       <.login_menu />
     </:guest_access>
-
-    <:logged_in>
-      <.admin_menu current_user={@current_user} />
-    </:logged_in>
   </.access_control>
+  
+  <.admin_menu current_user={@current_user} />
 </div>
 
 <header class="px-4 sm:px-6 lg:px-8">
