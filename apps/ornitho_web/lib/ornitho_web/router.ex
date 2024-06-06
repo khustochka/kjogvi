@@ -9,12 +9,20 @@ defmodule OrnithoWeb.Router do
 
     scope =
       quote bind_quoted: binding() do
-        scope path, alias: false, as: false do
-          {session_name, session_opts, route_opts} =
-            OrnithoWeb.Router.__options__(opts)
+        {session_name, session_opts, route_opts} =
+          OrnithoWeb.Router.__options__(opts)
 
-          import Phoenix.Router, only: [get: 3, get: 4, post: 3, post: 4]
-          import Phoenix.LiveView.Router, only: [live: 4, live_session: 3]
+        pipeline :ornitho_web_pipeline do
+          plug :put_root_layout, session_opts[:root_layout]
+          plug :put_layout, session_opts[:layout]
+        end
+
+        scope path, alias: false, as: false do
+          import Plug.Conn
+          import Phoenix.Controller
+          import Phoenix.LiveView.Router
+
+          pipe_through :ornitho_web_pipeline
 
           live_session session_name, session_opts do
             # Assets
@@ -62,6 +70,18 @@ defmodule OrnithoWeb.Router do
         %{} = keys -> Map.take(keys, [:img, :style, :script])
       end
 
+    root_layout =
+      case options[:root_layout] do
+        nil -> {OrnithoWeb.Layouts, :root}
+        layout -> layout
+      end
+
+    app_layout =
+      case options[:app_layout] do
+        nil -> {OrnithoWeb.Layouts, :app}
+        layout -> layout
+      end
+
     session_args = [
       csp_nonce_assign_key
     ]
@@ -70,7 +90,8 @@ defmodule OrnithoWeb.Router do
       options[:live_session_name] || :ornitho_web,
       [
         session: {__MODULE__, :__session__, session_args},
-        root_layout: {OrnithoWeb.Layouts, :root},
+        root_layout: root_layout,
+        layout: app_layout,
         on_mount: options[:on_mount] || nil
       ],
       [

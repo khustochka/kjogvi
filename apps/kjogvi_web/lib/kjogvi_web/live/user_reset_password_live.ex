@@ -9,29 +9,31 @@ Kjogvi.Config.with_user_registration do
     def render(assigns) do
       ~H"""
       <div class="mx-auto max-w-sm">
-        <.header class="text-center">Reset Password</.header>
+        <CoreComponents.header class="text-center">Reset Password</CoreComponents.header>
 
-        <.simple_form
+        <CoreComponents.simple_form
           for={@form}
           id="reset_password_form"
           phx-submit="reset_password"
           phx-change="validate"
         >
-          <.error :if={@form.errors != []}>
+          <CoreComponents.error :if={@form.errors != []}>
             Oops, something went wrong! Please check the errors below.
-          </.error>
+          </CoreComponents.error>
 
-          <.input field={@form[:password]} type="password" label="New password" required />
-          <.input
+          <CoreComponents.input field={@form[:password]} type="password" label="New password" required />
+          <CoreComponents.input
             field={@form[:password_confirmation]}
             type="password"
             label="Confirm new password"
             required
           />
           <:actions>
-            <.button phx-disable-with="Resetting..." class="w-full">Reset Password</.button>
+            <CoreComponents.button phx-disable-with="Resetting..." class="w-full">
+              Reset Password
+            </CoreComponents.button>
           </:actions>
-        </.simple_form>
+        </CoreComponents.simple_form>
 
         <p class="text-center text-sm mt-4">
           <.link href={~p"/users/register"}>Register</.link>

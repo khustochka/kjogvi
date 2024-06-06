@@ -5,21 +5,21 @@ defmodule KjogviWeb.UserSettingsLive do
 
   def render(assigns) do
     ~H"""
-    <.header class="text-center">
+    <CoreComponents.header class="text-center">
       Account Settings
       <:subtitle>Manage your account email address and password settings</:subtitle>
-    </.header>
+    </CoreComponents.header>
 
     <div class="space-y-12 divide-y">
       <div>
-        <.simple_form
+        <CoreComponents.simple_form
           for={@email_form}
           id="email_form"
           phx-submit="update_email"
           phx-change="validate_email"
         >
-          <.input field={@email_form[:email]} type="email" label="Email" required />
-          <.input
+          <CoreComponents.input field={@email_form[:email]} type="email" label="Email" required />
+          <CoreComponents.input
             field={@email_form[:current_password]}
             name="current_password"
             id="current_password_for_email"
@@ -29,12 +29,12 @@ defmodule KjogviWeb.UserSettingsLive do
             required
           />
           <:actions>
-            <.button phx-disable-with="Changing...">Change Email</.button>
+            <CoreComponents.button phx-disable-with="Changing...">Change Email</CoreComponents.button>
           </:actions>
-        </.simple_form>
+        </CoreComponents.simple_form>
       </div>
       <div>
-        <.simple_form
+        <CoreComponents.simple_form
           for={@password_form}
           id="password_form"
           action={~p"/users/log_in?_action=password_updated"}
@@ -49,7 +49,7 @@ defmodule KjogviWeb.UserSettingsLive do
             id="hidden_user_email"
             value={@current_email}
           />
-          <.input
+          <CoreComponents.input
             field={@password_form[:current_password]}
             name="current_password"
             type="password"
@@ -58,16 +58,23 @@ defmodule KjogviWeb.UserSettingsLive do
             value={@current_password}
             required
           />
-          <.input field={@password_form[:password]} type="password" label="New password" required />
-          <.input
+          <CoreComponents.input
+            field={@password_form[:password]}
+            type="password"
+            label="New password"
+            required
+          />
+          <CoreComponents.input
             field={@password_form[:password_confirmation]}
             type="password"
             label="Confirm new password"
           />
           <:actions>
-            <.button phx-disable-with="Changing...">Change Password</.button>
+            <CoreComponents.button phx-disable-with="Changing...">
+              Change Password
+            </CoreComponents.button>
           </:actions>
-        </.simple_form>
+        </CoreComponents.simple_form>
       </div>
     </div>
     """

@@ -13,5 +13,7 @@ defmodule KjogviWeb.Layouts do
 
   require Kjogvi.Config
 
+  import KjogviWeb.Partials
+
   embed_templates "layouts/*"
 end

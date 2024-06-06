@@ -4,18 +4,21 @@ defmodule KjogviWeb.AccessComponents do
   """
   use Phoenix.Component
 
-  @doc "Rendered if the user is logged in"
-  def logged_in(assigns) do
+  @doc """
+  Render different content depending on if user is logged in or not.
+  """
+  attr :user, :any
+
+  slot :logged_in
+  slot :guest_access
+
+  def access_control(assigns) do
     ~H"""
-    <%= if @current_user do %>
+    <%= if @user do %>
+      <%= render_slot(@logged_in) %>
+    <% else %>
+      <%= render_slot(@guest_access) %>
     <% end %>
-    """
-  end
-
-  @doc "Rendered if the user is a guest (not logged in)"
-  def guest_access(assigns) do
-    ~H"""
-
     """
   end
 end

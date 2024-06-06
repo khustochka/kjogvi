@@ -55,17 +55,21 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
 
   def render(assigns) do
     ~H"""
-    <.header>Admin Tasks</.header>
+    <.header_single>Admin Tasks</.header_single>
     <h2>Legacy Import</h2>
-    <.simple_form for={nil} phx-submit="legacy_import" action={~p"/admin/tasks/legacy_import"}>
+    <CoreComponents.simple_form
+      for={nil}
+      phx-submit="legacy_import"
+      action={~p"/admin/tasks/legacy_import"}
+    >
       <:actions>
         <%= if @async_result.loading do %>
-          <.button disabled>processing...</.button>
+          <CoreComponents.button disabled>processing...</CoreComponents.button>
         <% else %>
-          <.button>Import</.button>
+          <CoreComponents.button>Import</CoreComponents.button>
         <% end %>
       </:actions>
-    </.simple_form>
+    </CoreComponents.simple_form>
     """
   end
 end

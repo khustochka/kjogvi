@@ -1,0 +1,52 @@
+<div :if={@current_user} class="md:flex justify-between items-center">
+  <ul>
+    <.admin_menu_item>
+      <.link href={~p"/locations"} class="no-underline hover:underline">
+        Locations
+      </.link>
+    </.admin_menu_item>
+    <.admin_menu_item>
+      <.link href={~p"/cards"} class="no-underline hover:underline">
+        Cards
+      </.link>
+    </.admin_menu_item>
+    <.admin_menu_item>
+      <.link href={~p"/taxonomy"} class="no-underline hover:underline">
+        Taxonomy
+      </.link>
+    </.admin_menu_item>
+    <.admin_menu_item>
+      <.link href={~p"/admin/tasks"} class="no-underline hover:underline">
+        Admin tasks
+      </.link>
+    </.admin_menu_item>
+    <.admin_menu_item>
+      <.link href={~p"/dashboard"} class="no-underline hover:underline">
+        Live Dashboard
+      </.link>
+    </.admin_menu_item>
+    <%= Kjogvi.Config.with_dev_routes do %>
+      <.admin_menu_item>
+        <.link href={~p"/dev/mailbox"} class="no-underline hover:underline">
+          Dev Mailbox
+        </.link>
+      </.admin_menu_item>
+    <% end %>
+  </ul>
+  <ul>
+    <.admin_menu_item>
+      <.link href={~p"/users/settings"} class="text-[0.94rem] md:text-[0.9rem] underline">
+        <%= @current_user.email %>
+      </.link>
+    </.admin_menu_item>
+    <.admin_menu_item>
+      <.form_as_link
+        action={~p"/users/log_out"}
+        method="delete"
+        class="no-underline font-normal text-[0.9rem] text-zinc-900 bg-slate-50 py-0.5 px-2"
+      >
+        Log out
+      </.form_as_link>
+    </.admin_menu_item>
+  </ul>
+</div>

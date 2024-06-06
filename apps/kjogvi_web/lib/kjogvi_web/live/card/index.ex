@@ -34,11 +34,11 @@ defmodule KjogviWeb.Live.Card.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <.header>
+    <.header_single>
       Cards
-    </.header>
+    </.header_single>
 
-    <.table id="cards" rows={@cards}>
+    <CoreComponents.table id="cards" rows={@cards}>
       <:col :let={card} label="id">
         <.link navigate={~p"/cards/#{card.id}"}><%= card.id %></.link>
       </:col>
@@ -58,7 +58,7 @@ defmodule KjogviWeb.Live.Card.Index do
           <%= card.observation_count %>
         </span>
       </:col>
-    </.table>
+    </CoreComponents.table>
 
     <%= paginate(@socket, @cards, &KjogviWeb.Router.Helpers.card_page_path/4, [:index], live: true) %>
     """

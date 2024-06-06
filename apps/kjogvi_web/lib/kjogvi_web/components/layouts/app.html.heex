@@ -1,3 +1,13 @@
+<div class="bg-neutral-800 text-sm md:text-[0.8125rem] font-semibold py-1 px-1 md:px-2 text-center">
+  <.access_control user={@current_user}>
+    <:guest_access>
+      <.login_menu />
+    </:guest_access>
+  </.access_control>
+  
+  <.admin_menu current_user={@current_user} />
+</div>
+
 <header class="px-4 sm:px-6 lg:px-8">
   <div class="sm:flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
     <div class="flex items-center gap-4">
@@ -14,18 +24,10 @@
         Kjogvi
       </p>
       <.link
-        :if={@current_user}
-        patch={~p"/locations"}
+        patch={~p"/"}
         class="rounded-lg bg-zinc-100 px-2 py-1 text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:bg-zinc-200/80 active:text-zinc-900/70"
       >
-        Locations
-      </.link>
-      <.link
-        :if={@current_user}
-        patch={~p"/cards"}
-        class="rounded-lg bg-zinc-100 px-2 py-1 text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:bg-zinc-200/80 active:text-zinc-900/70"
-      >
-        Cards
+        Home
       </.link>
       <.link
         patch={~p"/lifelist"}
@@ -33,20 +35,6 @@
       >
         Lifelist
       </.link>
-    </div>
-    <div :if={@current_user} class="flex items-center gap-4">
-      <a
-        href={~p"/taxonomy"}
-        class="rounded-lg bg-zinc-100 px-2 py-1 text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:bg-zinc-200/80 active:text-zinc-900/70"
-      >
-        Taxonomy
-      </a>
-      <a
-        href={~p"/dashboard"}
-        class="text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-      >
-        Dashboard
-      </a>
     </div>
   </div>
 </header>

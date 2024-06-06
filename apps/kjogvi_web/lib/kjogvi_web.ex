@@ -97,14 +97,19 @@ defmodule KjogviWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
-      import KjogviWeb.CoreComponents
+      # CoreComponents preserved for reference but should be slowly phazed out
+      # import KjogviWeb.CoreComponents
+      import KjogviWeb.AccessComponents
+      import KjogviWeb.BaseComponents
       import KjogviWeb.FlashComponents
+      import KjogviWeb.IconComponents
       import KjogviWeb.MetaComponents
       import KjogviWeb.NavigationComponents
       import KjogviWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
+      alias KjogviWeb.CoreComponents
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
