@@ -80,7 +80,6 @@ defmodule KjogviWeb.MixProject do
       {:bandit, "~> 1.2"},
       {:scrivener_phoenix, "~> 0.3.2"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:opentelemetry_api, "~> 1.2"},
       {:opentelemetry_phoenix, "~> 1.2",
        github: "khustochka/opentelemetry-erlang-contrib",
@@ -90,7 +89,8 @@ defmodule KjogviWeb.MixProject do
        github: "khustochka/opentelemetry-erlang-contrib",
        branch: "fix-bandit-spans",
        subdir: "instrumentation/opentelemetry_bandit"},
-      {:opentelemetry_exporter, "~> 1.6"}
+      {:opentelemetry_exporter, "~> 1.6"},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
