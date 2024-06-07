@@ -15,7 +15,7 @@ defmodule Kjogvi.Opentelemetry.Ecto do
 
   defp split_repo_key(repo) do
     repo
-    |> Module.split
+    |> Module.split()
     |> Enum.map(fn str ->
       str
       |> Macro.underscore()

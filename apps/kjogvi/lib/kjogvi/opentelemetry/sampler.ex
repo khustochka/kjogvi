@@ -24,6 +24,7 @@ defmodule Kjogvi.Telemetry.Sampler do
         _sampler_config
       ) do
     result = drop_trace?(span_name, attributes)
+
     Logger.debug(fn ->
       "TRACE drop=#{result} span_names=#{span_name} kind=#{span_kind}"
     end)
@@ -42,12 +43,18 @@ defmodule Kjogvi.Telemetry.Sampler do
   def drop_trace?(span_name, attributes) do
     cond do
       # I don't care about WS connection
-      span_name == "Websocket" -> true
+      span_name == "Websocket" ->
+        true
+
       # dev only but filter out to reduce noise
       # span_name == "kjogvi.repo.query:schema_migrations" -> true
 
-      String.starts_with?(span_name, "HTTP GET") && (attributes[:"http.target"] || "") =~ @ignored_get_paths -> true
-      true -> false
+      String.starts_with?(span_name, "HTTP GET") &&
+          (attributes[:"http.target"] || "") =~ @ignored_get_paths ->
+        true
+
+      true ->
+        false
     end
   end
 end
