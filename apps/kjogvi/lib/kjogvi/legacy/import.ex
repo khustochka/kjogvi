@@ -2,10 +2,16 @@ defmodule Kjogvi.Legacy.Import do
   @moduledoc false
 
   def run do
-    prepare_import()
-    perform_import(:locations)
-    perform_import(:cards)
-    perform_import(:observations)
+    metadata = %{adapter: adapter()}
+
+    :telemetry.span([:kjogvi, :legacy, :import], metadata, fn ->
+      prepare_import()
+      perform_import(:locations)
+      perform_import(:cards)
+      perform_import(:observations)
+
+      {:ok, metadata}
+    end)
   end
 
   def prepare_import do
