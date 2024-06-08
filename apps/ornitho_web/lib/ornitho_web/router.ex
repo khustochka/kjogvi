@@ -8,7 +8,7 @@ defmodule OrnithoWeb.Router do
       end
 
     scope =
-      quote bind_quoted: binding() do
+      quote bind_quoted: binding(), generated: true do
         {session_name, session_opts, route_opts} =
           OrnithoWeb.Router.__options__(opts)
 
