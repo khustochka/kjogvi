@@ -22,7 +22,7 @@ defmodule Kjogvi.Umbrella.MixProject do
       test_coverage: [tool: ExCoveralls],
       releases: [
         kjogvi: [
-          applications: [kjogvi_web: :permanent]
+          applications: [kjogvi_web: :permanent, opentelemetry: :temporary]
         ]
       ]
     ]

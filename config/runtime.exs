@@ -16,6 +16,43 @@ if config_env() == :dev && System.get_env("BIND_PUBLIC") in ~w(true 1) do
   config :kjogvi_web, KjogviWeb.Endpoint, http: [ip: {0, 0, 0, 0}, port: "4000"]
 end
 
+# Opentelemetry
+
+cond do
+  config_env() == :dev && System.get_env("OTEL_EXPORTER_STDOUT") in ~w(true 1) ->
+    config :opentelemetry,
+      traces_exporter: {:otel_exporter_stdout, []}
+
+  System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") ->
+    config :opentelemetry,
+      span_processor: :batch,
+      sampler: {:parent_based, %{root: {Kjogvi.Telemetry.Sampler, %{}}}},
+      # traces_exporter: {:opentelemetry_exporter, []}
+      traces_exporter: {Kjogvi.Opentelemetry.Exporter, []}
+
+  true ->
+    config :opentelemetry, traces_exporter: :none
+end
+
+# Also for dev
+# config :opentelemetry_exporter,
+#   otlp_protocol: :http_protobuf,
+#   otlp_endpoint: "http://localhost:4318"
+
+# Set env vars
+# export OTEL_SERVICE_NAME=your-service-name
+# export OTEL_EXPORTER_OTLP_ENDPOINT=https://api.honeycomb.io:443
+# export OTEL_EXPORTER_OTLP_HEADERS="x-honeycomb-team=your-api-key"
+# export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+# export OTEL_EXPORTER_OTLP_COMPRESSION=gzip
+# if System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
+#   config :opentelemetry_exporter,
+#     otlp_protocol: :grpc,
+#     otlp_compression: :gzip,
+#     otlp_endpoint: "https://api.honeycomb.io:443",
+#     otlp_headers: [{"x-honeycomb-team", "your-api-key"}]
+# end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
