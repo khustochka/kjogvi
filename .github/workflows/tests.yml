@@ -8,25 +8,9 @@ permissions:
   contents: read
 
 jobs:
-  build:
-
-    name: Build and test
+  compile:
+    name: Compile
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15-alpine
-        ports:
-          - "5432:5432"
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        env:
-          POSTGRES_USER: kjogvi
-          POSTGRES_DB: kjogvi_test
-          POSTGRES_PASSWORD: "kjogvi"
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up Elixir
@@ -63,14 +47,42 @@ jobs:
       env:
         MIX_ENV: test
       run: mix compile
-    - name: Run tests with coverage
-      env:
-        MIX_ENV: test
-        DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
-        ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
-      run: mix do ecto.setup, coveralls.html --umbrella
-    - name: Code coverage results
-      uses: actions/upload-artifact@v4
-      with:
-        name: Coverage
-        path: cover/  
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: compile
+    steps:
+      - name: Run lint
+        env:
+          MIX_ENV: test
+        run: mix lint
+  test:    
+    name: Test
+    runs-on: ubuntu-latest
+    needs: compile
+    services:
+      postgres:
+        image: postgres:15-alpine
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        env:
+          POSTGRES_USER: kjogvi
+          POSTGRES_DB: kjogvi_test
+          POSTGRES_PASSWORD: "kjogvi"
+    steps:
+      - name: Run tests with coverage
+        env:
+          MIX_ENV: test
+          DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
+          ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
+        run: mix do ecto.setup, coveralls.html --umbrella
+      - name: Code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage
+          path: cover/
