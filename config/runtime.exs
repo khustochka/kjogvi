@@ -19,16 +19,16 @@ end
 # Opentelemetry
 
 cond do
+  config_env() == :dev && System.get_env("OTEL_EXPORTER_STDOUT") in ~w(true 1) ->
+    config :opentelemetry,
+      traces_exporter: {:otel_exporter_stdout, []}
+
   System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") ->
     config :opentelemetry,
       span_processor: :batch,
       sampler: {:parent_based, %{root: {Kjogvi.Telemetry.Sampler, %{}}}},
       # traces_exporter: {:opentelemetry_exporter, []}
       traces_exporter: {Kjogvi.Opentelemetry.Exporter, []}
-
-  config_env() == :dev && System.get_env("OTEL_EXPORTER_STDOUT") in ~w(true 1) ->
-    config :opentelemetry,
-      traces_exporter: {:otel_exporter_stdout, []}
 
   true ->
     config :opentelemetry, traces_exporter: :none

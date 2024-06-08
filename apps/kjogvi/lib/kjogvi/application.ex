@@ -9,7 +9,7 @@ defmodule Kjogvi.Application do
   def start(_type, _args) do
     Kjogvi.Logger.install()
 
-    Kjogvi.Opentelemetry.Ecto.setup()
+    Kjogvi.Opentelemetry.setup()
 
     children = [
       Kjogvi.Repo,
