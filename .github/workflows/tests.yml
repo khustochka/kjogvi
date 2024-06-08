@@ -12,46 +12,24 @@ jobs:
     name: Compile
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Elixir
-      uses: erlef/setup-beam@v1
-      with:
-        version-file: .tool-versions
-        version-type: strict
-        # elixir-version: '1.14.3' # Define the elixir version [required]
-        # otp-version: '25.0' # Define the OTP version [required]
-    - name: Restore dependencies cache
-      uses: actions/cache@v4
-      with:
-        path: '**/deps'
-        key: ${{ runner.os }}-deps-${{ hashFiles('**/mix.lock') }}
-        # restore-keys: ${{ runner.os }}-deps-
-    - name: Restore build cache
-      uses: actions/cache@v4
-      with:
-        path: '**/_build'
-        key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
-        # restore-keys: |
-        #   ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-
-        #   ${{ runner.os }}-build-
-    - name: Install dependencies
-      env:
-        MIX_ENV: test
-      run: mix deps.get
-    # See https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12  
-    # - name: Compile deps
-    #   env:
-    #     MIX_ENV: test
-    #   run: mix deps.compile
-    - name: Compile
-      env:
-        MIX_ENV: test
-      run: mix compile
+      - uses: actions/checkout@v4
+      - name: Setup test environment
+        uses: ./.github/actions/setup
+      # See https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12  
+      # - name: Compile deps
+      #   env:
+      #     MIX_ENV: test
+      #   run: mix deps.compile
+      - name: Compile
+        env:
+          MIX_ENV: test
+        run: mix compile
   lint:
     name: Lint
     runs-on: ubuntu-latest
     needs: compile
     steps:
+      - uses: actions/checkout@v4
       - name: Run lint
         env:
           MIX_ENV: test
@@ -75,6 +53,9 @@ jobs:
           POSTGRES_DB: kjogvi_test
           POSTGRES_PASSWORD: "kjogvi"
     steps:
+      - uses: actions/checkout@v4
+      - name: Setup test environment
+        uses: ./.github/actions/setup
       - name: Run tests with coverage
         env:
           MIX_ENV: test
