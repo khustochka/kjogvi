@@ -1,5 +1,5 @@
 defmodule Kjogvi.Users.User do
-  use Ecto.Schema
+  use Kjogvi.Schema
   import Ecto.Changeset
 
   schema "users" do
