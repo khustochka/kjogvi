@@ -43,7 +43,7 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup
         with:
-          env: dev
+          env: test
       - name: Run tests with coverage
         env:
           MIX_ENV: test
