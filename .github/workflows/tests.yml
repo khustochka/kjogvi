@@ -30,6 +30,8 @@ jobs:
     needs: compile
     steps:
       - uses: actions/checkout@v4
+      - name: Setup test environment
+        uses: ./.github/actions/setup
       - name: Run lint
         env:
           MIX_ENV: test
