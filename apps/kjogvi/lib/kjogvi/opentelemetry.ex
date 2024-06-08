@@ -27,11 +27,15 @@ defmodule Kjogvi.Opentelemetry do
         [:kjogvi, :legacy, :import, :start],
         %{monotonic_time: start_time},
         metadata,
-        %{tracer_id: tracer_id, span_name: name}
+        %{tracer_id: tracer_id, span_name: span_name}
       ) do
-    start_opts = %{start_time: start_time, kind: :internal}
-
-    OpentelemetryTelemetry.start_telemetry_span(tracer_id, name, metadata, start_opts)
+    OpentelemetryTelemetry.start_telemetry_span(tracer_id, span_name, metadata, %{
+      links: [],
+      attributes: metadata,
+      start_time: start_time,
+      is_recording: false,
+      kind: :internal
+    })
 
     :ok
   end
