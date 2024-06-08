@@ -23,6 +23,7 @@ runs:
           ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-
           ${{ runner.os }}-build-
     - name: Install dependencies
+      shell: bash
       env:
         MIX_ENV: test
       run: mix deps.get  
