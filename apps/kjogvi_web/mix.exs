@@ -83,11 +83,11 @@ defmodule KjogviWeb.MixProject do
       {:opentelemetry_api, "~> 1.2"},
       {:opentelemetry_phoenix, "~> 1.2",
        github: "khustochka/opentelemetry-erlang-contrib",
-       branch: "fix-bandit-spans",
+       branch: "integration",
        subdir: "instrumentation/opentelemetry_phoenix"},
       {:opentelemetry_bandit, "~> 0.1",
        github: "khustochka/opentelemetry-erlang-contrib",
-       branch: "fix-bandit-spans",
+       branch: "integration",
        subdir: "instrumentation/opentelemetry_bandit"},
       {:opentelemetry_exporter, "~> 1.6"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
