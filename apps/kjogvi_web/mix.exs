@@ -56,7 +56,7 @@ defmodule KjogviWeb.MixProject do
     [
       {:phoenix, "~> 1.7.12"},
       {:phoenix_ecto, "~> 4.4"},
-      {:phoenix_html, "~> 3.3"},
+      {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.2"},
       {:floki, ">= 0.30.0"},
@@ -78,7 +78,8 @@ defmodule KjogviWeb.MixProject do
       {:ornitho_web, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.2"},
-      {:scrivener_phoenix, "~> 0.3.2"},
+      {:scrivener_phoenix, ">= 0.0.0",
+       github: "khustochka/scrivener_phoenix", branch: "phoenix_html-4"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:opentelemetry_api, "~> 1.2"},
       {:opentelemetry_phoenix, "~> 1.2",
