@@ -3,13 +3,10 @@
 </.header_single>
 
 <section>
-  <div class="flex gap-4 items-baseline">
-    <h2 class="text-[2rem] font-semibold font-header text-zinc-500">
-      Top 5 lifers
-    </h2>
-    <.link href={~p"/lifelist"} class="text-zinc-600 text-sm">See more</.link>
-  </div>
-  <table id="lifers" class="mt-2 w-full">
+  <h2 class="text-[2rem] font-semibold font-header text-zinc-500">
+    Last 5 lifers
+  </h2>
+  <table id="lifers" class="mt-2">
     <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 leading-snug text-zinc-700">
       <%= for {lifer, i} <- Enum.with_index(@lifelist) do %>
         <tr>
@@ -23,6 +20,13 @@
           </td>
         </tr>
       <% end %>
+      <tr>
+        <td class="p-0 py-4 pr-6 text-right"><.icon name="hero-ellipsis-horizontal" /></td>
+        <td class="p-0 py-4 pr-6">
+          <.link href={~p"/lifelist"} class="text-zinc-600">See more</.link>
+        </td>
+        <td></td>
+      </tr>
     </tbody>
   </table>
 </section>
