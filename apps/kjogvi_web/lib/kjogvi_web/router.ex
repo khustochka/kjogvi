@@ -51,7 +51,7 @@ defmodule KjogviWeb.Router do
       live "/locations/countries", Live.Country.Index, :index
 
       live "/cards", Live.Card.Index, :index
-      live "/cards/page/:page", Live.Card.Index, :index, as: :card_page
+      live "/cards/page/:page", Live.Card.Index, :index
       live "/cards/:id", Live.Card.Show, :show
 
       live "/admin/tasks", Live.Admin.Tasks.Index, :index

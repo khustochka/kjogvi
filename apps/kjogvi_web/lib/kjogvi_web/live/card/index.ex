@@ -60,7 +60,14 @@ defmodule KjogviWeb.Live.Card.Index do
       </:col>
     </CoreComponents.table>
 
-    <%= paginate(@socket, @cards, &KjogviWeb.Router.Helpers.card_page_path/4, [:index], live: true) %>
+    <%= paginate(@socket, @cards, &paginated_card_path/4, [:index], live: true) %>
     """
+  end
+
+  defp paginated_card_path(_conn, _action, page, _params) do
+    case page do
+      1 -> ~p"/cards"
+      n -> ~p"/cards/page/#{n}"
+    end
   end
 end
