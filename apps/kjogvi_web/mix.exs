@@ -79,7 +79,7 @@ defmodule KjogviWeb.MixProject do
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.2"},
       {:scrivener_phoenix, ">= 0.0.0",
-       github: "khustochka/scrivener_phoenix", branch: "phoenix_html-4"},
+       github: "khustochka/scrivener_phoenix", branch: "integration"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:opentelemetry_api, "~> 1.2"},
       {:opentelemetry_phoenix, "~> 1.2",
