@@ -1,4 +1,6 @@
-if Application.compile_env(:kjogvi, :allow_user_registration, false) do
+require Kjogvi.Config
+
+Kjogvi.Config.with_user_registration do
   defmodule KjogviWeb.UserForgotPasswordLiveTest do
     use KjogviWeb.ConnCase
     @moduletag :skip

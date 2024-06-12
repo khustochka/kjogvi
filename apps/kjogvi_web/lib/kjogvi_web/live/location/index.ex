@@ -36,9 +36,9 @@ defmodule KjogviWeb.Live.Location.Index do
     <.link patch={~p{/locations/countries}}>Countries</.link>
     <.link patch={~p{/locations}}>Locations</.link>
 
-    <.header>
+    <.header_single>
       Locations
-    </.header>
+    </.header_single>
 
     <div class="mb-3">
       <%= render_with_children(%{locations: @top_locations, all_locations: @locations}) %>

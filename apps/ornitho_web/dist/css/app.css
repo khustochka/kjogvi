@@ -1,5 +1,5 @@
 /*
-! tailwindcss v3.4.3 | MIT License | https://tailwindcss.com
+! tailwindcss v3.4.4 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -1135,10 +1135,6 @@ a {
 
 .animate-spin {
   animation: spin 1s linear infinite;
-}
-
-.flex-row {
-  flex-direction: row;
 }
 
 .items-center {

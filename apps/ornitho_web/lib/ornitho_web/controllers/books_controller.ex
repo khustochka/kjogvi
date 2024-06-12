@@ -1,8 +1,6 @@
 defmodule OrnithoWeb.BooksController do
   use OrnithoWeb, :controller
 
-  plug :put_root_layout, html: {OrnithoWeb.Layouts, :root}
-
   def index(conn, _params) do
     books = Ornitho.Finder.Book.with_taxa_count()
 
@@ -25,6 +23,6 @@ defmodule OrnithoWeb.BooksController do
         |> put_flash(:error, "Not an allowed importer.")
       end
 
-    redirect(conn, to: OrnithoWeb.LinkHelper.path(conn, "/"))
+    redirect(conn, to: OrnithoWeb.LinkHelper.root_path(conn))
   end
 end

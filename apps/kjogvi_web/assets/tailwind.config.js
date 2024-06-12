@@ -2,6 +2,7 @@
 // https://tailwindcss.com/docs/configuration
 
 const plugin = require("tailwindcss/plugin")
+const defaultTheme = require('tailwindcss/defaultTheme')
 const fs = require("fs")
 const path = require("path")
 
@@ -9,13 +10,19 @@ module.exports = {
   content: [
     "./js/**/*.js",
     "../lib/kjogvi_web.ex",
-    "../lib/kjogvi_web/**/*.*ex"
+    "../lib/kjogvi_web/**/*.*ex",
+    "../../ornitho_web/assets/js/**/*.js",
+    "../../ornitho_web/lib/ornitho_web.ex",
+    "../../ornitho_web/lib/ornitho_web/**/*.*ex"
   ],
   theme: {
     extend: {
       colors: {
         brand: "#FD4F00",
-      }
+      },
+      fontFamily: {
+        'header': ['Rubik', 'sans-serif', 'ui-sans-serif', 'system-ui'],
+      },
     },
   },
   plugins: [
@@ -31,8 +38,20 @@ module.exports = {
     plugin(({addVariant}) => addVariant("phx-submit-loading", [".phx-submit-loading&", ".phx-submit-loading &"])),
     plugin(({addVariant}) => addVariant("phx-change-loading", [".phx-change-loading&", ".phx-change-loading &"])),
 
+    // Overrides base values
+    plugin(function({ addBase }) {
+      addBase({
+        'a': { "text-decoration": "underline" },
+        'html': { 
+          // fontSize: "18px",
+          textUnderlineOffset: "2px",
+          "text-decoration-skip-ink": "none"
+        },
+       })
+     }),
+
     // Embeds Heroicons (https://heroicons.com) into your app.css bundle
-    // See your `CoreComponents.icon/1` for more information.
+    // See your `IconComponents.icon/1` for more information.
     //
     plugin(function({matchComponents, theme}) {
       let iconsDir = path.join(__dirname, "../../../deps/heroicons/optimized")

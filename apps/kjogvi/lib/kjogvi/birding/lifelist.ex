@@ -26,6 +26,19 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.reverse()
   end
 
+  def top(n, params \\ %{}) when is_integer(n) and n > 0 do
+    lifelist_query(params)
+    |> Repo.all()
+    |> Enum.map(&Repo.load(LifeObservation, &1))
+    |> Kjogvi.Birding.preload_taxa_and_species()
+    |> Enum.filter(& &1.species)
+    |> Enum.uniq_by(& &1.species.code)
+    |> Enum.reverse()
+    |> then(fn lifelist ->
+      %{lifelist: Enum.take(lifelist, n), total: length(lifelist)}
+    end)
+  end
+
   def years(params \\ %{}) do
     observations_filtered(params)
     |> distinct(true)

@@ -1,0 +1,43 @@
+name: "Setup test environment"
+description: "Setup Elixir-OTP and dependencies."
+inputs:
+  env:
+    required: true
+    description: "Environment"
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        version-file: .tool-versions
+        version-type: strict
+    - name: Restore dependencies cache
+      uses: actions/cache@v4
+      with:
+        path: '**/deps'
+        key: ${{ runner.os }}-deps-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}
+        restore-keys: ${{ runner.os }}-deps-
+    - name: Restore build cache
+      uses: actions/cache@v4
+      with:
+        path: '**/_build'
+        key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-
+          ${{ runner.os }}-build-
+    - name: Install dependencies
+      env:
+        MIX_ENV: ${{ inputs.env }}
+      shell: bash
+      run: mix deps.get
+    # See https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12  
+    # - name: Compile deps
+    #   env:
+    #     MIX_ENV: test
+    #   run: mix deps.compile
+    - name: Compile
+      env:
+        MIX_ENV: ${{ inputs.env }}
+      shell: bash
+      run: mix compile  

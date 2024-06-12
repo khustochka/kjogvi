@@ -8,9 +8,21 @@ permissions:
   contents: read
 
 jobs:
-  build:
-
-    name: Build and test
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup test environment
+        uses: ./.github/actions/setup
+        with:
+          env: dev
+      - name: Run lint
+        env:
+          MIX_ENV: dev
+        run: mix lint
+  test:    
+    name: Test
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -26,51 +38,20 @@ jobs:
           POSTGRES_USER: kjogvi
           POSTGRES_DB: kjogvi_test
           POSTGRES_PASSWORD: "kjogvi"
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Elixir
-      uses: erlef/setup-beam@v1
-      with:
-        version-file: .tool-versions
-        version-type: strict
-        # elixir-version: '1.14.3' # Define the elixir version [required]
-        # otp-version: '25.0' # Define the OTP version [required]
-    - name: Restore dependencies cache
-      uses: actions/cache@v4
-      with:
-        path: '**/deps'
-        key: ${{ runner.os }}-deps-${{ hashFiles('**/mix.lock') }}
-        # restore-keys: ${{ runner.os }}-deps-
-    - name: Restore build cache
-      uses: actions/cache@v4
-      with:
-        path: '**/_build'
-        key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
-        # restore-keys: |
-        #   ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-
-        #   ${{ runner.os }}-build-
-    - name: Install dependencies
-      env:
-        MIX_ENV: test
-      run: mix deps.get
-    # See https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12  
-    # - name: Compile deps
-    #   env:
-    #     MIX_ENV: test
-    #   run: mix deps.compile
-    - name: Compile
-      env:
-        MIX_ENV: test
-      run: mix compile
-    - name: Run tests with coverage
-      env:
-        MIX_ENV: test
-        DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
-        ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
-      run: mix do ecto.setup, coveralls.html --umbrella
-    - name: Code coverage results
-      uses: actions/upload-artifact@v4
-      with:
-        name: Coverage
-        path: cover/  
+      - uses: actions/checkout@v4
+      - name: Setup test environment
+        uses: ./.github/actions/setup
+        with:
+          env: test
+      - name: Run tests with coverage
+        env:
+          MIX_ENV: test
+          DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
+          ORNITHO_DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
+        run: mix do ecto.setup, coveralls.html --umbrella
+      - name: Code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage
+          path: cover/

@@ -11,5 +11,9 @@ defmodule KjogviWeb.Layouts do
 
   use KjogviWeb, :html
 
+  require Kjogvi.Config
+
+  import KjogviWeb.Partials
+
   embed_templates "layouts/*"
 end

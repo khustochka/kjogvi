@@ -8,7 +8,6 @@ defmodule Ornitho.Finder.Taxon do
   alias Ornitho.Query
   alias Ornitho.Schema.{Book, Taxon}
 
-  @default_per_page 25
   @search_results_limit 10
 
   @spec by_name_sci(Book.t(), String.t()) :: Taxon.t() | nil
@@ -35,17 +34,6 @@ defmodule Ornitho.Finder.Taxon do
     Query.Taxon.base_taxon(book)
     |> where(code: ^code)
     |> Ornithologue.repo().one!()
-  end
-
-  def page(book, page_num, opts \\ []) do
-    per_page = opts[:per_page] || @default_per_page
-    off = per_page * (page_num - 1)
-
-    Query.Taxon.base_taxon(book)
-    |> Query.Taxon.ordered()
-    |> offset(^off)
-    |> limit(^per_page)
-    |> Ornithologue.repo().all()
   end
 
   def search(book, search_term, opts \\ []) do

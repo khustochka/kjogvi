@@ -45,8 +45,9 @@ defmodule KjogviWeb.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  defp extra_apps(:test), do: [:logger, :runtime_tools]
-  defp extra_apps(_), do: [:logger, :runtime_tools, :os_mon]
+  defp extra_apps(:default), do: [:logger, :runtime_tools]
+  defp extra_apps(:test), do: extra_apps(:default)
+  defp extra_apps(_), do: extra_apps(:default) ++ [:os_mon, :opentelemetry]
 
   # Specifies your project dependencies.
   #
@@ -55,7 +56,7 @@ defmodule KjogviWeb.MixProject do
     [
       {:phoenix, "~> 1.7.12"},
       {:phoenix_ecto, "~> 4.4"},
-      {:phoenix_html, "~> 3.3"},
+      {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.2"},
       {:floki, ">= 0.30.0"},
@@ -69,6 +70,7 @@ defmodule KjogviWeb.MixProject do
        app: false,
        compile: false,
        depth: 1},
+      {:earmark, "~> 1.4", only: [:dev, :test]},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
@@ -76,8 +78,19 @@ defmodule KjogviWeb.MixProject do
       {:ornitho_web, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.2"},
-      {:scrivener_phoenix, "~> 0.3.2"},
+      {:scrivener_phoenix, ">= 0.0.0",
+       github: "khustochka/scrivener_phoenix", branch: "integration"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
+      {:opentelemetry_api, "~> 1.2"},
+      {:opentelemetry_phoenix, "~> 1.2",
+       github: "khustochka/opentelemetry-erlang-contrib",
+       branch: "integration",
+       subdir: "instrumentation/opentelemetry_phoenix"},
+      {:opentelemetry_bandit, "~> 0.1",
+       github: "khustochka/opentelemetry-erlang-contrib",
+       branch: "integration",
+       subdir: "instrumentation/opentelemetry_bandit"},
+      {:opentelemetry_exporter, "~> 1.6"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end

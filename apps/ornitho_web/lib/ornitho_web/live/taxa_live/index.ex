@@ -3,9 +3,10 @@ defmodule OrnithoWeb.Live.Taxa.Index do
 
   use OrnithoWeb, :live_component
 
-  import OrnithoWeb.PaginationComponents
+  import Scrivener.PhoenixView
 
   @minimum_search_term_length 3
+  @taxa_per_page 25
 
   @impl true
   def update(%{book: book, page_num: page_num, search_term: search_term}, socket) do
@@ -60,13 +61,9 @@ defmodule OrnithoWeb.Live.Taxa.Index do
         search_term={@search_term}
       />
 
-      <.simple_pagination
-        :if={!@search_enabled}
-        page_num={@page_num}
-        url_generator={
-          &OrnithoWeb.LinkHelper.path(@socket, "#{@book.slug}/#{@book.version}/page/#{&1}")
-        }
-      />
+      <%= if !@search_enabled do %>
+        <%= paginate(@socket, @taxa, &OrnithoWeb.LinkHelper.book_path/3, [@book], live: true) %>
+      <% end %>
     </div>
     """
   end
@@ -95,8 +92,9 @@ defmodule OrnithoWeb.Live.Taxa.Index do
   end
 
   defp get_taxa(%{book: book, search_enabled: false, page_num: page_num}) do
-    Ornitho.Finder.Taxon.page(book, page_num)
-    |> Ornitho.Finder.Taxon.with_parent_species()
+    Ornitho.Query.Taxon.base_ordered(book)
+    |> Ornitho.Query.Taxon.with_parent_species()
+    |> Ornithologue.repo().paginate(page: page_num, page_size: @taxa_per_page)
   end
 
   defp get_taxa(%{book: book, search_enabled: true, search_term: search_term}) do

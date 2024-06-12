@@ -22,7 +22,7 @@ defmodule Kjogvi.Umbrella.MixProject do
       test_coverage: [tool: ExCoveralls],
       releases: [
         kjogvi: [
-          applications: [kjogvi_web: :permanent]
+          applications: [kjogvi_web: :permanent, opentelemetry: :temporary]
         ]
       ]
     ]
@@ -76,9 +76,13 @@ defmodule Kjogvi.Umbrella.MixProject do
       setup: ["cmd mix setup"],
       "ecto.setup": ["ecto.create --quiet", "ecto.migrate --quiet"],
       lint: [
+        "run --no-start -e 'IO.puts(\"Checking formatting...\")'",
         "format --check-formatted",
+        "run --no-start -e 'IO.puts(\"Checking for unused dependencies...\")'",
         "deps.unlock --check-unused",
+        "run --no-start -e 'IO.puts(\"Running credo...\")'",
         "credo --format oneline --ignore design,refactor,readability,consistency",
+        "run --no-start -e 'IO.puts(\"Running dialyzer...\")'",
         "dialyzer --format dialyxir --quiet"
       ]
     ]

@@ -1,5 +1,5 @@
 defmodule Kjogvi.Users.UserToken do
-  use Ecto.Schema
+  use Kjogvi.Schema
   import Ecto.Query
   alias Kjogvi.Users.UserToken
 

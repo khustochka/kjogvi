@@ -44,7 +44,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.21.3",
+  version: "0.21.4",
   kjogvi_web: [
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
@@ -54,7 +54,7 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "3.4.3",
+  version: "3.4.4",
   kjogvi_web: [
     args: ~w(
       --config=tailwind.config.js
@@ -73,8 +73,7 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 config :scrivener_phoenix,
-  window: 2,
-  template: KjogviWeb.Scrivener.Template.Tailwind
+  window: 2
 
 # ORNITHOLOGUE
 

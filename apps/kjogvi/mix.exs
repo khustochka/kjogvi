@@ -24,7 +24,7 @@ defmodule Kjogvi.MixProject do
   def application do
     [
       mod: {Kjogvi.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: extra_apps(Mix.env())
     ]
   end
 
@@ -44,6 +44,10 @@ defmodule Kjogvi.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
+  defp extra_apps(:default), do: [:logger, :tls_certificate_check, :runtime_tools]
+  defp extra_apps(:test), do: extra_apps(:default)
+  defp extra_apps(_), do: extra_apps(:default) ++ [:opentelemetry]
+
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
@@ -56,14 +60,18 @@ defmodule Kjogvi.MixProject do
       {:ecto_psql_extras, "~> 0.8"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.2"},
-      {:swoosh, "~> 1.5"},
+      {:swoosh, "~> 1.16.9"},
       {:finch, "~> 0.13"},
-      {:req, "~> 0.4.0"},
+      {:req, "~> 0.5"},
       {:scrivener_ecto, "~> 2.7"},
       {:ornithologue, in_umbrella: true},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:ex_machina, "~> 2.7.0", only: :test},
+      {:opentelemetry_api, "~> 1.2"},
+      {:opentelemetry_ecto, "~> 1.2"},
+      {:opentelemetry_exporter, "~> 1.6"},
+      {:opentelemetry_telemetry, "~> 1.1.1"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end

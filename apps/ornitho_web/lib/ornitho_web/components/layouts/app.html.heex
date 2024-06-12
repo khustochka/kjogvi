@@ -14,7 +14,7 @@
         Ornithologue
       </p>
       <a
-        href={OrnithoWeb.LinkHelper.path(assigns[:conn] || @socket, "/")}
+        href={OrnithoWeb.LinkHelper.root_path(assigns[:conn] || @socket)}
         class="rounded-lg bg-zinc-100 px-2 py-1 text-[0.8125rem] font-semibold leading-6 text-zinc-900 hover:bg-zinc-200/80 active:text-zinc-900/70"
       >
         Taxonomy

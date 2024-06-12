@@ -63,6 +63,7 @@ COPY apps/ornithologue/priv apps/ornithologue/priv
 COPY apps/ornitho_web/priv apps/ornitho_web/priv
 
 COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
+COPY apps/ornitho_web/assets apps/ornitho_web/assets
 COPY apps/ornitho_web/dist apps/ornitho_web/dist
 
 # compile assets

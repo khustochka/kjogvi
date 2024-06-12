@@ -7,6 +7,10 @@ defmodule Kjogvi.Application do
 
   @impl true
   def start(_type, _args) do
+    Kjogvi.Logger.install()
+
+    Kjogvi.Opentelemetry.setup()
+
     children = [
       Kjogvi.Repo,
       Kjogvi.OrnithoRepo,
