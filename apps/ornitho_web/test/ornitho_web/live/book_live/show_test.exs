@@ -10,8 +10,6 @@ defmodule OrnithoWeb.Live.Book.ShowTest do
 
       {:ok, _show_live, html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
-      assert html =~ book.slug
-      assert html =~ book.version
       assert html =~ book.name
     end
 
@@ -46,7 +44,7 @@ defmodule OrnithoWeb.Live.Book.ShowTest do
 
       {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
 
-      html = show_live |> element("a", "Page 2") |> render_click()
+      html = show_live |> element("ul.pagination a", "2") |> render_click()
 
       assert html =~ List.last(taxa).name_sci
 

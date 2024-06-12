@@ -23,6 +23,6 @@ defmodule OrnithoWeb.BooksController do
         |> put_flash(:error, "Not an allowed importer.")
       end
 
-    redirect(conn, to: OrnithoWeb.LinkHelper.path(conn, "/"))
+    redirect(conn, to: OrnithoWeb.LinkHelper.root_path(conn))
   end
 end

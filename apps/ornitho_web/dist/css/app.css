@@ -1137,10 +1137,6 @@ a {
   animation: spin 1s linear infinite;
 }
 
-.flex-row {
-  flex-direction: row;
-}
-
 .items-center {
   align-items: center;
 }

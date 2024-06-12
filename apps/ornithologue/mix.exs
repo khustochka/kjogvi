@@ -51,6 +51,7 @@ defmodule Ornithologue.MixProject do
       {:postgrex, ">= 0.0.0"},
       # For jsonb columns
       {:jason, "~> 1.0"},
+      {:scrivener_ecto, "~> 2.7"},
       {:csv, "~> 3.0"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},

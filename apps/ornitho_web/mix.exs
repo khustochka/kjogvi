@@ -55,9 +55,12 @@ defmodule OrnithoWeb.MixProject do
       {:phoenix_live_view, "~> 0.20.2"},
       {:phoenix, "~> 1.7.7"},
       {:phoenix_html, "~> 4.1"},
+      {:scrivener_phoenix, ">= 0.0.0",
+       github: "khustochka/scrivener_phoenix", branch: "integration"},
       {:ornithologue, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:floki, ">= 0.30.0"},
+      {:gettext, "~> 0.20"},
 
       # Assets
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
@@ -74,7 +77,6 @@ defmodule OrnithoWeb.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:telemetry_metrics, "~> 1.0", only: [:dev, :test]},
       {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
-      {:gettext, "~> 0.20", only: [:dev, :test]},
       {:bandit, "~> 1.2", only: [:dev, :test]},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},

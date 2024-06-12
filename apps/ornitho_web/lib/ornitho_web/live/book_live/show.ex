@@ -35,7 +35,7 @@ defmodule OrnithoWeb.Live.Book.Show do
   def render(assigns) do
     ~H"""
     <.breadcrumbs>
-      <:crumb><b><.link href={OrnithoWeb.LinkHelper.path(@socket, "/")}>Taxonomy</.link></b></:crumb>
+      <:crumb><b><.link href={OrnithoWeb.LinkHelper.root_path(@socket)}>Taxonomy</.link></b></:crumb>
       <:crumb><%= @book.name %></:crumb>
     </.breadcrumbs>
 

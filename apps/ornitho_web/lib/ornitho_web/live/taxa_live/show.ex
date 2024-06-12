@@ -32,10 +32,10 @@ defmodule OrnithoWeb.Live.Taxa.Show do
   def render(assigns) do
     ~H"""
     <.breadcrumbs>
-      <:crumb><b><.link href={OrnithoWeb.LinkHelper.path(@socket, "/")}>Taxonomy</.link></b></:crumb>
+      <:crumb><b><.link href={OrnithoWeb.LinkHelper.root_path(@socket)}>Taxonomy</.link></b></:crumb>
       <:crumb>
         <b>
-          <.link navigate={OrnithoWeb.LinkHelper.path(@socket, "/#{@book.slug}/#{@book.version}")}>
+          <.link navigate={OrnithoWeb.LinkHelper.book_path(@socket, @book)}>
             <%= @book.name %>
           </.link>
         </b>
