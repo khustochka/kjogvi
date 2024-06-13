@@ -81,6 +81,7 @@ defmodule KjogviWeb.MixProject do
       {:scrivener_phoenix, ">= 0.0.0",
        github: "khustochka/scrivener_phoenix", branch: "integration"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
+      {:opentelemetry, "~> 1.4"},
       {:opentelemetry_api, "~> 1.2"},
       {:opentelemetry_phoenix, "~> 1.2",
        github: "khustochka/opentelemetry-erlang-contrib",
