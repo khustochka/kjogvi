@@ -63,12 +63,7 @@ defmodule OrnithoWeb.Router do
   def __options__(options) do
     live_socket_path = Keyword.get(options, :live_socket_path, "/live")
 
-    csp_nonce_assign_key =
-      case options[:csp_nonce_assign_key] do
-        nil -> nil
-        key when is_atom(key) -> %{img: key, style: key, script: key}
-        %{} = keys -> Map.take(keys, [:img, :style, :script])
-      end
+    csp_nonce_assign_key = __extract_csp_nonce_assign_key(options)
 
     root_layout =
       case options[:root_layout] do
@@ -99,6 +94,14 @@ defmodule OrnithoWeb.Router do
         as: :ornitho_web
       ]
     }
+  end
+
+  defp __extract_csp_nonce_assign_key(options) do
+    case options[:csp_nonce_assign_key] do
+      nil -> nil
+      key when is_atom(key) -> %{img: key, style: key, script: key}
+      %{} = keys -> Map.take(keys, [:img, :style, :script])
+    end
   end
 
   @doc false
