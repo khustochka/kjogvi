@@ -24,7 +24,7 @@ defmodule Kjogvi.Opentelemetry.Ecto do
   end
 
   defp service_name(repo_key) do
-    repo_key |> Enum.map(&Atom.to_string/1) |> Enum.join("-")
+    repo_key |> Enum.map_join("-", &Atom.to_string/1)
   end
 
   # defp service_addon([_ | rest]) do

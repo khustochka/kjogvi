@@ -89,8 +89,7 @@ defmodule Kjogvi.Geo.Location do
 
     [cached_subdivision, country]
     |> Enum.reject(&is_nil(&1))
-    |> Enum.map(& &1.name_en)
-    |> Enum.join(", ")
+    |> Enum.map_join(", ", & &1.name_en)
   end
 
   def long_name(location) do
