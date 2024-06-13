@@ -17,7 +17,9 @@ defmodule Kjogvi.Umbrella.MixProject do
           :unknown,
           :no_return,
           :missing_return
-        ]
+        ],
+        ignore_warnings: ".dialyzer_ignore.exs",
+        list_unused_filters: true
       ],
       test_coverage: [tool: ExCoveralls],
       releases: [
