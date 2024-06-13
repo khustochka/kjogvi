@@ -1,4 +1,8 @@
 defmodule Kjogvi.Users.UserToken do
+  @moduledoc """
+  A schema representing tokens generated for User.
+  """
+
   use Kjogvi.Schema
   import Ecto.Query
   alias Kjogvi.Users.UserToken

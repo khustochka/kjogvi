@@ -1,4 +1,8 @@
 defmodule Kjogvi.Opentelemetry.Exporter do
+  @moduledoc """
+  Opentelemetry exporter. For now a stub, but can be extended.
+  """
+
   @behaviour :otel_exporter
 
   @impl true

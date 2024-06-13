@@ -1,4 +1,6 @@
 defmodule KjogviWeb.Live.Card.Index do
+  @moduledoc false
+
   use KjogviWeb, :live_view
 
   import Scrivener.PhoenixView

@@ -1,4 +1,8 @@
 defmodule Kjogvi.Opentelemetry do
+  @moduledoc """
+  Opentelemetry setup with customizations specific to the Kjogvi project.
+  """
+
   def setup() do
     Kjogvi.Opentelemetry.Ecto.setup()
 

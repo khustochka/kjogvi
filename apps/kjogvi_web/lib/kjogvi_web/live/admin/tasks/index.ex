@@ -1,4 +1,6 @@
 defmodule KjogviWeb.Live.Admin.Tasks.Index do
+  @moduledoc false
+
   use KjogviWeb, :live_view
 
   alias Phoenix.LiveView.AsyncResult

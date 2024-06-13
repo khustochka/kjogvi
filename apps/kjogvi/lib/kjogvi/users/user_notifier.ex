@@ -1,4 +1,8 @@
 defmodule Kjogvi.Users.UserNotifier do
+  @moduledoc """
+  Sending emails to users.
+  """
+
   import Swoosh.Email
 
   alias Kjogvi.Mailer

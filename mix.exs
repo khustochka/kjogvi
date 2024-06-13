@@ -83,7 +83,7 @@ defmodule Kjogvi.Umbrella.MixProject do
         "run --no-start -e 'IO.puts(\"Checking for unused dependencies...\")'",
         "deps.unlock --check-unused",
         "run --no-start -e 'IO.puts(\"Running credo...\")'",
-        "credo --format oneline --ignore design,readability,consistency",
+        "credo --format oneline --ignore design,consistency",
         "run --no-start -e 'IO.puts(\"Running dialyzer...\")'",
         "dialyzer --format dialyxir --quiet"
       ],
@@ -93,7 +93,7 @@ defmodule Kjogvi.Umbrella.MixProject do
         "run --no-start -e 'IO.puts(\"Checking for unused dependencies...\")'",
         "deps.unlock --check-unused",
         "run --no-start -e 'IO.puts(\"Running credo...\")'",
-        "credo --format oneline --ignore design,readability,consistency",
+        "credo --format oneline --ignore design,consistency",
         "run --no-start -e 'IO.puts(\"Running dialyzer...\")'",
         "dialyzer --format github --quiet"
       ]

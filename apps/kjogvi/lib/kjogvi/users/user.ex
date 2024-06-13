@@ -1,4 +1,8 @@
 defmodule Kjogvi.Users.User do
+  @moduledoc """
+  A schema representing user/
+  """
+
   use Kjogvi.Schema
   import Ecto.Changeset
 

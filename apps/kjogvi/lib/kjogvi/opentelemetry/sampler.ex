@@ -1,4 +1,8 @@
 defmodule Kjogvi.Telemetry.Sampler do
+  @moduledoc """
+  Opentelemetry sampler, filtering out low-value traces.
+  """
+
   require OpenTelemetry.Tracer, as: Tracer
   require Logger
 

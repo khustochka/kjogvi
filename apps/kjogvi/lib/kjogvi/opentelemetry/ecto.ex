@@ -1,4 +1,8 @@
 defmodule Kjogvi.Opentelemetry.Ecto do
+  @moduledoc """
+  Enables Ecto opentelemetry with customizations specific to the Kjogvi project.
+  """
+
   def setup() do
     Application.fetch_env!(:kjogvi, :ecto_repos)
     |> Enum.each(fn repo ->
