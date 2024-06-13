@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Ornitho.Import do
 
   ## Examples
 
-    $ mix ornitho.import Importer.Ebird.V1
+    $ mix ornitho.import Ornitho.Importer.Ebird.V2022
 
   ## Command line options
 
@@ -23,10 +23,11 @@ defmodule Mix.Tasks.Ornitho.Import do
     force: :boolean
   ]
 
-  @shortdoc "The task to import a book."
-  def run(args) do
-    Mix.Task.run("app.start")
+  @shortdoc "Imports taxonomy (provide Importer module as parameter)"
+  @requirements ["app.start"]
 
+  @impl Mix.Task
+  def run(args) do
     case OptionParser.parse!(args, strict: @switches, aliases: @aliases) do
       {opts, [importer_name]} ->
         force = opts[:force]
@@ -35,6 +36,7 @@ defmodule Mix.Tasks.Ornitho.Import do
         with {:ok, _} <- ensure_module_exists(importer),
              {:ok, _} <- ensure_function_exported(importer),
              {:ok, _} <- importer.process_import(force: force) do
+          {:ok}
         else
           {:error, error} when is_binary(error) ->
             Mix.raise(error)

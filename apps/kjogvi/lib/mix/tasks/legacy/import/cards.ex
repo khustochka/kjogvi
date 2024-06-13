@@ -3,9 +3,9 @@ defmodule Mix.Tasks.Legacy.Import.Cards do
 
   use Mix.Task
 
-  def run(_args) do
-    Mix.Task.run("app.start")
+  @requirements ["app.start"]
 
+  def run(_args) do
     Kjogvi.Legacy.Import.perform_import(:cards)
   end
 end
