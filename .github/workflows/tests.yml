@@ -20,7 +20,7 @@ jobs:
       - name: Run lint
         env:
           MIX_ENV: dev
-        run: mix lint
+        run: mix lint.github
   test:    
     name: Test
     runs-on: ubuntu-latest
