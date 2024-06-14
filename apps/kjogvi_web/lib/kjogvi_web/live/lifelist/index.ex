@@ -7,6 +7,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   alias Kjogvi.Birding
   alias Kjogvi.Geo
 
+  alias KjogviWeb.Format
+
   @impl true
   def mount(_params, _session, socket) do
     {
@@ -172,7 +174,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
               <i class="whitespace-nowrap"><%= lifer.species.name_sci %></i>
             </td>
             <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
-              <%= lifer.observ_date %>
+              <%= Format.observation_date(lifer) %>
             </td>
             <td class="p-0 py-4 pr-6">
               <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>

@@ -6,5 +6,7 @@ defmodule KjogviWeb.PageHTML do
   """
   use KjogviWeb, :html
 
+  alias KjogviWeb.Format
+
   embed_templates "page_html/*"
 end

@@ -18,7 +18,9 @@
                 <i class="whitespace-nowrap"><%= lifer.species.name_sci %></i>
               </div>
               <div>
-                <span class="whitespace-nowrap"><%= lifer.observ_date %></span>
+                <span class="whitespace-nowrap">
+                  <%= Format.observation_date(lifer) %>
+                </span>
               </div>
             </div>
           </td>
