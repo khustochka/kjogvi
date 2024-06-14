@@ -92,9 +92,8 @@ defmodule OrnithoWeb.Live.Taxa.Index do
   end
 
   defp get_taxa(%{book: book, search_enabled: false, page_num: page_num}) do
-    Ornitho.Query.Taxon.base_ordered(book)
-    |> Ornitho.Query.Taxon.with_parent_species()
-    |> Ornithologue.repo().paginate(page: page_num, page_size: @taxa_per_page)
+    Ornitho.Finder.Taxon.paginate(book, page: page_num, page_size: @taxa_per_page)
+    |> Ornitho.Finder.Taxon.with_parent_species()
   end
 
   defp get_taxa(%{book: book, search_enabled: true, search_term: search_term}) do
