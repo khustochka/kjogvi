@@ -79,8 +79,7 @@ defmodule KjogviWeb.MixProject do
       {:ornitho_web, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.2"},
-      {:scrivener_phoenix, ">= 0.0.0",
-       github: "khustochka/scrivener_phoenix", branch: "integration"},
+      {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:opentelemetry, "~> 1.4"},
       {:opentelemetry_api, "~> 1.2"},
@@ -95,6 +94,14 @@ defmodule KjogviWeb.MixProject do
       {:opentelemetry_exporter, "~> 1.6"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
+  end
+
+  defp scrivener_phoenix_opts() do
+    if System.get_env("LOCAL_SCRIVENER") do
+      [path: "../../../scrivener_phoenix"]
+    else
+      [github: "khustochka/scrivener_phoenix", branch: "integration"]
+    end
   end
 
   # Aliases are shortcuts or tasks specific to the current project.
