@@ -8,7 +8,11 @@ defmodule KjogviWeb.Application do
   @impl true
   def start(_type, _args) do
     OpentelemetryBandit.setup()
-    OpentelemetryPhoenix.setup(adapter: :bandit)
+
+    OpentelemetryPhoenix.setup(
+      adapter: :bandit,
+      liveview_include_params: &Phoenix.Logger.filter_values/1
+    )
 
     children = [
       # Start the Telemetry supervisor
