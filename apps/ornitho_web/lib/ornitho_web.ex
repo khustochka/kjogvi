@@ -19,6 +19,17 @@ defmodule OrnithoWeb do
 
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
 
+  def router do
+    quote do
+      use Phoenix.Router, helpers: false
+
+      # Import common connection and controller functions to use in pipelines
+      import Plug.Conn
+      import Phoenix.Controller
+      import Phoenix.LiveView.Router
+    end
+  end
+
   def channel do
     quote do
       use Phoenix.Channel

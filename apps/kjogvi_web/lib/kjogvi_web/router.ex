@@ -5,7 +5,7 @@ defmodule KjogviWeb.Router do
 
   import KjogviWeb.UserAuth
 
-  import OrnithoWeb.Router
+  # import OrnithoWeb.Router
   import Phoenix.LiveDashboard.Router
 
   import KjogviWeb.Plug
@@ -61,14 +61,14 @@ defmodule KjogviWeb.Router do
 
   # MOUNTED APPS
 
-  scope "/", KjogviWeb do
+  scope "/" do
     pipe_through :browser
     pipe_through :admin
 
-    ornitho_web "/taxonomy",
-      root_layout: {KjogviWeb.Layouts, :root},
-      app_layout: {KjogviWeb.Layouts, :app},
-      on_mount: [{KjogviWeb.UserAuth, :mount_current_user}]
+    forward "/taxonomy", OrnithoWeb.Router
+      # root_layout: {KjogviWeb.Layouts, :root},
+      # app_layout: {KjogviWeb.Layouts, :app},
+      # on_mount: [{KjogviWeb.UserAuth, :mount_current_user}]
 
     live_dashboard "/dashboard",
       metrics: KjogviWeb.Telemetry,
