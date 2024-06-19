@@ -1,5 +1,5 @@
 defmodule KjogviWeb.UserLoginLiveTest do
-  use KjogviWeb.ConnCase
+  use KjogviWeb.ConnCase, async: true
 
   require Kjogvi.Config
 

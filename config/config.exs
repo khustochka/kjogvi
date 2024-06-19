@@ -27,9 +27,10 @@ config :kjogvi, Kjogvi.OrnithoRepo, migration_timestamps: [type: :utc_datetime_u
 # at the `config/runtime.exs`.
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Local
 
-# config :kjogvi_web,
-#   ecto_repos: [Kjogvi.Repo, Kjogvi.OrnithoRepo],
-#   generators: [context_app: :kjogvi]
+# This is needed for some mix tasks
+config :kjogvi_web,
+  ecto_repos: [Kjogvi.Repo, Kjogvi.OrnithoRepo],
+  generators: [timestamp_type: :utc_datetime_usec, context_app: :kjogvi]
 
 # Configures the endpoint
 config :kjogvi_web, KjogviWeb.Endpoint,

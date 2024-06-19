@@ -2,7 +2,7 @@ require Kjogvi.Config
 
 Kjogvi.Config.with_user_registration do
   defmodule KjogviWeb.UserRegistrationLiveTest do
-    use KjogviWeb.ConnCase
+    use KjogviWeb.ConnCase, async: true
     @moduletag :skip
 
     import Phoenix.LiveViewTest
@@ -81,7 +81,7 @@ Kjogvi.Config.with_user_registration do
 
         {:ok, _login_live, login_html} =
           lv
-          |> element(~s|main a:fl-contains("Sign in")|)
+          |> element(~s|main a:fl-contains("Log in")|)
           |> render_click()
           |> follow_redirect(conn, ~p"/users/log_in")
 

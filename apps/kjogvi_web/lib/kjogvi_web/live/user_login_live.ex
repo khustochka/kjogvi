@@ -7,7 +7,7 @@ defmodule KjogviWeb.UserLoginLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <CoreComponents.header class="text-center">
-        Sign in to account
+        Log in to account
         <:subtitle>
           <%= Kjogvi.Config.with_user_registration do %>
             Don't have an account?
@@ -38,7 +38,7 @@ defmodule KjogviWeb.UserLoginLive do
         </:actions>
         <:actions>
           <CoreComponents.button phx-disable-with="Signing in..." class="w-full">
-            Sign in <span aria-hidden="true">→</span>
+            Log in <span aria-hidden="true">→</span>
           </CoreComponents.button>
         </:actions>
       </CoreComponents.simple_form>
@@ -47,7 +47,7 @@ defmodule KjogviWeb.UserLoginLive do
   end
 
   def mount(_params, _session, socket) do
-    email = live_flash(socket.assigns.flash, :email)
+    email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
     {:ok, assign(socket, form: form), temporary_assigns: [form: form]}
   end

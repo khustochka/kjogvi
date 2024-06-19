@@ -10,9 +10,10 @@ defmodule Kjogvi.Users.User do
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
-    field :confirmed_at, :naive_datetime
+    field :current_password, :string, virtual: true, redact: true
+    field :confirmed_at, :utc_datetime_usec
 
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
   end
 
   @doc """
@@ -129,7 +130,7 @@ defmodule Kjogvi.Users.User do
   Confirms the account by setting `confirmed_at`.
   """
   def confirm_changeset(user) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
     change(user, confirmed_at: now)
   end
 
@@ -153,6 +154,8 @@ defmodule Kjogvi.Users.User do
   Validates the current password otherwise adds an error to the changeset.
   """
   def validate_current_password(changeset, password) do
+    changeset = cast(changeset, %{current_password: password}, [:current_password])
+
     if valid_password?(changeset.data, password) do
       changeset
     else

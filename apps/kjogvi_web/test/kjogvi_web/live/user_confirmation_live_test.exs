@@ -2,7 +2,7 @@ require Kjogvi.Config
 
 Kjogvi.Config.with_user_registration do
   defmodule KjogviWeb.UserConfirmationLiveTest do
-    use KjogviWeb.ConnCase
+    use KjogviWeb.ConnCase, async: true
     @moduletag :skip
 
     import Phoenix.LiveViewTest

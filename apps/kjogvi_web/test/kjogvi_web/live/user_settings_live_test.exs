@@ -1,5 +1,5 @@
 defmodule KjogviWeb.UserSettingsLiveTest do
-  use KjogviWeb.ConnCase
+  use KjogviWeb.ConnCase, async: true
 
   alias Kjogvi.Users
   import Phoenix.LiveViewTest
