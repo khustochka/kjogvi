@@ -52,7 +52,7 @@ defmodule KjogviWeb.Live.Card.Index do
       <:col :let={card} label="Effort"><%= card.effort_type %></:col>
       <:col :let={card} label="M/L">
         <span :if={card.motorless} title="Motorless">
-          <.icon name="hero-bug-ant" class="h-4 w-4" />
+          <.icon name="fa-solid-bicycle" class="h-4 w-4" />
         </span>
       </:col>
       <:col :let={card} label="Obs">

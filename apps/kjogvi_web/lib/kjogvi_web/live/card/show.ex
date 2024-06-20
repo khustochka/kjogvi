@@ -37,7 +37,7 @@ defmodule KjogviWeb.Live.Card.Show do
         <%= @card.observ_date %> · <%= Geo.Location.long_name(@card.location) %>
 
         <span :if={@card.motorless} title="Motorless">
-          <.icon name="hero-bug-ant-solid" class="h-4 w-4" />
+          <.icon name="fa-solid-bicycle" class="h-4 w-4" />
         </span>
       </:subtitle>
     </CoreComponents.header>
