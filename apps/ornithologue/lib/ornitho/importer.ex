@@ -125,6 +125,11 @@ defmodule Ornitho.Importer do
     @legit_importers
   end
 
+  def legit_importers_string() do
+    legit_importers()
+    |> Enum.map(&Atom.to_string/1)
+  end
+
   def unimported() do
     imported = Ornitho.Finder.Book.all_signatures()
 

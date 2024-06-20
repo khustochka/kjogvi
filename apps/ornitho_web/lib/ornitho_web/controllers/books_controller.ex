@@ -12,11 +12,10 @@ defmodule OrnithoWeb.BooksController do
   end
 
   def import(conn, %{"importer" => importer_string}) do
-    importer = String.to_atom(importer_string)
-
     conn =
-      if importer in Ornitho.Importer.legit_importers() do
-        importer.process_import
+      if importer_string in Ornitho.Importer.legit_importers_string() do
+        importer = String.to_existing_atom(importer_string)
+        importer.process_import()
         conn
       else
         conn
