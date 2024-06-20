@@ -5,9 +5,19 @@ defmodule Kjogvi.Application do
 
   use Application
 
+  if Mix.env() == :dev do
+    defp ecto_dev_logger do
+      Ecto.DevLogger.install(Kjogvi.Repo, log_repo_name: true)
+      Ecto.DevLogger.install(Kjogvi.OrnithoRepo, log_repo_name: true)
+    end
+  else
+    defp ecto_dev_logger, do: nil
+  end
+
   @impl true
   def start(_type, _args) do
     Kjogvi.Logger.install()
+    ecto_dev_logger()
 
     Kjogvi.Opentelemetry.setup()
 

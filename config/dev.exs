@@ -8,7 +8,8 @@ config :kjogvi, Kjogvi.Repo,
   database: System.get_env("DATABASE_NAME", "kjogvi_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 10,
+  log: false
 
 # nil username fails, no username uses the current user
 db_user = System.get_env("DATABASE_USER")
@@ -24,7 +25,8 @@ config :kjogvi, Kjogvi.OrnithoRepo,
   database: System.get_env("ORNITHO_DATABASE_NAME", "ornithologue_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 10,
+  log: false
 
 # nil username fails, no username uses the current user
 ornitho_db_user = System.get_env("ORNITHO_DATABASE_USER")
