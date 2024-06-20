@@ -171,7 +171,6 @@ defmodule KjogviWeb.UserSettingsLiveTest do
       %{conn: log_in_user(conn, user), token: token, email: email, user: user}
     end
 
-    @tag :skip
     test "updates the user email once", %{conn: conn, user: user, token: token, email: email} do
       {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
 
@@ -190,7 +189,6 @@ defmodule KjogviWeb.UserSettingsLiveTest do
       assert message == "Email change link is invalid or it has expired."
     end
 
-    @tag :skip
     test "does not update email with invalid token", %{conn: conn, user: user} do
       {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/oops")
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
@@ -200,7 +198,6 @@ defmodule KjogviWeb.UserSettingsLiveTest do
       assert Users.get_user_by_email(user.email)
     end
 
-    @tag :skip
     test "redirects if user is not logged in", %{token: token} do
       conn = build_conn()
       {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")

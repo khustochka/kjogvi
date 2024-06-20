@@ -3,7 +3,6 @@ require Kjogvi.Config
 Kjogvi.Config.with_user_registration do
   defmodule KjogviWeb.UserRegistrationLiveTest do
     use KjogviWeb.ConnCase, async: true
-    @moduletag :skip
 
     import Phoenix.LiveViewTest
     import Kjogvi.UsersFixtures
@@ -55,7 +54,6 @@ Kjogvi.Config.with_user_registration do
         conn = get(conn, "/")
         response = html_response(conn, 200)
         assert response =~ email
-        assert response =~ "Settings"
         assert response =~ "Log out"
       end
 

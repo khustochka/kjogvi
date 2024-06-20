@@ -61,7 +61,6 @@ defmodule KjogviWeb.UserLoginLiveTest do
 
   Kjogvi.Config.with_user_registration do
     describe "login navigation" do
-      @tag :skip
       test "redirects to registration page when the Register button is clicked", %{conn: conn} do
         {:ok, lv, _html} = live(conn, ~p"/users/log_in")
 
@@ -74,7 +73,6 @@ defmodule KjogviWeb.UserLoginLiveTest do
         assert login_html =~ "Register"
       end
 
-      @tag :skip
       test "redirects to forgot password page when the Forgot Password button is clicked", %{
         conn: conn
       } do
