@@ -7,10 +7,10 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
   defp extract_sci_names(html) do
     {:ok, doc} = Floki.parse_document(html)
 
+    # Do not trim the strings, this checks that there are no dangling underlines
     Floki.find(doc, "strong a em.sci_name")
     |> Enum.map(fn ht ->
       Floki.text(ht)
-      |> String.trim()
     end)
   end
 

@@ -116,9 +116,7 @@ defmodule OrnithoWeb.TaxaComponents do
   attr :search_term, :string, default: nil
 
   def sci_name(assigns) do
-    ~H"""
-    <em {@rest}><.highlighted content={@taxon.name_sci} term={@search_term} /></em>
-    """
+    ~H"<em {@rest}><.highlighted content={@taxon.name_sci} term={@search_term} /></em>"
   end
 
   attr :content, :string, required: true
@@ -126,13 +124,13 @@ defmodule OrnithoWeb.TaxaComponents do
 
   def highlighted(assigns) do
     ~H"""
-    <%= if is_nil(@term) || @term == "" do %>
-      <%= @content %>
-    <% else %>
-      <.unchanged phx-no-format>
-      <%= for vals <- split_for_highlight(@content, @term) do %><%= maybe_highlighted(vals) %><% end %>
-      </.unchanged>
-    <% end %>
+    <%= if is_nil(@term) || @term == "", do: @content, else: highlighted_content(assigns) %>
+    """
+  end
+
+  defp highlighted_content(assigns) do
+    ~H"""
+    <.unchanged phx-no-format><%= for vals <- split_for_highlight(@content, @term) do %><%= maybe_highlighted(vals) %><% end %></.unchanged>
     """
   end
 
