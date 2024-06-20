@@ -8,7 +8,7 @@ config :kjogvi, Kjogvi.Repo,
   socket_options: maybe_ipv6
 
 config :kjogvi, Kjogvi.OrnithoRepo,
-  url: System.get_env("ORNITHO_DATABASE_URL"),
+  url: System.get_env("DATABASE_ORNITHO_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
   socket_options: maybe_ipv6
 

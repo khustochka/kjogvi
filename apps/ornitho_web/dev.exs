@@ -3,7 +3,7 @@ Logger.configure(level: :debug)
 # _argv = System.argv()
 
 Application.put_env(:ornitho_web, DemoWeb.OrnithoRepo,
-  url: System.get_env("ORNITHO_DATABASE_URL"),
+  url: System.get_env("DATABASE_ORNITHO_URL"),
   database: "ornithologue_dev",
   hostname: "localhost",
   stacktrace: true,

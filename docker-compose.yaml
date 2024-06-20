@@ -5,7 +5,7 @@ services:
     environment:
       SECRET_KEY_BASE: M0wBY/H0jPgHjM2ml/wTYn/HKsIopIlsvQvP3MJTXNSptX20f3BcFyjH5MtsFRJW
       DATABASE_URL: postgres://kjogvi:kjogvi@database/kjogvi_prod
-      ORNITHO_DATABASE_URL: postgres://kjogvi:kjogvi@database/ornithologue_prod
+      DATABASE_ORNITHO_URL: postgres://kjogvi:kjogvi@database/ornithologue_prod
       PHX_PORT: 5040
     # env_file:
     #   - .env.docker

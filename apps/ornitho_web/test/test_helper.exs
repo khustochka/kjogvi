@@ -1,5 +1,5 @@
 Application.put_env(:ornitho_web, Kjogvi.OrnithoRepo,
-  url: System.get_env("ORNITHO_DATABASE_URL"),
+  url: System.get_env("DATABASE_ORNITHO_URL"),
   hostname: "localhost",
   database: "ornitho_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
