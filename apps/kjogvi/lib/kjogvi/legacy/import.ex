@@ -23,7 +23,7 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   def perform_import(object_type) do
-    load(object_type, adapter().init, 1)
+    load(object_type, adapter().init(), 1)
   end
 
   defp load(object_type, fetcher, page) do
