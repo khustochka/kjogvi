@@ -1,0 +1,45 @@
+<section class={@class}>
+  <h2 class="text-[2rem] font-semibold font-header text-zinc-500 mb-2">
+    <%= render_slot(@header) %>
+  </h2>
+  <div :if={@total == 0} class="flex gap-2 items-center">
+    <div><.icon name="hero-clipboard" class="text-zinc-500" /></div>
+    <div>
+      <i class="text-zinc-500">
+        No observations yet
+      </i>
+    </div>
+  </div>
+  <ol :if={@total > 0} class="list-none list-outside">
+    <%= for {lifer, i} <- Enum.with_index(@list) do %>
+      <li value={@total - i} class="flex gap-2 mb-3">
+        <div
+          class="before:content-[attr(counter-value)] before:text-sm before:text-gray-500 before:align-text-top"
+          counter-value={"#{@total - i}."}
+        >
+        </div>
+        <div>
+          <div class="mb-1 leading-snug">
+            <strong class="font-semibold text-neutral-600"><%= lifer.species.name_en %></strong>
+            <i class="whitespace-nowrap text-neutral-500"><%= lifer.species.name_sci %></i>
+          </div>
+          <div class="whitespace-nowrap flex items-center gap-0.5">
+            <.icon name="fa-regular-calendar-check" class="w-[0.8rem] h-[0.8rem] text-zinc-700" />
+            <span class="text-[0.83rem] text-zinc-500">
+              <%= Format.observation_date(lifer) %>
+            </span>
+          </div>
+        </div>
+        <div class="hidden">
+          &nbsp;
+        </div>
+      </li>
+    <% end %>
+  </ol>
+  <div :if={@href && @total > 0} class="flex gap-2 items-center">
+    <div><.icon name="hero-ellipsis-horizontal" /></div>
+    <div>
+      <.link href={~p"/lifelist"} class="text-zinc-600">See more</.link>
+    </div>
+  </div>
+</section>

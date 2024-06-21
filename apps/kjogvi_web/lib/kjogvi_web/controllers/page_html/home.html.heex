@@ -2,37 +2,10 @@
   Birding diary
 </.header_single>
 
-<section>
-  <h2 class="text-[2rem] font-semibold font-header text-zinc-500">
-    Last 5 lifers
-  </h2>
-  <table id="lifers" class="mt-2">
-    <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 leading-snug text-zinc-700">
-      <%= for {lifer, i} <- Enum.with_index(@lifelist) do %>
-        <tr>
-          <td class="p-0 py-4 pr-6 text-right align-top"><%= @total - i %>.</td>
-          <td class="p-0 py-4 pr-6">
-            <div class="md:flex justify-between gap-6">
-              <div>
-                <strong class="font-bold"><%= lifer.species.name_en %></strong>
-                <i class="whitespace-nowrap"><%= lifer.species.name_sci %></i>
-              </div>
-              <div>
-                <span class="whitespace-nowrap">
-                  <%= Format.observation_date(lifer) %>
-                </span>
-              </div>
-            </div>
-          </td>
-        </tr>
-      <% end %>
-      <tr>
-        <td class="p-0 py-4 pr-6 text-right"><.icon name="hero-ellipsis-horizontal" /></td>
-        <td class="p-0 py-4 pr-6">
-          <.link href={~p"/lifelist"} class="text-zinc-600">See more</.link>
-        </td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-</section>
+<.top_n_list list={@lifelist} total={@total} href={~p"/lifelist"}>
+  <:header>Last 5 lifers</:header>
+</.top_n_list>
+
+<%!-- <.top_n_list list={[]} total={0}>
+<:header>Empty</:header>
+</.top_n_list> --%>
