@@ -26,7 +26,7 @@ defmodule KjogviWeb.IconComponents do
       <.icon name="hero-x-mark-solid" />
       <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
 
-      <.icon name="fa-bicycle-solid" />
+      <.icon name="fa-solid-bicycle" />
   """
   attr :name, :string, required: true
   attr :class, :string, default: nil

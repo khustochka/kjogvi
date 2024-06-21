@@ -37,7 +37,7 @@ defmodule KjogviWeb.Live.Card.Show do
         <%= @card.observ_date %> · <%= Geo.Location.long_name(@card.location) %>
 
         <span :if={@card.motorless} title="Motorless">
-          <.icon name="fa-solid-bicycle" class="h-4 w-4" />
+          <.icon name="fa-solid-bicycle" />
         </span>
       </:subtitle>
     </CoreComponents.header>
@@ -80,8 +80,8 @@ defmodule KjogviWeb.Live.Card.Show do
       <:col :let={obs} label="id"><%= obs.id %></:col>
       <:col :let={obs} label="Quantity">
         <%= obs.quantity %>
-        <span :if={obs.voice} title="Voice only" class="pl-2">
-          <.icon name="hero-speaker-wave-solid" class="h-4 w-4" />
+        <span :if={obs.voice} title="Heard only" class="pl-2">
+          <.icon name="fa-regular-eye-slash" class="h-4 w-4" />
         </span>
       </:col>
       <:col :let={obs} label="Taxon">
