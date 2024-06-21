@@ -149,6 +149,18 @@ if config_env() == :prod do
 
   config :kjogvi, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  if System.get_env("EMAIL_REGISTRATION_SENDER_EMAIL") do
+    config :kjogvi, :email,
+      registration_sender: {
+        System.get_env("EMAIL_REGISTRATION_SENDER_EMAIL"),
+        System.get_env("EMAIL_REGISTRATION_SENDER_EMAIL")
+      }
+  end
+
+  config :kjogvi, Kjogvi.Mailer,
+    adapter: Swoosh.Adapters.Logger,
+    log_full_email: true
+
   # ORNITHOLOGUE IMPORTER
 
   config :ornithologue, Ornitho.Importer,

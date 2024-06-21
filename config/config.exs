@@ -88,6 +88,8 @@ config :ornithologue, Ornitho.StreamImporter,
 
 config :kjogvi, allow_user_registration: false
 
+config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@kjogvi.local"}
+
 config :kjogvi, :legacy,
   adapter: Kjogvi.Legacy.Adapters.Local,
   database: System.get_env("LEGACY_DATABASE")

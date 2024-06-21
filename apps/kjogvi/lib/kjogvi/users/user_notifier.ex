@@ -12,7 +12,7 @@ defmodule Kjogvi.Users.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Kjogvi", "contact@example.com"})
+      |> from(Application.get_env(:kjogvi, :email)[:registration_sender])
       |> subject(subject)
       |> text_body(body)
 
