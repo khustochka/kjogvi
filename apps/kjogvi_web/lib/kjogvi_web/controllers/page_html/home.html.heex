@@ -3,10 +3,14 @@
 </.header_single>
 
 <div :for={two_lists <- @grouped_lists} class="md:flex md:gap-14">
-  <div :for={{header, url, list} <- two_lists} class="md:flex-grow md:basis-1/2">
-    <div :if={!list} class="mb-10">&nbsp;</div>
-    <.top_n_list :if={list} list={list.lifelist} total={list.total} href={url} class="mb-10">
-      <:header><%= header %></:header>
-    </.top_n_list>
+  <div :for={list1 <- two_lists} class="md:flex-grow md:basis-1/2">
+    <%= case list1 do %>
+      <% {header, url, %{lifelist: list, total: total}} -> %>
+        <.top_n_list list={list} total={total} href={url} class="mb-10">
+          <:header><%= header %></:header>
+        </.top_n_list>
+      <% nil -> %>
+        <div class="mb-10">&nbsp;</div>
+    <% end %>
   </div>
 </div>

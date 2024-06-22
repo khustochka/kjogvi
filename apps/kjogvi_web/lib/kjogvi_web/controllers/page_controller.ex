@@ -32,19 +32,11 @@ defmodule KjogviWeb.PageController do
 
     grouped_lists =
       (primary_lists ++ country_lists)
-      |> pad_list({nil, nil, nil})
-      |> Enum.chunk_every(2)
+      # Adds a nil if the last chunk has only one element
+      |> Enum.chunk_every(2, 2, [nil])
 
     conn
     |> assign(:grouped_lists, grouped_lists)
     |> render(:home)
-  end
-
-  defp pad_list(list, pad) do
-    if Integer.is_odd(length(list)) do
-      list ++ [pad]
-    else
-      list
-    end
   end
 end
