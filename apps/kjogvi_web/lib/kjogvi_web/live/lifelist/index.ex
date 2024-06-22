@@ -85,7 +85,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <.header_single style={header_style(assigns)}>
+    <.header_single font_style={header_style(assigns)}>
       <%= @page_header %>
     </.header_single>
 

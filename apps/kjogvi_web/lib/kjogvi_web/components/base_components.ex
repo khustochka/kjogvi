@@ -13,9 +13,10 @@ defmodule KjogviWeb.BaseComponents do
   @doc """
   Renders an h1 element, single (no wrapper, no subheader).
 
-  `style` can be "semibold" or "medium".
+  `font_style` can be "semibold", "medium" or any other Tailwind class that combines with font-.
   """
-  attr :style, :string, default: "semibold"
+  attr :font_style, :string, default: "semibold"
+  attr :class, :string, default: ""
 
   slot :inner_block, required: true
 
@@ -24,11 +25,12 @@ defmodule KjogviWeb.BaseComponents do
     <h1 class={[
       "text-5xl",
       "font-header",
-      "font-#{@style}",
+      "font-#{@font_style}",
       "leading-none",
       "text-zinc-600",
       "mt-6",
-      "mb-8"
+      "mb-8",
+      @class
     ]}>
       <%= render_slot(@inner_block) %>
     </h1>
