@@ -5,13 +5,13 @@ defmodule Kjogvi.Application do
 
   use Application
 
-  if Mix.env() == :dev do
+  if Code.ensure_loaded?(Ecto.DevLogger) do
     defp ecto_dev_logger do
       Ecto.DevLogger.install(Kjogvi.Repo, log_repo_name: true)
       Ecto.DevLogger.install(Kjogvi.OrnithoRepo, log_repo_name: true)
     end
   else
-    defp ecto_dev_logger, do: nil
+    defp ecto_dev_logger, do: :ok
   end
 
   @impl true
