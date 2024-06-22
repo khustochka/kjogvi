@@ -262,30 +262,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     is_nil(socket.assigns.current_user) || params["public_view"] == "true"
   end
 
-  defp lifelist_path(year, location, query) do
-    lifelist_path_with_clean_query(year, location, clean_query(query))
-  end
-
-  defp clean_query(query) do
-    Keyword.reject(query, fn {_, val} -> !val end)
-  end
-
-  defp lifelist_path_with_clean_query(nil = _year, nil = _location, query) do
-    ~p"/lifelist?#{query}"
-  end
-
-  defp lifelist_path_with_clean_query(year, nil = _location, query) do
-    ~p"/lifelist/#{year}?#{query}"
-  end
-
-  defp lifelist_path_with_clean_query(nil = _year, location, query) do
-    ~p"/lifelist/#{location.slug}?#{query}"
-  end
-
-  defp lifelist_path_with_clean_query(year, location, query) do
-    ~p"/lifelist/#{year}/#{location.slug}?#{query}"
-  end
-
   defp header_style(%{year: nil, location: nil}) do
     "semibold"
   end

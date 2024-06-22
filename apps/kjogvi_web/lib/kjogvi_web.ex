@@ -58,6 +58,7 @@ defmodule KjogviWeb do
       import KjogviWeb.Gettext
 
       unquote(verified_routes())
+      unquote(path_helpers())
     end
   end
 
@@ -112,6 +113,7 @@ defmodule KjogviWeb do
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
+      unquote(path_helpers())
     end
   end
 
@@ -121,6 +123,12 @@ defmodule KjogviWeb do
         endpoint: KjogviWeb.Endpoint,
         router: KjogviWeb.Router,
         statics: KjogviWeb.static_paths()
+    end
+  end
+
+  def path_helpers do
+    quote do
+      use KjogviWeb.Paths
     end
   end
 
