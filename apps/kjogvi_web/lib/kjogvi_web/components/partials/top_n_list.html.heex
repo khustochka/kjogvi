@@ -18,13 +18,16 @@
           counter-value={"#{@total - i}."}
         >
         </div>
-        <div>
+        <div class="md:flex md:justify-between md:grow md:gap-4">
           <div class="mb-1 leading-snug">
             <strong class="font-semibold text-neutral-600"><%= lifer.species.name_en %></strong>
             <i class="whitespace-nowrap text-neutral-500"><%= lifer.species.name_sci %></i>
           </div>
           <div class="whitespace-nowrap flex items-center gap-0.5">
-            <.icon name="fa-regular-calendar-check" class="w-[0.8rem] h-[0.8rem] text-zinc-700" />
+            <.icon
+              name="fa-regular-calendar-check"
+              class="md:hidden w-[0.8rem] h-[0.8rem] text-zinc-700"
+            />
             <span class="text-[0.83rem] text-zinc-500">
               <%= Format.observation_date(lifer) %>
             </span>
@@ -39,7 +42,7 @@
   <div :if={@href && @total > 0} class="flex gap-2 items-center">
     <div><.icon name="hero-ellipsis-horizontal" /></div>
     <div>
-      <.link href={~p"/lifelist"} class="text-zinc-600">See more</.link>
+      <.link href={@href} class="text-zinc-600">See more</.link>
     </div>
   </div>
 </section>

@@ -2,10 +2,11 @@
   Birding diary
 </.header_single>
 
-<.top_n_list list={@lifelist} total={@total} href={~p"/lifelist"}>
-  <:header>Last 5 lifers</:header>
-</.top_n_list>
-
-<%!-- <.top_n_list list={[]} total={0}>
-<:header>Empty</:header>
-</.top_n_list> --%>
+<div :for={two_lists <- @grouped_lists} class="md:flex md:gap-14">
+  <div :for={{header, url, list} <- two_lists} class="md:flex-grow md:basis-1/2">
+    <div :if={!list} class="mb-10">&nbsp;</div>
+    <.top_n_list :if={list} list={list.lifelist} total={list.total} href={url} class="mb-10">
+      <:header><%= header %></:header>
+    </.top_n_list>
+  </div>
+</div>
