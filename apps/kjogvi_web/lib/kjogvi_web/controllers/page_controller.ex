@@ -30,13 +30,8 @@ defmodule KjogviWeb.PageController do
         end
       end)
 
-    grouped_lists =
-      (primary_lists ++ country_lists)
-      # Adds a nil if the last chunk has only one element
-      |> Enum.chunk_every(2, 2, [nil])
-
     conn
-    |> assign(:grouped_lists, grouped_lists)
+    |> assign(:lists, primary_lists ++ country_lists)
     |> render(:home)
   end
 end

@@ -2,15 +2,24 @@
   Birding diary
 </.header_single>
 
-<div :for={two_lists <- @grouped_lists} class="md:flex md:gap-14">
+<div class="md:grid md:grid-cols-2 md:gap-x-14 md:gap-y-8">
+  <.top_n_list
+    :for={{header, url, %{lifelist: list, total: total}} <- @lists}
+    list={list}
+    total={total}
+    href={url}
+    class="mb-8 md:mb-0"
+  >
+    <:header><%= header %></:header>
+  </.top_n_list>
+</div>
+
+<%!-- <div :for={two_lists <- @grouped_lists} class="md:flex md:gap-14">
   <div :for={list1 <- two_lists} class="md:flex-grow md:basis-1/2">
     <%= case list1 do %>
       <% {header, url, %{lifelist: list, total: total}} -> %>
         <.top_n_list list={list} total={total} href={url} class="mb-10">
           <:header><%= header %></:header>
         </.top_n_list>
-      <% nil -> %>
-        <div class="mb-10">&nbsp;</div>
-    <% end %>
   </div>
-</div>
+</div> --%>
