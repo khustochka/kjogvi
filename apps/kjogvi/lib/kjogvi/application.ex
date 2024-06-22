@@ -5,19 +5,10 @@ defmodule Kjogvi.Application do
 
   use Application
 
-  if Code.ensure_loaded?(Ecto.DevLogger) do
-    defp ecto_dev_logger do
-      Ecto.DevLogger.install(Kjogvi.Repo, log_repo_name: true)
-      Ecto.DevLogger.install(Kjogvi.OrnithoRepo, log_repo_name: true)
-    end
-  else
-    defp ecto_dev_logger, do: :ok
-  end
-
   @impl true
   def start(_type, _args) do
     Kjogvi.Logger.install()
-    ecto_dev_logger()
+    Kjogvi.Logger.dev_setup()
 
     Kjogvi.Opentelemetry.setup()
 

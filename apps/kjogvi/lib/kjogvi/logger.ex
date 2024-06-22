@@ -32,4 +32,20 @@ defmodule Kjogvi.Logger do
       metadata
     )
   end
+
+  def dev_setup do
+    ecto_dev_logger(
+      log_repo_name: true,
+      before_inline_callback: &Kjogvi.Util.SQLFormatter.format/1
+    )
+  end
+
+  if Code.ensure_loaded?(Ecto.DevLogger) do
+    defp ecto_dev_logger(opts) do
+      Ecto.DevLogger.install(Kjogvi.Repo, opts)
+      Ecto.DevLogger.install(Kjogvi.OrnithoRepo, opts)
+    end
+  else
+    defp ecto_dev_logger(_), do: :ok
+  end
 end
