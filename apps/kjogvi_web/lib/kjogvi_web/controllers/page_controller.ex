@@ -10,8 +10,9 @@ defmodule KjogviWeb.PageController do
   @spec home(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def home(conn, _params) do
     primary_lists = [
-      {"Last 5 lifers", ~p"/lifelist", Birding.Lifelist.top(@top_lifelist_num)},
-      {"2024 list", ~p"/lifelist/2024", Birding.Lifelist.top(@top_lifelist_num, year: 2024)}
+      {"Last 5 lifers", lifelist_path(), Birding.Lifelist.top(@top_lifelist_num)},
+      {"2024 list", lifelist_path(year: 2024),
+       Birding.Lifelist.top(@top_lifelist_num, year: 2024)}
     ]
 
     country_lists =
@@ -22,7 +23,7 @@ defmodule KjogviWeb.PageController do
         if loc do
           acc ++
             [
-              {"#{name} list", ~p"/lifelist/#{slug}",
+              {"#{name} list", lifelist_path(location: loc),
                Birding.Lifelist.top(@top_lifelist_num, location: loc)}
             ]
         else

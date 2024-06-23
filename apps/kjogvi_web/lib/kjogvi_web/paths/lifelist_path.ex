@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Paths.Lifelist do
+defmodule KjogviWeb.Paths.LifelistPath do
   @moduledoc """
   Generating Lifelist paths.
   """
@@ -6,24 +6,19 @@ defmodule KjogviWeb.Paths.Lifelist do
   use KjogviWeb, :verified_routes
 
   alias KjogviWeb.Paths
+  alias Kjogvi.Birding.Lifelist
 
-  def lifelist_path(opts, query \\ nil)
+  def lifelist_path(opts \\ [], query \\ nil)
 
-  def lifelist_path(filter, query) do
+  def lifelist_path(%Lifelist.Filter{} = filter, query) do
     {year, location, query_params} = split_params(filter, query)
 
     lifelist_p(year, location, query_params)
   end
 
-  # def lifelist_path(opts, query) when is_map(opts) do
-  #   {year, location, query_params} = split_params(opts, query)
-
-  #   lifelist_p(year, location, query_params)
-  # end
-
-  # def lifelist_path(opts, query) do
-  #   lifelist_path(Enum.into(opts, %{}), query)
-  # end
+  def lifelist_path(opts, query) do
+    lifelist_path(Lifelist.Filter.discombo!(opts), query)
+  end
 
   def split_params(filter, query) do
     {%{year: year, location: location}, query_filters} =
@@ -32,11 +27,9 @@ defmodule KjogviWeb.Paths.Lifelist do
       |> Map.split([:year, :location])
 
     query_filters
-    |> Map.merge(Enum.into(query, %{}))
+    |> Map.merge(Enum.into(query || [], %{}))
     |> Paths.clean_query()
-    |> then(fn query_params ->
-      {year, location, Paths.clean_query(query_params)}
-    end)
+    |> then(&{year, location, Paths.clean_query(&1)})
   end
 
   def split_params(%{year: year, location: location}) do
