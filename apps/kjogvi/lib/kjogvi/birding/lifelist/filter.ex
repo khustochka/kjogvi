@@ -27,6 +27,16 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
   defstruct Keyword.keys(@schema)
 
   def discombo(opts) do
+    case NimbleOptions.validate(opts, @schema) do
+      {:ok, result} ->
+        {:ok, struct!(__MODULE__, result)}
+
+      err ->
+        err
+    end
+  end
+
+  def discombo!(opts) do
     opts |> NimbleOptions.validate!(@schema) |> then(&struct!(__MODULE__, &1))
   end
 end

@@ -5,57 +5,78 @@ defmodule KjogviWeb.Live.Lifelist.Params do
 
   alias Kjogvi.Birding
 
+  @valid_year_regex ~r/\A\d{4}\Z/
   @months Enum.map(1..12, &Integer.to_string/1)
 
   def to_filter(user, params) do
-    Enum.reduce(params, [], fn el, acc ->
+    Enum.reduce(params, {:ok, []}, fn el, acc ->
       add_param(acc, el, user: user, params: params)
     end)
-    |> Birding.Lifelist.Filter.discombo()
+    |> case do
+      {:ok, result} ->
+        Birding.Lifelist.Filter.discombo(result)
+
+      err ->
+        err
+    end
   end
 
   defp add_param(acc, {"year_or_location", year_or_location}, opts) do
     cond do
-      year_or_location =~ ~r/\A\d{4}\Z/ ->
-        [{:year, validate_and_convert_year(year_or_location)} | acc]
+      year_or_location =~ @valid_year_regex ->
+        add_success(acc, {:year, String.to_integer(year_or_location)})
 
       year_or_location =~ ~r/\A\d+\Z/ ->
-        raise Plug.BadRequestError
+        add_error(acc, "Invalid year value.")
 
       true ->
-        [{:location, validate_and_convert_location(opts[:user], year_or_location)} | acc]
+        add_param(acc, {"location", year_or_location}, opts)
     end
   end
 
   defp add_param(acc, {"year", year}, _opts) do
-    if year =~ ~r/\A\d{4}\Z/ do
-      [{:year, validate_and_convert_year(year)} | acc]
+    if year =~ @valid_year_regex do
+      add_success(acc, {:year, String.to_integer(year)})
     else
-      raise Plug.BadRequestError
+      add_error(acc, "Invalid year value.")
     end
   end
 
   defp add_param(acc, {"month", month}, _opts) do
     if month in @months do
-      [{:month, String.to_integer(month)} | acc]
+      add_success(acc, {:month, String.to_integer(month)})
     else
-      raise Plug.BadRequestError
+      add_error(acc, "Invalid month value.")
     end
   end
 
   defp add_param(acc, {"location", location_slug}, opts) do
-    [{:location, validate_and_convert_location(opts[:user], location_slug)} | acc]
+    case Kjogvi.Geo.location_by_slug(opts[:user], location_slug) do
+      nil ->
+        add_error(acc, "Invalid location.")
+
+      location ->
+        add_success(acc, {:location, location})
+    end
   end
 
   defp add_param(acc, {_, _}, _opts) do
     acc
   end
 
-  defp validate_and_convert_location(user, location_slug) do
-    Kjogvi.Geo.location_by_slug!(user, location_slug)
+  def add_success({:ok, acc}, new_element) do
+    {:ok, [new_element | acc]}
   end
 
-  defp validate_and_convert_year(year) do
-    String.to_integer(year)
+  def add_success({:error, _} = error, _new) do
+    error
+  end
+
+  def add_error({:ok, _}, text) do
+    {:error, [text]}
+  end
+
+  def add_error({:error, errors}, text) do
+    {:error, [text | errors]}
   end
 end

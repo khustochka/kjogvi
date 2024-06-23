@@ -5,41 +5,39 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   alias Kjogvi.Birding.Lifelist.Filter
 
   test "no parameters" do
-    opts = Params.to_filter(nil, %{})
-    assert opts == Filter.discombo([])
+    result = Params.to_filter(nil, %{})
+    assert result == {:ok, Filter.discombo!([])}
   end
 
   test "unknown keys are discarded" do
-    opts = Params.to_filter(nil, %{"a" => "b"})
-    assert opts == Filter.discombo([])
+    result = Params.to_filter(nil, %{"a" => "b"})
+    assert result == {:ok, Filter.discombo!([])}
   end
 
   test "only valid year" do
-    opts = Params.to_filter(nil, %{"year_or_location" => "2024"})
-    assert opts == Filter.discombo(year: 2024)
+    result = Params.to_filter(nil, %{"year_or_location" => "2024"})
+    assert result == {:ok, Filter.discombo!(year: 2024)}
   end
 
   test "valid month parameter" do
-    opts = Params.to_filter(nil, %{"month" => "6"})
-    assert opts == Filter.discombo(month: 6)
+    result = Params.to_filter(nil, %{"month" => "6"})
+    assert result == {:ok, Filter.discombo!(month: 6)}
   end
 
   test "invalid numeric month parameter" do
-    assert_raise Plug.BadRequestError, fn ->
-      Params.to_filter(nil, %{"month" => "13"})
-    end
+    result = Params.to_filter(nil, %{"month" => "13"})
+    assert {:error, _} = result
   end
 
   test "invalid string month parameter" do
-    assert_raise Plug.BadRequestError, fn ->
-      Params.to_filter(nil, %{"month" => "abc"})
-    end
+    result = Params.to_filter(nil, %{"month" => "abc"})
+    assert {:error, _} = result
   end
 
   test "only public location" do
     ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
-    opts = Params.to_filter(nil, %{"year_or_location" => "ukraine"})
-    assert opts == Filter.discombo(location: ukraine)
+    result = Params.to_filter(nil, %{"year_or_location" => "ukraine"})
+    assert result == {:ok, Filter.discombo!(location: ukraine)}
   end
 
   test "private location unavailable for guest" do
@@ -50,9 +48,8 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
       is_private: true
     )
 
-    assert_raise Ecto.NoResultsError, fn ->
-      Params.to_filter(nil, %{"year_or_location" => "ukraine"})
-    end
+    result = Params.to_filter(nil, %{"year_or_location" => "ukraine"})
+    assert {:error, _} = result
   end
 
   test "private location available for logged in user" do
@@ -66,7 +63,7 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
         is_private: true
       )
 
-    opts = Params.to_filter(user, %{"year_or_location" => "ukraine"})
-    assert opts == Filter.discombo(location: ukraine)
+    result = Params.to_filter(user, %{"year_or_location" => "ukraine"})
+    assert result == {:ok, Filter.discombo!(location: ukraine)}
   end
 end

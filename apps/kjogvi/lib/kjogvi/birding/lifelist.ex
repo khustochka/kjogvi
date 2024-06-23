@@ -33,7 +33,7 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   def generate(filter) do
-    filter |> Filter.discombo() |> generate()
+    filter |> Filter.discombo!() |> generate()
   end
 
   @doc """
@@ -55,7 +55,7 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   def top(n, filter) when is_integer(n) and n > 0 do
-    filter |> Filter.discombo() |> then(&top(n, &1))
+    filter |> Filter.discombo!() |> then(&top(n, &1))
   end
 
   @doc """
@@ -72,7 +72,7 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   def years(filter) do
-    filter |> Filter.discombo() |> years()
+    filter |> Filter.discombo!() |> years()
   end
 
   @doc """
@@ -95,7 +95,7 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   def country_ids(filter) do
-    filter |> Filter.discombo() |> country_ids()
+    filter |> Filter.discombo!() |> country_ids()
   end
 
   # ----------------
