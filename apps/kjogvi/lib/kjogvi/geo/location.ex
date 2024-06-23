@@ -3,6 +3,10 @@ defmodule Kjogvi.Geo.Location do
   Location schema.
   """
 
+  if Code.ensure_loaded?(Phoenix.Param) do
+    @derive {Phoenix.Param, key: :slug}
+  end
+
   use Kjogvi.Schema
 
   import Ecto.Changeset
