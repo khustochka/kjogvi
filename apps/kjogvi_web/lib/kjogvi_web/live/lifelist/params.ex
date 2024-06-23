@@ -34,6 +34,16 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
+  defp add_param(acc, {"location", location_slug}, opts) do
+    case Kjogvi.Geo.location_by_slug(opts[:user], location_slug) do
+      nil ->
+        add_error(acc, "Invalid location.")
+
+      location ->
+        add_success(acc, {:location, location})
+    end
+  end
+
   defp add_param(acc, {"year", year}, _opts) do
     if year =~ @valid_year_regex do
       add_success(acc, {:year, String.to_integer(year)})
@@ -50,13 +60,11 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
-  defp add_param(acc, {"location", location_slug}, opts) do
-    case Kjogvi.Geo.location_by_slug(opts[:user], location_slug) do
-      nil ->
-        add_error(acc, "Invalid location.")
-
-      location ->
-        add_success(acc, {:location, location})
+  defp add_param(acc, {"motorless", motorless}, _opts) do
+    if motorless == "true" do
+      add_success(acc, {:motorless, true})
+    else
+      acc
     end
   end
 

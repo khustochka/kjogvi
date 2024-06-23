@@ -115,6 +115,9 @@ defmodule Kjogvi.Birding.Lifelist do
         {:location, location} when not is_nil(location) ->
           Card.Query.by_location_with_descendants(query, location)
 
+        {:motorless, motorless} when motorless == true ->
+          Card.Query.motorless(query)
+
         _ ->
           query
       end

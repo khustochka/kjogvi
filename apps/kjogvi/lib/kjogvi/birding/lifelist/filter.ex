@@ -17,6 +17,10 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
     location: [
       type: {:or, [:string, {:struct, Geo.Location}, nil]},
       default: nil
+    ],
+    motorless: [
+      type: :boolean,
+      default: false
     ]
     # public_view: [
     #   type: :boolean,

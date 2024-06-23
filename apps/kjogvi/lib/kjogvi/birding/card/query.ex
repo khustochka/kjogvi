@@ -18,6 +18,11 @@ defmodule Kjogvi.Birding.Card.Query do
     |> where([..., c], extract_month(c.observ_date) == ^month)
   end
 
+  def motorless(query) do
+    query
+    |> where([..., c], c.motorless == true)
+  end
+
   def by_location_with_descendants(query, %{location_type: "special", id: id}) do
     specials_ids =
       from("special_locations")

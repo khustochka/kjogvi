@@ -111,6 +111,27 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
+        <em :if={!@filter.motorless} class="font-semibold not-italic">Include all</em>
+        <.link
+          :if={@filter.motorless}
+          patch={lifelist_path(%{@filter | motorless: false}, @current_path_query)}
+        >
+          Include all
+        </.link>
+      </li>
+      <li class="whitespace-nowrap">
+        <em :if={@filter.motorless} class="font-semibold not-italic">Motorless only</em>
+        <.link
+          :if={!@filter.motorless}
+          patch={lifelist_path(%{@filter | motorless: true}, @current_path_query)}
+        >
+          Motorless only
+        </.link>
+      </li>
+    </ul>
+
+    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
+      <li class="whitespace-nowrap">
         <em :if={is_nil(@filter.year)} class="font-semibold not-italic">All years</em>
         <.link
           :if={not is_nil(@filter.year)}
