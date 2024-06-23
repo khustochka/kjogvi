@@ -1,4 +1,4 @@
-defmodule Kjogvi.Birding.Lifelist.Opts do
+defmodule Kjogvi.Birding.Lifelist.Filter do
   @moduledoc """
   Lifelist filtering parameters.
   """

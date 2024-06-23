@@ -11,7 +11,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     Enum.reduce(params, [], fn el, acc ->
       add_param(acc, el, user: user, params: params)
     end)
-    |> Birding.Lifelist.Opts.discombo()
+    |> Birding.Lifelist.Filter.discombo()
   end
 
   defp add_param(acc, {"year_or_location", year_or_location}, opts) do

@@ -2,26 +2,26 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   use Kjogvi.DataCase, async: true
 
   alias KjogviWeb.Live.Lifelist.Params
-  alias Kjogvi.Birding.Lifelist.Opts
+  alias Kjogvi.Birding.Lifelist.Filter
 
   test "no parameters" do
     opts = Params.to_filter(nil, %{})
-    assert opts == Opts.discombo([])
+    assert opts == Filter.discombo([])
   end
 
   test "unknown keys are discarded" do
     opts = Params.to_filter(nil, %{"a" => "b"})
-    assert opts == Opts.discombo([])
+    assert opts == Filter.discombo([])
   end
 
   test "only valid year" do
     opts = Params.to_filter(nil, %{"year_or_location" => "2024"})
-    assert opts == Opts.discombo(year: 2024)
+    assert opts == Filter.discombo(year: 2024)
   end
 
   test "valid month parameter" do
     opts = Params.to_filter(nil, %{"month" => "6"})
-    assert opts == Opts.discombo(month: 6)
+    assert opts == Filter.discombo(month: 6)
   end
 
   test "invalid numeric month parameter" do
@@ -39,7 +39,7 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   test "only public location" do
     ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
     opts = Params.to_filter(nil, %{"year_or_location" => "ukraine"})
-    assert opts == Opts.discombo(location: ukraine)
+    assert opts == Filter.discombo(location: ukraine)
   end
 
   test "private location unavailable for guest" do
@@ -67,6 +67,6 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
       )
 
     opts = Params.to_filter(user, %{"year_or_location" => "ukraine"})
-    assert opts == Opts.discombo(location: ukraine)
+    assert opts == Filter.discombo(location: ukraine)
   end
 end
