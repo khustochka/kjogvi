@@ -215,7 +215,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   # Logged in user
-  defp derive_current_path_query(%{assigns: %{current_user: current_user} = assigns} = socket) when not is_nil(current_user) do
+  defp derive_current_path_query(%{assigns: %{current_user: current_user} = assigns} = socket)
+       when not is_nil(current_user) do
     query =
       [public_view: assigns.public_view]
       |> Keyword.reject(fn {_, val} -> !val end)

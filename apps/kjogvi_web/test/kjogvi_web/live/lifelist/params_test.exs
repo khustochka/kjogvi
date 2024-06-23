@@ -16,17 +16,23 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
 
   test "only valid year" do
     opts = Params.to_filter(nil, %{"year_or_location" => "2024"})
-    assert opts == Opts.discombo([year: 2024])
+    assert opts == Opts.discombo(year: 2024)
   end
 
   test "only public location" do
     ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
     opts = Params.to_filter(nil, %{"year_or_location" => "ukraine"})
-    assert opts == Opts.discombo([location: ukraine])
+    assert opts == Opts.discombo(location: ukraine)
   end
 
   test "private location unavailable for guest" do
-    insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country", is_private: true)
+    insert(:location,
+      slug: "ukraine",
+      name_en: "Ukraine",
+      location_type: "country",
+      is_private: true
+    )
+
     assert_raise Ecto.NoResultsError, fn ->
       Params.to_filter(nil, %{"year_or_location" => "ukraine"})
     end
@@ -34,9 +40,16 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
 
   test "private location available for logged in user" do
     user = Kjogvi.UsersFixtures.user_fixture()
-    ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country", is_private: true)
+
+    ukraine =
+      insert(:location,
+        slug: "ukraine",
+        name_en: "Ukraine",
+        location_type: "country",
+        is_private: true
+      )
 
     opts = Params.to_filter(user, %{"year_or_location" => "ukraine"})
-    assert opts == Opts.discombo([location: ukraine])
+    assert opts == Opts.discombo(location: ukraine)
   end
 end

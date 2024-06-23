@@ -15,7 +15,7 @@ defmodule Kjogvi.Birding.Lifelist do
   alias Kjogvi.Geo
   alias __MODULE__.Opts
 
-  @doc"""
+  @doc """
   Generate lifelist based on provided filter options.
   """
   def generate(opts \\ %Opts{})
@@ -33,10 +33,10 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   def generate(opts) do
-    opts |> Opts.discombo |> generate()
+    opts |> Opts.discombo() |> generate()
   end
 
-  @doc"""
+  @doc """
   Get N newest species on the list based on provided filter options.
   """
   def top(n, opts \\ %Opts{})
@@ -55,10 +55,10 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   def top(n, opts) when is_integer(n) and n > 0 do
-    opts |> Opts.discombo |> then(&top(n, &1))
+    opts |> Opts.discombo() |> then(&top(n, &1))
   end
 
-  @doc"""
+  @doc """
   Get all years in a list based on provided filter options.
   """
   def years(opts \\ %Opts{})
@@ -72,10 +72,10 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   def years(opts) do
-    opts |> Opts.discombo |> years()
+    opts |> Opts.discombo() |> years()
   end
 
-  @doc"""
+  @doc """
   Get all country ids in a list based on provided filter options.
   """
   def country_ids(opts \\ %Opts{})
@@ -95,7 +95,7 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   def country_ids(opts) do
-    opts |> Opts.discombo |> country_ids()
+    opts |> Opts.discombo() |> country_ids()
   end
 
   # ----------------

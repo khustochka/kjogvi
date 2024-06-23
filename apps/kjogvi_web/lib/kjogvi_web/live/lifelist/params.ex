@@ -7,25 +7,29 @@ defmodule KjogviWeb.Live.Lifelist.Params do
 
   def to_filter(user, params) do
     Enum.reduce(params, [], fn el, acc ->
-      case el do
-        {"year_or_location", year_or_location} ->
-          if year_or_location =~ ~r/\A\d{4}\Z/ do
-            [{:year, validate_and_convert_year(year_or_location)} | acc]
-          else
-            [{:location, validate_and_convert_location(user, year_or_location)} | acc]
-          end
-
-        {"year", year} ->
-          [{:year, validate_and_convert_year(year)} | acc]
-
-        {"location", location_slug} ->
-          [{:location, validate_and_convert_location(user, location_slug)} | acc]
-
-        {_, _} ->
-          acc
-      end
+      add_param(acc, el, user: user, params: params)
     end)
     |> Birding.Lifelist.Opts.discombo()
+  end
+
+  defp add_param(acc, {"year_or_location", year_or_location}, opts) do
+    if year_or_location =~ ~r/\A\d{4}\Z/ do
+      [{:year, validate_and_convert_year(year_or_location)} | acc]
+    else
+      [{:location, validate_and_convert_location(opts[:user], year_or_location)} | acc]
+    end
+  end
+
+  defp add_param(acc, {"year", year}, _opts) do
+    [{:year, validate_and_convert_year(year)} | acc]
+  end
+
+  defp add_param(acc, {"location", location_slug}, opts) do
+    [{:location, validate_and_convert_location(opts[:user], location_slug)} | acc]
+  end
+
+  defp add_param(acc, {_, _}, _opts) do
+    acc
   end
 
   defp validate_and_convert_location(user, location_slug) do

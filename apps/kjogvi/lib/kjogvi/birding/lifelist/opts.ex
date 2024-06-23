@@ -1,4 +1,8 @@
 defmodule Kjogvi.Birding.Lifelist.Opts do
+  @moduledoc """
+  Lifelist filtering parameters.
+  """
+
   alias Kjogvi.Geo
 
   @schema [
