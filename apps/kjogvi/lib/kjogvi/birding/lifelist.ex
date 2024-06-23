@@ -109,6 +109,9 @@ defmodule Kjogvi.Birding.Lifelist do
         {:year, year} when not is_nil(year) ->
           Card.Query.by_year(query, year)
 
+        {:month, month} when not is_nil(month) ->
+          Card.Query.by_month(query, month)
+
         {:location, location} when not is_nil(location) ->
           Card.Query.by_location_with_descendants(query, location)
 

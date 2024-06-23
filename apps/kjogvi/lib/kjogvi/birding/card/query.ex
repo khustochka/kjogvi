@@ -13,6 +13,11 @@ defmodule Kjogvi.Birding.Card.Query do
     |> where([..., c], extract_year(c.observ_date) == ^year)
   end
 
+  def by_month(query, month) when is_integer(month) do
+    query
+    |> where([..., c], extract_month(c.observ_date) == ^month)
+  end
+
   def by_location_with_descendants(query, %{location_type: "special", id: id}) do
     specials_ids =
       from("special_locations")

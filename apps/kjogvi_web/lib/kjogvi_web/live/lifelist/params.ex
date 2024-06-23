@@ -5,6 +5,8 @@ defmodule KjogviWeb.Live.Lifelist.Params do
 
   alias Kjogvi.Birding
 
+  @months Enum.map(1..12, &Integer.to_string/1)
+
   def to_filter(user, params) do
     Enum.reduce(params, [], fn el, acc ->
       add_param(acc, el, user: user, params: params)
@@ -13,15 +15,32 @@ defmodule KjogviWeb.Live.Lifelist.Params do
   end
 
   defp add_param(acc, {"year_or_location", year_or_location}, opts) do
-    if year_or_location =~ ~r/\A\d{4}\Z/ do
-      [{:year, validate_and_convert_year(year_or_location)} | acc]
-    else
-      [{:location, validate_and_convert_location(opts[:user], year_or_location)} | acc]
+    cond do
+      year_or_location =~ ~r/\A\d{4}\Z/ ->
+        [{:year, validate_and_convert_year(year_or_location)} | acc]
+
+      year_or_location =~ ~r/\A\d+\Z/ ->
+        raise KjogviWeb.Exception.BadParams
+
+      true ->
+        [{:location, validate_and_convert_location(opts[:user], year_or_location)} | acc]
     end
   end
 
   defp add_param(acc, {"year", year}, _opts) do
-    [{:year, validate_and_convert_year(year)} | acc]
+    if year =~ ~r/\A\d{4}\Z/ do
+      [{:year, validate_and_convert_year(year)} | acc]
+    else
+      raise KjogviWeb.Exception.BadParams
+    end
+  end
+
+  defp add_param(acc, {"month", month}, _opts) do
+    if month in @months do
+      [{:month, String.to_integer(month)} | acc]
+    else
+      raise KjogviWeb.Exception.BadParams
+    end
   end
 
   defp add_param(acc, {"location", location_slug}, opts) do

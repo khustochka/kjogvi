@@ -10,6 +10,10 @@ defmodule Kjogvi.Birding.Lifelist.Opts do
       type: {:or, [:integer, nil]},
       default: nil
     ],
+    month: [
+      type: {:or, [{:in, 1..12}, nil]},
+      default: nil
+    ],
     location: [
       type: {:or, [:string, {:struct, Geo.Location}, nil]},
       default: nil

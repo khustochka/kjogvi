@@ -48,8 +48,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         lifelist: lifelist,
         total: length(lifelist),
         year: filter.year,
+        month: filter.month,
         location: filter.location,
         years: Util.Enum.zip_inclusion(all_years, years),
+        months: 1..12,
         locations: all_countries |> Enum.map(fn el -> {el, el.id in country_ids} end)
       )
       |> derive_current_path_query()
@@ -133,6 +135,31 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
+        <em :if={is_nil(@month)} class="font-semibold not-italic">All months</em>
+        <.link
+          :if={not is_nil(@month)}
+          patch={lifelist_path(@year, @location, Keyword.delete(@current_path_query, :month))}
+        >
+          All months
+        </.link>
+      </li>
+      <%= for month <- @months do %>
+        <li>
+          <%= if @month == month do %>
+            <em class="font-semibold not-italic"><%= Timex.month_shortname(month) %></em>
+          <% else %>
+            <.link patch={
+              lifelist_path(@year, @location, Keyword.put(@current_path_query, :month, month))
+            }>
+              <%= Timex.month_shortname(month) %>
+            </.link>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+
+    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
+      <li class="whitespace-nowrap">
         <em :if={is_nil(@location)} class="font-semibold not-italic">All countries</em>
         <.link :if={not is_nil(@location)} patch={lifelist_path(@year, nil, @current_path_query)}>
           All countries
@@ -198,27 +225,43 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  defp lifelist_title(%{year: nil, location: nil}) do
+  defp lifelist_title(%{year: nil, location: nil, month: nil}) do
     "Lifelist"
   end
 
-  defp lifelist_title(%{year: year, location: nil}) when is_integer(year) do
+  defp lifelist_title(%{year: nil, location: nil, month: month}) do
+    "#{Timex.month_name(month)} Lifelist"
+  end
+
+  defp lifelist_title(%{year: year, location: nil, month: nil}) do
     "#{year} Year List"
   end
 
-  defp lifelist_title(%{year: nil, location: location}) do
+  defp lifelist_title(%{year: year, location: nil, month: month}) do
+    "#{Timex.month_name(month)} #{year} List"
+  end
+
+  defp lifelist_title(%{year: nil, location: location, month: nil}) do
     "#{location.name_en} Life List"
   end
 
-  defp lifelist_title(%{year: year, location: location}) when is_integer(year) do
+  defp lifelist_title(%{year: nil, location: location, month: month}) do
+    "#{location.name_en} #{Timex.month_name(month)} List"
+  end
+
+  defp lifelist_title(%{year: year, location: location, month: nil}) do
     "#{year} #{location.name_en} List"
+  end
+
+  defp lifelist_title(%{year: year, location: location, month: month}) do
+    "#{Timex.month_name(month)} #{year} #{location.name_en} List"
   end
 
   # Logged in user
   defp derive_current_path_query(%{assigns: %{current_user: current_user} = assigns} = socket)
        when not is_nil(current_user) do
     query =
-      [public_view: assigns.public_view]
+      [month: assigns.month, public_view: assigns.public_view]
       |> Keyword.reject(fn {_, val} -> !val end)
 
     socket
@@ -227,8 +270,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   # Guest user
   defp derive_current_path_query(socket) do
+    query =
+      [month: socket.assigns.month]
+      |> Keyword.reject(fn {_, val} -> !val end)
+
     socket
-    |> assign(:current_path_query, [])
+    |> assign(:current_path_query, query)
   end
 
   defp derive_location_field(%{assigns: assigns} = socket) do

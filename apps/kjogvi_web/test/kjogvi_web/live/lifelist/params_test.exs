@@ -19,6 +19,23 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
     assert opts == Opts.discombo(year: 2024)
   end
 
+  test "valid month parameter" do
+    opts = Params.to_filter(nil, %{"month" => "6"})
+    assert opts == Opts.discombo(month: 6)
+  end
+
+  test "invalid numeric month parameter" do
+    assert_raise KjogviWeb.Exception.BadParams, fn ->
+      Params.to_filter(nil, %{"month" => "13"})
+    end
+  end
+
+  test "invalid string month parameter" do
+    assert_raise KjogviWeb.Exception.BadParams, fn ->
+      Params.to_filter(nil, %{"month" => "abc"})
+    end
+  end
+
   test "only public location" do
     ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
     opts = Params.to_filter(nil, %{"year_or_location" => "ukraine"})

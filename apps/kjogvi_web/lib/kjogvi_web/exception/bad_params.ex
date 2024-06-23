@@ -3,6 +3,6 @@ defmodule KjogviWeb.Exception.BadParams do
 end
 
 defimpl Plug.Exception, for: KjogviWeb.Exception.BadParams do
-  def status(_), do: 404
+  def status(_), do: 400
   def actions(_), do: []
 end
