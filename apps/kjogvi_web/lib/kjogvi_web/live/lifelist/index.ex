@@ -25,7 +25,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     all_years = Birding.Lifelist.years()
 
     years =
-      if is_nil(filter[:location]) do
+      if is_nil(filter.location) do
         all_years
       else
         Birding.Lifelist.years(Map.delete(filter, :year))
@@ -34,7 +34,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     all_countries = Kjogvi.Geo.get_countries()
 
     country_ids =
-      if is_nil(filter[:year]) do
+      if is_nil(filter.year) do
         Enum.map(all_countries, & &1.id)
       else
         Birding.Lifelist.country_ids(Map.delete(filter, :location))
@@ -47,8 +47,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         public_view: derive_public_view(socket, params),
         lifelist: lifelist,
         total: length(lifelist),
-        year: filter[:year],
-        location: filter[:location],
+        year: filter.year,
+        location: filter.location,
         years: Util.Enum.zip_inclusion(all_years, years),
         locations: all_countries |> Enum.map(fn el -> {el, el.id in country_ids} end)
       )
@@ -214,13 +214,20 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     "#{year} #{location.name_en} List"
   end
 
-  defp derive_current_path_query(%{assigns: assigns} = socket) do
+  # Logged in user
+  defp derive_current_path_query(%{assigns: %{current_user: current_user} = assigns} = socket) when not is_nil(current_user) do
     query =
       [public_view: assigns.public_view]
       |> Keyword.reject(fn {_, val} -> !val end)
 
     socket
     |> assign(:current_path_query, query)
+  end
+
+  # Guest user
+  defp derive_current_path_query(socket) do
+    socket
+    |> assign(:current_path_query, [])
   end
 
   defp derive_location_field(%{assigns: assigns} = socket) do

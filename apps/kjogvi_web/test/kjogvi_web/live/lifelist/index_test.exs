@@ -65,7 +65,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert get_number_of_species(resp) == 0
   end
 
-  test "empty full lifelist is indexed", %{conn: conn} do
+  test "empty full lifelist is indexed by robots", %{conn: conn} do
     conn = get(conn, "/lifelist")
     resp = html_response(conn, 200)
 
@@ -74,7 +74,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert Enum.empty?(Floki.find(html, "meta[name=robots]"))
   end
 
-  test "non-empty year list is indexed", %{conn: conn} do
+  test "non-empty year list is indexed by robots", %{conn: conn} do
     species = Ornitho.Factory.insert(:taxon, category: "species")
     card = insert(:card, observ_date: ~D[2023-06-07])
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(species))
@@ -86,7 +86,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert Enum.empty?(Floki.find(html, "meta[name=robots]"))
   end
 
-  test "empty year list is not indexed", %{conn: conn} do
+  test "empty year list is not indexed by robots", %{conn: conn} do
     conn = get(conn, "/lifelist/2022")
     resp = html_response(conn, 200)
 
@@ -156,5 +156,26 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert_error_sent :not_found, fn ->
       get(conn, "/lifelist/2022/testtest")
     end
+  end
+
+  test "correct links for guest user", %{conn: conn} do
+    ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
+    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+    taxon1 = Ornitho.Factory.insert(:taxon)
+    card1 = insert(:card, observ_date: ~D"2022-11-18", location: brovary)
+    insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    taxon2 = Ornitho.Factory.insert(:taxon)
+    card2 = insert(:card, observ_date: ~D"2023-07-16", location: brovary)
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+    conn = get(conn, "/lifelist")
+    resp = html_response(conn, 200)
+
+    {:ok, doc} = Floki.parse_document(resp)
+    links = Floki.find(doc, "li a") |> Enum.flat_map(&Floki.attribute(&1, "href"))
+
+    assert ~p"/lifelist/2022" in links
+    assert ~p"/lifelist/2023" in links
   end
 end

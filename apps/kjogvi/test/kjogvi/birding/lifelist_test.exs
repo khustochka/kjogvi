@@ -96,7 +96,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       card2 = insert(:card, observ_date: ~D"2023-07-16")
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
-      result = Kjogvi.Birding.Lifelist.generate(%{year: 2022})
+      result = Kjogvi.Birding.Lifelist.generate(year: 2022)
       assert length(result) == 1
     end
 
@@ -108,7 +108,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       card2 = insert(:card, observ_date: ~D"2023-07-16")
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
-      result = Kjogvi.Birding.Lifelist.generate(%{year: 2005})
+      result = Kjogvi.Birding.Lifelist.generate(year: 2005)
       assert result == []
     end
 
@@ -124,7 +124,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       card2 = insert(:card, location: usa)
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
-      result = Kjogvi.Birding.Lifelist.generate(%{location: ukraine})
+      result = Kjogvi.Birding.Lifelist.generate(location: ukraine)
       assert length(result) == 1
     end
 
@@ -140,7 +140,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       card2 = insert(:card, location: usa)
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
-      result = Kjogvi.Birding.Lifelist.generate(%{location: brovary})
+      result = Kjogvi.Birding.Lifelist.generate(location: brovary)
       assert length(result) == 1
     end
 
@@ -159,7 +159,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       card2 = insert(:card, observ_date: ~D"2022-07-16", location: usa)
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
-      result = Kjogvi.Birding.Lifelist.generate(%{location: ukraine, year: 2022})
+      result = Kjogvi.Birding.Lifelist.generate(location: ukraine, year: 2022)
       assert length(result) == 1
     end
 
@@ -193,7 +193,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       card2 = insert(:card, observ_date: ~D"2022-07-16", location: locus4)
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
-      result = Kjogvi.Birding.Lifelist.generate(%{location: locus_5mr})
+      result = Kjogvi.Birding.Lifelist.generate(location: locus_5mr)
       assert length(result) == 2
     end
   end

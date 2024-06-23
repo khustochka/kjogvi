@@ -13,9 +13,15 @@ defmodule Kjogvi.Birding.Lifelist do
   alias Kjogvi.Birding.LifeObservation
   alias Kjogvi.Birding.Observation
   alias Kjogvi.Geo
+  alias __MODULE__.Opts
 
-  def generate(params \\ %{}) do
-    lifelist_query(params)
+  @doc"""
+  Generate lifelist based on provided filter options.
+  """
+  def generate(opts \\ %Opts{})
+
+  def generate(%Opts{} = opts) do
+    lifelist_query(opts)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Repo.preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
@@ -26,8 +32,17 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.reverse()
   end
 
-  def top(n, params \\ %{}) when is_integer(n) and n > 0 do
-    lifelist_query(params)
+  def generate(opts) do
+    opts |> Opts.discombo |> generate()
+  end
+
+  @doc"""
+  Get N newest species on the list based on provided filter options.
+  """
+  def top(n, opts \\ %Opts{})
+
+  def top(n, %Opts{} = opts) when is_integer(n) and n > 0 do
+    lifelist_query(opts)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Kjogvi.Birding.preload_taxa_and_species()
@@ -39,17 +54,35 @@ defmodule Kjogvi.Birding.Lifelist do
     end)
   end
 
-  def years(params \\ %{}) do
-    observations_filtered(params)
+  def top(n, opts) when is_integer(n) and n > 0 do
+    opts |> Opts.discombo |> then(&top(n, &1))
+  end
+
+  @doc"""
+  Get all years in a list based on provided filter options.
+  """
+  def years(opts \\ %Opts{})
+
+  def years(%Opts{} = opts) do
+    observations_filtered(opts)
     |> distinct(true)
     |> select([..., c], extract_year(c.observ_date))
     |> Repo.all()
     |> Enum.sort()
   end
 
-  def country_ids(params \\ %{}) do
+  def years(opts) do
+    opts |> Opts.discombo |> years()
+  end
+
+  @doc"""
+  Get all country ids in a list based on provided filter options.
+  """
+  def country_ids(opts \\ %Opts{})
+
+  def country_ids(%Opts{} = opts) do
     location_ids =
-      observations_filtered(params)
+      observations_filtered(opts)
       |> distinct(true)
       |> select([_o, c], [c.location_id])
 
@@ -61,10 +94,17 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Repo.all()
   end
 
-  def observations_filtered(params) do
+  def country_ids(opts) do
+    opts |> Opts.discombo |> country_ids()
+  end
+
+  # ----------------
+
+  def observations_filtered(%Opts{} = opts) do
     base = from([o, c] in observation_base())
 
-    Enum.reduce(params, base, fn filter, query ->
+    Map.from_struct(opts)
+    |> Enum.reduce(base, fn filter, query ->
       case filter do
         {:year, year} when not is_nil(year) ->
           Card.Query.by_year(query, year)
@@ -78,13 +118,13 @@ defmodule Kjogvi.Birding.Lifelist do
     end)
   end
 
-  defp lifelist_query(params) do
-    from l in subquery(lifers_query(params)),
+  defp lifelist_query(opts) do
+    from l in subquery(lifers_query(opts)),
       order_by: [asc: l.observ_date, asc_nulls_last: l.start_time, asc: l.id]
   end
 
-  defp lifers_query(params) do
-    from [o, c] in observations_filtered(params),
+  defp lifers_query(opts) do
+    from [o, c] in observations_filtered(opts),
       distinct: o.taxon_key,
       order_by: [asc: o.taxon_key, asc: c.observ_date, asc_nulls_last: c.start_time, asc: o.id],
       select: %{

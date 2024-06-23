@@ -64,6 +64,7 @@ defmodule Kjogvi.MixProject do
       {:finch, "~> 0.13"},
       {:req, "~> 0.5"},
       {:scrivener_ecto, "~> 2.7"},
+      {:nimble_options, "~> 1.1"},
       {:ornithologue, in_umbrella: true},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},

@@ -9,9 +9,7 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
 
     # Do not trim the strings, this checks that there are no dangling underlines
     Floki.find(doc, "strong a em.sci_name")
-    |> Enum.map(fn ht ->
-      Floki.text(ht)
-    end)
+    |> Enum.map(&Floki.text/1)
   end
 
   describe "Index" do
