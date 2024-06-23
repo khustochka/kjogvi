@@ -16,6 +16,12 @@ defmodule KjogviWeb.Paths.LifelistPath do
     lifelist_p(year, location, query_params)
   end
 
+  def lifelist_path(opts, query) when is_map(opts) do
+    opts
+    |> Map.to_list()
+    |> lifelist_path(query)
+  end
+
   def lifelist_path(opts, query) do
     lifelist_path(Lifelist.Filter.discombo!(opts), query)
   end
