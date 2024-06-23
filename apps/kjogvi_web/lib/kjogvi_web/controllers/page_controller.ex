@@ -17,7 +17,7 @@ defmodule KjogviWeb.PageController do
     country_lists =
       @default_countries
       |> Enum.reduce([], fn {name, slug}, acc ->
-        loc = Kjogvi.Geo.location_by_slug(slug)
+        loc = Kjogvi.Geo.location_by_slug(nil, slug)
 
         if loc do
           acc ++

@@ -14,6 +14,14 @@ defmodule Kjogvi.Geo.Location.Query do
     from l in query, where: l.slug == ^slug
   end
 
+  def for_user(query, nil) do
+    from l in query, where: l.is_private == false or is_nil(l.is_private)
+  end
+
+  def for_user(query, _user) do
+    query
+  end
+
   def countries(query) do
     from [..., l] in query,
       where: l.location_type == @country_location_type

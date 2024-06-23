@@ -19,7 +19,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    filter = KjogviWeb.Live.Lifelist.Params.to_filter(params)
+    filter = KjogviWeb.Live.Lifelist.Params.to_filter(socket.assigns.current_user, params)
     lifelist = Birding.Lifelist.generate(filter)
 
     all_years = Birding.Lifelist.years()

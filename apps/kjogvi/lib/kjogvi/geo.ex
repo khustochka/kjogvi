@@ -46,14 +46,16 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
-  def location_by_slug(slug) do
+  def location_by_slug(user, slug) do
     Location
+    |> Location.Query.for_user(user)
     |> Location.Query.by_slug(slug)
     |> Repo.one()
   end
 
-  def location_by_slug!(slug) do
+  def location_by_slug!(user, slug) do
     Location
+    |> Location.Query.for_user(user)
     |> Location.Query.by_slug(slug)
     |> Repo.one!()
   end
