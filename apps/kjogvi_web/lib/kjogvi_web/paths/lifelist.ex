@@ -7,24 +7,36 @@ defmodule KjogviWeb.Paths.Lifelist do
 
   alias KjogviWeb.Paths
 
-  @spec lifelist_path(integer() | nil, String.t() | %{slug: String.t()} | nil, Enum.t() | nil) ::
-          String.t()
-  def lifelist_path(year, location, query \\ nil) do
-    lifelist_p(year, location, Paths.clean_query(query))
-  end
+  def lifelist_path(opts, query \\ nil)
 
-  def lifelist_path(opts) when is_map(opts) do
-    {year, location, query_params} = split_params(opts)
+  def lifelist_path(filter, query) do
+    {year, location, query_params} = split_params(filter, query)
 
     lifelist_p(year, location, query_params)
   end
 
-  def lifelist_path(opts) do
-    lifelist_path(Enum.into(opts, %{}))
-  end
+  # def lifelist_path(opts, query) when is_map(opts) do
+  #   {year, location, query_params} = split_params(opts, query)
 
-  def split_params(%{year: year, location: location, query: query}) do
-    {year, location, Paths.clean_query(query)}
+  #   lifelist_p(year, location, query_params)
+  # end
+
+  # def lifelist_path(opts, query) do
+  #   lifelist_path(Enum.into(opts, %{}), query)
+  # end
+
+  def split_params(filter, query) do
+    {%{year: year, location: location}, query_filters} =
+      filter
+      |> Map.from_struct()
+      |> Map.split([:year, :location])
+
+    query_filters
+    |> Map.merge(Enum.into(query, %{}))
+    |> Paths.clean_query()
+    |> then(fn query_params ->
+      {year, location, Paths.clean_query(query_params)}
+    end)
   end
 
   def split_params(%{year: year, location: location}) do

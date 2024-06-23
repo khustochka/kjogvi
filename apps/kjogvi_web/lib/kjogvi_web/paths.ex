@@ -3,7 +3,7 @@ defmodule KjogviWeb.Paths do
 
   defmacro __using__(_) do
     quote do
-      import KjogviWeb.Paths.Lifelist, only: [lifelist_path: 1, lifelist_path: 3]
+      import KjogviWeb.Paths.Lifelist, only: [lifelist_path: 1, lifelist_path: 2]
     end
   end
 
