@@ -20,7 +20,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
         [{:year, validate_and_convert_year(year_or_location)} | acc]
 
       year_or_location =~ ~r/\A\d+\Z/ ->
-        raise KjogviWeb.Exception.BadParams
+        raise Plug.BadRequestError
 
       true ->
         [{:location, validate_and_convert_location(opts[:user], year_or_location)} | acc]
@@ -31,7 +31,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     if year =~ ~r/\A\d{4}\Z/ do
       [{:year, validate_and_convert_year(year)} | acc]
     else
-      raise KjogviWeb.Exception.BadParams
+      raise Plug.BadRequestError
     end
   end
 
@@ -39,7 +39,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     if month in @months do
       [{:month, String.to_integer(month)} | acc]
     else
-      raise KjogviWeb.Exception.BadParams
+      raise Plug.BadRequestError
     end
   end
 

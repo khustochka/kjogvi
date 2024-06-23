@@ -25,13 +25,13 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   end
 
   test "invalid numeric month parameter" do
-    assert_raise KjogviWeb.Exception.BadParams, fn ->
+    assert_raise Plug.BadRequestError, fn ->
       Params.to_filter(nil, %{"month" => "13"})
     end
   end
 
   test "invalid string month parameter" do
-    assert_raise KjogviWeb.Exception.BadParams, fn ->
+    assert_raise Plug.BadRequestError, fn ->
       Params.to_filter(nil, %{"month" => "abc"})
     end
   end
