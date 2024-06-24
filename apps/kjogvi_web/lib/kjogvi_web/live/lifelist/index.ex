@@ -62,26 +62,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   @impl true
-  def handle_event(
-        "public_toggle",
-        %{"_target" => ["public_view"]} = params,
-        %{assigns: assigns} = socket
-      ) do
-    {:noreply,
-     push_navigate(socket,
-       to:
-         lifelist_path(
-           assigns.filter,
-           Keyword.put(
-             assigns.current_path_query,
-             :public_view,
-             derive_public_view(socket, params)
-           )
-         )
-     )}
-  end
-
-  @impl true
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
@@ -89,21 +69,53 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <%= @page_header %>
     </.header_single>
 
-    <div :if={@current_user} class="flex items-center mt-4">
-      <form action="" phx-change="public_toggle">
+    <div class="flex gap-8 mt-4">
+      <form
+        method="GET"
+        id="motorless-form"
+        action={lifelist_path(@filter, @current_path_query)}
+        phx-change={JS.exec("toggle_action", to: "#motorless-form")}
+        toggle_action={
+          JS.patch(
+            lifelist_path(@filter, Keyword.put(@current_path_query, :motorless, !@filter.motorless))
+          )
+        }
+      >
+        <input type="hidden" name="motorless" />
+        <input
+          type="checkbox"
+          name="motorless"
+          value="true"
+          checked={@filter.motorless}
+          id="motorless-unchecked"
+          class="relative w-[3.25rem] h-7 p-px bg-gray-100 border-transparent text-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:ring-blue-600 disabled:opacity-50 disabled:pointer-events-none checked:bg-none checked:text-blue-600 checked:border-blue-600 focus:checked:border-blue-600 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-600 before:inline-block before:w-6 before:h-6 before:bg-white checked:before:bg-blue-200 before:translate-x-0 checked:before:translate-x-full before:rounded-full before:shadow before:transform before:ring-0 before:transition before:ease-in-out before:duration-200 dark:before:bg-gray-400 dark:checked:before:bg-blue-200"
+        />
+        <label for="motorless-unchecked" class="text-sm text-gray-500 ms-3 dark:text-gray-400">
+          Motorless
+        </label>
+      </form>
+
+      <form
+        :if={@current_user}
+        id="public-view-form"
+        action=""
+        phx-change={JS.exec("toggle_action", to: "#public-view-form")}
+        toggle_action={
+          JS.patch(
+            lifelist_path(@filter, Keyword.put(@current_path_query, :public_view, !@public_view))
+          )
+        }
+      >
         <input type="hidden" name="public_view" />
         <input
           type="checkbox"
           name="public_view"
           value="true"
           checked={@public_view}
-          id="hs-basic-with-description-unchecked"
+          id="public-view-unchecked"
           class="relative w-[3.25rem] h-7 p-px bg-gray-100 border-transparent text-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:ring-blue-600 disabled:opacity-50 disabled:pointer-events-none checked:bg-none checked:text-blue-600 checked:border-blue-600 focus:checked:border-blue-600 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-600 before:inline-block before:w-6 before:h-6 before:bg-white checked:before:bg-blue-200 before:translate-x-0 checked:before:translate-x-full before:rounded-full before:shadow before:transform before:ring-0 before:transition before:ease-in-out before:duration-200 dark:before:bg-gray-400 dark:checked:before:bg-blue-200"
         />
-        <label
-          for="hs-basic-with-description-unchecked"
-          class="text-sm text-gray-500 ms-3 dark:text-gray-400"
-        >
+        <label for="public-view-unchecked" class="text-sm text-gray-500 ms-3 dark:text-gray-400">
           Public view
         </label>
       </form>
