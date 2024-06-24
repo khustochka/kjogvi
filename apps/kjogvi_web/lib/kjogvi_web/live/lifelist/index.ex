@@ -67,7 +67,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         %{assigns: assigns} = socket
       ) do
     {:noreply,
-     push_navigate(socket,
+     push_patch(socket,
        to:
          lifelist_path(
            assigns.filter,
