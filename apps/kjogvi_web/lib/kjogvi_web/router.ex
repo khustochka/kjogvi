@@ -36,7 +36,7 @@ defmodule KjogviWeb.Router do
   scope "/", KjogviWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/", HomeController, :home
   end
 
   # ADMIN ROUTES

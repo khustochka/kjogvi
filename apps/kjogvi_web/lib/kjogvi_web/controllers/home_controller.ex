@@ -1,4 +1,4 @@
-defmodule KjogviWeb.PageController do
+defmodule KjogviWeb.HomeController do
   use KjogviWeb, :controller
 
   @top_lifelist_num 5

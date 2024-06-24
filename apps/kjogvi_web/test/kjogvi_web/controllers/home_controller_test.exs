@@ -1,4 +1,4 @@
-defmodule KjogviWeb.PageControllerTest do
+defmodule KjogviWeb.HomeControllerTest do
   use KjogviWeb.ConnCase
 
   test "GET /", %{conn: conn} do
