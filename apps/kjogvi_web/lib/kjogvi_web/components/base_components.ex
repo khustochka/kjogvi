@@ -36,4 +36,36 @@ defmodule KjogviWeb.BaseComponents do
     </h1>
     """
   end
+
+  @doc """
+  Renders an header element, potentially with subheader.
+
+  `font_style` can be "semibold", "medium" or any other Tailwind class that combines with font-.
+  """
+  attr :font_style, :string, default: "semibold"
+  attr :class, :string, default: ""
+
+  slot :inner_block, required: true
+  slot :subheader
+
+  def header(assigns) do
+    ~H"""
+    <div class="mb-6">
+      <h1 class={[
+        "text-5xl",
+        "font-header",
+        "font-#{@font_style}",
+        "leading-none",
+        "text-zinc-600",
+        "mt-6",
+        @class
+      ]}>
+        <%= render_slot(@inner_block) %>
+      </h1>
+      <div :if={@subheader != []} class="mt-2 font-header font-semibold text-xl text-zinc-400">
+        <%= render_slot(@subheader) %>
+      </div>
+    </div>
+    """
+  end
 end
