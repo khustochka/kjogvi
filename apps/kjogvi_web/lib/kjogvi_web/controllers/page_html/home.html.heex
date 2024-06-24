@@ -13,13 +13,3 @@
     <:header><%= header %></:header>
   </.top_n_list>
 </div>
-
-<%!-- <div :for={two_lists <- @grouped_lists} class="md:flex md:gap-14">
-  <div :for={list1 <- two_lists} class="md:flex-grow md:basis-1/2">
-    <%= case list1 do %>
-      <% {header, url, %{lifelist: list, total: total}} -> %>
-        <.top_n_list list={list} total={total} href={url} class="mb-10">
-          <:header><%= header %></:header>
-        </.top_n_list>
-  </div>
-</div> --%>

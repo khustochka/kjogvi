@@ -8,13 +8,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   alias Kjogvi.Geo
 
   alias KjogviWeb.Format
+  alias KjogviWeb.Live.Lifelist.Presenter
 
   @impl true
   def mount(_params, _session, socket) do
-    {
-      :ok,
-      socket
-    }
+    {:ok, socket}
   end
 
   @impl true
@@ -267,38 +265,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  defp lifelist_title(%{year: nil, location: nil, month: nil}) do
-    "Lifelist"
-  end
-
-  defp lifelist_title(%{year: nil, location: nil, month: month}) do
-    "#{Timex.month_name(month)} Lifelist"
-  end
-
-  defp lifelist_title(%{year: year, location: nil, month: nil}) do
-    "#{year} Year List"
-  end
-
-  defp lifelist_title(%{year: year, location: nil, month: month}) do
-    "#{Timex.month_name(month)} #{year} List"
-  end
-
-  defp lifelist_title(%{year: nil, location: location, month: nil}) do
-    "#{location.name_en} Life List"
-  end
-
-  defp lifelist_title(%{year: nil, location: location, month: month}) do
-    "#{location.name_en} #{Timex.month_name(month)} List"
-  end
-
-  defp lifelist_title(%{year: year, location: location, month: nil}) do
-    "#{year} #{location.name_en} List"
-  end
-
-  defp lifelist_title(%{year: year, location: location, month: month}) do
-    "#{Timex.month_name(month)} #{year} #{location.name_en} List"
-  end
-
   # Logged in user
   defp derive_current_path_query(%{assigns: %{current_user: current_user} = assigns} = socket)
        when not is_nil(current_user) do
@@ -330,23 +296,26 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp derive_page_header(socket) do
     socket
-    |> assign(:page_header, lifelist_title(socket.assigns.filter))
+    |> assign(:page_header, Presenter.title(socket.assigns.filter))
   end
 
   defp derive_page_title(%{assigns: assigns} = socket) do
     socket
-    |> assign(:page_title, assigns[:page_header] || lifelist_title(assigns.filter))
+    |> assign(:page_title, assigns[:page_header] || Presenter.title(assigns.filter))
   end
 
+  # Month lists are not indexed
   defp derive_robots(%{assigns: %{month: month}} = socket) when not is_nil(month) do
     socket
     |> assign(:robots, [:noindex])
   end
 
+  # Lifelist for diff locations and world are index (# TODO: only countries)
   defp derive_robots(%{assigns: %{filter: %{year: nil}}} = socket) do
     socket
   end
 
+  # Empty lists are not indexed
   defp derive_robots(%{assigns: %{lifelist: []}} = socket) do
     socket
     |> assign(:robots, [:noindex])
