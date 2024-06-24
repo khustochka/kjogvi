@@ -15,12 +15,12 @@ defmodule Kjogvi.Birding.Lifelist do
   alias Kjogvi.Geo
   alias __MODULE__.Filter
 
+  # === MAIN API ===
+
   @doc """
   Generate lifelist based on provided filter options.
   """
-  def generate(filter \\ %Filter{})
-
-  def generate(%Filter{} = filter) do
+  def generate(filter \\ %Filter{}) do
     lifelist_query(filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
@@ -32,16 +32,10 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.reverse()
   end
 
-  def generate(filter) do
-    filter |> Filter.discombo!() |> generate()
-  end
-
   @doc """
   Get N newest species on the list based on provided filter options.
   """
-  def top(n, filter \\ %Filter{})
-
-  def top(n, %Filter{} = filter) when is_integer(n) and n > 0 do
+  def top(n, filter \\ %Filter{}) when is_integer(n) and n > 0 do
     lifelist_query(filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
@@ -54,16 +48,10 @@ defmodule Kjogvi.Birding.Lifelist do
     end)
   end
 
-  def top(n, filter) when is_integer(n) and n > 0 do
-    filter |> Filter.discombo!() |> then(&top(n, &1))
-  end
-
   @doc """
   Get all years in a list based on provided filter options.
   """
-  def years(filter \\ %Filter{})
-
-  def years(%Filter{} = filter) do
+  def years(filter \\ %Filter{}) do
     observations_filtered(filter)
     |> distinct(true)
     |> select([..., c], extract_year(c.observ_date))
@@ -71,16 +59,10 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.sort()
   end
 
-  def years(filter) do
-    filter |> Filter.discombo!() |> years()
-  end
-
   @doc """
   Get all country ids in a list based on provided filter options.
   """
-  def country_ids(filter \\ %Filter{})
-
-  def country_ids(%Filter{} = filter) do
+  def country_ids(filter \\ %Filter{}) do
     location_ids =
       observations_filtered(filter)
       |> distinct(true)
@@ -94,11 +76,12 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Repo.all()
   end
 
-  def country_ids(filter) do
-    filter |> Filter.discombo!() |> country_ids()
-  end
+  # ===
 
-  # ----------------
+  @doc """
+  Main entrypoint that converts filter into a query that returns observation matching it.
+  """
+  def observations_filtered(filter \\ %Filter{})
 
   def observations_filtered(%Filter{} = filter) do
     base = from([o, c] in observation_base())
@@ -123,6 +106,12 @@ defmodule Kjogvi.Birding.Lifelist do
       end
     end)
   end
+
+  def observations_filtered(filter) do
+    filter |> Filter.discombo!() |> observations_filtered()
+  end
+
+  # ----------------
 
   defp lifelist_query(filter) do
     from l in subquery(lifers_query(filter)),
