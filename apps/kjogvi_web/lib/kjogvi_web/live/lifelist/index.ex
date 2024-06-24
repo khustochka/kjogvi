@@ -18,13 +18,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    filter =
-      KjogviWeb.Live.Lifelist.Params.to_filter(socket.assigns.current_user, params)
-      |> case do
-        {:ok, filter} -> filter
-        {:error, _} -> raise Plug.BadRequestError
-      end
+  def handle_params(params, _url, %{assigns: assigns} = socket) do
+    filter = build_filter(assigns.current_user, params)
 
     lifelist = Birding.Lifelist.generate(filter)
 
@@ -268,6 +263,14 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </tbody>
     </table>
     """
+  end
+
+  defp build_filter(user, params) do
+    KjogviWeb.Live.Lifelist.Params.to_filter(user, params)
+    |> case do
+      {:ok, filter} -> filter
+      {:error, _} -> raise Plug.BadRequestError
+    end
   end
 
   # Logged in user
