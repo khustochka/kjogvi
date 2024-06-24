@@ -10,6 +10,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   alias KjogviWeb.Format
   alias KjogviWeb.Live.Lifelist.Presenter
 
+  @all_months 1..12
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}
@@ -32,6 +34,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       Birding.Lifelist.years(Map.delete(filter, :year))
       |> then(&Util.Enum.zip_inclusion(all_years, &1))
 
+    months =
+      Birding.Lifelist.months(Map.delete(filter, :months))
+      |> then(&Util.Enum.zip_inclusion(@all_months, &1))
+
     all_countries = Kjogvi.Geo.get_countries()
     country_ids = Birding.Lifelist.country_ids(Map.delete(filter, :location))
 
@@ -48,7 +54,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         filter: filter,
         total: length(lifelist),
         years: years,
-        months: 1..12,
+        months: months,
         locations: locations
       )
       |> derive_current_path_query()
@@ -177,19 +183,18 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           All months
         </.link>
       </li>
-      <%= for month <- @months do %>
+      <%= for {month, active} <- @months do %>
         <li>
           <%= if @filter.month == month do %>
             <em class="font-semibold not-italic"><%= Timex.month_shortname(month) %></em>
           <% else %>
-            <.link patch={
-              lifelist_path(
-                %{@filter | month: month},
-                Keyword.put(@current_path_query, :month, month)
-              )
-            }>
-              <%= Timex.month_shortname(month) %>
-            </.link>
+            <%= if active do %>
+              <.link patch={lifelist_path(%{@filter | month: month}, @current_path_query)}>
+                <%= Timex.month_shortname(month) %>
+              </.link>
+            <% else %>
+              <span class="text-gray-500"><%= Timex.month_shortname(month) %></span>
+            <% end %>
           <% end %>
         </li>
       <% end %>

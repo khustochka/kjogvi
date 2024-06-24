@@ -60,6 +60,17 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   @doc """
+  Get all months in a list based on provided filter options.
+  """
+  def months(filter \\ %Filter{}) do
+    observations_filtered(filter)
+    |> distinct(true)
+    |> select([..., c], extract_month(c.observ_date))
+    |> Repo.all()
+    |> Enum.sort()
+  end
+
+  @doc """
   Get all country ids in a list based on provided filter options.
   """
   def country_ids(filter \\ %Filter{}) do
