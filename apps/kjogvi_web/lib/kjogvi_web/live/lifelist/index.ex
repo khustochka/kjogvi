@@ -70,9 +70,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     <div class="flex gap-8 mt-4">
       <form
-        method="GET"
         id="motorless-form"
-        action={lifelist_path(@filter, @current_path_query)}
+        action=""
         phx-change={JS.exec("toggle_action", to: "#motorless-form")}
         toggle_action={
           JS.patch(
