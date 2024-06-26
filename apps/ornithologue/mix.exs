@@ -60,7 +60,7 @@ defmodule Ornithologue.MixProject do
       {:configparser_ex, "~> 4.0", only: :dev},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
-      {:ex_machina, "~> 2.7.0", only: :test},
+      {:ex_machina, "~> 2.8", only: :test},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end

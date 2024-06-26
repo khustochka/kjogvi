@@ -68,7 +68,7 @@ defmodule Kjogvi.MixProject do
       {:ornithologue, in_umbrella: true},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
-      {:ex_machina, "~> 2.7.0", only: :test},
+      {:ex_machina, "~> 2.8", only: :test},
       {:ecto_dev_logger, "~> 0.10", only: [:dev]},
       {:opentelemetry, "~> 1.4"},
       {:opentelemetry_api, "~> 1.2"},
