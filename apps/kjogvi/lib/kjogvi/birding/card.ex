@@ -30,6 +30,7 @@ defmodule Kjogvi.Birding.Card do
     field :ebird_id, :string
 
     has_many(:observations, Kjogvi.Birding.Observation)
+    belongs_to(:user, Kjogvi.Users.User)
 
     timestamps()
 

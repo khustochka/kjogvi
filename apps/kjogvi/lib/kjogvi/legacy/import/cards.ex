@@ -1,14 +1,15 @@
 defmodule Kjogvi.Legacy.Import.Cards do
   @moduledoc false
 
-  def import(columns_str, rows) do
+  def import(columns_str, rows, opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
+    user_id = opts[:user].id
 
     cards =
       for row <- rows do
         # time = DateTime.utc_now()
 
-        Enum.zip(columns, row)
+        Enum.zip([:user_id | columns], [user_id | row])
         |> Enum.into(%{})
         |> transform_keys
       end

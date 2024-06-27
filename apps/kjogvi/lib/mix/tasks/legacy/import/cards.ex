@@ -5,7 +5,11 @@ defmodule Mix.Tasks.Legacy.Import.Cards do
 
   @requirements ["app.start"]
 
-  def run(_args) do
-    Kjogvi.Legacy.Import.perform_import(:cards)
+  def run(args) do
+    user =
+      args[:user]
+      |> dbg()
+
+    Kjogvi.Legacy.Import.perform_import(:cards, user: user)
   end
 end

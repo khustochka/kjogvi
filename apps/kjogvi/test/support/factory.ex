@@ -12,6 +12,7 @@ defmodule Kjogvi.Factory do
 
   def card_factory do
     %Kjogvi.Birding.Card{
+      user: Kjogvi.UsersFixtures.user_fixture(),
       observ_date: "2023-08-29",
       effort_type: "INCIDENTAL",
       location: build(:location)

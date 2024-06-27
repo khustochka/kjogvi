@@ -3,7 +3,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
 
   import Ecto.Query
 
-  def import(columns_str, rows) do
+  def import(columns_str, rows, _opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
 
     locations =
