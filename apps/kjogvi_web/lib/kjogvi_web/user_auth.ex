@@ -126,6 +126,9 @@ defmodule KjogviWeb.UserAuth do
       on user_token.
       Redirects to login page if there's no logged user.
 
+    * `:ensure_admin` - Authenticates the user from the session,
+      and verifies that the user is an administrator.
+
     * `:redirect_if_user_is_authenticated` - Authenticates the user from the session.
       Redirects to signed_in_path if there's a logged user.
 
@@ -164,6 +167,23 @@ defmodule KjogviWeb.UserAuth do
 
       {:halt, socket}
     end
+  end
+
+  def on_mount(:ensure_admin, _params, session, socket) do
+    socket = mount_current_user(socket, session)
+
+    socket.assigns.current_user
+    |> then(fn user ->
+      if user && Kjogvi.Users.admin?(user) do
+        {:cont, socket}
+      else
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "Access denied")
+
+        {:halt, socket}
+      end
+    end)
   end
 
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
@@ -213,6 +233,22 @@ defmodule KjogviWeb.UserAuth do
       |> redirect(to: ~p"/users/log_in")
       |> halt()
     end
+  end
+
+  @doc """
+  Used for routes that require admin.
+  """
+  def require_admin(conn, _opts) do
+    conn.assigns[:current_user]
+    |> then(fn user ->
+      if user && Users.admin?(user) do
+        conn
+      else
+        conn
+        |> send_resp(:not_found, "Not found")
+        |> halt()
+      end
+    end)
   end
 
   defp put_token_in_session(conn, token) do

@@ -20,16 +20,18 @@ defmodule KjogviWeb.Live.Card.Index do
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
+  def handle_params(params, _url, %{assigns: assigns} = socket) do
     # TODO: validate page number; redirect to default if number is 1
     page =
       Map.get(params, "page", "1")
       |> String.to_integer()
 
+    cards = Birding.get_cards(assigns.current_user, %{page: page, page_size: @cards_per_page})
+
     {
       :noreply,
       socket
-      |> assign(:cards, Birding.get_cards(%{page: page, page_size: @cards_per_page}))
+      |> assign(:cards, cards)
     }
   end
 

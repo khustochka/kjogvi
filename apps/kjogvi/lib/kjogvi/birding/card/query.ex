@@ -18,6 +18,11 @@ defmodule Kjogvi.Birding.Card.Query do
     |> where([..., c], extract_month(c.observ_date) == ^month)
   end
 
+  def by_user(query, user) do
+    query
+    |> where([..., c], c.user_id == ^user.id)
+  end
+
   def motorless(query) do
     query
     |> where([..., c], c.motorless == true)

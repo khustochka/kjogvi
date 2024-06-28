@@ -10,27 +10,29 @@
         Cards
       </.link>
     </.admin_menu_item>
-    <.admin_menu_item>
-      <.link href={~p"/taxonomy"} class="no-underline hover:underline">
-        Taxonomy
-      </.link>
-    </.admin_menu_item>
-    <.admin_menu_item>
-      <.link href={~p"/admin/tasks"} class="no-underline hover:underline">
-        Admin tasks
-      </.link>
-    </.admin_menu_item>
-    <.admin_menu_item>
-      <.link href={~p"/dashboard"} class="no-underline hover:underline">
-        Live Dashboard
-      </.link>
-    </.admin_menu_item>
-    <%= Kjogvi.Config.with_dev_routes do %>
+    <%= if Kjogvi.Users.admin?(@current_user) do %>
       <.admin_menu_item>
-        <.link href={~p"/dev/mailbox"} class="no-underline hover:underline">
-          Dev Mailbox
+        <.link href={~p"/taxonomy"} class="no-underline hover:underline">
+          Taxonomy
         </.link>
       </.admin_menu_item>
+      <.admin_menu_item>
+        <.link href={~p"/admin/tasks"} class="no-underline hover:underline">
+          Admin tasks
+        </.link>
+      </.admin_menu_item>
+      <.admin_menu_item>
+        <.link href={~p"/dashboard"} class="no-underline hover:underline">
+          Live Dashboard
+        </.link>
+      </.admin_menu_item>
+      <%= Kjogvi.Config.with_dev_routes do %>
+        <.admin_menu_item>
+          <.link href={~p"/dev/mailbox"} class="no-underline hover:underline">
+            Dev Mailbox
+          </.link>
+        </.admin_menu_item>
+      <% end %>
     <% end %>
   </ul>
   <ul>

@@ -5,7 +5,8 @@ defmodule KjogviWeb.Live.Card.IndexTest do
   import Kjogvi.UsersFixtures
 
   setup %{conn: conn} do
-    %{conn: log_in_user(conn, user_fixture())}
+    user = user_fixture()
+    %{conn: log_in_user(conn, user), user: user}
   end
 
   test "renders with no cards", %{conn: conn} do
@@ -16,17 +17,17 @@ defmodule KjogviWeb.Live.Card.IndexTest do
            |> render()
   end
 
-  test "renders with cards present", %{conn: conn} do
-    insert(:card)
+  test "renders with cards present", %{conn: conn, user: user} do
+    insert(:card, user: user)
 
     {:ok, _index_live, html} = live(conn, ~p"/cards")
 
     assert html =~ "Winnipeg"
   end
 
-  test "pagination with multiple cards", %{conn: conn} do
+  test "pagination with multiple cards", %{conn: conn, user: user} do
     location = insert(:location)
-    insert_list(51, :card, location: location)
+    insert_list(51, :card, location: location, user: user)
 
     {:ok, _index_live, html} = live(conn, ~p"/cards")
 

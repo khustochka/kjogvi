@@ -12,6 +12,7 @@ defmodule Kjogvi.Users.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime_usec
+    field :roles, {:array, :string}
 
     timestamps(type: :utc_datetime_usec)
   end

@@ -21,10 +21,6 @@ defmodule KjogviWeb.Router do
     plug :fetch_current_user
   end
 
-  pipeline :admin do
-    plug :require_authenticated_user
-  end
-
   pipeline :lifelist do
     # plug :validate_lifelist_params
   end
@@ -39,14 +35,13 @@ defmodule KjogviWeb.Router do
     get "/", HomeController, :home
   end
 
-  # ADMIN ROUTES
+  # AUTHENTICATED USER ROUTES
 
   scope "/", KjogviWeb do
-    pipe_through :browser
-    pipe_through :admin
+    pipe_through [:browser, :require_authenticated_user]
 
-    live_session :admin_paths,
-      on_mount: [{KjogviWeb.UserAuth, :mount_current_user}] do
+    live_session :require_authenticated_user,
+      on_mount: [{KjogviWeb.UserAuth, :ensure_authenticated}] do
       live "/locations", Live.Location.Index, :index
       live "/locations/countries", Live.Country.Index, :index
 
@@ -54,25 +49,31 @@ defmodule KjogviWeb.Router do
       live "/cards/page/:page", Live.Card.Index, :index
       live "/cards/:id", Live.Card.Show, :show
 
-      live "/admin/tasks", Live.Admin.Tasks.Index, :index
-      post "/admin/tasks/legacy_import", Admin.TasksController, :legacy_import
+      live "/users/settings", UserSettingsLive, :edit
+      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
     end
   end
 
-  # MOUNTED APPS
+  # ADMIN ROUTES
 
   scope "/", KjogviWeb do
-    pipe_through :browser
-    pipe_through :admin
+    pipe_through [:browser, :require_admin]
+
+    live_session :admin_paths,
+      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}] do
+      live "/admin/tasks", Live.Admin.Tasks.Index, :index
+      post "/admin/tasks/legacy_import", Admin.TasksController, :legacy_import
+    end
 
     ornitho_web "/taxonomy",
       root_layout: {KjogviWeb.Layouts, :root},
       app_layout: {KjogviWeb.Layouts, :app},
-      on_mount: [{KjogviWeb.UserAuth, :mount_current_user}]
+      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}]
 
     live_dashboard "/dashboard",
       metrics: KjogviWeb.Telemetry,
-      env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY"]
+      env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY"],
+      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}]
   end
 
   # PUBLIC ROUTES
@@ -114,17 +115,6 @@ defmodule KjogviWeb.Router do
   end
 
   scope "/", KjogviWeb do
-    pipe_through [:browser, :require_authenticated_user]
-
-    live_session :require_authenticated_user,
-      on_mount: [{KjogviWeb.UserAuth, :ensure_authenticated}] do
-      live "/users/settings", UserSettingsLive, :edit
-
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
-    end
-  end
-
-  scope "/", KjogviWeb do
     pipe_through [:browser]
 
     delete "/users/log_out", UserSessionController, :delete
@@ -143,7 +133,7 @@ defmodule KjogviWeb.Router do
   # Enable Swoosh mailbox preview in development
   if Application.compile_env(:kjogvi_web, :dev_routes) do
     scope "/dev" do
-      pipe_through :browser
+      pipe_through [:browser, :require_admin]
 
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end

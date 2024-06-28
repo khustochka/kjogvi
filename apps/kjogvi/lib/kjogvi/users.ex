@@ -8,6 +8,8 @@ defmodule Kjogvi.Users do
 
   alias Kjogvi.Users.{User, UserToken, UserNotifier}
 
+  @admin_role "admin"
+
   ## Database getters
 
   @doc """
@@ -349,5 +351,21 @@ defmodule Kjogvi.Users do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
+  end
+
+  ## Roles
+
+  @doc """
+  String representation of admin role.
+  """
+  def admin_role do
+    @admin_role
+  end
+
+  @doc """
+  Returns true if user is an admin, false otherwise.
+  """
+  def admin?(user) do
+    @admin_role in user.roles
   end
 end
