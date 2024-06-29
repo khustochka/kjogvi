@@ -7,6 +7,12 @@ services:
       DATABASE_URL: postgres://kjogvi:kjogvi@database/kjogvi_prod
       DATABASE_ORNITHO_URL: postgres://kjogvi:kjogvi@database/ornithologue_prod
       PHX_PORT: 5040
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      ORNITHO_IMPORTER_S3_BUCKET: ${ORNITHO_IMPORTER_S3_BUCKET}
+      ORNITHO_IMPORTER_S3_REGION: ${ORNITHO_IMPORTER_S3_REGION}
+      LEGACY_URL: ${LEGACY_URL}
+      LEGACY_API_KEY: ${LEGACY_API_KEY}
     # env_file:
     #   - .env.docker
     # command: 
