@@ -178,3 +178,14 @@ if config_env() == :prod do
     url: System.get_env("LEGACY_URL"),
     api_key: System.get_env("LEGACY_API_KEY")
 end
+
+case config_env() do
+  :dev ->
+    config :kjogvi, :cache, enabled: System.get_env("DEV_CACHING") in ~w(true 1)
+
+  :prod ->
+    config :kjogvi, :cache, enabled: true
+
+  _ ->
+    nil
+end

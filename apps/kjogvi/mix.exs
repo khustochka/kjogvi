@@ -59,6 +59,7 @@ defmodule Kjogvi.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:ecto_psql_extras, "~> 0.8"},
       {:postgrex, ">= 0.0.0"},
+      {:cachex, "~> 3.6"},
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.16.9"},
       {:finch, "~> 0.13"},
