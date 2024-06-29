@@ -38,6 +38,14 @@ defmodule KjogviWeb.ConnCase do
   end
 
   @doc """
+  Setup helper that registers a "main user".
+  """
+  def register_main_user(context) do
+    Kjogvi.UsersFixtures.user_fixture(%{roles: ["admin"]})
+    context
+  end
+
+  @doc """
   Setup helper that registers and logs in users.
 
       setup :register_and_log_in_user
@@ -45,9 +53,9 @@ defmodule KjogviWeb.ConnCase do
   It stores an updated connection and a registered user in the
   test context.
   """
-  def register_and_log_in_user(%{conn: conn}) do
+  def register_and_log_in_user(%{conn: conn} = context) do
     user = Kjogvi.UsersFixtures.user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+    %{context | conn: log_in_user(conn, user), user: user}
   end
 
   @doc """

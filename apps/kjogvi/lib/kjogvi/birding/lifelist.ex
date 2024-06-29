@@ -20,8 +20,8 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Generate lifelist based on provided filter options.
   """
-  def generate(filter \\ %Filter{}) do
-    lifelist_query(filter)
+  def generate(user, filter \\ %Filter{}) do
+    lifelist_query(user, filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Repo.preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
@@ -35,8 +35,8 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get N newest species on the list based on provided filter options.
   """
-  def top(n, filter \\ %Filter{}) when is_integer(n) and n > 0 do
-    lifelist_query(filter)
+  def top(user, n, filter \\ %Filter{}) when is_integer(n) and n > 0 do
+    lifelist_query(user, filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Kjogvi.Birding.preload_taxa_and_species()
@@ -51,8 +51,8 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get all years in a list based on provided filter options.
   """
-  def years(filter \\ %Filter{}) do
-    observations_filtered(filter)
+  def years(user, filter \\ %Filter{}) do
+    observations_filtered(user, filter)
     |> distinct(true)
     |> select([..., c], extract_year(c.observ_date))
     |> Repo.all()
@@ -62,8 +62,8 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get all months in a list based on provided filter options.
   """
-  def months(filter \\ %Filter{}) do
-    observations_filtered(filter)
+  def months(user, filter \\ %Filter{}) do
+    observations_filtered(user, filter)
     |> distinct(true)
     |> select([..., c], extract_month(c.observ_date))
     |> Repo.all()
@@ -73,9 +73,9 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get all country ids in a list based on provided filter options.
   """
-  def country_ids(filter \\ %Filter{}) do
+  def country_ids(user, filter \\ %Filter{}) do
     location_ids =
-      observations_filtered(filter)
+      observations_filtered(user, filter)
       |> distinct(true)
       |> select([_o, c], [c.location_id])
 
@@ -92,10 +92,10 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Main entrypoint that converts filter into a query that returns observation matching it.
   """
-  def observations_filtered(filter \\ %Filter{})
+  def observations_filtered(user, filter \\ %Filter{})
 
-  def observations_filtered(%Filter{} = filter) do
-    base = from([o, c] in observation_base())
+  def observations_filtered(user, %Filter{} = filter) do
+    base = from([o, c] in observation_base(user))
 
     Map.from_struct(filter)
     |> Enum.reduce(base, fn filter, query ->
@@ -118,19 +118,19 @@ defmodule Kjogvi.Birding.Lifelist do
     end)
   end
 
-  def observations_filtered(filter) do
-    filter |> Filter.discombo!() |> observations_filtered()
+  def observations_filtered(user, filter) do
+    filter |> Filter.discombo!() |> then(&observations_filtered(user, &1))
   end
 
   # ----------------
 
-  defp lifelist_query(filter) do
-    from l in subquery(lifers_query(filter)),
+  defp lifelist_query(user, filter) do
+    from l in subquery(lifers_query(user, filter)),
       order_by: [asc: l.observ_date, asc_nulls_last: l.start_time, asc: l.id]
   end
 
-  defp lifers_query(filter) do
-    from [o, c] in observations_filtered(filter),
+  defp lifers_query(user, filter) do
+    from [o, c] in observations_filtered(user, filter),
       distinct: o.taxon_key,
       order_by: [asc: o.taxon_key, asc: c.observ_date, asc_nulls_last: c.start_time, asc: o.id],
       select: %{
@@ -143,10 +143,10 @@ defmodule Kjogvi.Birding.Lifelist do
       }
   end
 
-  defp observation_base do
+  defp observation_base(%{id: id} = _user) do
     from o in Observation,
       join: c in assoc(o, :card),
-      where: o.unreported == false
+      where: o.unreported == false and c.user_id == ^id
   end
 
   # TODO: extract this to be usable universally

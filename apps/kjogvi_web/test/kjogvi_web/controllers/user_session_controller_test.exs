@@ -3,6 +3,8 @@ defmodule KjogviWeb.UserSessionControllerTest do
 
   import Kjogvi.UsersFixtures
 
+  setup :register_main_user
+
   setup do
     %{user: user_fixture()}
   end

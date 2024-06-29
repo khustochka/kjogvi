@@ -83,6 +83,15 @@ defmodule Kjogvi.Users do
   end
 
   @doc """
+  Create a user (allows more attributes than registration).
+  """
+  def create_user(attrs) do
+    %User{}
+    |> User.creation_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for tracking user changes.
 
   ## Examples
@@ -367,5 +376,9 @@ defmodule Kjogvi.Users do
   """
   def admin?(user) do
     @admin_role in user.roles
+  end
+
+  def admins do
+    from u in User, where: ^admin_role() in u.roles
   end
 end

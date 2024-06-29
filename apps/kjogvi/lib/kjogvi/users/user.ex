@@ -47,6 +47,16 @@ defmodule Kjogvi.Users.User do
     |> validate_password(opts)
   end
 
+  @doc """
+  Changeset for creation.
+  """
+  def creation_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :password, :roles])
+    |> validate_email(opts)
+    |> validate_password(opts)
+  end
+
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])

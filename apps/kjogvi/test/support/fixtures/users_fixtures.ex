@@ -18,7 +18,7 @@ defmodule Kjogvi.UsersFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Kjogvi.Users.register_user()
+      |> Kjogvi.Users.create_user()
 
     user
   end

@@ -6,6 +6,8 @@ defmodule KjogviWeb.UserLoginLiveTest do
   import Phoenix.LiveViewTest
   import Kjogvi.UsersFixtures
 
+  setup :register_main_user
+
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/log_in")

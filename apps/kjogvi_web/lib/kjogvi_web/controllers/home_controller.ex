@@ -7,19 +7,22 @@ defmodule KjogviWeb.HomeController do
   require Integer
   alias Kjogvi.Birding
   alias KjogviWeb.Live
+  alias Kjogvi.Settings
 
   @spec home(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def home(conn, _params) do
+    user = Settings.main_user()
+
     primary_lists = [
       {
         "Last 5 lifers",
         lifelist_path(),
-        Birding.Lifelist.top(@top_lifelist_num)
+        Birding.Lifelist.top(user, @top_lifelist_num)
       },
       {
         Live.Lifelist.Presenter.title(year: 2024),
         lifelist_path(year: 2024),
-        Birding.Lifelist.top(@top_lifelist_num, year: 2024)
+        Birding.Lifelist.top(user, @top_lifelist_num, year: 2024)
       }
     ]
 
@@ -34,7 +37,7 @@ defmodule KjogviWeb.HomeController do
               {
                 Live.Lifelist.Presenter.title(location: loc),
                 lifelist_path(location: loc),
-                Birding.Lifelist.top(@top_lifelist_num, location: loc)
+                Birding.Lifelist.top(user, @top_lifelist_num, location: loc)
               }
             ]
         else

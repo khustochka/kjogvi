@@ -14,27 +14,33 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    {
+      :ok,
+      socket
+      |> assign(:user, Kjogvi.Settings.main_user())
+    }
   end
 
   @impl true
   def handle_params(params, _url, %{assigns: assigns} = socket) do
+    user = assigns.user
+
     filter = build_filter(assigns.current_user, params)
 
-    lifelist = Birding.Lifelist.generate(filter)
+    lifelist = Birding.Lifelist.generate(user, filter)
 
-    all_years = Birding.Lifelist.years()
+    all_years = Birding.Lifelist.years(user)
 
     years =
-      Birding.Lifelist.years(Map.delete(filter, :year))
+      Birding.Lifelist.years(user, Map.delete(filter, :year))
       |> then(&Util.Enum.zip_inclusion(all_years, &1))
 
     months =
-      Birding.Lifelist.months(Map.delete(filter, :months))
+      Birding.Lifelist.months(user, Map.delete(filter, :months))
       |> then(&Util.Enum.zip_inclusion(@all_months, &1))
 
     all_countries = Kjogvi.Geo.get_countries()
-    country_ids = Birding.Lifelist.country_ids(Map.delete(filter, :location))
+    country_ids = Birding.Lifelist.country_ids(user, Map.delete(filter, :location))
 
     locations =
       all_countries
@@ -44,7 +50,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       :noreply,
       socket
       |> assign(
-        public_view: derive_public_view(socket, params),
+        public_view: derive_public_view(user, assigns.current_user, params),
         lifelist: lifelist,
         filter: filter,
         total: length(lifelist),
@@ -74,7 +80,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
            Keyword.put(
              assigns.current_path_query,
              :public_view,
-             derive_public_view(socket, params)
+             derive_public_view(assigns.user, assigns.current_user, params)
            )
          )
      )}
@@ -95,7 +101,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </:subheader>
     </.header>
 
-    <div :if={@current_user} class="flex items-center mt-4">
+    <div :if={@current_user && @current_user.id == @user.id} class="flex items-center mt-4">
       <form action="" phx-change="public_toggle">
         <input type="hidden" name="public_view" />
         <input
@@ -325,8 +331,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     socket
   end
 
-  defp derive_public_view(socket, params) do
-    is_nil(socket.assigns.current_user) || params["public_view"] == "true"
+  defp derive_public_view(%{id: user_id} = _user, current_user, params) do
+    is_nil(current_user) || (current_user.id == user_id && params["public_view"] == "true")
   end
 
   defp header_style(%{year: nil, location: nil}) do

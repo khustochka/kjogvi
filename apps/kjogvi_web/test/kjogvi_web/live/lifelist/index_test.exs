@@ -3,6 +3,8 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   import Phoenix.LiveViewTest
 
+  setup :register_main_user
+
   def get_number_of_species(html) do
     {:ok, doc} = Floki.parse_document(html)
 
@@ -17,7 +19,11 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   test "renders with species observation", %{conn: conn} do
     taxon = Ornitho.Factory.insert(:taxon, category: "species")
-    insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    insert(:observation,
+      taxon_key: Ornitho.Schema.Taxon.key(taxon),
+      card: insert(:main_user_card)
+    )
 
     {:ok, _index_live, html} = live(conn, ~p"/lifelist")
     assert get_number_of_species(html) == 1
@@ -25,7 +31,11 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   test "renders with spuh observation", %{conn: conn} do
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
-    insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    insert(:observation,
+      taxon_key: Ornitho.Schema.Taxon.key(taxon),
+      card: insert(:main_user_card)
+    )
 
     {:ok, _index_live, html} = live(conn, ~p"/lifelist")
     assert get_number_of_species(html) == 0
@@ -35,7 +45,11 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     book = Ornitho.Factory.insert(:book)
     species = Ornitho.Factory.insert(:taxon, book: book, category: "species")
     taxon = Ornitho.Factory.insert(:taxon, book: book, category: "issf", parent_species: species)
-    insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    insert(:observation,
+      taxon_key: Ornitho.Schema.Taxon.key(taxon),
+      card: insert(:main_user_card)
+    )
 
     {:ok, _index_live, html} = live(conn, ~p"/lifelist")
     assert get_number_of_species(html) == 1
@@ -45,9 +59,9 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     book = Ornitho.Factory.insert(:book)
     species1 = Ornitho.Factory.insert(:taxon, book: book, category: "species")
     species2 = Ornitho.Factory.insert(:taxon, book: book, category: "species")
-    card1 = insert(:card, observ_date: ~D[2023-06-07])
+    card1 = insert(:main_user_card, observ_date: ~D[2023-06-07])
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(species1))
-    card2 = insert(:card, observ_date: ~D[2022-04-03])
+    card2 = insert(:main_user_card, observ_date: ~D[2022-04-03])
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(species2))
 
     {:ok, _index_live, html} = live(conn, ~p"/lifelist/2022")
@@ -77,7 +91,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   test "non-empty year list is indexed by robots", %{conn: conn} do
     species = Ornitho.Factory.insert(:taxon, category: "species")
     card = insert(:card, observ_date: ~D[2023-06-07])
-    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(species))
+
+    insert(:observation,
+      card: card,
+      taxon_key: Ornitho.Schema.Taxon.key(species),
+      card: insert(:main_user_card)
+    )
+
     conn = get(conn, "/lifelist/2023")
     resp = html_response(conn, 200)
 
@@ -98,7 +118,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   @tag skip: "False negative test (passing when it should fail)"
   test "noindex disappears when navigating from empty to non-empty year list", %{conn: conn} do
     species = Ornitho.Factory.insert(:taxon, category: "species")
-    card = insert(:card, observ_date: ~D[2023-06-07])
+    card = insert(:main_user_card, observ_date: ~D[2023-06-07])
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(species))
 
     {:ok, index_live, doc} = live(conn, ~p"/lifelist/2022")
@@ -119,10 +139,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     taxon1 = Ornitho.Factory.insert(:taxon)
-    card1 = insert(:card, location: brovary)
+    card1 = insert(:main_user_card, location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     taxon2 = Ornitho.Factory.insert(:taxon)
-    card2 = insert(:card, location: usa)
+    card2 = insert(:main_user_card, location: usa)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     conn = get(conn, "/lifelist/ukraine")
@@ -137,13 +157,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     taxon1 = Ornitho.Factory.insert(:taxon)
-    card1 = insert(:card, observ_date: ~D"2022-11-18", location: brovary)
+    card1 = insert(:main_user_card, observ_date: ~D"2022-11-18", location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     taxon2 = Ornitho.Factory.insert(:taxon)
-    card2 = insert(:card, observ_date: ~D"2023-07-16", location: brovary)
+    card2 = insert(:main_user_card, observ_date: ~D"2023-07-16", location: brovary)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
     taxon3 = Ornitho.Factory.insert(:taxon)
-    card2 = insert(:card, observ_date: ~D"2022-07-16", location: usa)
+    card2 = insert(:main_user_card, observ_date: ~D"2022-07-16", location: usa)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
     conn = get(conn, "/lifelist/2022/ukraine")
@@ -163,10 +183,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     taxon1 = Ornitho.Factory.insert(:taxon)
-    card1 = insert(:card, observ_date: ~D"2022-11-18", location: brovary)
+    card1 = insert(:main_user_card, observ_date: ~D"2022-11-18", location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     taxon2 = Ornitho.Factory.insert(:taxon)
-    card2 = insert(:card, observ_date: ~D"2023-07-16", location: brovary)
+    card2 = insert(:main_user_card, observ_date: ~D"2023-07-16", location: brovary)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     conn = get(conn, "/lifelist")
