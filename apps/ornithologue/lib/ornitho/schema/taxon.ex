@@ -12,10 +12,6 @@ defmodule Ornitho.Schema.Taxon do
 
   alias Ornitho.Schema.{Book, Taxon}
 
-  if Code.ensure_loaded?(Phoenix.Param) do
-    @derive {Phoenix.Param, key: :code}
-  end
-
   @required_fields [:name_sci, :name_en, :code, :category, :sort_order, :book_id]
   @default_order [asc: :sort_order]
 
