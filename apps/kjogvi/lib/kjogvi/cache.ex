@@ -3,7 +3,26 @@ defmodule Kjogvi.Cache do
   Caching front end.
   """
 
+  use Supervisor
+
   @cache_name :kjogvi_cache
+
+  def start_link(arg) do
+    if config()[:enabled] do
+      Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
+    else
+      :ignore
+    end
+  end
+
+  @impl true
+  def init(_arg) do
+    children = [
+      {Cachex, name: @cache_name}
+    ]
+
+    Supervisor.init(children, strategy: :one_for_one)
+  end
 
   def get(key, opts \\ []) do
     underlying_get(config(), key, opts)

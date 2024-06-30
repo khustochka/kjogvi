@@ -13,6 +13,9 @@ defmodule Kjogvi.Application do
     Kjogvi.Opentelemetry.setup()
 
     children = [
+      Kjogvi.Repo,
+      Kjogvi.OrnithoRepo,
+      Kjogvi.Cache,
       {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Kjogvi.PubSub},
       # Start the Finch HTTP client for sending emails
@@ -20,15 +23,6 @@ defmodule Kjogvi.Application do
       # Start a worker by calling: Kjogvi.Worker.start_link(arg)
       # {Kjogvi.Worker, arg}
     ]
-
-    children =
-      if Application.get_env(:kjogvi, :cache)[:enabled] do
-        [{Cachex, name: :kjogvi_cache} | children]
-      else
-        children
-      end
-
-    children = [Kjogvi.Repo, Kjogvi.OrnithoRepo | children]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Kjogvi.Supervisor)
   end
