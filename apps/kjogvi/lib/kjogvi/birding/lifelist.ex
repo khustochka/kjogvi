@@ -14,9 +14,15 @@ defmodule Kjogvi.Birding.Lifelist do
   alias Kjogvi.Birding.Observation
   alias Kjogvi.Geo
   alias __MODULE__.Filter
+  alias __MODULE__.Result
+
+  @type user() :: %Kjogvi.Users.User{} | %{id: integer()}
+  @type filter() :: %Filter{} | keyword()
 
   # === MAIN API ===
 
+  @spec generate(user()) :: Result.t()
+  @spec generate(user(), filter()) :: Result.t()
   @doc """
   Generate lifelist based on provided filter options.
   """
@@ -30,8 +36,18 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.filter(& &1.species)
     |> Enum.uniq_by(& &1.species.code)
     |> Enum.reverse()
+    |> then(fn list ->
+      %Result{
+        user: user,
+        filter: filter,
+        list: list,
+        total: length(list)
+      }
+    end)
   end
 
+  @spec top(user(), integer()) :: Result.t()
+  @spec top(user(), integer(), filter()) :: Result.t()
   @doc """
   Get N newest species on the list based on provided filter options.
   """
@@ -43,8 +59,13 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.filter(& &1.species)
     |> Enum.uniq_by(& &1.species.code)
     |> Enum.reverse()
-    |> then(fn lifelist ->
-      %{lifelist: Enum.take(lifelist, n), total: length(lifelist)}
+    |> then(fn list ->
+      %Result{
+        user: user,
+        filter: filter,
+        list: Enum.take(list, n),
+        total: length(list)
+      }
     end)
   end
 

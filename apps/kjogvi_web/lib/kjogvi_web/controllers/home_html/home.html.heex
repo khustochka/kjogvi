@@ -4,10 +4,10 @@
 
 <div class="md:grid md:grid-cols-2 md:gap-x-14 md:gap-y-8">
   <.top_n_list
-    :for={{header, url, %{lifelist: list, total: total}} <- @lists}
-    list={list}
-    total={total}
-    href={url}
+    :for={{header, lifelist} <- @lists}
+    list={lifelist.list}
+    total={lifelist.total}
+    href={lifelist_path(lifelist.filter)}
     class="mb-8 md:mb-0"
   >
     <:header><%= header %></:header>

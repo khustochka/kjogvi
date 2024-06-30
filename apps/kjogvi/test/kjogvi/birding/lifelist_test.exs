@@ -47,7 +47,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       result = Kjogvi.Birding.Lifelist.generate(user_fixture())
-      assert result == []
+      assert result.list == []
     end
 
     test "includes species observation" do
@@ -55,7 +55,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       result = Kjogvi.Birding.Lifelist.generate(obs.card.user)
-      assert hd(result).species.name_sci == taxon.name_sci
+      assert hd(result.list).species.name_sci == taxon.name_sci
     end
 
     test "includes subspecies observation" do
@@ -68,7 +68,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       result = Kjogvi.Birding.Lifelist.generate(obs.card.user)
-      assert hd(result).species.name_sci == species.name_sci
+      assert hd(result.list).species.name_sci == species.name_sci
     end
 
     test "uses subspecies observation date if it is earlier than the full species" do
@@ -85,8 +85,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(species))
 
       result = Kjogvi.Birding.Lifelist.generate(user)
-      assert length(result)
-      assert hd(result).observ_date == card1.observ_date
+      assert length(result.list)
+      assert hd(result.list).observ_date == card1.observ_date
     end
 
     test "does not include spuh observation" do
@@ -94,7 +94,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       result = Kjogvi.Birding.Lifelist.generate(obs.card.user)
-      assert result == []
+      assert result.list == []
     end
 
     test "filtered by year" do
@@ -107,7 +107,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(user, year: 2022)
-      assert length(result) == 1
+      assert length(result.list) == 1
     end
 
     test "filtered by missing year" do
@@ -120,7 +120,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(user, year: 2005)
-      assert result == []
+      assert result.list == []
     end
 
     test "filtered by country" do
@@ -137,7 +137,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(user, location: ukraine)
-      assert length(result) == 1
+      assert length(result.list) == 1
     end
 
     test "filtered by location" do
@@ -154,7 +154,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(user, location: brovary)
-      assert length(result) == 1
+      assert length(result.list) == 1
     end
 
     test "filtered by year and country" do
@@ -174,7 +174,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
       result = Kjogvi.Birding.Lifelist.generate(user, location: ukraine, year: 2022)
-      assert length(result) == 1
+      assert length(result.list) == 1
     end
 
     test "filtered by special location" do
@@ -209,7 +209,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
       result = Kjogvi.Birding.Lifelist.generate(user, location: locus_5mr)
-      assert length(result) == 2
+      assert length(result.list) == 2
     end
   end
 end

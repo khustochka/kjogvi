@@ -53,7 +53,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         public_view: derive_public_view(user, assigns.current_user, params),
         lifelist: lifelist,
         filter: filter,
-        total: length(lifelist),
         years: years,
         months: months,
         locations: locations
@@ -231,9 +230,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         </tr>
       </thead>
       <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 leading-snug text-zinc-700">
-        <%= for {lifer, i} <- Enum.with_index(@lifelist) do %>
+        <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
           <tr>
-            <td class="p-0 py-4 pr-6 text-right"><%= @total - i %>.</td>
+            <td class="p-0 py-4 pr-6 text-right"><%= @lifelist.total - i %>.</td>
             <td class="p-0 py-4 pr-6">
               <strong class="font-bold"><%= lifer.species.name_en %></strong>
               <i class="whitespace-nowrap"><%= lifer.species.name_sci %></i>
@@ -311,7 +310,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   # Month lists are not indexed
-  defp derive_robots(%{assigns: %{month: month}} = socket) when not is_nil(month) do
+  defp derive_robots(%{assigns: %{filter: %{month: month}}} = socket) when not is_nil(month) do
     socket
     |> assign(:robots, [:noindex])
   end
@@ -322,7 +321,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   # Empty lists are not indexed
-  defp derive_robots(%{assigns: %{lifelist: []}} = socket) do
+  defp derive_robots(%{assigns: %{lifelist: %{list: []}}} = socket) do
     socket
     |> assign(:robots, [:noindex])
   end
