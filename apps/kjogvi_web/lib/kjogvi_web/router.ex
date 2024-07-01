@@ -37,20 +37,20 @@ defmodule KjogviWeb.Router do
 
   # AUTHENTICATED USER ROUTES
 
-  scope "/", KjogviWeb do
+  scope "/my", KjogviWeb.Live do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
       on_mount: [{KjogviWeb.UserAuth, :ensure_authenticated}] do
-      live "/locations", Live.Location.Index, :index
-      live "/locations/countries", Live.Country.Index, :index
+      live "/locations", My.Locations.Index, :index
+      live "/locations/countries", My.Countries.Index, :index
 
-      live "/cards", Live.Card.Index, :index
-      live "/cards/page/:page", Live.Card.Index, :index
-      live "/cards/:id", Live.Card.Show, :show
+      live "/cards", My.Cards.Index, :index
+      live "/cards/page/:page", My.Cards.Index, :index
+      live "/cards/:id", My.Cards.Show, :show
 
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+      live "/account/settings", My.Account.Settings, :edit
+      live "/account/settings/confirm_email/:token", My.Account.Settings, :confirm_email
     end
   end
 

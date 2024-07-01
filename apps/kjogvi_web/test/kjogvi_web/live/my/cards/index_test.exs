@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Card.IndexTest do
+defmodule KjogviWeb.Live.My.Cards.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -10,7 +10,7 @@ defmodule KjogviWeb.Live.Card.IndexTest do
   end
 
   test "renders with no cards", %{conn: conn} do
-    {:ok, index_live, _html} = live(conn, ~p"/cards")
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
 
     assert index_live
            |> element("h1", "Cards")
@@ -20,7 +20,7 @@ defmodule KjogviWeb.Live.Card.IndexTest do
   test "renders with cards present", %{conn: conn, user: user} do
     insert(:card, user: user)
 
-    {:ok, _index_live, html} = live(conn, ~p"/cards")
+    {:ok, _index_live, html} = live(conn, ~p"/my/cards")
 
     assert html =~ "Winnipeg"
   end
@@ -29,7 +29,7 @@ defmodule KjogviWeb.Live.Card.IndexTest do
     location = insert(:location)
     insert_list(51, :card, location: location, user: user)
 
-    {:ok, _index_live, html} = live(conn, ~p"/cards")
+    {:ok, _index_live, html} = live(conn, ~p"/my/cards")
 
     assert html =~ "/cards/page/2"
   end

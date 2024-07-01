@@ -1,4 +1,6 @@
-defmodule KjogviWeb.UserSettingsLive do
+defmodule KjogviWeb.Live.My.Account.Settings do
+  @moduledoc false
+
   use KjogviWeb, :live_view
 
   alias Kjogvi.Users
@@ -90,7 +92,7 @@ defmodule KjogviWeb.UserSettingsLive do
           put_flash(socket, :error, "Email change link is invalid or it has expired.")
       end
 
-    {:ok, push_navigate(socket, to: ~p"/users/settings")}
+    {:ok, push_navigate(socket, to: ~p"/my/account/settings")}
   end
 
   def mount(_params, _session, socket) do
@@ -131,7 +133,7 @@ defmodule KjogviWeb.UserSettingsLive do
         Users.deliver_user_update_email_instructions(
           applied_user,
           user.email,
-          &url(~p"/users/settings/confirm_email/#{&1}")
+          &url(~p"/my/account/settings/confirm_email/#{&1}")
         )
 
         info = "A link to confirm your email change has been sent to the new address."

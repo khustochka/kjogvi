@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Country.Index do
+defmodule KjogviWeb.Live.My.Countries.Index do
   @moduledoc false
 
   use KjogviWeb, :live_view
@@ -28,8 +28,8 @@ defmodule KjogviWeb.Live.Country.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <.link patch={~p{/locations/countries}}>Countries</.link>
-    <.link patch={~p{/locations}}>Locations</.link>
+    <.link patch={~p{/my/locations/countries}}>Countries</.link>
+    <.link patch={~p{/my/locations}}>Locations</.link>
 
     <.header_single>
       Countries

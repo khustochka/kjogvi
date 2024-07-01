@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Card.ShowTest do
+defmodule KjogviWeb.Live.My.Cards.ShowTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -12,7 +12,7 @@ defmodule KjogviWeb.Live.Card.ShowTest do
   test "renders with no observations", %{conn: conn, user: user} do
     card = insert(:card, user: user)
 
-    {:ok, _show_live, html} = live(conn, ~p"/cards/#{card.id}")
+    {:ok, _show_live, html} = live(conn, ~p"/my/cards/#{card.id}")
 
     assert html =~ "Card ##{card.id}"
     assert html =~ "This card has no observations."
@@ -23,7 +23,7 @@ defmodule KjogviWeb.Live.Card.ShowTest do
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, _show_live, html} = live(conn, ~p"/cards/#{card.id}")
+    {:ok, _show_live, html} = live(conn, ~p"/my/cards/#{card.id}")
 
     assert html =~ "Card ##{card.id}"
   end
@@ -34,7 +34,7 @@ defmodule KjogviWeb.Live.Card.ShowTest do
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
     assert_raise Ecto.NoResultsError, fn ->
-      live(conn, ~p"/cards/#{card.id}")
+      live(conn, ~p"/my/cards/#{card.id}")
     end
   end
 end

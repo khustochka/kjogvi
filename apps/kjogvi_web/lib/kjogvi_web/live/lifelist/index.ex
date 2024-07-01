@@ -251,7 +251,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
               <% end %>
             </td>
             <td :if={!@public_view} class="p-0 py-4 pr-6 text-center">
-              <.link navigate={~p"/cards/#{lifer.card_id}"}>
+              <.link navigate={~p"/my/cards/#{lifer.card_id}"}>
                 <.icon name="hero-clipboard-document-list" class="w-[18px]" />
               </.link>
             </td>

@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Card.Show do
+defmodule KjogviWeb.Live.My.Cards.Show do
   @moduledoc false
 
   use KjogviWeb, :live_view

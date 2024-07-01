@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Location.Index do
+defmodule KjogviWeb.Live.My.Locations.Index do
   @moduledoc false
 
   use KjogviWeb, :live_view
@@ -35,8 +35,8 @@ defmodule KjogviWeb.Live.Location.Index do
   def render(assigns) do
     ~H"""
     <%!-- FIXME: Extract to partial --%>
-    <.link patch={~p{/locations/countries}}>Countries</.link>
-    <.link patch={~p{/locations}}>Locations</.link>
+    <.link patch={~p{/my/locations/countries}}>Countries</.link>
+    <.link patch={~p{/my/locations}}>Locations</.link>
 
     <.header_single>
       Locations

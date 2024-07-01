@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Card.Index do
+defmodule KjogviWeb.Live.My.Cards.Index do
   @moduledoc false
 
   use KjogviWeb, :live_view
@@ -44,7 +44,7 @@ defmodule KjogviWeb.Live.Card.Index do
 
     <CoreComponents.table id="cards" rows={@cards}>
       <:col :let={card} label="id">
-        <.link navigate={~p"/cards/#{card.id}"}><%= card.id %></.link>
+        <.link navigate={~p"/my/cards/#{card.id}"}><%= card.id %></.link>
       </:col>
       <:col :let={card} label="Location">
         <%= Geo.Location.long_name(card.location) %>
@@ -70,8 +70,8 @@ defmodule KjogviWeb.Live.Card.Index do
 
   defp paginated_card_path(_conn, _action, page, _params) do
     case page do
-      1 -> ~p"/cards"
-      n -> ~p"/cards/page/#{n}"
+      1 -> ~p"/my/cards"
+      n -> ~p"/my/cards/page/#{n}"
     end
   end
 end

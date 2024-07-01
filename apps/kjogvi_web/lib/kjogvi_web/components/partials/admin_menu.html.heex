@@ -1,12 +1,12 @@
 <div :if={@current_user} class="md:flex justify-between items-center leading-7 md:leading-6">
   <ul>
     <.admin_menu_item>
-      <.link href={~p"/locations"} class="no-underline hover:underline">
+      <.link href={~p"/my/locations"} class="no-underline hover:underline">
         Locations
       </.link>
     </.admin_menu_item>
     <.admin_menu_item>
-      <.link href={~p"/cards"} class="no-underline hover:underline">
+      <.link href={~p"/my/cards"} class="no-underline hover:underline">
         Cards
       </.link>
     </.admin_menu_item>
@@ -38,7 +38,7 @@
   <ul>
     <.admin_menu_item>
       <.link
-        href={~p"/users/settings"}
+        href={~p"/my/account/settings"}
         class="text-[0.94rem] text-zinc-200 md:text-[0.9rem] underline"
       >
         <%= @current_user.email %>
