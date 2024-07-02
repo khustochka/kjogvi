@@ -21,6 +21,10 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
     motorless: [
       type: :boolean,
       default: false
+    ],
+    exclude_heard_only: [
+      type: :boolean,
+      default: false
     ]
     # public_view: [
     #   type: :boolean,

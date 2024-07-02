@@ -68,6 +68,14 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
+  defp add_param(acc, {"exclude_heard_only", exclude_heard_only}, _opts) do
+    if exclude_heard_only == "true" do
+      add_success(acc, {:exclude_heard_only, true})
+    else
+      acc
+    end
+  end
+
   defp add_param(acc, {_, _}, _opts) do
     acc
   end

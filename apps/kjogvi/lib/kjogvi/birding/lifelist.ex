@@ -133,6 +133,9 @@ defmodule Kjogvi.Birding.Lifelist do
         {:motorless, motorless} when motorless == true ->
           Card.Query.motorless(query)
 
+        {:exclude_heard_only, exclude_heard_only} when exclude_heard_only == true ->
+          Card.Query.exclude_heard_only(query)
+
         _ ->
           query
       end

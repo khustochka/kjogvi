@@ -97,6 +97,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <% else %>
           &nbsp;
         <% end %>
+        <%= if @filter.exclude_heard_only do %>
+          &bull; Heard only excluded
+        <% else %>
+          &nbsp;
+        <% end %>
       </:subheader>
     </.header>
 
@@ -116,6 +121,27 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         </label>
       </form>
     </div>
+
+    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
+      <li class="whitespace-nowrap">
+        <em :if={!@filter.exclude_heard_only} class="font-semibold not-italic">Include all</em>
+        <.link
+          :if={@filter.exclude_heard_only}
+          patch={lifelist_path(%{@filter | exclude_heard_only: false}, @current_path_query)}
+        >
+          Include all
+        </.link>
+      </li>
+      <li class="whitespace-nowrap">
+        <em :if={@filter.exclude_heard_only} class="font-semibold not-italic">Exclude heard only</em>
+        <.link
+          :if={!@filter.exclude_heard_only}
+          patch={lifelist_path(%{@filter | exclude_heard_only: true}, @current_path_query)}
+        >
+          Exclude heard only
+        </.link>
+      </li>
+    </ul>
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
