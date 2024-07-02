@@ -24,19 +24,19 @@ if db_user do
 end
 
 config :kjogvi, Kjogvi.OrnithoRepo,
-  hostname: System.get_env("ORNITHO_DATABASE_HOST", "localhost"),
-  port: System.get_env("ORNITHO_DATABASE_PORT"),
-  password: System.get_env("ORNITHO_DATABASE_PASSWORD"),
+  hostname: System.get_env("DATABASE_ORNITHO_HOST", "localhost"),
+  port: System.get_env("DATABASE_ORNITHO_PORT"),
+  password: System.get_env("DATABASE_ORNITHO_PASSWORD"),
   database:
     System.get_env(
-      "ORNITHO_DATABASE_NAME",
+      "DATABASE_ORNITHO_NAME",
       "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}"
     ),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
 # nil username fails, no username uses the current user
-ornitho_db_user = System.get_env("ORNITHO_DATABASE_USER")
+ornitho_db_user = System.get_env("DATABASE_ORNITHO_USER")
 
 if ornitho_db_user do
   config :kjogvi, Kjogvi.OrnithoRepo, username: ornitho_db_user

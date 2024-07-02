@@ -14,9 +14,9 @@ services:
       DATABASE_HOST: db
       DATABASE_USER: kjogvi
       DATABASE_PASSWORD: kjogvi
-      ORNITHO_DATABASE_HOST: db
-      ORNITHO_DATABASE_USER: kjogvi
-      ORNITHO_DATABASE_PASSWORD: kjogvi
+      DATABASE_ORNITHO_HOST: db
+      DATABASE_ORNITHO_USER: kjogvi
+      DATABASE_ORNITHO_PASSWORD: kjogvi
 
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
