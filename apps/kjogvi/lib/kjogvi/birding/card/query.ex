@@ -28,12 +28,6 @@ defmodule Kjogvi.Birding.Card.Query do
     |> where([..., c], c.motorless == true)
   end
 
-  # FIXME: this belongs to Observation
-  def exclude_heard_only(query) do
-    query
-    |> where([..., o, _], o.voice == false)
-  end
-
   def by_location_with_descendants(query, %{location_type: "special", id: id}) do
     specials_ids =
       from("special_locations")

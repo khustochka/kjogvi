@@ -134,7 +134,9 @@ defmodule Kjogvi.Birding.Lifelist do
           Card.Query.motorless(query)
 
         {:exclude_heard_only, exclude_heard_only} when exclude_heard_only == true ->
-          Card.Query.exclude_heard_only(query)
+          # FIXME: move to Observation.Query ?
+          query
+          |> where([observation: o], o.voice == false)
 
         _ ->
           query
@@ -169,7 +171,9 @@ defmodule Kjogvi.Birding.Lifelist do
 
   defp observation_base(%{id: id} = _user) do
     from o in Observation,
+      as: :observation,
       join: c in assoc(o, :card),
+      as: :card,
       where: o.unreported == false and c.user_id == ^id
   end
 
