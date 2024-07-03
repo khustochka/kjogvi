@@ -3,12 +3,12 @@ defmodule Kjogvi.Config do
   Kjogvi configuration reader.
   """
 
-  # def allow_user_registration do
-  #   Application.get_env(:kjogvi, :allow_user_registration, false)
+  # def multiuser do
+  #   Application.get_env(:kjogvi, :multiuser, false)
   # end
 
-  defmacro with_user_registration(do: body) do
-    if Application.get_env(:kjogvi, :allow_user_registration, false) do
+  defmacro with_multiuser(do: body) do
+    if Application.get_env(:kjogvi, :multiuser, false) do
       quote do
         unquote(body)
       end

@@ -104,7 +104,7 @@ defmodule KjogviWeb.Router do
       on_mount: [{KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/users/log_in", UserLoginLive, :new
 
-      Kjogvi.Config.with_user_registration do
+      Kjogvi.Config.with_multiuser do
         live "/users/register", UserRegistrationLive, :new
         live "/users/reset_password", UserForgotPasswordLive, :new
         live "/users/reset_password/:token", UserResetPasswordLive, :edit
@@ -119,7 +119,7 @@ defmodule KjogviWeb.Router do
 
     delete "/users/log_out", UserSessionController, :delete
 
-    Kjogvi.Config.with_user_registration do
+    Kjogvi.Config.with_multiuser do
       live_session :current_user,
         on_mount: [{KjogviWeb.UserAuth, :mount_current_user}] do
         live "/users/confirm/:token", UserConfirmationLive, :edit

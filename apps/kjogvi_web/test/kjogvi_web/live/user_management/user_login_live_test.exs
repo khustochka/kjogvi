@@ -61,7 +61,7 @@ defmodule KjogviWeb.UserLoginLiveTest do
     end
   end
 
-  Kjogvi.Config.with_user_registration do
+  Kjogvi.Config.with_multiuser do
     describe "login navigation" do
       test "redirects to registration page when the Register button is clicked", %{conn: conn} do
         {:ok, lv, _html} = live(conn, ~p"/users/log_in")

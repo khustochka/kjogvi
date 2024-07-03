@@ -1,5 +1,5 @@
 <ul class="flex justify-center py-0.5">
-  <%= Kjogvi.Config.with_user_registration do %>
+  <%= Kjogvi.Config.with_multiuser do %>
     <.admin_menu_item>
       <.link href={~p"/users/register"} class="no-underline hover:underline">
         Register

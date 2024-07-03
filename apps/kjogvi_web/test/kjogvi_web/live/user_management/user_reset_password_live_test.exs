@@ -1,6 +1,6 @@
 require Kjogvi.Config
 
-Kjogvi.Config.with_user_registration do
+Kjogvi.Config.with_multiuser do
   defmodule KjogviWeb.UserResetPasswordLiveTest do
     use KjogviWeb.ConnCase, async: true
 

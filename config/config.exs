@@ -86,7 +86,7 @@ config :ornithologue, Ornitho.StreamImporter,
 
 # KJOGVI
 
-config :kjogvi, allow_user_registration: false
+config :kjogvi, multiuser: false
 
 config :kjogvi, :cache, enabled: false
 

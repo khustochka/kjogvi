@@ -9,7 +9,7 @@ defmodule KjogviWeb.UserLoginLive do
       <CoreComponents.header class="text-center">
         Log in to account
         <:subtitle>
-          <%= Kjogvi.Config.with_user_registration do %>
+          <%= Kjogvi.Config.with_multiuser do %>
             Don't have an account?
             <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
               Sign up
@@ -30,7 +30,7 @@ defmodule KjogviWeb.UserLoginLive do
 
         <:actions>
           <CoreComponents.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-          <%= Kjogvi.Config.with_user_registration do %>
+          <%= Kjogvi.Config.with_multiuser do %>
             <.link href={~p"/users/reset_password"} class="text-sm font-semibold">
               Forgot your password?
             </.link>
