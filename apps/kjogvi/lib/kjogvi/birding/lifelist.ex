@@ -134,9 +134,7 @@ defmodule Kjogvi.Birding.Lifelist do
           Card.Query.motorless(query)
 
         {:exclude_heard_only, exclude_heard_only} when exclude_heard_only == true ->
-          # FIXME: move to Observation.Query ?
-          query
-          |> where([observation: o], o.voice == false)
+          Observation.Query.exclude_heard_only(query)
 
         _ ->
           query
