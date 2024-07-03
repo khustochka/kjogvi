@@ -17,7 +17,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     {
       :ok,
       socket
-      |> assign(:user, Kjogvi.Settings.main_user())
+      |> assign(:user, socket.assigns.main_user)
     }
   end
 

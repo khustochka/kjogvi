@@ -29,6 +29,8 @@ defmodule KjogviWeb.ConnCase do
       import Phoenix.ConnTest
       import KjogviWeb.ConnCase
       import Kjogvi.Factory
+
+      setup :register_main_user
     end
   end
 

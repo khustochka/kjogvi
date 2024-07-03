@@ -18,6 +18,11 @@ defmodule KjogviWeb.Router do
     plug :put_root_layout, html: {KjogviWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+
+    Kjogvi.Config.with_single_user do
+      plug :fetch_main_user
+    end
+
     plug :fetch_current_user
   end
 
@@ -41,7 +46,10 @@ defmodule KjogviWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{KjogviWeb.UserAuth, :ensure_authenticated}] do
+      on_mount: [
+        {KjogviWeb.UserAuth, :ensure_authenticated},
+        {KjogviWeb.UserAuth, :mount_main_user}
+      ] do
       live "/locations", My.Locations.Index, :index
       live "/locations/countries", My.Countries.Index, :index
 
@@ -60,7 +68,7 @@ defmodule KjogviWeb.Router do
     pipe_through [:browser, :require_admin]
 
     live_session :admin_paths,
-      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}] do
+      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}, {KjogviWeb.UserAuth, :mount_main_user}] do
       live "/admin/tasks", Live.Admin.Tasks.Index, :index
       post "/admin/tasks/legacy_import", Admin.TasksController, :legacy_import
     end
@@ -68,12 +76,12 @@ defmodule KjogviWeb.Router do
     ornitho_web "/taxonomy",
       root_layout: {KjogviWeb.Layouts, :root},
       app_layout: {KjogviWeb.Layouts, :app},
-      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}]
+      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}, {KjogviWeb.UserAuth, :mount_main_user}]
 
     live_dashboard "/dashboard",
       metrics: KjogviWeb.Telemetry,
       env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY"],
-      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}]
+      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}, {KjogviWeb.UserAuth, :mount_main_user}]
   end
 
   # PUBLIC ROUTES
@@ -83,7 +91,10 @@ defmodule KjogviWeb.Router do
     pipe_through :lifelist
 
     live_session :open_current_user,
-      on_mount: [{KjogviWeb.UserAuth, :mount_current_user}] do
+      on_mount: [
+        {KjogviWeb.UserAuth, :mount_current_user},
+        {KjogviWeb.UserAuth, :mount_main_user}
+      ] do
       live "/", Live.Lifelist.Index, :index
       live "/:year_or_location", Live.Lifelist.Index, :index
       live "/:year/:location", Live.Lifelist.Index, :index
@@ -100,8 +111,14 @@ defmodule KjogviWeb.Router do
   scope "/", KjogviWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
+    registration_on_mount = [{KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}]
+
+    Kjogvi.Config.with_single_user do
+      registration_on_mount = registration_on_mount ++ [{KjogviWeb.UserAuth, :mount_main_user}]
+    end
+
     live_session :redirect_if_user_is_authenticated,
-      on_mount: [{KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      on_mount: registration_on_mount do
       live "/users/log_in", UserLoginLive, :new
 
       Kjogvi.Config.with_multiuser do

@@ -25,4 +25,24 @@ defmodule KjogviWeb.Plug do
       conn
     end
   end
+
+  @doc """
+  Finds the main user in single-user mode.
+  """
+  def fetch_main_user(conn, _opts) do
+    if String.starts_with?(conn.request_path, "/setup") do
+      conn
+    else
+      case Kjogvi.Settings.main_user() do
+        nil ->
+          conn
+          |> put_status(301)
+          |> redirect(to: ~p"/setup")
+          |> halt()
+
+        user ->
+          assign(conn, :main_user, user)
+      end
+    end
+  end
 end

@@ -154,6 +154,10 @@ defmodule KjogviWeb.UserAuth do
     {:cont, mount_current_user(socket, session)}
   end
 
+  def on_mount(:mount_main_user, _params, session, socket) do
+    {:cont, mount_main_user(socket, session)}
+  end
+
   def on_mount(:ensure_authenticated, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
@@ -201,6 +205,12 @@ defmodule KjogviWeb.UserAuth do
       if user_token = session["user_token"] do
         Users.get_user_by_session_token(user_token)
       end
+    end)
+  end
+
+  defp mount_main_user(socket, _session) do
+    Phoenix.Component.assign_new(socket, :main_user, fn ->
+      Kjogvi.Settings.main_user()
     end)
   end
 

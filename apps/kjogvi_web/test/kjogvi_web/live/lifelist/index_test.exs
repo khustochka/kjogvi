@@ -3,8 +3,6 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   import Phoenix.LiveViewTest
 
-  setup :register_main_user
-
   def get_number_of_species(html) do
     {:ok, doc} = Floki.parse_document(html)
 
