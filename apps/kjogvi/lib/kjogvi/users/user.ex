@@ -48,11 +48,12 @@ defmodule Kjogvi.Users.User do
   end
 
   @doc """
-  Changeset for creation.
+  Changeset for admin.
   """
-  def creation_changeset(user, attrs, opts \\ []) do
+  def admin_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password, :roles])
+    |> cast(attrs, [:email, :password])
+    |> put_change(:roles, [Kjogvi.Users.admin_role()])
     |> validate_email(opts)
     |> validate_password(opts)
   end

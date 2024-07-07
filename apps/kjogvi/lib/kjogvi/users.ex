@@ -83,11 +83,11 @@ defmodule Kjogvi.Users do
   end
 
   @doc """
-  Create a user (allows more attributes than registration).
+  Register an admin user.
   """
-  def create_user(attrs) do
+  def register_admin(attrs) do
     %User{}
-    |> User.creation_changeset(attrs)
+    |> User.admin_changeset(attrs)
     |> Repo.insert()
   end
 

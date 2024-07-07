@@ -18,7 +18,16 @@ defmodule Kjogvi.UsersFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Kjogvi.Users.create_user()
+      |> Kjogvi.Users.register_user()
+
+    user
+  end
+
+  def admin_fixture(attrs \\ %{}) do
+    {:ok, user} =
+      attrs
+      |> valid_user_attributes()
+      |> Kjogvi.Users.register_admin()
 
     user
   end
