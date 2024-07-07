@@ -43,7 +43,7 @@ defmodule KjogviWeb.ConnCase do
   Setup helper that registers a "main user".
   """
   def register_main_user(context) do
-    Kjogvi.UsersFixtures.user_fixture(%{roles: ["admin"]})
+    Kjogvi.UsersFixtures.admin_fixture()
     context
   end
 

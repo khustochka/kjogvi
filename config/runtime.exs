@@ -189,3 +189,7 @@ case config_env() do
   _ ->
     nil
 end
+
+# If setup code is not set, a new one will be generated on request to /setup,
+# and printed to the logs.
+config :kjogvi, :setup_code, System.get_env("SETUP_CODE")
