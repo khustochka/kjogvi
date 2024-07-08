@@ -30,7 +30,12 @@ defmodule KjogviWeb.ConnCase do
       import KjogviWeb.ConnCase
       import Kjogvi.Factory
 
-      setup :register_main_user
+      setup tags do
+        if !tags[:no_main_user] do
+          KjogviWeb.ConnCase.register_main_user(tags)
+        end
+        tags
+      end
     end
   end
 
@@ -42,9 +47,9 @@ defmodule KjogviWeb.ConnCase do
   @doc """
   Setup helper that registers a "main user".
   """
-  def register_main_user(context) do
+  def register_main_user(tags) do
     Kjogvi.UsersFixtures.admin_fixture()
-    context
+    tags
   end
 
   @doc """

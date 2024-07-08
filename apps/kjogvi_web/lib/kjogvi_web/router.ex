@@ -18,11 +18,10 @@ defmodule KjogviWeb.Router do
     plug :put_root_layout, html: {KjogviWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-  end
 
-  pipeline :user_fetching do
     Kjogvi.Config.with_single_user do
       plug :fetch_main_user
+      plug :verify_main_user
     end
 
     plug :fetch_current_user
@@ -43,7 +42,7 @@ defmodule KjogviWeb.Router do
   end
 
   scope "/", KjogviWeb do
-    pipe_through [:browser, :user_fetching]
+    pipe_through [:browser]
 
     get "/", HomeController, :home
   end
@@ -51,7 +50,7 @@ defmodule KjogviWeb.Router do
   # AUTHENTICATED USER ROUTES
 
   scope "/my", KjogviWeb.Live do
-    pipe_through [:browser, :user_fetching, :require_authenticated_user]
+    pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
       on_mount: [
@@ -73,7 +72,7 @@ defmodule KjogviWeb.Router do
   # ADMIN ROUTES
 
   scope "/", KjogviWeb do
-    pipe_through [:browser, :user_fetching, :require_admin]
+    pipe_through [:browser, :require_admin]
 
     live_session :admin_paths,
       on_mount: [{KjogviWeb.UserAuth, :ensure_admin}, {KjogviWeb.UserAuth, :mount_main_user}] do
@@ -95,7 +94,7 @@ defmodule KjogviWeb.Router do
   # PUBLIC ROUTES
 
   scope "/lifelist", KjogviWeb do
-    pipe_through [:browser, :user_fetching]
+    pipe_through [:browser]
 
     live_session :open_current_user,
       on_mount: [
@@ -116,7 +115,7 @@ defmodule KjogviWeb.Router do
   ## Authentication routes
 
   scope "/", KjogviWeb do
-    pipe_through [:browser, :user_fetching, :redirect_if_user_is_authenticated]
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     registration_on_mount = [{KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}]
 
@@ -139,7 +138,7 @@ defmodule KjogviWeb.Router do
   end
 
   scope "/", KjogviWeb do
-    pipe_through [:browser, :user_fetching]
+    pipe_through [:browser]
 
     delete "/users/log_out", UserSessionController, :delete
 
@@ -157,7 +156,7 @@ defmodule KjogviWeb.Router do
   # Enable Swoosh mailbox preview in development
   if Application.compile_env(:kjogvi_web, :dev_routes) do
     scope "/dev" do
-      pipe_through [:browser, :user_fetching, :require_admin]
+      pipe_through [:browser, :require_admin]
 
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end

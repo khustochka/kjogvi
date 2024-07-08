@@ -30,19 +30,29 @@ defmodule KjogviWeb.Plug do
   Finds the main user in single-user mode.
   """
   def fetch_main_user(conn, _opts) do
-    if String.starts_with?(conn.request_path, "/setup") do
+    conn
+    |> assign(:main_user, Kjogvi.Settings.main_user())
+  end
+
+  def verify_main_user(%{request_path: "/setup" <> _} = conn, _opts) do
+    if conn.assigns[:main_user] do
+      conn
+      |> put_status(:not_found)
+      |> put_view(Application.get_env(:kjogvi_web, KjogviWeb.Endpoint)[:render_errors][:formats])
+      |> render(:"404")
+      |> halt()
+    else
+      conn
+    end
+  end
+
+  def verify_main_user(conn, _opts) do
+    if conn.assigns[:main_user] do
       conn
     else
-      case Kjogvi.Settings.main_user() do
-        nil ->
-          conn
-          |> put_status(301)
-          |> redirect(to: ~p"/setup")
-          |> halt()
-
-        user ->
-          assign(conn, :main_user, user)
-      end
+      conn
+      |> redirect(to: ~p"/setup")
+      |> halt()
     end
   end
 end
