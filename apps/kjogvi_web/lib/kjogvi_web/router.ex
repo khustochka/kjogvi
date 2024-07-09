@@ -36,8 +36,8 @@ defmodule KjogviWeb.Router do
       pipe_through [:browser]
 
       get "/", SetupController, :enter
-      post "/", SetupController, :new
-      post "/save", SetupController, :create
+      post "/new", SetupController, :new
+      post "/", SetupController, :create
     end
   end
 

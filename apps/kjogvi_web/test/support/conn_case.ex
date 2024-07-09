@@ -34,6 +34,7 @@ defmodule KjogviWeb.ConnCase do
         if !tags[:no_main_user] do
           KjogviWeb.ConnCase.register_main_user(tags)
         end
+
         tags
       end
     end

@@ -1,7 +1,7 @@
 <div class="mx-auto max-w-sm">
   <.main_flash flash={@flash} />
 
-  <CoreComponents.simple_form action="/setup" method="post" for={%{"code" => nil}}>
+  <CoreComponents.simple_form action="/setup/new" method="post" for={%{"code" => nil}}>
     <CoreComponents.input name="code" value="" type="text" label="Setup code" required />
     <:actions>
       <CoreComponents.button>Submit</CoreComponents.button>
