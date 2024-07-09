@@ -8,7 +8,7 @@ config :logger, :console, format: "[$level] $message\n"
 
 if config_env() == :dev do
   config :esbuild,
-    version: "0.21.4",
+    version: "0.23.0",
     ornitho_web: [
       args:
         ~w(js/app.js --bundle --minify --target=es2017 --outdir=../dist/js --external:/fonts/* --external:/images/*),
