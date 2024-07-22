@@ -46,7 +46,8 @@ defmodule Kjogvi.MixProject do
 
   defp extra_apps(:default), do: [:logger, :tls_certificate_check, :runtime_tools]
   defp extra_apps(:test), do: extra_apps(:default)
-  defp extra_apps(_), do: extra_apps(:default) ++ [:opentelemetry]
+  # grpcbox is required for opentelemetry exporter using grpc (e.g. honeycomb)
+  defp extra_apps(_), do: extra_apps(:default) ++ [:grpcbox, :opentelemetry]
 
   # Specifies your project dependencies.
   #

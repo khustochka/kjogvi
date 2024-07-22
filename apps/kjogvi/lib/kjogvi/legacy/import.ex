@@ -2,28 +2,32 @@ defmodule Kjogvi.Legacy.Import do
   @moduledoc false
 
   def run(user) do
-    metadata = %{adapter: adapter()}
-
-    :telemetry.span([:kjogvi, :legacy, :import], metadata, fn ->
+    :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(), fn ->
       prepare_import()
       perform_import(:locations)
       perform_import(:cards, user: user)
       perform_import(:observations)
 
-      {:ok, metadata}
+      {:ok, telemetry_metadata()}
     end)
   end
 
   def prepare_import do
-    Kjogvi.Legacy.Import.Observations.truncate()
-    Kjogvi.Legacy.Import.Cards.truncate()
-    Kjogvi.Legacy.Import.Locations.truncate()
+    :telemetry.span([:kjogvi, :legacy, :import, :prepare], telemetry_metadata(), fn ->
+      Kjogvi.Legacy.Import.Observations.truncate()
+      Kjogvi.Legacy.Import.Cards.truncate()
+      Kjogvi.Legacy.Import.Locations.truncate()
 
-    :ok
+      {:ok, telemetry_metadata()}
+    end)
   end
 
   def perform_import(object_type, opts \\ []) do
-    load(object_type, adapter().init(), 1, opts)
+    :telemetry.span([:kjogvi, :legacy, :import, object_type], telemetry_metadata(), fn ->
+      result = load(object_type, adapter().init(), 1, opts)
+
+      {result, telemetry_metadata()}
+    end)
   end
 
   defp load(object_type, fetcher, page, opts) do
@@ -55,5 +59,9 @@ defmodule Kjogvi.Legacy.Import do
 
   defp adapter do
     config()[:adapter]
+  end
+
+  defp telemetry_metadata() do
+    %{adapter: adapter()}
   end
 end
