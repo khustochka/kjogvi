@@ -1,5 +1,5 @@
 /*
-! tailwindcss v3.4.4 | MIT License | https://tailwindcss.com
+! tailwindcss v3.4.6 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -973,10 +973,6 @@ a {
   margin-left: 1rem;
 }
 
-.mt-0 {
-  margin-top: 0px;
-}
-
 .mt-0\.5 {
   margin-top: 0.125rem;
 }
@@ -1147,10 +1143,6 @@ a {
 
 .justify-between {
   justify-content: space-between;
-}
-
-.gap-1 {
-  gap: 0.25rem;
 }
 
 .gap-1\.5 {
@@ -1389,10 +1381,6 @@ a {
 .py-4 {
   padding-top: 1rem;
   padding-bottom: 1rem;
-}
-
-.pb-0 {
-  padding-bottom: 0px;
 }
 
 .pb-0\.5 {

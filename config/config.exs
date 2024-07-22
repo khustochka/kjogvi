@@ -55,7 +55,7 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "3.4.4",
+  version: "3.4.6",
   kjogvi_web: [
     args: ~w(
       --config=tailwind.config.js
