@@ -57,7 +57,7 @@ defmodule Kjogvi.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:dns_cluster, "~> 0.1.1"},
       {:phoenix_pubsub, "~> 2.1"},
-      {:ecto_sql, "~> 3.10"},
+      {:ecto_sql, "~> 3.11.3"},
       {:ecto_psql_extras, "~> 0.8"},
       {:postgrex, ">= 0.0.0"},
       {:cachex, "~> 3.6"},
