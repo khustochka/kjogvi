@@ -47,11 +47,11 @@ defmodule Ornithologue.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ecto_sql, "~> 3.11.3"},
+      {:ecto_sql, "~> 3.12"},
       {:postgrex, ">= 0.0.0"},
       # For jsonb columns
       {:jason, "~> 1.0"},
-      {:scrivener_ecto, "~> 2.7"},
+      {:scrivener_ecto, "~> 3.0"},
       {:csv, "~> 3.0"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
