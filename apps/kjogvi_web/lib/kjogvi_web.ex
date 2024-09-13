@@ -55,7 +55,7 @@ defmodule KjogviWeb do
         layouts: [html: KjogviWeb.Layouts]
 
       import Plug.Conn
-      import KjogviWeb.Gettext
+      use Gettext, backend: KjogviWeb.Gettext
 
       unquote(verified_routes())
       unquote(path_helpers())
@@ -105,7 +105,7 @@ defmodule KjogviWeb do
       import KjogviWeb.IconComponents
       import KjogviWeb.MetaComponents
       import KjogviWeb.NavigationComponents
-      import KjogviWeb.Gettext
+      use Gettext, backend: KjogviWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

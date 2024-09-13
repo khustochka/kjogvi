@@ -5,7 +5,7 @@ defmodule KjogviWeb.Gettext do
   By using [Gettext](https://hexdocs.pm/gettext),
   your module gains a set of macros for translations, for example:
 
-      import KjogviWeb.Gettext
+      use Gettext, backend: KjogviWeb.Gettext
 
       # Simple translation
       gettext("Here is the string to translate")
@@ -20,5 +20,5 @@ defmodule KjogviWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :kjogvi_web
+  use Gettext.Backend, otp_app: :kjogvi_web
 end

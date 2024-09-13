@@ -32,7 +32,7 @@ defmodule OrnithoWeb do
         formats: [:html, :json]
 
       import Plug.Conn
-      import OrnithoWeb.Gettext
+      use Gettext, backend: OrnithoWeb.Gettext
 
       # unquote(verified_routes())
     end
@@ -74,7 +74,7 @@ defmodule OrnithoWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import OrnithoWeb.CoreComponents
-      import OrnithoWeb.Gettext
+      use Gettext, backend: OrnithoWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

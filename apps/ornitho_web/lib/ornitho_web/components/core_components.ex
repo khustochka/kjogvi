@@ -17,7 +17,7 @@ defmodule OrnithoWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import OrnithoWeb.Gettext
+  use Gettext, backend: OrnithoWeb.Gettext
 
   @doc """
   Renders a modal.

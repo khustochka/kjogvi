@@ -20,7 +20,7 @@ defmodule KjogviWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import KjogviWeb.Gettext
+  use Gettext, backend: KjogviWeb.Gettext
 
   @doc """
   Renders a modal.

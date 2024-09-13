@@ -8,7 +8,7 @@ defmodule KjogviWeb.BaseComponents do
   use Phoenix.Component
 
   # alias Phoenix.LiveView.JS
-  # import KjogviWeb.Gettext
+  # use Gettext, backend: KjogviWeb.Gettext
 
   @doc """
   Renders an h1 element, single (no wrapper, no subheader).

@@ -4,7 +4,7 @@ defmodule OrnithoWeb.TaxaComponents do
   """
   use OrnithoWeb, :html
 
-  import OrnithoWeb.Gettext
+  use Gettext, backend: OrnithoWeb.Gettext
 
   @doc """
   Renders a table with generic styling. Simplified compared to the table from CoreComponents.

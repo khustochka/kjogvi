@@ -5,7 +5,7 @@ defmodule KjogviWeb.FlashComponents do
   use Phoenix.Component
 
   import KjogviWeb.CoreComponents
-  import KjogviWeb.Gettext
+  use Gettext, backend: KjogviWeb.Gettext
 
   alias Phoenix.LiveView.JS
 
