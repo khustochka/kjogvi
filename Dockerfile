@@ -11,15 +11,15 @@
 #   - https://pkgs.org/ - resource for finding needed packages
 #   - Ex: hexpm/elixir:1.16.0-erlang-27.0-debian-bullseye-20231009-slim
 #
-ARG ELIXIR_VERSION=1.17.2
-ARG OTP_VERSION=27.0.1
-ARG DEBIAN_VERSION=bookworm-20240812-slim
+ARG ELIXIR_VERSION=1.17.3
+ARG OTP_VERSION=27.1
+ARG DEBIAN_VERSION=bookworm-20240904-slim
 ARG DISTRO_VERSION=debian-${DEBIAN_VERSION}
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-${DISTRO_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apt-get update -y && apt-get install -y build-essential git \
