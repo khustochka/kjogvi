@@ -36,7 +36,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       |> then(&Util.Enum.zip_inclusion(all_years, &1))
 
     months =
-      Birding.Lifelist.months(user, Map.delete(filter, :months))
+      Birding.Lifelist.months(user, Map.delete(filter, :month))
       |> then(&Util.Enum.zip_inclusion(@all_months, &1))
 
     all_countries = Kjogvi.Geo.get_countries()
