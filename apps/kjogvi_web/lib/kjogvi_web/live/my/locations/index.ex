@@ -65,21 +65,57 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   def render_with_children(assigns) do
     ~H"""
-    <ul>
+    <ul class="hs-accordion-group" data-hs-accordion-always-open="data-hs-accordion-always-open">
       <%= for location <- @locations do %>
-        <li>
-          <div class="flex gap-2">
-            <div><%= location.id %></div>
-            <div><%= location.slug %></div>
-            <div><%= location.name_en %></div>
-            <div><%= location.cards_count %></div>
-          </div>
-          <div class="ml-8">
-            <%= render_with_children(%{
-              locations:
-                Enum.filter(@all_locations, fn loc -> List.last(loc.ancestry) == location.id end),
-              all_locations: @all_locations
-            }) %>
+        <li class="hs-accordion active">
+          <button
+            class="hs-accordion-toggle hs-accordion-active:text-blue-600 py-3 inline-flex items-center gap-x-3 w-full font-semibold text-start text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 rounded-lg disabled:opacity-50 disabled:pointer-events-none dark:hs-accordion-active:text-blue-500 dark:text-neutral-200 dark:hover:text-neutral-400 dark:focus:text-neutral-400"
+            aria-expanded="true"
+            aria-controls="hs-basic-nested-collapse-one"
+          >
+            <svg
+              class="hs-accordion-active:hidden block size-3.5"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14"></path>
+              <path d="M12 5v14"></path>
+            </svg>
+            <svg
+              class="hs-accordion-active:block hidden size-3.5"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14"></path>
+            </svg>
+            <div class="flex gap-2">
+              <div><%= location.name_en %></div>
+              <div class="font-normal"><%= location.slug %></div>
+              <div><%= location.cards_count %></div>
+            </div>
+          </button>
+          <div class="hs-accordion-content w-full overflow-hidden transition-[height] duration-300">
+            <div class="ml-8">
+              <%= render_with_children(%{
+                locations:
+                  Enum.filter(@all_locations, fn loc -> List.last(loc.ancestry) == location.id end),
+                all_locations: @all_locations
+              }) %>
+            </div>
           </div>
         </li>
       <% end %>
