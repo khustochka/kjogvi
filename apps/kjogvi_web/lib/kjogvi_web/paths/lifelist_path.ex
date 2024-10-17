@@ -33,7 +33,7 @@ defmodule KjogviWeb.Paths.LifelistPath do
       |> Map.split([:year, :location])
 
     query_filters
-    |> Map.merge(Enum.into(query || [], %{}))
+    |> Map.merge(Map.new(query || []))
     |> Paths.clean_query()
     |> then(&{year, location, Paths.clean_query(&1)})
   end

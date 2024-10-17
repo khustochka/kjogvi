@@ -7,7 +7,7 @@ defmodule Kjogvi.Opentelemetry.Exporter do
 
   @impl true
   def init(opts) do
-    :opentelemetry_exporter.init(Enum.into(opts, %{}))
+    :opentelemetry_exporter.init(Map.new(opts))
   end
 
   @impl true

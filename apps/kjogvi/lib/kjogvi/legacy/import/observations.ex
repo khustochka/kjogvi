@@ -7,7 +7,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
     obs =
       for row <- rows do
         Enum.zip(columns, row)
-        |> Enum.into(%{})
+        |> Map.new()
         |> transform_keys
       end
 

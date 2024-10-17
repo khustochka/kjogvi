@@ -95,7 +95,7 @@ defmodule Convertor.Ebird.V2023 do
       |> Enum.sort_by(&(Keyword.get(&1, :sort_order)))
     headers = values |> List.first |> Keyword.keys
     values
-    |> Enum.map(&Enum.into(&1, %{}))
+    |> Enum.map(&Map.new/1)
     |> CSV.encode(headers: headers)
     |> Enum.each(&IO.write(file, &1))
   end

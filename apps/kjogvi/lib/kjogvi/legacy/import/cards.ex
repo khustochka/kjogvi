@@ -10,7 +10,7 @@ defmodule Kjogvi.Legacy.Import.Cards do
         # time = DateTime.utc_now()
 
         Enum.zip([:user_id | columns], [user_id | row])
-        |> Enum.into(%{})
+        |> Map.new()
         |> transform_keys
       end
 

@@ -32,7 +32,7 @@ defmodule Ornithologue do
         |> repo().preload(:parent_species)
         |> Enum.group_by(&Taxon.key(%{&1 | book: book}))
         |> Enum.map(fn {key, [val | _]} -> {key, val} end)
-        |> Enum.into(%{})
+        |> Map.new()
 
       acc
       |> Map.merge(grouped)

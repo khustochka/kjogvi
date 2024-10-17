@@ -9,7 +9,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
     locations =
       for row <- rows do
         Enum.zip(columns, row)
-        |> Enum.into(%{})
+        |> Map.new()
         |> convert_ancestry
         |> transform_keys
       end

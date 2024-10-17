@@ -30,7 +30,8 @@ defmodule Kjogvi.Cache do
   end
 
   defp config() do
-    Application.get_env(:kjogvi, :cache) |> Enum.into(%{})
+    Application.get_env(:kjogvi, :cache)
+    |> Map.new()
   end
 
   defp adapter() do
