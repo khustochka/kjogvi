@@ -8,7 +8,6 @@ const path = require("path")
 
 module.exports = {
   content: [
-    '../../../deps/preline/dist/*.js',
     "./js/**/*.js",
     "../lib/kjogvi_web.ex",
     "../lib/kjogvi_web/**/*.*ex",
@@ -132,8 +131,6 @@ module.exports = {
           }
         }
       }, {values})
-    },
-    require('../../../deps/preline/plugin')
-  )
+    })
   ]
 }

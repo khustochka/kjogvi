@@ -78,8 +78,6 @@ defmodule KjogviWeb.MixProject do
        app: false,
        compile: false,
        depth: 1},
-      {:preline,
-       github: "htmlstreamofficial/preline", tag: "v2.5.0", app: false, compile: false, depth: 1},
       {:earmark, "~> 1.4", only: [:dev, :test]},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
