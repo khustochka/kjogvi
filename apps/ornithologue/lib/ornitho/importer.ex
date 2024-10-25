@@ -13,7 +13,8 @@ defmodule Ornitho.Importer do
   @required_keys [:slug, :version, :name]
   @legit_importers [
     Ornitho.Importer.Ebird.V2022,
-    Ornitho.Importer.Ebird.V2023
+    Ornitho.Importer.Ebird.V2023,
+    Ornitho.Importer.Ebird.V2024
   ]
   @default_import_timeout 30_000
 

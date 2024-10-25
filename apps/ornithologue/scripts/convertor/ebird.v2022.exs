@@ -1,4 +1,4 @@
-defmodule Convertor.Ebird.V2023 do
+defmodule Convertor.Ebird.V2022 do
   @moduledoc """
   Converts two checklist CSVs into one nice CSV for the importer.
   """
@@ -6,16 +6,16 @@ defmodule Convertor.Ebird.V2023 do
   @extras_conversion %{
     "TAXON_ORDER" => {:integer, :ebird_order},
     "SPECIES_GROUP" => {:string, :species_group},
-    "Clements v2023 change" => {:string, :change_type},
-    "text for website v2023" => {:string, :change_text},
+    "Clements v2022 change" => {:string, :change_type},
+    "text for website v2022" => {:string, :change_text},
     "range" => {:string, :range},
     "extinct" => {:boolean, :extinct},
     "extinct year" => {:string, :extinct_year}
   }
 
-  @ebird_taxonomy_file "priv/import/ebird/v2023/ebird_taxonomy_v2023.csv"
-  @clements_checklist_file "priv/import/ebird/v2023/eBird-Clements-v2023-integrated-checklist-October-2023.csv"
-  @output_file "priv/import/ebird/v2023/ornithologue_ebird_v2023.csv"
+  @ebird_taxonomy_file "priv/import/ebird/v2022/ebird_taxonomy_v2022.csv"
+  @clements_checklist_file "priv/import/ebird/v2022/NEW_Clements-Checklist-v2022-October-2022.csv"
+  @output_file "priv/import/ebird/v2022/ornithologue_ebird_v2022.csv"
 
   def convert do
     extract_taxa_from_csv(@ebird_taxonomy_file)
@@ -37,20 +37,19 @@ defmodule Convertor.Ebird.V2023 do
 
         {:ok, encoded_extras} = Jason.encode(extract_extras(row))
 
-        attrs = [
+        attrs = %{
           name_sci: row["SCI_NAME"],
           name_en: row["PRIMARY_COM_NAME"],
-          taxon_concept_id: row["TAXON_CONCEPT_ID"],
           code: row["SPECIES_CODE"],
           category: row["CATEGORY"],
-          order: row["ORDER"],
+          order: row["ORDER1"],
           family: family,
           extras: encoded_extras,
           sort_order: sort_order,
           parent_species_code: row["REPORT_AS"],
           authority: nil,
           authority_brackets: nil
-        ]
+        }
 
         new_cache = Map.put(taxa_acc, row["SCI_NAME"], attrs)
 
@@ -71,13 +70,13 @@ defmodule Convertor.Ebird.V2023 do
       if not is_nil(taxon) do
 
 
-      {:ok, old_extras} = taxon[:extras] |> Jason.decode
+      {:ok, old_extras} = taxon.extras |> Jason.decode
         new_extras = old_extras |> Map.merge(extract_extras(row))
         {authority, authority_brackets} = extract_authority(row["authority"])
         {:ok, encoded_extras} = new_extras |> Jason.encode
         taxon_updated =
           taxon
-          |> Keyword.merge([extras: encoded_extras, authority: authority, authority_brackets: authority_brackets])
+          |> Map.merge(%{extras: encoded_extras, authority: authority, authority_brackets: authority_brackets})
           taxa_cache
         |> Map.put(name_sci, taxon_updated)
       else
@@ -92,10 +91,9 @@ defmodule Convertor.Ebird.V2023 do
     values =
       taxa
       |> Map.values()
-      |> Enum.sort_by(&(Keyword.get(&1, :sort_order)))
-    headers = values |> List.first |> Keyword.keys
+      |> Enum.sort_by(&(Map.get(&1, :sort_order)))
+    headers = values |> List.first |> Map.keys
     values
-    |> Enum.map(&Map.new/1)
     |> CSV.encode(headers: headers)
     |> Enum.each(&IO.write(file, &1))
   end
@@ -144,3 +142,5 @@ defmodule Convertor.Ebird.V2023 do
     }
   end
 end
+
+Convertor.Ebird.V2024.convert()
