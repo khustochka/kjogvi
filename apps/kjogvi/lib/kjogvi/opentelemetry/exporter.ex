@@ -11,8 +11,8 @@ defmodule Kjogvi.Opentelemetry.Exporter do
   end
 
   @impl true
-  def export(:traces, spans_tid, resource, config) do
-    :opentelemetry_exporter.export(:traces, spans_tid, resource, config)
+  def export(exporter, spans_tid, resource, config \\ []) do
+    :opentelemetry_exporter.export(exporter, spans_tid, resource, config)
   end
 
   @impl true
