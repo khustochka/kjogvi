@@ -84,5 +84,29 @@ defmodule Ornitho.Finder.TaxonTest do
       result = Ornitho.Finder.Taxon.search(book, "%yel")
       assert result == []
     end
+
+    test "does not search in the wrong book" do
+      book1 = insert(:book)
+      book2 = insert(:book)
+
+      taxon1 =
+        insert(:taxon,
+          book: book1,
+          name_sci: "Nucifraga caryocatactes",
+          name_en: "Eurasian Nutcracker"
+        )
+
+      taxon2 =
+        insert(:taxon,
+          book: book2,
+          name_sci: "Nucifraga caryocatactes",
+          name_en: "Northern Nutcracker"
+        )
+
+      result = Ornitho.Finder.Taxon.search(book1, "nutcracker")
+      ids = Enum.map(result, & &1.id)
+      assert taxon1.id in ids
+      assert taxon2.id not in ids
+    end
   end
 end

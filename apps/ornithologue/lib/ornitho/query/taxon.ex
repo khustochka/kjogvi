@@ -33,8 +33,9 @@ defmodule Ornitho.Query.Taxon do
     like_term = "%#{sanitized_term}%"
 
     query
-    |> where([t], ilike(t.name_sci, ^like_term))
-    |> or_where([t], ilike(t.name_en, ^like_term))
-    |> or_where([t], ilike(t.code, ^start_term))
+    |> where(
+      [t],
+      ilike(t.name_sci, ^like_term) or ilike(t.name_en, ^like_term) or ilike(t.code, ^start_term)
+    )
   end
 end
