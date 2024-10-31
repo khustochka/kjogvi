@@ -90,8 +90,8 @@ defmodule KjogviWeb.MixProject do
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:opentelemetry, "~> 1.5"},
       {:opentelemetry_api, "~> 1.4"},
-      {:opentelemetry_phoenix, "~> 1.2", opentelemetry_phoenix_opts()},
-      {:opentelemetry_bandit, "~> 0.1", opentelemetry_bandit_opts()},
+      {:opentelemetry_phoenix, "~> 2.0.0-rc.1", opentelemetry_phoenix_opts()},
+      {:opentelemetry_bandit, "~> 0.2.0-rc.1"},
       {:opentelemetry_exporter, "~> 1.6"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
@@ -103,20 +103,8 @@ defmodule KjogviWeb.MixProject do
     else
       [
         github: "khustochka/opentelemetry-erlang-contrib",
-        branch: "integration",
+        branch: "add-liveview-params",
         subdir: "instrumentation/opentelemetry_phoenix"
-      ]
-    end
-  end
-
-  def opentelemetry_bandit_opts do
-    if System.get_env("LOCAL_OTEL_LIBS") do
-      [path: "../../../opentelemetry-erlang-contrib/instrumentation/opentelemetry_bandit"]
-    else
-      [
-        github: "khustochka/opentelemetry-erlang-contrib",
-        branch: "integration",
-        subdir: "instrumentation/opentelemetry_bandit"
       ]
     end
   end
