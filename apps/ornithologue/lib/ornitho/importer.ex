@@ -11,11 +11,6 @@ defmodule Ornitho.Importer do
   """
 
   @required_keys [:slug, :version, :name]
-  @legit_importers [
-    Ornitho.Importer.Ebird.V2022,
-    Ornitho.Importer.Ebird.V2023,
-    Ornitho.Importer.Ebird.V2024
-  ]
   @default_import_timeout 30_000
 
   defmacro __using__(opts) do
@@ -123,7 +118,7 @@ defmodule Ornitho.Importer do
   end
 
   def legit_importers() do
-    @legit_importers
+    Application.get_env(:ornithologue, __MODULE__)[:legit_importers] || []
   end
 
   def legit_importers_string() do
@@ -134,7 +129,7 @@ defmodule Ornitho.Importer do
   def unimported() do
     imported = Ornitho.Finder.Book.all_signatures()
 
-    @legit_importers
+    legit_importers()
     |> Enum.reject(fn importer ->
       [importer.slug(), importer.version()] in imported
     end)

@@ -80,6 +80,13 @@ config :scrivener_phoenix,
 
 config :ornithologue, repo: Kjogvi.OrnithoRepo
 
+config :ornithologue, Ornitho.Importer,
+  legit_importers: [
+    Ornitho.Importer.Ebird.V2022,
+    Ornitho.Importer.Ebird.V2023,
+    Ornitho.Importer.Ebird.V2024
+  ]
+
 config :ornithologue, Ornitho.StreamImporter,
   adapter: Ornitho.StreamImporter.LocalAdapter,
   path_prefix: "priv"
