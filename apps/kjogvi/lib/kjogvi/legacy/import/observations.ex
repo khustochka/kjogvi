@@ -34,7 +34,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
        ) do
     obs
     |> Map.drop([:created_at, :post_id, :taxon_id, :ebird_code])
-    |> Map.put(:taxon_key, "/ebird/v2023/#{ebird_code}")
+    |> Map.put(:taxon_key, "/ebird/v2024/#{ebird_code}")
     |> Map.put(:inserted_at, convert_timestamp(created_at))
     |> Map.put(:updated_at, convert_timestamp(updated_at))
   end
