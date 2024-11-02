@@ -9,6 +9,7 @@ services:
     volumes:
       - ..:/workspaces/kjogvi:cached
       - build:/workspaces/kjogvi/_build
+      - deps:/workspaces/kjogvi/deps
 
     environment:
       DATABASE_HOST: db
@@ -66,3 +67,4 @@ services:
 volumes:
   postgres-data-16:
   build:
+  deps:
