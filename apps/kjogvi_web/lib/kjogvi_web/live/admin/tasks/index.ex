@@ -21,13 +21,12 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
      |> clear_flash()}
   end
 
-  defp start_legacy_import(%{assigns: assigns} = socket) do
+  defp start_legacy_import(%{assigns: %{current_user: current_user}} = socket) do
     # live_view_pid = self()
-
     socket
     |> assign(:async_result, AsyncResult.loading())
     |> start_async(:legacy_import, fn ->
-      Kjogvi.Legacy.Import.run(assigns.current_user)
+      Kjogvi.Legacy.Import.run(current_user)
       # Enum.each(1..5, fn n ->
       #   Process.sleep(1_000)
       #   IO.puts("SENDING ASYNC TASK MESSAGE #{n}")
