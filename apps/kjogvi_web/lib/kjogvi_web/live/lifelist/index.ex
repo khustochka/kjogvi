@@ -8,6 +8,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   alias KjogviWeb.Live.Lifelist.Presenter
 
+  import KjogviWeb.Live.Lifelist.Components
+
   @all_months 1..12
 
   @impl true
@@ -243,8 +245,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <% end %>
     </ul>
 
-    <.live_component
-      module={KjogviWeb.Live.Lifelist.Table}
+    <.lifers_table
       id="lifelist-table"
       public_view={@public_view}
       lifelist={@lifelist}
@@ -264,11 +265,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           "mb-4"
         ]}
       >
-        Heard only:
+        Heard only
       </h3>
 
-      <.live_component
-        module={KjogviWeb.Live.Lifelist.Table}
+      <.lifers_table
         id="lifelist-heard-only-table"
         public_view={@public_view}
         lifelist={@lifelist.extras.heard_only}

@@ -1,16 +1,17 @@
-defmodule KjogviWeb.Live.Lifelist.Table do
+defmodule KjogviWeb.Live.Lifelist.Components do
   @moduledoc false
 
-  use KjogviWeb, :live_component
+  use KjogviWeb, :html
 
   alias Kjogvi.Geo
   alias KjogviWeb.Format
 
+  attr :id, :string, required: true
   attr :public_view, :boolean, default: true
   attr :lifelist, :list, required: true
   attr :location_field, :atom, required: true
 
-  def render(assigns) do
+  def lifers_table(assigns) do
     ~H"""
     <table id={@id} class="mt-11 w-full">
       <thead class="text-sm text-left leading-snug text-zinc-500">
