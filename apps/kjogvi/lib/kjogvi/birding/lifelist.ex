@@ -27,14 +27,8 @@ defmodule Kjogvi.Birding.Lifelist do
   Generate lifelist based on provided filter options.
   """
   def generate(user, filter \\ %Filter{}) do
-    lifelist_query(user, filter)
-    |> Repo.all()
-    |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Repo.preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
-    |> preload_public_location()
-    |> Kjogvi.Birding.preload_taxa_and_species()
-    |> Enum.filter(& &1.species)
-    |> Enum.uniq_by(& &1.species.code)
+    generate_with_species(user, filter)
+    |> preload_all_location()
     |> Enum.reverse()
     |> then(fn list ->
       %Result{
@@ -44,6 +38,7 @@ defmodule Kjogvi.Birding.Lifelist do
         total: length(list)
       }
     end)
+    |> maybe_add_extras()
   end
 
   @spec top(user(), integer()) :: Result.t()
@@ -133,7 +128,7 @@ defmodule Kjogvi.Birding.Lifelist do
         {:motorless, motorless} when motorless == true ->
           Card.Query.motorless(query)
 
-        {:exclude_heard_only, exclude_heard_only} when exclude_heard_only == true ->
+        {:exclude_heard_only, true} ->
           Observation.Query.exclude_heard_only(query)
 
         _ ->
@@ -147,6 +142,46 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   # ----------------
+
+  defp generate_with_species(user, filter) do
+    lifelist_query(user, filter)
+    |> Repo.all()
+    |> Enum.map(&Repo.load(LifeObservation, &1))
+    |> Kjogvi.Birding.preload_taxa_and_species()
+    |> Enum.filter(& &1.species)
+    |> Enum.uniq_by(& &1.species.code)
+  end
+
+  defp maybe_add_extras(result = %{filter: filter = %{exclude_heard_only: true}, user: user}) do
+    sp_codes =
+      result.list
+      |> Enum.map(& &1.species.code)
+
+    new_filter = %{filter | exclude_heard_only: false}
+
+    full_list =
+      generate_with_species(user, new_filter)
+
+    heard_only_list =
+      full_list
+      |> Enum.reject(fn life_obs ->
+        life_obs.species.code in sp_codes
+      end)
+      |> preload_all_location()
+      |> Enum.reverse()
+      |> then(fn list ->
+        %Result{
+          list: list,
+          total: length(list)
+        }
+      end)
+
+    %{result | extras: %{heard_only: heard_only_list}}
+  end
+
+  defp maybe_add_extras(list) do
+    list
+  end
 
   defp lifelist_query(user, filter) do
     from l in subquery(lifers_query(user, filter)),
@@ -176,12 +211,18 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   # TODO: extract this to be usable universally
-  def preload_public_location(things) do
+  defp preload_public_location(things) do
     things
     |> preload_location_ancestors
     |> Enum.map(fn thing ->
       put_in(thing.public_location, Location.public_location(thing.location))
     end)
+  end
+
+  defp preload_all_location(things) do
+    things
+    |> Repo.preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
+    |> preload_public_location()
   end
 
   defp preload_location_ancestors(things) do

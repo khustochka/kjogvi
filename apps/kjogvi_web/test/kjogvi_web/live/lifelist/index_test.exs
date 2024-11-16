@@ -6,7 +6,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   def get_number_of_species(html) do
     {:ok, doc} = Floki.parse_document(html)
 
-    Floki.find(doc, "#lifers tbody tr")
+    Floki.find(doc, "#lifelist-table tbody tr")
     |> length()
   end
 

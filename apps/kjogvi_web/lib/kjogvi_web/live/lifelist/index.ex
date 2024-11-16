@@ -5,9 +5,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   alias Kjogvi.Util
   alias Kjogvi.Birding
-  alias Kjogvi.Geo
 
-  alias KjogviWeb.Format
   alias KjogviWeb.Live.Lifelist.Presenter
 
   @all_months 1..12
@@ -98,7 +96,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           &nbsp;
         <% end %>
         <%= if @filter.exclude_heard_only do %>
-          &bull; Heard only excluded
+          &bull; Heard only <a href="#heard-only-list">separated</a>
         <% else %>
           &nbsp;
         <% end %>
@@ -133,12 +131,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         </.link>
       </li>
       <li class="whitespace-nowrap">
-        <em :if={@filter.exclude_heard_only} class="font-semibold not-italic">Exclude heard only</em>
+        <em :if={@filter.exclude_heard_only} class="font-semibold not-italic">Separate heard only</em>
         <.link
           :if={!@filter.exclude_heard_only}
           patch={lifelist_path(%{@filter | exclude_heard_only: true}, @current_path_query)}
         >
-          Exclude heard only
+          Separate heard only
         </.link>
       </li>
     </ul>
@@ -245,46 +243,38 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <% end %>
     </ul>
 
-    <table id="lifers" class="mt-11 w-full">
-      <thead class="text-sm text-left leading-snug text-zinc-500">
-        <tr>
-          <th class="p-0 pr-6 pb-4 font-normal"></th>
-          <th class="p-0 pr-6 pb-4 font-normal">Species</th>
-          <th class="p-0 pr-6 pb-4 font-normal text-center">Date</th>
-          <th class="p-0 pr-6 pb-4 font-normal">Location</th>
-          <th :if={!@public_view} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 leading-snug text-zinc-700">
-        <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
-          <tr>
-            <td class="p-0 py-4 pr-6 text-right"><%= @lifelist.total - i %>.</td>
-            <td class="p-0 py-4 pr-6">
-              <strong class="font-bold"><%= lifer.species.name_en %></strong>
-              <i class="whitespace-nowrap"><%= lifer.species.name_sci %></i>
-            </td>
-            <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
-              <%= Format.observation_date(lifer) %>
-            </td>
-            <td class="p-0 py-4 pr-6">
-              <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>
-                <%= Geo.Location.name_local_part(location) %> ·
-                <%= with country when not is_nil(country) <- location.country do %>
-                  <span class="font-semibold whitespace-nowrap">
-                    <%= Geo.Location.name_administrative_part(location) %>
-                  </span>
-                <% end %>
-              <% end %>
-            </td>
-            <td :if={!@public_view} class="p-0 py-4 pr-6 text-center">
-              <.link navigate={~p"/my/cards/#{lifer.card_id}"}>
-                <.icon name="hero-clipboard-document-list" class="w-[18px]" />
-              </.link>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+    <.live_component
+      module={KjogviWeb.Live.Lifelist.Table}
+      id="lifelist-table"
+      public_view={@public_view}
+      lifelist={@lifelist}
+      location_field={@location_field}
+    />
+
+    <%= if @filter.exclude_heard_only do %>
+      <h3
+        id="heard-only-list"
+        class={[
+          "text-2xl",
+          "font-header",
+          "font-semibold",
+          "leading-none",
+          "text-zinc-500",
+          "mt-8",
+          "mb-4"
+        ]}
+      >
+        Heard only:
+      </h3>
+
+      <.live_component
+        module={KjogviWeb.Live.Lifelist.Table}
+        id="lifelist-heard-only-table"
+        public_view={@public_view}
+        lifelist={@lifelist.extras.heard_only}
+        location_field={@location_field}
+      />
+    <% end %>
     """
   end
 
