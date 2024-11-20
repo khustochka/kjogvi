@@ -211,5 +211,31 @@ defmodule Kjogvi.Birding.LifelistTest do
       result = Kjogvi.Birding.Lifelist.generate(user, location: locus_5mr)
       assert length(result.list) == 2
     end
+
+    test "exclude heard only has the species at the later date" do
+      user = user_fixture()
+      locus = insert(:location)
+
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      card0 = insert(:card, observ_date: ~D"2022-11-18", location: locus, user: user)
+      insert(:observation, card: card0, voice: true, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+
+      card1 = insert(:card, observ_date: ~D"2023-12-19", location: locus, user: user)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, observ_date: ~D"2024-12-31", location: locus, user: user)
+      insert(:observation, card: card2, voice: true, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      taxon3 = Ornitho.Factory.insert(:taxon)
+      card3 = insert(:card, observ_date: ~D"2024-12-31", location: locus, user: user)
+      insert(:observation, card: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+
+      result = Kjogvi.Birding.Lifelist.generate(user, exclude_heard_only: true)
+      assert length(result.list) == 2
+
+      assert Enum.map(result.list, & &1.species.code) == [taxon3.code, taxon1.code]
+      assert Enum.map(result.list, & &1.observ_date) == [card3.observ_date, card1.observ_date]
+    end
   end
 end
