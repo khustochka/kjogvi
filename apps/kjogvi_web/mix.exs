@@ -90,8 +90,8 @@ defmodule KjogviWeb.MixProject do
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:opentelemetry, "~> 1.5"},
       {:opentelemetry_api, "~> 1.4"},
-      {:opentelemetry_phoenix, "~> 2.0.0-rc.2", opentelemetry_phoenix_opts()},
-      {:opentelemetry_bandit, "~> 0.2.0-rc.2"},
+      {:opentelemetry_phoenix, "~> 2.0.0", opentelemetry_phoenix_opts()},
+      {:opentelemetry_bandit, "~> 0.2.0"},
       {:opentelemetry_exporter, "~> 1.6"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
