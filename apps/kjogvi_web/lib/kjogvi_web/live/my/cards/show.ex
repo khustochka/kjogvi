@@ -85,12 +85,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
         </span>
       </:col>
       <:col :let={obs} label="Taxon">
-        <div>
-          <.link href={"/taxonomy#{obs.taxon_key}"} target="_blank">
-            <%= obs.taxon_key %>
-          </.link>
-        </div>
-        <%= present_taxon(%{taxon: obs.taxon}) %>
+        <%= present_taxon(Map.take(obs, [:taxon_key, :taxon])) %>
       </:col>
     </CoreComponents.table>
     """
@@ -98,15 +93,22 @@ defmodule KjogviWeb.Live.My.Cards.Show do
 
   def present_taxon(assigns = %{taxon: nil}) do
     ~H"""
-    <div class="text-rose-600">
-      <.icon name="hero-exclamation-triangle-mini" class="mt-0.5" />
-      <span>Undefined taxon!</span>
+    <div class="text-slate-400">
+      <%= @taxon_key %>
     </div>
+    <CoreComponents.error>
+      Undefined taxon!
+    </CoreComponents.error>
     """
   end
 
   def present_taxon(assigns) do
     ~H"""
+    <div>
+      <.link href={"/taxonomy#{@taxon_key}"} target="_blank">
+        <%= @taxon_key %>
+      </.link>
+    </div>
     <div>
       <b class="font-semibold"><%= @taxon.name_en %></b>
       <i><%= @taxon.name_sci %></i>
