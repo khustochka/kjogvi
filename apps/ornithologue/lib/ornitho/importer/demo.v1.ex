@@ -7,7 +7,8 @@ defmodule Ornitho.Importer.Demo.V1 do
     slug: "demo",
     version: "v1",
     name: "Demo book",
-    description: "This is a demo book"
+    description: "This is a demo book",
+    publication_date: ~D[2021-08-24]
 
   @taxa_list [
     %{

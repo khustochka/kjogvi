@@ -5,7 +5,8 @@ defmodule Ornitho.Importer.Test.NoTaxa do
     slug: "test",
     version: "no_taxa",
     name: "Test book with no taxa",
-    description: "This is a test book"
+    description: "This is a test book",
+    publication_date: ~D[2018-08-14]
 
   def create_taxa(_book) do
     {:ok, []}

@@ -45,6 +45,7 @@ defmodule OrnithoWeb.Live.Book.Show do
     </.header>
     <div class="mt-8">
       <.list>
+        <:item title="Published"><%= Calendar.strftime(@book.publication_date, "%-d %b %Y") %></:item>
         <:item title="Imported at"><.datetime time={@book.imported_at} /></:item>
         <:item title="Taxa"><%= @book.taxa_count %></:item>
         <:item :for={{key, value} <- @book.extras || %{}} title={key}>

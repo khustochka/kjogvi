@@ -14,6 +14,7 @@ defmodule Ornitho.Migrations.V01 do
       add :version, :string, null: false, size: 16
       add :name, :string, null: false, size: 256
       add :description, :text
+      add :publication_date, :date, null: false
       add :extras, :map
       add :imported_at, :utc_datetime_usec
 

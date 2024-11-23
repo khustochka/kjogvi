@@ -21,7 +21,15 @@ defmodule OrnithoWeb.BooksHTML do
       </:col>
       <:col :let={book} label="version"><%= book.version %></:col>
       <:col :let={book} label="name"><%= book.name %></:col>
-      <:col :let={book} label="description"><%= book.description %></:col>
+      <:col :let={book} label="description">
+        <p class="mb-3">
+          <%= book.description %>
+        </p>
+        <p>
+          <span class="font-bold">Published:</span>
+          <%= Calendar.strftime(book.publication_date, "%-d %b %Y") %>
+        </p>
+      </:col>
       <:col :let={book} label="taxa"><%= book.taxa_count %></:col>
       <:col :let={book} label="imported">
         <.datetime time={book.imported_at} />
@@ -42,7 +50,13 @@ defmodule OrnithoWeb.BooksHTML do
           <%= importer.name() %>
         </:col>
         <:col :let={importer} label="description">
-          <%= importer.description() %>
+          <p class="mb-3">
+            <%= importer.description() %>
+          </p>
+          <p>
+            <span class="font-bold">Published:</span>
+            <%= Calendar.strftime(importer.publication_date(), "%-d %b %Y") %>
+          </p>
         </:col>
         <:col :let={importer} label="import">
           <.simple_form

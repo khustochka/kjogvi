@@ -15,7 +15,7 @@ defmodule Ornitho.Schema.Book do
   alias __MODULE__
   alias Ornitho.Schema.Taxon
 
-  @default_order [asc: :slug, asc: :version]
+  @default_order [desc: :publication_date]
 
   @type t() :: %__MODULE__{}
 
@@ -24,6 +24,7 @@ defmodule Ornitho.Schema.Book do
     field(:version, :string)
     field(:name, :string)
     field(:description, :string)
+    field(:publication_date, :date)
     field(:extras, :map)
     # Time when the taxa were imported
     field(:imported_at, :utc_datetime_usec)

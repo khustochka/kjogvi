@@ -11,7 +11,8 @@ defmodule Ornitho.Importer.Ebird.V2022 do
       "Clements, J. F., T. S. Schulenberg, M. J. Iliff, T. A. Fredericks, " <>
         "J. A. Gerbracht, D. Lepage, S. M. Billerman, B. L. Sullivan, and C. L. Wood. 2022. " <>
         "The eBird/Clements checklist of Birds of the World: v2022.\n" <>
-        "Downloaded from https://www.birds.cornell.edu/clementschecklist/download/"
+        "Downloaded from https://www.birds.cornell.edu/clementschecklist/download/",
+    publication_date: ~D[2022-10-25]
 
   use Ornitho.StreamImporter,
     file_path: "import/ebird/v2022/ornithologue_ebird_v2022.csv"

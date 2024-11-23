@@ -40,6 +40,7 @@ defmodule Ornitho.Importer do
       @version opts[:version]
       @name opts[:name]
       @description opts[:description]
+      @publication_date opts[:publication_date]
       @extras opts[:extras]
 
       @callback create_taxa(book :: Book) :: {:ok, any()} | {:error, any()}
@@ -55,6 +56,9 @@ defmodule Ornitho.Importer do
 
       @spec description() :: nil | String.t()
       def description(), do: @description
+
+      @spec publication_date() :: Date.t()
+      def publication_date(), do: @publication_date
 
       @spec extras() :: nil | map()
       def extras(), do: @extras
@@ -103,6 +107,7 @@ defmodule Ornitho.Importer do
           version: version(),
           name: name(),
           description: description(),
+          publication_date: publication_date(),
           extras: extras()
         }
       end
@@ -133,6 +138,7 @@ defmodule Ornitho.Importer do
     |> Enum.reject(fn importer ->
       [importer.slug(), importer.version()] in imported
     end)
+    |> Enum.sort_by(& &1.publication_date(), {:desc, Date})
   end
 
   def import_timeout() do

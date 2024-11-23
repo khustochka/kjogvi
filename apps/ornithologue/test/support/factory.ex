@@ -8,6 +8,7 @@ defmodule Ornitho.Factory do
       slug: "ebird",
       version: sequence(:book_version, &"v#{&1}", start_at: 2020),
       name: "eBird/Clements",
+      publication_date: ~D[2019-08-15],
       extras: %{
         "authors" => """
         Clements, J. F., T. S. Schulenberg, M. J. Iliff, T. A. Fredericks, J. A. Gerbracht, D. Lepage, S. M. Billerman, B. L. Sullivan, and C. L. Wood
