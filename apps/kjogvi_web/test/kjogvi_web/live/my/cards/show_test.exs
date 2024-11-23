@@ -37,4 +37,14 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
       live(conn, ~p"/my/cards/#{card.id}")
     end
   end
+
+  test "renders with unknown taxon", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+    insert(:observation, card: card, taxon_key: "/ioc/v1/pasdom")
+
+    {:ok, _show_live, html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    assert html =~ "Card ##{card.id}"
+    assert html =~ "Undefined taxon!"
+  end
 end

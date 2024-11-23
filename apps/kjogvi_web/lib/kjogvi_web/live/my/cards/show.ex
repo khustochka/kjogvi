@@ -90,12 +90,27 @@ defmodule KjogviWeb.Live.My.Cards.Show do
             <%= obs.taxon_key %>
           </.link>
         </div>
-        <div>
-          <b class="font-semibold"><%= obs.taxon.name_en %></b>
-          <i><%= obs.taxon.name_sci %></i>
-        </div>
+        <%= present_taxon(%{taxon: obs.taxon}) %>
       </:col>
     </CoreComponents.table>
+    """
+  end
+
+  def present_taxon(assigns = %{taxon: nil}) do
+    ~H"""
+    <div class="text-rose-600">
+      <.icon name="hero-exclamation-triangle-mini" class="mt-0.5" />
+      <span>Undefined taxon!</span>
+    </div>
+    """
+  end
+
+  def present_taxon(assigns) do
+    ~H"""
+    <div>
+      <b class="font-semibold"><%= @taxon.name_en %></b>
+      <i><%= @taxon.name_sci %></i>
+    </div>
     """
   end
 end
