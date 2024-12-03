@@ -90,7 +90,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   def render(assigns) do
     ~H"""
     <.header font_style={header_style(assigns)}>
-      <%= @page_header %>
+      {@page_header}
       <:subheader>
         <%= if @filter.motorless do %>
           Motorless
@@ -177,14 +177,14 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <%= for {year, active} <- @years do %>
         <li>
           <%= if @filter.year == year do %>
-            <em class="font-semibold not-italic"><%= year %></em>
+            <em class="font-semibold not-italic">{year}</em>
           <% else %>
             <%= if active do %>
               <.link patch={lifelist_path(%{@filter | year: year}, @current_path_query)}>
-                <%= year %>
+                {year}
               </.link>
             <% else %>
-              <span class="text-gray-500"><%= year %></span>
+              <span class="text-gray-500">{year}</span>
             <% end %>
           <% end %>
         </li>
@@ -204,14 +204,14 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <%= for {month, active} <- @months do %>
         <li>
           <%= if @filter.month == month do %>
-            <em class="font-semibold not-italic"><%= Timex.month_shortname(month) %></em>
+            <em class="font-semibold not-italic">{Timex.month_shortname(month)}</em>
           <% else %>
             <%= if active do %>
               <.link patch={lifelist_path(%{@filter | month: month}, @current_path_query)}>
-                <%= Timex.month_shortname(month) %>
+                {Timex.month_shortname(month)}
               </.link>
             <% else %>
-              <span class="text-gray-500"><%= Timex.month_shortname(month) %></span>
+              <span class="text-gray-500">{Timex.month_shortname(month)}</span>
             <% end %>
           <% end %>
         </li>
@@ -231,14 +231,14 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <%= for {location, active} <- @locations do %>
         <li>
           <%= if @filter.location == location do %>
-            <em class="font-semibold not-italic"><%= location.name_en %></em>
+            <em class="font-semibold not-italic">{location.name_en}</em>
           <% else %>
             <%= if active do %>
               <.link patch={lifelist_path(%{@filter | location: location}, @current_path_query)}>
-                <%= location.name_en %>
+                {location.name_en}
               </.link>
             <% else %>
-              <span class="text-gray-500"><%= location.name_en %></span>
+              <span class="text-gray-500">{location.name_en}</span>
             <% end %>
           <% end %>
         </li>

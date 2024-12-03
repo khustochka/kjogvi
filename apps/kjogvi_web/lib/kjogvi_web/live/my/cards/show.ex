@@ -32,9 +32,9 @@ defmodule KjogviWeb.Live.My.Cards.Show do
   def render(assigns) do
     ~H"""
     <CoreComponents.header>
-      Card #<%= @card.id %>
+      Card #{@card.id}
       <:subtitle>
-        <%= @card.observ_date %> · <%= Geo.Location.long_name(@card.location) %>
+        {@card.observ_date} · {Geo.Location.long_name(@card.location)}
 
         <span :if={@card.motorless} title="Motorless">
           <.icon name="fa-solid-bicycle" />
@@ -43,30 +43,30 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     </CoreComponents.header>
 
     <CoreComponents.list>
-      <:item title="Effort"><%= @card.effort_type %></:item>
-      <:item title="Start time"><%= @card.start_time %></:item>
+      <:item title="Effort">{@card.effort_type}</:item>
+      <:item title="Start time">{@card.start_time}</:item>
       <:item title="Duration">
         <%= with duration when not is_nil(duration) <- @card.duration_minutes do %>
-          <%= duration %> min
+          {duration} min
         <% end %>
       </:item>
       <:item title="Distance">
         <%= with distance when not is_nil(distance) <- @card.distance_kms do %>
-          <%= distance %> km
+          {distance} km
         <% end %>
       </:item>
       <:item title="Area">
         <%= with area when not is_nil(area) <- @card.area_acres do %>
-          <%= area %> acres
+          {area} acres
         <% end %>
       </:item>
       <:item title="Observers">
-        <%= @card.observers %>
+        {@card.observers}
       </:item>
     </CoreComponents.list>
     <h2 class="py-4">Notes</h2>
     <p>
-      <%= @card.notes %>
+      {@card.notes}
     </p>
     <h2 class="py-4">Observations</h2>
     <p :if={Enum.empty?(@card.observations)}>
@@ -77,15 +77,15 @@ defmodule KjogviWeb.Live.My.Cards.Show do
       id="observation"
       rows={@card.observations}
     >
-      <:col :let={obs} label="id"><%= obs.id %></:col>
+      <:col :let={obs} label="id">{obs.id}</:col>
       <:col :let={obs} label="Quantity">
-        <%= obs.quantity %>
+        {obs.quantity}
         <span :if={obs.voice} title="Heard only" class="pl-2">
           <.icon name="fa-regular-eye-slash" class="h-4 w-4" />
         </span>
       </:col>
       <:col :let={obs} label="Taxon">
-        <%= present_taxon(Map.take(obs, [:taxon_key, :taxon])) %>
+        {present_taxon(Map.take(obs, [:taxon_key, :taxon]))}
       </:col>
     </CoreComponents.table>
     """
@@ -94,7 +94,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
   def present_taxon(assigns = %{taxon: nil}) do
     ~H"""
     <div class="text-slate-400">
-      <%= @taxon_key %>
+      {@taxon_key}
     </div>
     <CoreComponents.error>
       Undefined taxon!
@@ -106,12 +106,12 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     ~H"""
     <div>
       <.link href={"/taxonomy#{@taxon_key}"} target="_blank">
-        <%= @taxon_key %>
+        {@taxon_key}
       </.link>
     </div>
     <div>
-      <b class="font-semibold"><%= @taxon.name_en %></b>
-      <i><%= @taxon.name_sci %></i>
+      <b class="font-semibold">{@taxon.name_en}</b>
+      <i>{@taxon.name_sci}</i>
     </div>
     """
   end

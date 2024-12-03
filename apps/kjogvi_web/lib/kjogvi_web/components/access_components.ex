@@ -15,9 +15,9 @@ defmodule KjogviWeb.AccessComponents do
   def access_control(assigns) do
     ~H"""
     <%= if @user do %>
-      <%= render_slot(@logged_in) %>
+      {render_slot(@logged_in)}
     <% else %>
-      <%= render_slot(@guest_access) %>
+      {render_slot(@guest_access)}
     <% end %>
     """
   end

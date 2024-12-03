@@ -32,7 +32,7 @@ defmodule KjogviWeb.BaseComponents do
       "mb-8",
       @class
     ]}>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </h1>
     """
   end
@@ -60,10 +60,10 @@ defmodule KjogviWeb.BaseComponents do
         "mt-6",
         @class
       ]}>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </h1>
       <div :if={@subheader != []} class="mt-2 font-header font-semibold text-xl text-zinc-400">
-        <%= render_slot(@subheader) %>
+        {render_slot(@subheader)}
       </div>
     </div>
     """

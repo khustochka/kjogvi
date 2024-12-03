@@ -18,10 +18,10 @@ defmodule OrnithoWeb.TimeComponents do
     ~H"""
     <time :if={@time} datetime={@time}>
       <nobr>
-        <%= Calendar.strftime(@time, "%-d %b %Y") %>
+        {Calendar.strftime(@time, "%-d %b %Y")}
       </nobr>
       <nobr>
-        <%= Calendar.strftime(@time, "%X") %>
+        {Calendar.strftime(@time, "%X")}
       </nobr>
     </time>
     """

@@ -36,20 +36,20 @@ defmodule OrnithoWeb.Live.Book.Show do
     ~H"""
     <.breadcrumbs>
       <:crumb><b><.link href={OrnithoWeb.LinkHelper.root_path(@socket)}>Taxonomy</.link></b></:crumb>
-      <:crumb><%= @book.name %></:crumb>
+      <:crumb>{@book.name}</:crumb>
     </.breadcrumbs>
 
     <.header>
-      <%= @book.name %>
-      <:subtitle><%= @book.description %></:subtitle>
+      {@book.name}
+      <:subtitle>{@book.description}</:subtitle>
     </.header>
     <div class="mt-8">
       <.list>
-        <:item title="Published"><%= Calendar.strftime(@book.publication_date, "%-d %b %Y") %></:item>
+        <:item title="Published">{Calendar.strftime(@book.publication_date, "%-d %b %Y")}</:item>
         <:item title="Imported at"><.datetime time={@book.imported_at} /></:item>
-        <:item title="Taxa"><%= @book.taxa_count %></:item>
+        <:item title="Taxa">{@book.taxa_count}</:item>
         <:item :for={{key, value} <- @book.extras || %{}} title={key}>
-          <%= value %>
+          {value}
         </:item>
       </.list>
     </div>

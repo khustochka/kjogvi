@@ -36,7 +36,7 @@ defmodule OrnithoWeb.Live.Taxa.Show do
       <:crumb>
         <b>
           <.link navigate={OrnithoWeb.LinkHelper.book_path(@socket, @book)}>
-            <%= @book.name %>
+            {@book.name}
           </.link>
         </b>
       </:crumb>
@@ -46,20 +46,20 @@ defmodule OrnithoWeb.Live.Taxa.Show do
     <.header>
       <.sci_name taxon={@taxon} />
       <.category_tag category={@taxon.category} />
-      <:subtitle><%= @taxon.name_en %></:subtitle>
+      <:subtitle>{@taxon.name_en}</:subtitle>
     </.header>
     <div class="mt-8">
       <.list>
-        <:item title="Order #"><%= @taxon.sort_order %></:item>
+        <:item title="Order #">{@taxon.sort_order}</:item>
         <:item :if={@taxon.authority} title="Authority">
-          <%= Ornitho.Schema.Taxon.formatted_authority(@taxon) %>
+          {Ornitho.Schema.Taxon.formatted_authority(@taxon)}
         </:item>
-        <:item :if={@taxon.protonym} title="Protonym"><%= @taxon.protonym %></:item>
+        <:item :if={@taxon.protonym} title="Protonym">{@taxon.protonym}</:item>
         <:item :if={@taxon.order || @taxon.family} title="Taxonomy">
-          <%= @taxon.order %> / <%= @taxon.family %>
+          {@taxon.order} / {@taxon.family}
         </:item>
-        <:item title="Code"><span class="font-mono"><%= @taxon.code %></span></:item>
-        <:item title="Taxon Concept ID"><%= @taxon.taxon_concept_id %></:item>
+        <:item title="Code"><span class="font-mono">{@taxon.code}</span></:item>
+        <:item title="Taxon Concept ID">{@taxon.taxon_concept_id}</:item>
         <:item :if={@taxon.parent_species} title="Parent species">
           <.link patch={
             OrnithoWeb.LinkHelper.path(
@@ -71,7 +71,7 @@ defmodule OrnithoWeb.Live.Taxa.Show do
           </.link>
         </:item>
         <:item :for={{key, value} <- @taxon.extras || %{}} title={key}>
-          <%= value %>
+          {value}
         </:item>
       </.list>
     </div>

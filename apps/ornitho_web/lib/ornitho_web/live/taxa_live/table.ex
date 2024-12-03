@@ -45,7 +45,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
           <%= for taxon <- @taxa do %>
             <tr>
               <td class="p-0 py-4 pr-6">
-                <%= taxon.sort_order %>
+                {taxon.sort_order}
               </td>
               <td class="p-0 py-4 pr-6">
                 <span class="font-mono">
@@ -71,7 +71,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                       <.extinct_tag taxon={taxon} />
                     </div>
                     <div :if={taxon.authority} class="text-zinc-500 text-xs">
-                      <%= Ornitho.Schema.Taxon.formatted_authority(taxon) %>
+                      {Ornitho.Schema.Taxon.formatted_authority(taxon)}
                     </div>
                   </div>
                 </div>
@@ -93,8 +93,8 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                 </.link>
               </td>
               <td class="p-0 py-4 pr-6">
-                <div><%= taxon.order %></div>
-                <div><%= taxon.family %></div>
+                <div>{taxon.order}</div>
+                <div>{taxon.family}</div>
               </td>
               <td class="p-0 py-4 pr-6">
                 <span
@@ -123,7 +123,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
               <td class="p-0 py-4 pr-6" colspan={if @skip_parent_species, do: 4, else: 5}>
                 <.list>
                   <:item :for={{key, value} <- taxon.extras || %{}} title={key}>
-                    <%= value %>
+                    {value}
                   </:item>
                 </.list>
               </td>

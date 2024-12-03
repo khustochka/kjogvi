@@ -26,20 +26,20 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 leading-snug text-zinc-700">
         <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
           <tr>
-            <td class="p-0 py-4 pr-6 text-right"><%= @lifelist.total - i %>.</td>
+            <td class="p-0 py-4 pr-6 text-right">{@lifelist.total - i}.</td>
             <td class="p-0 py-4 pr-6">
-              <strong class="font-bold"><%= lifer.species.name_en %></strong>
-              <i class="whitespace-nowrap"><%= lifer.species.name_sci %></i>
+              <strong class="font-bold">{lifer.species.name_en}</strong>
+              <i class="whitespace-nowrap">{lifer.species.name_sci}</i>
             </td>
             <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
-              <%= Format.observation_date(lifer) %>
+              {Format.observation_date(lifer)}
             </td>
             <td class="p-0 py-4 pr-6">
               <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>
-                <%= Geo.Location.name_local_part(location) %> ·
+                {Geo.Location.name_local_part(location)} ·
                 <%= with country when not is_nil(country) <- location.country do %>
                   <span class="font-semibold whitespace-nowrap">
-                    <%= Geo.Location.name_administrative_part(location) %>
+                    {Geo.Location.name_administrative_part(location)}
                   </span>
                 <% end %>
               <% end %>

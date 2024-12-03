@@ -1,7 +1,7 @@
 <section class={@class}>
   <h2 class="text-[2rem] font-semibold font-header text-green-700 mb-2">
     <.link patch={@href} class="no-underline border-b-2 border-b-green-600">
-      <%= render_slot(@header) %>
+      {render_slot(@header)}
     </.link>
   </h2>
   <div :if={@total == 0} class="flex gap-2 items-center">
@@ -28,7 +28,7 @@
                 class="px-1 py-0.5 no-underline bg-lime-200 hover:bg-lime-300"
               ><%= lifer.species.name_en %></.link>
             </strong>
-            <i class="whitespace-nowrap text-neutral-500"><%= lifer.species.name_sci %></i>
+            <i class="whitespace-nowrap text-neutral-500">{lifer.species.name_sci}</i>
           </div>
           <div class="whitespace-nowrap flex items-center gap-0.5">
             <.icon
@@ -36,7 +36,7 @@
               class="md:hidden w-[0.8rem] h-[0.8rem] text-zinc-700"
             />
             <span class="text-[0.83rem] text-zinc-500">
-              <%= Format.observation_date(lifer) %>
+              {Format.observation_date(lifer)}
             </span>
           </div>
         </div>

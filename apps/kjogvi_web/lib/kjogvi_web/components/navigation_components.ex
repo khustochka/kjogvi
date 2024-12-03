@@ -15,7 +15,7 @@ defmodule KjogviWeb.NavigationComponents do
       <input type="hidden" name="_method" value={@method} />
       <input type="hidden" name="_csrf_token" value={Phoenix.Controller.get_csrf_token()} />
       <button class={@class}>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </button>
     </form>
     """

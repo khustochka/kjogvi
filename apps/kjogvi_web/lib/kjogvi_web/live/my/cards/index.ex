@@ -44,14 +44,14 @@ defmodule KjogviWeb.Live.My.Cards.Index do
 
     <CoreComponents.table id="cards" rows={@cards}>
       <:col :let={card} label="id">
-        <.link navigate={~p"/my/cards/#{card.id}"}><%= card.id %></.link>
+        <.link navigate={~p"/my/cards/#{card.id}"}>{card.id}</.link>
       </:col>
       <:col :let={card} label="Location">
-        <%= Geo.Location.long_name(card.location) %>
+        {Geo.Location.long_name(card.location)}
       </:col>
-      <:col :let={card} label="Date"><%= card.observ_date %></:col>
-      <:col :let={card} label="Start time"><%= card.start_time %></:col>
-      <:col :let={card} label="Effort"><%= card.effort_type %></:col>
+      <:col :let={card} label="Date">{card.observ_date}</:col>
+      <:col :let={card} label="Start time">{card.start_time}</:col>
+      <:col :let={card} label="Effort">{card.effort_type}</:col>
       <:col :let={card} label="M/L">
         <span :if={card.motorless} title="Motorless">
           <.icon name="fa-solid-bicycle" />
@@ -59,12 +59,12 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       </:col>
       <:col :let={card} label="Obs">
         <span class="tabular-nums">
-          <%= card.observation_count %>
+          {card.observation_count}
         </span>
       </:col>
     </CoreComponents.table>
 
-    <%= paginate(@socket, @cards, &paginated_card_path/4, [:index], live: true) %>
+    {paginate(@socket, @cards, &paginated_card_path/4, [:index], live: true)}
     """
   end
 

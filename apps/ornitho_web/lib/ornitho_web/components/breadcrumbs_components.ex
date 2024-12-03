@@ -22,7 +22,7 @@ defmodule OrnithoWeb.BreadcrumbsComponents do
     ~H"""
     <nav role="navigation" aria-label="Breadcrumbs" class="breadcrumbs mb-6 text-xs">
       <%= for {crumb, i} <- Enum.with_index(@crumb) do %>
-        <div class="inline-block"><%= render_slot(crumb) %></div>
+        <div class="inline-block">{render_slot(crumb)}</div>
         <.breadcrumbs_separator :if={i < length(@crumb) - 1} />
       <% end %>
     </nav>

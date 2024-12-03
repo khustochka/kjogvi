@@ -62,7 +62,7 @@ defmodule OrnithoWeb.Live.Taxa.Index do
       />
 
       <%= if !@search_enabled do %>
-        <%= paginate(@socket, @taxa, &OrnithoWeb.LinkHelper.book_path/3, [@book], live: true) %>
+        {paginate(@socket, @taxa, &OrnithoWeb.LinkHelper.book_path/3, [@book], live: true)}
       <% end %>
     </div>
     """

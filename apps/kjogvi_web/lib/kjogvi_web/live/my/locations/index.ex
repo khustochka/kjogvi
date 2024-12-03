@@ -45,7 +45,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     </.header_single>
 
     <div class="mb-3">
-      <%= render_with_children(%{locations: @top_locations, all_locations: @locations}) %>
+      {render_with_children(%{locations: @top_locations, all_locations: @locations})}
     </div>
 
     <h2 class="text-lg font-semibold mb-3">Special locations</h2>
@@ -54,7 +54,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <%= for location <- @specials do %>
         <li class="mb-2">
           <div class="flex gap-3">
-            <%= location_details(%{location: location}) %>
+            {location_details(%{location: location})}
           </div>
         </li>
       <% end %>
@@ -82,13 +82,13 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
-              <%= location_details(%{location: location}) %>
+              {location_details(%{location: location})}
             </summary>
             <div class="ml-8">
-              <%= render_with_children(%{
+              {render_with_children(%{
                 locations: @all_locations[location.id],
                 all_locations: @all_locations
-              }) %>
+              })}
             </div>
           </details>
         </li>
@@ -99,8 +99,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   def location_details(assigns) do
     ~H"""
-    <div><strong><%= @location.name_en %></strong></div>
-    <div class="text-slate-700"><%= @location.slug %></div>
+    <div><strong>{@location.name_en}</strong></div>
+    <div class="text-slate-700">{@location.slug}</div>
     <div
       :if={@location.iso_code && @location.iso_code != ""}
       class="text-sm text-slate-500 leading-relaxed"
@@ -110,10 +110,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         class="leading-none font-mono underline text-slate-500 decoration-dotted"
         title="ISO alpha-2"
       >
-        <%= @location.iso_code %>
+        {@location.iso_code}
       </span>
     </div>
-    <div :if={!is_nil(@location.cards_count)}><%= @location.cards_count %></div>
+    <div :if={!is_nil(@location.cards_count)}>{@location.cards_count}</div>
     """
   end
 end

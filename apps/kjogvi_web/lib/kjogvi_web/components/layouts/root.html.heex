@@ -13,7 +13,7 @@
     <link rel="manifest" href="/site.webmanifest" />
 
     <.live_title suffix=" · Kjogvi">
-      <%= assigns[:page_title] || "" %>
+      {assigns[:page_title] || ""}
     </.live_title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -30,7 +30,7 @@
   </head>
   <body class="bg-white">
     <div class="max-w-screen-2xl min-h-screen mx-auto shadow-2xl">
-      <%= @inner_content %>
+      {@inner_content}
     </div>
   </body>
 </html>

@@ -32,8 +32,8 @@ defmodule OrnithoWeb.TaxaComponents do
       <table class="mt-6 w-[40rem] sm:w-full">
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal"><%= col[:label] %></th>
-            <th class="relative p-0 pb-4"><span class="sr-only"><%= gettext("Actions") %></span></th>
+            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
+            <th class="relative p-0 pb-4"><span class="sr-only">{gettext("Actions")}</span></th>
           </tr>
         </thead>
         <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
@@ -49,7 +49,7 @@ defmodule OrnithoWeb.TaxaComponents do
               </div>
               <div class="block py-4 pr-6">
                 <span class="relative">
-                  <%= render_slot(col, row) %>
+                  {render_slot(col, row)}
                 </span>
               </div>
             </td>
@@ -59,7 +59,7 @@ defmodule OrnithoWeb.TaxaComponents do
                   :for={action <- @action}
                   class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
                 >
-                  <%= render_slot(action, row) %>
+                  {render_slot(action, row)}
                 </span>
               </div>
             </td>
@@ -84,7 +84,7 @@ defmodule OrnithoWeb.TaxaComponents do
         "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg whitespace-nowrap"
       ]}
     >
-      <span class="sr-only">[</span><%= @category %><span class="sr-only">]</span>
+      <span class="sr-only">[</span>{@category}<span class="sr-only">]</span>
     </span>
     """
   end
@@ -124,7 +124,7 @@ defmodule OrnithoWeb.TaxaComponents do
 
   def highlighted(assigns) do
     ~H"""
-    <%= if is_nil(@term) || @term == "", do: @content, else: highlighted_content(assigns) %>
+    {if is_nil(@term) || @term == "", do: @content, else: highlighted_content(assigns)}
     """
   end
 
@@ -135,11 +135,11 @@ defmodule OrnithoWeb.TaxaComponents do
   end
 
   defp maybe_highlighted(%{type: :highlight, text: _text} = assigns) do
-    ~H(<span class="bg-yellow-200"><%= @text %></span>)
+    ~H(<span class="bg-yellow-200">{@text}</span>)
   end
 
   defp maybe_highlighted(%{type: _, text: _text} = assigns) do
-    ~H"<%= @text %>"
+    ~H"{@text}"
   end
 
   defp split_for_highlight(content, term) do
