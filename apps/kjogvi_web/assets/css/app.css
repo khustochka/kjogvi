@@ -5,4 +5,12 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+
+@layer utilities {
+    .small-caps {
+      font-variant: small-caps;
+    }
+  }
+
+
 /* This file is for your main application CSS */

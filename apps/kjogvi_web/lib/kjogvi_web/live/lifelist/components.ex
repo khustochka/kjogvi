@@ -28,8 +28,9 @@ defmodule KjogviWeb.Live.Lifelist.Components do
           <tr>
             <td class="p-0 py-4 pr-6 text-right">{@lifelist.total - i}.</td>
             <td class="p-0 py-4 pr-6">
-              <strong class="font-bold">{lifer.species.name_en}</strong>
-              <i class="whitespace-nowrap">{lifer.species.name_sci}</i>
+              <.species_link species={lifer.species} />
+              <%!-- <strong class="font-bold">{lifer.species.name_en}</strong>
+              <i class="whitespace-nowrap">{lifer.species.name_sci}</i> --%>
             </td>
             <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
               {Format.observation_date(lifer)}
