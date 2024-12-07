@@ -23,6 +23,13 @@ defmodule Kjogvi.Legacy.Import.Observations do
     _ = Kjogvi.Repo.query!("ALTER SEQUENCE observations_id_seq RESTART;")
   end
 
+  defp transform_keys(%{hidden: value} = obs) do
+    obs
+    |> Map.drop([:hidden])
+    |> Map.put(:unreported, value)
+    |> transform_keys
+  end
+
   defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs) do
     %{obs | ebird_code: "bird1"}
     |> Map.put(:unreported, true)
