@@ -27,8 +27,9 @@ cond do
     config :opentelemetry,
       span_processor: :batch,
       sampler: {:parent_based, %{root: {Kjogvi.Telemetry.Sampler, %{}}}},
-      # traces_exporter: {:opentelemetry_exporter, %{}}
-      traces_exporter: {Kjogvi.Opentelemetry.Exporter, []}
+      traces_exporter: {:opentelemetry_exporter, %{}}
+      # TODO: Below stopped working for unclear reason
+      # traces_exporter: {Kjogvi.Opentelemetry.Exporter, []}
 
   true ->
     config :opentelemetry, traces_exporter: :none
