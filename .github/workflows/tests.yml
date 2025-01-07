@@ -17,6 +17,8 @@ jobs:
         uses: ./.github/actions/setup
         with:
           env: dev
+          elixir: v1.18.1
+          otp: '27'
       - name: Run lint
         env:
           MIX_ENV: dev
@@ -24,6 +26,16 @@ jobs:
   test:    
     name: Test
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: 'v1.18.1'
+            otp: '27'
+          - elixir: 'v1.17.3'
+            otp: '27'
+          - elixir: 'v1.16.3'
+            otp: '26'
     services:
       postgres:
         # Latest on fly.io is 16.4
@@ -45,6 +57,8 @@ jobs:
         uses: ./.github/actions/setup
         with:
           env: test
+          elixir: ${{ matrix.elixir }}
+          otp: ${{ matrix.otp }}
       - name: Run tests with coverage
         env:
           MIX_ENV: test
@@ -54,7 +68,7 @@ jobs:
       - name: Code coverage results
         uses: actions/upload-artifact@v4
         with:
-          name: Coverage
+          name: Coverage-Elixir-${{ matrix.elixir }}-otp-${{ matrix.otp }}
           path: cover/
 
   build_image:

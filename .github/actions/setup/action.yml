@@ -4,13 +4,20 @@ inputs:
   env:
     required: true
     description: "Environment"
+  elixir:
+    required: true
+    description: "Elixir version"
+  otp:
+    required: true
+    description: "OTP version"
 runs:
   using: "composite"
   steps:
     - name: Set up Elixir
       uses: erlef/setup-beam@v1
       with:
-        version-file: .tool-versions
+        elixir-version: ${{ inputs.elixir }}
+        otp-version: ${{ inputs.otp }}
         version-type: strict
     - name: Restore dependencies cache
       uses: actions/cache@v4
