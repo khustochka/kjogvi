@@ -66,6 +66,10 @@ defmodule KjogviWeb.Router do
 
       live "/account/settings", My.Account.Settings, :edit
       live "/account/settings/confirm_email/:token", My.Account.Settings, :confirm_email
+
+      live "/lifelist", Lifelist.Index, :private_view
+      live "/lifelist/:year_or_location", Lifelist.Index, :private_view
+      live "/lifelist/:year/:location", Lifelist.Index, :private_view
     end
   end
 
@@ -101,9 +105,9 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :mount_current_user},
         {KjogviWeb.UserAuth, :mount_main_user}
       ] do
-      live "/", Live.Lifelist.Index, :index
-      live "/:year_or_location", Live.Lifelist.Index, :index
-      live "/:year/:location", Live.Lifelist.Index, :index
+      live "/", Live.Lifelist.Index, :public_view
+      live "/:year_or_location", Live.Lifelist.Index, :public_view
+      live "/:year/:location", Live.Lifelist.Index, :public_view
     end
   end
 

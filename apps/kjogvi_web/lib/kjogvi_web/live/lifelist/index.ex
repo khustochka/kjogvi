@@ -24,8 +24,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @impl true
   def handle_params(params, _url, %{assigns: assigns} = socket) do
     user = assigns.user
+    public_view = assigns.live_action != :private_view
+    include_private = !public_view && user.id == assigns.current_user.id
 
-    filter = build_filter(assigns.current_user, params)
+    filter = build_filter(assigns.current_user, params, include_private: include_private)
 
     lifelist = Birding.Lifelist.generate(user, filter)
 
@@ -50,12 +52,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       :noreply,
       socket
       |> assign(
-        public_view: derive_public_view(user, assigns.current_user, params),
         lifelist: lifelist,
         filter: filter,
         years: years,
         months: months,
-        locations: locations
+        locations: locations,
+        public_view: public_view
       )
       |> derive_current_path_query()
       |> derive_location_field()
@@ -63,26 +65,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       |> derive_page_title()
       |> derive_robots()
     }
-  end
-
-  @impl true
-  def handle_event(
-        "public_toggle",
-        %{"_target" => ["public_view"]} = params,
-        %{assigns: assigns} = socket
-      ) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         lifelist_path(
-           assigns.filter,
-           Keyword.put(
-             assigns.current_path_query,
-             :public_view,
-             derive_public_view(assigns.user, assigns.current_user, params)
-           )
-         )
-     )}
   end
 
   @impl true
@@ -105,29 +87,16 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </:subheader>
     </.header>
 
-    <div :if={@current_user && @current_user.id == @user.id} class="flex items-center mt-4">
-      <form action="" phx-change="public_toggle">
-        <input type="hidden" name="public_view" />
-        <input
-          type="checkbox"
-          name="public_view"
-          value="true"
-          checked={@public_view}
-          id="public-view-unchecked"
-          class="relative w-[3.25rem] h-7 p-px bg-gray-100 border-transparent text-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:ring-blue-600 disabled:opacity-50 disabled:pointer-events-none checked:bg-none checked:text-blue-600 checked:border-blue-600 focus:checked:border-blue-600 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-600 before:inline-block before:w-6 before:h-6 before:bg-white checked:before:bg-blue-200 before:translate-x-0 checked:before:translate-x-full before:rounded-full before:shadow before:transform before:ring-0 before:transition before:ease-in-out before:duration-200 dark:before:bg-gray-400 dark:checked:before:bg-blue-200"
-        />
-        <label for="public-view-unchecked" class="text-sm text-gray-500 ms-3 dark:text-gray-400">
-          Public view
-        </label>
-      </form>
-    </div>
-
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
         <em :if={!@filter.exclude_heard_only} class="font-semibold not-italic">Include all</em>
         <.link
           :if={@filter.exclude_heard_only}
-          patch={lifelist_path(%{@filter | exclude_heard_only: false}, @current_path_query)}
+          patch={
+            lifelist_path(%{@filter | exclude_heard_only: false}, @current_path_query,
+              private_view: !@public_view
+            )
+          }
         >
           Include all
         </.link>
@@ -136,7 +105,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={@filter.exclude_heard_only} class="font-semibold not-italic">Separate heard only</em>
         <.link
           :if={!@filter.exclude_heard_only}
-          patch={lifelist_path(%{@filter | exclude_heard_only: true}, @current_path_query)}
+          patch={
+            lifelist_path(%{@filter | exclude_heard_only: true}, @current_path_query,
+              private_view: !@public_view
+            )
+          }
         >
           Separate heard only
         </.link>
@@ -148,7 +121,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={!@filter.motorless} class="font-semibold not-italic">Include all</em>
         <.link
           :if={@filter.motorless}
-          patch={lifelist_path(%{@filter | motorless: false}, @current_path_query)}
+          patch={
+            lifelist_path(%{@filter | motorless: false}, @current_path_query,
+              private_view: !@public_view
+            )
+          }
         >
           Include all
         </.link>
@@ -157,7 +134,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={@filter.motorless} class="font-semibold not-italic">Motorless only</em>
         <.link
           :if={!@filter.motorless}
-          patch={lifelist_path(%{@filter | motorless: true}, @current_path_query)}
+          patch={
+            lifelist_path(%{@filter | motorless: true}, @current_path_query,
+              private_view: !@public_view
+            )
+          }
         >
           Motorless only
         </.link>
@@ -169,7 +150,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={is_nil(@filter.year)} class="font-semibold not-italic">All years</em>
         <.link
           :if={not is_nil(@filter.year)}
-          patch={lifelist_path(%{@filter | year: nil}, @current_path_query)}
+          patch={
+            lifelist_path(%{@filter | year: nil}, @current_path_query, private_view: !@public_view)
+          }
         >
           All years
         </.link>
@@ -180,7 +163,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <em class="font-semibold not-italic">{year}</em>
           <% else %>
             <%= if active do %>
-              <.link patch={lifelist_path(%{@filter | year: year}, @current_path_query)}>
+              <.link patch={
+                lifelist_path(%{@filter | year: year}, @current_path_query,
+                  private_view: !@public_view
+                )
+              }>
                 {year}
               </.link>
             <% else %>
@@ -196,7 +183,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={is_nil(@filter.month)} class="font-semibold not-italic">All months</em>
         <.link
           :if={not is_nil(@filter.month)}
-          patch={lifelist_path(%{@filter | month: nil}, Keyword.delete(@current_path_query, :month))}
+          patch={
+            lifelist_path(%{@filter | month: nil}, Keyword.delete(@current_path_query, :month),
+              private_view: !@public_view
+            )
+          }
         >
           All months
         </.link>
@@ -207,7 +198,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <em class="font-semibold not-italic">{Timex.month_shortname(month)}</em>
           <% else %>
             <%= if active do %>
-              <.link patch={lifelist_path(%{@filter | month: month}, @current_path_query)}>
+              <.link patch={
+                lifelist_path(%{@filter | month: month}, @current_path_query,
+                  private_view: !@public_view
+                )
+              }>
                 {Timex.month_shortname(month)}
               </.link>
             <% else %>
@@ -223,7 +218,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={is_nil(@filter.location)} class="font-semibold not-italic">All countries</em>
         <.link
           :if={not is_nil(@filter.location)}
-          patch={lifelist_path(%{@filter | location: nil}, @current_path_query)}
+          patch={
+            lifelist_path(%{@filter | location: nil}, @current_path_query,
+              private_view: !@public_view
+            )
+          }
         >
           All countries
         </.link>
@@ -234,7 +233,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <em class="font-semibold not-italic">{location.name_en}</em>
           <% else %>
             <%= if active do %>
-              <.link patch={lifelist_path(%{@filter | location: location}, @current_path_query)}>
+              <.link patch={
+                lifelist_path(%{@filter | location: location}, @current_path_query,
+                  private_view: !@public_view
+                )
+              }>
                 {location.name_en}
               </.link>
             <% else %>
@@ -278,19 +281,21 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  defp build_filter(user, params) do
+  defp build_filter(user, params, include_private: _include_private) do
     KjogviWeb.Live.Lifelist.Params.to_filter(user, params)
     |> case do
+      # %{filter | include_private: include_private}
       {:ok, filter} -> filter
       {:error, _} -> raise Plug.BadRequestError
     end
   end
 
   # Logged in user
-  defp derive_current_path_query(%{assigns: %{current_user: current_user} = assigns} = socket)
+  defp derive_current_path_query(%{assigns: %{current_user: current_user} = _assigns} = socket)
        when not is_nil(current_user) do
+    # Include here params only available to logged in user
     query =
-      [public_view: assigns.public_view]
+      []
       |> Keyword.reject(fn {_, val} -> !val end)
 
     socket
@@ -344,10 +349,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp derive_robots(socket) do
     socket
-  end
-
-  defp derive_public_view(%{id: user_id} = _user, current_user, params) do
-    is_nil(current_user) || (current_user.id == user_id && params["public_view"] == "true")
   end
 
   defp header_style(%{year: nil, location: nil}) do

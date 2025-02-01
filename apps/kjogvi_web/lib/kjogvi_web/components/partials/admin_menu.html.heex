@@ -10,6 +10,11 @@
         Cards
       </.link>
     </.admin_menu_item>
+    <.admin_menu_item>
+      <.link href={~p"/my/lifelist"} class="no-underline hover:underline">
+        Lifelist
+      </.link>
+    </.admin_menu_item>
     <%= if Kjogvi.Users.admin?(@current_user) do %>
       <.admin_menu_item>
         <.link href={~p"/taxonomy"} class="no-underline hover:underline">
