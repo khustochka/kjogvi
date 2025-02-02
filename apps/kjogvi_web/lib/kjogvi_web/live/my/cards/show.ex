@@ -80,8 +80,11 @@ defmodule KjogviWeb.Live.My.Cards.Show do
       <:col :let={obs} label="id">{obs.id}</:col>
       <:col :let={obs} label="Quantity">
         {obs.quantity}
+        <span :if={obs.hidden} title="Hidden" class="pl-2">
+          <.icon name="fa-regular-eye-slash" class="h-4 w-4 text-red-500" />
+        </span>
         <span :if={obs.voice} title="Heard only" class="pl-2">
-          <.icon name="fa-regular-eye-slash" class="h-4 w-4" />
+          <.icon name="fa-solid-ear-listen" class="h-4 w-4 text-teal-600" />
         </span>
       </:col>
       <:col :let={obs} label="Taxon">

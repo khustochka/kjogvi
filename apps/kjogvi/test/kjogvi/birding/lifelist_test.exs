@@ -237,5 +237,82 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert Enum.map(result.list, & &1.species.code) == [taxon3.code, taxon1.code]
       assert Enum.map(result.list, & &1.observ_date) == [card3.observ_date, card1.observ_date]
     end
+
+    test "unreported observations not included in private view" do
+      user = user_fixture()
+
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon1),
+        unreported: true
+      )
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon2)
+      )
+
+      result = Kjogvi.Birding.Lifelist.generate(user)
+
+      assert length(result.list) == 1
+
+      assert Enum.map(result.list, & &1.species.code) == [taxon2.code]
+    end
+
+    test "hidden observations are included in private view" do
+      user = user_fixture()
+
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon1),
+        hidden: true
+      )
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon2)
+      )
+
+      result = Kjogvi.Birding.Lifelist.generate(user, include_hidden: true)
+
+      assert length(result.list) == 2
+
+      codes = Enum.map(result.list, & &1.species.code)
+      assert taxon1.code in codes
+      assert taxon2.code in codes
+    end
+
+    test "hidden observations are not included in public view" do
+      user = user_fixture()
+
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon1),
+        hidden: true
+      )
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon2)
+      )
+
+      result = Kjogvi.Birding.Lifelist.generate(user)
+
+      assert length(result.list) == 1
+
+      assert Enum.map(result.list, & &1.species.code) == [taxon2.code]
+    end
   end
 end

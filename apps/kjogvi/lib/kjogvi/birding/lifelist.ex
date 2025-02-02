@@ -26,7 +26,7 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Generate lifelist based on provided filter options.
   """
-  def generate(user, filter \\ %Filter{}) do
+  def generate(user, filter \\ []) do
     generate_with_species(user, filter)
     |> preload_all_location()
     |> Enum.reverse()
@@ -46,7 +46,7 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get N newest species on the list based on provided filter options.
   """
-  def top(user, n, filter \\ %Filter{}) when is_integer(n) and n > 0 do
+  def top(user, n, filter \\ []) when is_integer(n) and n > 0 do
     lifelist_query(user, filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
@@ -67,7 +67,7 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get all years in a list based on provided filter options.
   """
-  def years(user, filter \\ %Filter{}) do
+  def years(user, filter \\ []) do
     observations_filtered(user, filter)
     |> distinct(true)
     |> select([..., c], extract_year(c.observ_date))
@@ -78,7 +78,7 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get all months in a list based on provided filter options.
   """
-  def months(user, filter \\ %Filter{}) do
+  def months(user, filter \\ []) do
     observations_filtered(user, filter)
     |> distinct(true)
     |> select([..., c], extract_month(c.observ_date))
@@ -89,7 +89,7 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get all country ids in a list based on provided filter options.
   """
-  def country_ids(user, filter \\ %Filter{}) do
+  def country_ids(user, filter \\ []) do
     location_ids =
       observations_filtered(user, filter)
       |> distinct(true)
@@ -108,7 +108,7 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Main entrypoint that converts filter into a query that returns observation matching it.
   """
-  def observations_filtered(user, filter \\ %Filter{})
+  def observations_filtered(user, filter \\ [])
 
   def observations_filtered(user, %Filter{} = filter) do
     base = from([o, c] in observation_base(user))
@@ -135,10 +135,19 @@ defmodule Kjogvi.Birding.Lifelist do
           query
       end
     end)
+    |> apply_privacy_filter(filter)
   end
 
   def observations_filtered(user, filter) do
     filter |> Filter.discombo!() |> then(&observations_filtered(user, &1))
+  end
+
+  defp apply_privacy_filter(query, %{include_hidden: true}) do
+    query
+  end
+
+  defp apply_privacy_filter(query, %{include_hidden: false}) do
+    Observation.Query.exclude_hidden(query)
   end
 
   # ----------------

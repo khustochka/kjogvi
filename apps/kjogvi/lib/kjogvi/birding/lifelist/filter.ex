@@ -25,11 +25,11 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
     exclude_heard_only: [
       type: :boolean,
       default: false
+    ],
+    include_hidden: [
+      type: :boolean,
+      default: false
     ]
-    # public_view: [
-    #   type: :boolean,
-    #   default: false
-    # ]
   ]
 
   defstruct Keyword.keys(@schema)

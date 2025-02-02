@@ -13,6 +13,9 @@ defmodule Kjogvi.Birding.Observation do
     field :voice, :boolean, default: false
     field :notes, :string
     field :private_notes, :string
+    # Hidden from public, but shown to the owner
+    field :hidden, :boolean, default: false
+    # Not included in lifelist even for the owner
     field :unreported, :boolean, default: false
     field :ebird_obs_id, :string
 

@@ -25,9 +25,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   def handle_params(params, _url, %{assigns: assigns} = socket) do
     user = assigns.user
     public_view = assigns.live_action != :private_view
-    include_private = !public_view && user.id == assigns.current_user.id
+    include_hidden = !public_view && user.id == assigns.current_user.id
 
-    filter = build_filter(assigns.current_user, params, include_private: include_private)
+    filter = build_filter(assigns.current_user, params, include_hidden: include_hidden)
 
     lifelist = Birding.Lifelist.generate(user, filter)
 
@@ -281,11 +281,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  defp build_filter(user, params, include_private: _include_private) do
+  defp build_filter(user, params, include_hidden: include_hidden) do
     KjogviWeb.Live.Lifelist.Params.to_filter(user, params)
     |> case do
-      # %{filter | include_private: include_private}
-      {:ok, filter} -> filter
+      {:ok, filter} -> %{filter | include_hidden: include_hidden}
       {:error, _} -> raise Plug.BadRequestError
     end
   end
