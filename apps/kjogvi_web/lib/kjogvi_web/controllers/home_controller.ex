@@ -19,8 +19,8 @@ defmodule KjogviWeb.HomeController do
         Birding.Lifelist.top(user, @top_lifelist_num)
       },
       {
-        Live.Lifelist.Presenter.title(year: 2024),
-        Birding.Lifelist.top(user, @top_lifelist_num, year: 2024)
+        Live.Lifelist.Presenter.title(year: 2025),
+        Birding.Lifelist.top(user, @top_lifelist_num, year: 2025)
       }
     ]
 
