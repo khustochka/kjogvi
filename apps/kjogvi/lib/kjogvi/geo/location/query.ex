@@ -41,6 +41,6 @@ defmodule Kjogvi.Geo.Location.Query do
 
   def child_locations(%{id: id}) do
     from l in Location,
-      where: ^id in l.ancestry or ^id == l.id
+      where: fragment("? @> ?::bigint[]", l.ancestry, [^id]) or ^id == l.id
   end
 end
