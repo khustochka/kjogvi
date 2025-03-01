@@ -36,6 +36,10 @@ jobs:
             otp: '27'
           - elixir: 'v1.16.3'
             otp: '26'
+          - elixir: 'v1.15.8'
+            otp: '26'
+          - elixir: 'v1.14.5'
+            otp: '26'
     services:
       postgres:
         # Latest on fly.io is 16.4
