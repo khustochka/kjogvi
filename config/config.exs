@@ -45,10 +45,16 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.24.2",
+  version: "0.25.0",
   kjogvi_web: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    args: ~w(
+        js/app.js
+        --bundle
+        --target=es2017
+        --outdir=../priv/static/assets
+        --external:/fonts/*
+        --external:/images/*
+      ),
     cd: Path.expand("../apps/kjogvi_web/assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
