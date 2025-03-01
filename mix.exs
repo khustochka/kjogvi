@@ -8,19 +8,7 @@ defmodule Kjogvi.Umbrella.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      dialyzer: [
-        plt_add_deps: :app_tree,
-        plt_add_apps: [:mix],
-        flags: [
-          :error_handling,
-          :no_opaque,
-          :unknown,
-          :no_return,
-          :missing_return
-        ],
-        ignore_warnings: ".dialyzer_ignore.exs",
-        list_unused_filters: true
-      ],
+      dialyzer: dialyzer(),
       test_coverage: [tool: ExCoveralls],
       releases: [
         kjogvi: [
@@ -101,6 +89,22 @@ defmodule Kjogvi.Umbrella.MixProject do
         # "run --no-start -e 'IO.puts(\"Running cycles detection...\")'",
         # "xref graph --format cycles --label compile-connected --fail-above 0"
       ]
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_add_deps: :app_tree,
+      plt_add_apps: [:mix],
+      flags: [
+        :error_handling,
+        :no_opaque,
+        :unknown,
+        :no_return,
+        :missing_return
+      ],
+      ignore_warnings: ".dialyzer_ignore.exs",
+      list_unused_filters: true
     ]
   end
 end
