@@ -7,6 +7,7 @@ defmodule OrnithoWeb.Live.Taxa.Index do
 
   @minimum_search_term_length 3
   @taxa_per_page 25
+  @pagination_opts [window: 2, template: OrnithoWeb.Scrivener.Phoenix.Template]
 
   @impl true
   def update(%{book: book, page_num: page_num, search_term: search_term}, socket) do
@@ -62,7 +63,13 @@ defmodule OrnithoWeb.Live.Taxa.Index do
       />
 
       <%= if !@search_enabled do %>
-        {paginate(@socket, @taxa, &OrnithoWeb.LinkHelper.book_path/4, [@book], live: true)}
+        {paginate(
+          @socket,
+          @taxa,
+          &OrnithoWeb.LinkHelper.book_path/4,
+          [@book],
+          Keyword.merge([live: true], pagination_opts())
+        )}
       <% end %>
     </div>
     """
@@ -99,5 +106,9 @@ defmodule OrnithoWeb.Live.Taxa.Index do
   defp get_taxa(%{book: book, search_enabled: true, search_term: search_term}) do
     Ornitho.Finder.Taxon.search(book, search_term, limit: 15)
     |> Ornitho.Finder.Taxon.with_parent_species()
+  end
+
+  defp pagination_opts do
+    @pagination_opts
   end
 end

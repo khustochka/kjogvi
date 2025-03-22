@@ -54,10 +54,6 @@ Application.put_env(:ornitho_web, DemoWeb.Endpoint,
   ]
 )
 
-Application.put_all_env(
-  scrivener_phoenix: [window: 2, template: OrnithoWeb.Scrivener.Phoenix.Template]
-)
-
 defmodule DemoWeb.PageController do
   import Plug.Conn
 
