@@ -80,7 +80,8 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 config :scrivener_phoenix,
-  window: 2
+  window: 2,
+  template: Scrivener.Phoenix.Template.Tailwind
 
 # ORNITHOLOGUE
 
