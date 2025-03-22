@@ -113,7 +113,7 @@ defmodule KjogviWeb.MixProject do
     if System.get_env("LOCAL_SCRIVENER") do
       [path: "../../../scrivener_phoenix"]
     else
-      [github: "khustochka/scrivener_phoenix", branch: "integration"]
+      [github: "khustochka/scrivener_phoenix", branch: "fix-deprecated-link"]
     end
   end
 
