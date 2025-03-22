@@ -7,9 +7,7 @@ defmodule OrnithoWeb.LinkHelper do
     routed_path(conn_or_socket, "/", params)
   end
 
-  def book_path(conn_or_socket, book, params \\ []) do
-    {page, params} = pop_in(params, [:page])
-
+  def book_path(conn_or_socket, book, page \\ nil, params \\ []) do
     path =
       case page do
         n when n in [nil, "", 0, "0", 1, "1"] -> "#{book.slug}/#{book.version}"
