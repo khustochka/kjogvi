@@ -52,7 +52,7 @@ defmodule OrnithoWeb.MixProject do
   defp deps do
     [
       # Deps
-      {:phoenix_live_view, ">= 0.20.0"},
+      {:phoenix_live_view, "~> 1.0"},
       {:phoenix, "~> 1.7.20"},
       {:phoenix_html, "~> 4.1"},
       {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
@@ -63,7 +63,7 @@ defmodule OrnithoWeb.MixProject do
 
       # Assets
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
       {:heroicons,
        github: "tailwindlabs/heroicons",
        tag: "v2.2.0",

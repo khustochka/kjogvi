@@ -63,7 +63,7 @@ defmodule KjogviWeb.MixProject do
       {:timex, "~> 3.0"},
       {:phoenix_live_dashboard, "~> 0.8.4"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
       {:heroicons,
        github: "tailwindlabs/heroicons",
        tag: "v2.2.0",
