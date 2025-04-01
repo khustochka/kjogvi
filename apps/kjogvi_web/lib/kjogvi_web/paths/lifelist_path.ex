@@ -8,6 +8,8 @@ defmodule KjogviWeb.Paths.LifelistPath do
   alias KjogviWeb.Paths
   alias Kjogvi.Birding.Lifelist
 
+  @filter_exclude_from_query [:include_hidden]
+
   def lifelist_path(path_opts \\ [], query \\ nil, privacy_opts \\ [])
 
   def lifelist_path(%Lifelist.Filter{} = filter, query, privacy_opts) do
@@ -33,6 +35,7 @@ defmodule KjogviWeb.Paths.LifelistPath do
       |> Map.split([:year, :location])
 
     query_filters
+    |> Map.drop(@filter_exclude_from_query)
     |> Map.merge(Map.new(query || []))
     |> Paths.clean_query()
     |> then(&{year, location, Paths.clean_query(&1)})

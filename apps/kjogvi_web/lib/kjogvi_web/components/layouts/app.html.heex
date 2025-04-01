@@ -38,8 +38,11 @@
     </div>
   </div>
 </header>
-<main class="px-4 py-4 sm:px-6 lg:px-8">
-  <div class="mx-auto max-w-5xl">
+<main class="px-4 pb-4 sm:px-6 lg:px-8">
+  <div :if={@private_view} class="bg-orange-400 text-white p-2 text-center">
+    Private view
+  </div>
+  <div class="mx-auto mt-4 max-w-5xl">
     <.main_flash flash={@flash} />
     {@inner_content}
     <hr class="hidden" />

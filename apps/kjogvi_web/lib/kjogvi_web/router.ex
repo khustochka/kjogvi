@@ -25,6 +25,11 @@ defmodule KjogviWeb.Router do
     end
 
     plug :fetch_current_user
+    plug :set_default_assigns
+  end
+
+  pipeline :private_view do
+    plug :set_override_assigns, private_view: true
   end
 
   pipeline :api do
@@ -50,10 +55,11 @@ defmodule KjogviWeb.Router do
   # AUTHENTICATED USER ROUTES
 
   scope "/my", KjogviWeb.Live do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through [:browser, :private_view, :require_authenticated_user]
 
     live_session :require_authenticated_user,
       on_mount: [
+        {KjogviWeb.DefaultMounts, :private_view},
         {KjogviWeb.UserAuth, :ensure_authenticated},
         {KjogviWeb.UserAuth, :mount_main_user}
       ] do
@@ -67,19 +73,23 @@ defmodule KjogviWeb.Router do
       live "/account/settings", My.Account.Settings, :edit
       live "/account/settings/confirm_email/:token", My.Account.Settings, :confirm_email
 
-      live "/lifelist", Lifelist.Index, :private_view
-      live "/lifelist/:year_or_location", Lifelist.Index, :private_view
-      live "/lifelist/:year/:location", Lifelist.Index, :private_view
+      live "/lifelist", Lifelist.Index, :index
+      live "/lifelist/:year_or_location", Lifelist.Index, :index
+      live "/lifelist/:year/:location", Lifelist.Index, :index
     end
   end
 
   # ADMIN ROUTES
 
   scope "/", KjogviWeb do
-    pipe_through [:browser, :require_admin]
+    pipe_through [:browser, :private_view, :require_admin]
 
     live_session :admin_paths,
-      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}, {KjogviWeb.UserAuth, :mount_main_user}] do
+      on_mount: [
+        {KjogviWeb.DefaultMounts, :private_view},
+        {KjogviWeb.UserAuth, :ensure_admin},
+        {KjogviWeb.UserAuth, :mount_main_user}
+      ] do
       live "/admin/tasks", Live.Admin.Tasks.Index, :index
       post "/admin/tasks/legacy_import", Admin.TasksController, :legacy_import
     end
@@ -102,6 +112,7 @@ defmodule KjogviWeb.Router do
 
     live_session :open_current_user,
       on_mount: [
+        {KjogviWeb.DefaultMounts, :default},
         {KjogviWeb.UserAuth, :mount_current_user},
         {KjogviWeb.UserAuth, :mount_main_user}
       ] do
@@ -121,7 +132,10 @@ defmodule KjogviWeb.Router do
   scope "/", KjogviWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    registration_on_mount = [{KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}]
+    registration_on_mount = [
+      {KjogviWeb.DefaultMounts, :default},
+      {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}
+    ]
 
     Kjogvi.Config.with_single_user do
       registration_on_mount = registration_on_mount ++ [{KjogviWeb.UserAuth, :mount_main_user}]
@@ -148,7 +162,10 @@ defmodule KjogviWeb.Router do
 
     Kjogvi.Config.with_multiuser do
       live_session :current_user,
-        on_mount: [{KjogviWeb.UserAuth, :mount_current_user}] do
+        on_mount: [
+          {KjogviWeb.DefaultMounts, :default},
+          {KjogviWeb.UserAuth, :mount_current_user}
+        ] do
         live "/users/confirm/:token", UserConfirmationLive, :edit
         live "/users/confirm", UserConfirmationInstructionsLive, :new
       end

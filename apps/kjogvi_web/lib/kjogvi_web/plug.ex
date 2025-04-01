@@ -5,6 +5,10 @@ defmodule KjogviWeb.Plug do
 
   use KjogviWeb, :controller
 
+  @override_assign_keys [
+    :private_view
+  ]
+
   @doc """
   If a non-root URL ends with a slash '/', do a permanent redirect to a URL that
   removes it.
@@ -53,6 +57,22 @@ defmodule KjogviWeb.Plug do
       conn
       |> redirect(to: ~p"/setup")
       |> halt()
+    end
+  end
+
+  def set_default_assigns(conn, _opts) do
+    conn
+    |> assign(:private_view, false)
+  end
+
+  def set_override_assigns(conn, opts) do
+    for key <- @override_assign_keys, reduce: conn do
+      acc ->
+        if Keyword.has_key?(opts, key) do
+          acc |> assign(key, opts[key])
+        else
+          acc
+        end
     end
   end
 end

@@ -7,7 +7,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   alias KjogviWeb.Format
 
   attr :id, :string, required: true
-  attr :public_view, :boolean, default: true
+  attr :show_private_details, :boolean, default: false
   attr :lifelist, :list, required: true
   attr :location_field, :atom, required: true
 
@@ -20,7 +20,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
           <th class="p-0 pr-6 pb-4 font-normal">Species</th>
           <th class="p-0 pr-6 pb-4 font-normal text-center">Date</th>
           <th class="p-0 pr-6 pb-4 font-normal">Location</th>
-          <th :if={!@public_view} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
+          <th :if={@show_private_details} class="p-0 pr-6 pb-4 font-normal text-center">Card</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-zinc-100 border-t border-zinc-200 leading-snug text-zinc-700">
@@ -45,7 +45,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
                 <% end %>
               <% end %>
             </td>
-            <td :if={!@public_view} class="p-0 py-4 pr-6 text-center">
+            <td :if={@show_private_details} class="p-0 py-4 pr-6 text-center">
               <.link navigate={~p"/my/cards/#{lifer.card_id}"}>
                 <.icon name="hero-clipboard-document-list" class="w-[18px]" />
               </.link>

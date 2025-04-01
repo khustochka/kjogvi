@@ -24,10 +24,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @impl true
   def handle_params(params, _url, %{assigns: assigns} = socket) do
     user = assigns.user
-    public_view = assigns.live_action != :private_view
-    include_hidden = !public_view && user.id == assigns.current_user.id
+    show_private_details = assigns.private_view && user.id == assigns.current_user.id
 
-    filter = build_filter(assigns.current_user, params, include_hidden: include_hidden)
+    filter = build_filter(assigns.current_user, params, include_hidden: show_private_details)
 
     lifelist = Birding.Lifelist.generate(user, filter)
 
@@ -57,7 +56,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         years: years,
         months: months,
         locations: locations,
-        public_view: public_view
+        show_private_details: show_private_details
       )
       |> derive_current_path_query()
       |> derive_location_field()
@@ -94,7 +93,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           :if={@filter.exclude_heard_only}
           patch={
             lifelist_path(%{@filter | exclude_heard_only: false}, @current_path_query,
-              private_view: !@public_view
+              private_view: @private_view
             )
           }
         >
@@ -107,7 +106,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           :if={!@filter.exclude_heard_only}
           patch={
             lifelist_path(%{@filter | exclude_heard_only: true}, @current_path_query,
-              private_view: !@public_view
+              private_view: @private_view
             )
           }
         >
@@ -123,7 +122,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           :if={@filter.motorless}
           patch={
             lifelist_path(%{@filter | motorless: false}, @current_path_query,
-              private_view: !@public_view
+              private_view: @private_view
             )
           }
         >
@@ -136,7 +135,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           :if={!@filter.motorless}
           patch={
             lifelist_path(%{@filter | motorless: true}, @current_path_query,
-              private_view: !@public_view
+              private_view: @private_view
             )
           }
         >
@@ -151,7 +150,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <.link
           :if={not is_nil(@filter.year)}
           patch={
-            lifelist_path(%{@filter | year: nil}, @current_path_query, private_view: !@public_view)
+            lifelist_path(%{@filter | year: nil}, @current_path_query, private_view: @private_view)
           }
         >
           All years
@@ -165,7 +164,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <%= if active do %>
               <.link patch={
                 lifelist_path(%{@filter | year: year}, @current_path_query,
-                  private_view: !@public_view
+                  private_view: @private_view
                 )
               }>
                 {year}
@@ -185,7 +184,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           :if={not is_nil(@filter.month)}
           patch={
             lifelist_path(%{@filter | month: nil}, Keyword.delete(@current_path_query, :month),
-              private_view: !@public_view
+              private_view: @private_view
             )
           }
         >
@@ -200,7 +199,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <%= if active do %>
               <.link patch={
                 lifelist_path(%{@filter | month: month}, @current_path_query,
-                  private_view: !@public_view
+                  private_view: @private_view
                 )
               }>
                 {Timex.month_shortname(month)}
@@ -220,7 +219,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           :if={not is_nil(@filter.location)}
           patch={
             lifelist_path(%{@filter | location: nil}, @current_path_query,
-              private_view: !@public_view
+              private_view: @private_view
             )
           }
         >
@@ -235,7 +234,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <%= if active do %>
               <.link patch={
                 lifelist_path(%{@filter | location: location}, @current_path_query,
-                  private_view: !@public_view
+                  private_view: @private_view
                 )
               }>
                 {location.name_en}
@@ -250,7 +249,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     <.lifers_table
       id="lifelist-table"
-      public_view={@public_view}
+      show_private_details={@show_private_details}
       lifelist={@lifelist}
       location_field={@location_field}
     />
@@ -273,7 +272,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
       <.lifers_table
         id="lifelist-heard-only-table"
-        public_view={@public_view}
+        show_private_details={@show_private_details}
         lifelist={@lifelist.extras.heard_only}
         location_field={@location_field}
       />
@@ -311,10 +310,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     socket
     |> assign(
       :location_field,
-      if assigns.public_view do
-        :public_location
-      else
+      if assigns.show_private_details do
         :location
+      else
+        :public_location
       end
     )
   end
