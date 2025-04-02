@@ -7,8 +7,6 @@ defmodule KjogviWeb.Partials do
 
   import KjogviWeb.AdminMenuComponents
 
-  alias KjogviWeb.Format
-
   require Kjogvi.Config
 
   embed_templates "partials/*"

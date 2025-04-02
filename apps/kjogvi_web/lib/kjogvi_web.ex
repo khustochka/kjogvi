@@ -106,6 +106,7 @@ defmodule KjogviWeb do
       import KjogviWeb.MetaComponents
       import KjogviWeb.NavigationComponents
       import KjogviWeb.BirdingComponents
+      import KjogviWeb.FormatComponents
       use Gettext, backend: KjogviWeb.Gettext
 
       # Shortcut for generating JS commands
