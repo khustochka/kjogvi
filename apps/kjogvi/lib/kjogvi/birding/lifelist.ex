@@ -9,10 +9,9 @@ defmodule Kjogvi.Birding.Lifelist do
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
 
-  alias Kjogvi.Birding.Card
   alias Kjogvi.Birding.LifeObservation
-  alias Kjogvi.Birding.Observation
   alias Kjogvi.Geo
+  alias __MODULE__
   alias __MODULE__.Filter
   alias __MODULE__.Result
 
@@ -47,7 +46,7 @@ defmodule Kjogvi.Birding.Lifelist do
   Get N newest species on the list based on provided filter options.
   """
   def top(user, n, filter \\ []) when is_integer(n) and n > 0 do
-    lifelist_query(user, filter)
+    Lifelist.Query.lifelist_query(user, filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Kjogvi.Birding.preload_taxa_and_species()
@@ -68,7 +67,7 @@ defmodule Kjogvi.Birding.Lifelist do
   Get all years in a list based on provided filter options.
   """
   def years(user, filter \\ []) do
-    observations_filtered(user, filter)
+    Lifelist.Query.observations_filtered(user, filter)
     |> distinct(true)
     |> select([..., c], extract_year(c.observ_date))
     |> Repo.all()
@@ -79,7 +78,7 @@ defmodule Kjogvi.Birding.Lifelist do
   Get all months in a list based on provided filter options.
   """
   def months(user, filter \\ []) do
-    observations_filtered(user, filter)
+    Lifelist.Query.observations_filtered(user, filter)
     |> distinct(true)
     |> select([..., c], extract_month(c.observ_date))
     |> Repo.all()
@@ -91,7 +90,7 @@ defmodule Kjogvi.Birding.Lifelist do
   """
   def country_ids(user, filter \\ []) do
     location_ids =
-      observations_filtered(user, filter)
+      Lifelist.Query.observations_filtered(user, filter)
       |> distinct(true)
       |> select([_o, c], [c.location_id])
 
@@ -105,55 +104,8 @@ defmodule Kjogvi.Birding.Lifelist do
 
   # ===
 
-  @doc """
-  Main entrypoint that converts filter into a query that returns observation matching it.
-  """
-  def observations_filtered(user, filter \\ [])
-
-  def observations_filtered(user, %Filter{} = filter) do
-    base = from([o, c] in observation_base(user))
-
-    Map.from_struct(filter)
-    |> Enum.reduce(base, fn filter, query ->
-      case filter do
-        {:year, year} when not is_nil(year) ->
-          Card.Query.by_year(query, year)
-
-        {:month, month} when not is_nil(month) ->
-          Card.Query.by_month(query, month)
-
-        {:location, location} when not is_nil(location) ->
-          Card.Query.by_location_with_descendants(query, location)
-
-        {:motorless, motorless} when motorless == true ->
-          Card.Query.motorless(query)
-
-        {:exclude_heard_only, true} ->
-          Observation.Query.exclude_heard_only(query)
-
-        _ ->
-          query
-      end
-    end)
-    |> apply_privacy_filter(filter)
-  end
-
-  def observations_filtered(user, filter) do
-    filter |> Filter.discombo!() |> then(&observations_filtered(user, &1))
-  end
-
-  defp apply_privacy_filter(query, %{include_hidden: true}) do
-    query
-  end
-
-  defp apply_privacy_filter(query, %{include_hidden: false}) do
-    Observation.Query.exclude_hidden(query)
-  end
-
-  # ----------------
-
   defp generate_with_species(user, filter) do
-    lifelist_query(user, filter)
+    Lifelist.Query.lifelist_query(user, filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Kjogvi.Birding.preload_taxa_and_species()
@@ -190,33 +142,6 @@ defmodule Kjogvi.Birding.Lifelist do
 
   defp maybe_add_extras(list) do
     list
-  end
-
-  defp lifelist_query(user, filter) do
-    from l in subquery(lifers_query(user, filter)),
-      order_by: [asc: l.observ_date, asc_nulls_last: l.start_time, asc: l.id]
-  end
-
-  defp lifers_query(user, filter) do
-    from [o, c] in observations_filtered(user, filter),
-      distinct: o.taxon_key,
-      order_by: [asc: o.taxon_key, asc: c.observ_date, asc_nulls_last: c.start_time, asc: o.id],
-      select: %{
-        id: o.id,
-        card_id: c.id,
-        taxon_key: o.taxon_key,
-        observ_date: c.observ_date,
-        start_time: c.start_time,
-        location_id: c.location_id
-      }
-  end
-
-  defp observation_base(%{id: id} = _user) do
-    from o in Observation,
-      as: :observation,
-      join: c in assoc(o, :card),
-      as: :card,
-      where: o.unreported == false and c.user_id == ^id
   end
 
   # TODO: extract this to be usable universally
