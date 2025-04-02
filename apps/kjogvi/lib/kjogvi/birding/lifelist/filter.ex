@@ -5,6 +5,8 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
 
   alias Kjogvi.Geo
 
+  @type t() :: %__MODULE__{}
+
   @schema [
     year: [
       type: {:or, [:integer, nil]},
@@ -23,10 +25,6 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
       default: false
     ],
     exclude_heard_only: [
-      type: :boolean,
-      default: false
-    ],
-    include_hidden: [
       type: :boolean,
       default: false
     ]

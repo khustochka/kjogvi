@@ -5,6 +5,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
 
   import Ecto.Query
 
+  alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Birding.Lifelist.Filter
   alias Kjogvi.Birding.Card
   alias Kjogvi.Birding.Observation
@@ -12,13 +13,15 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   @doc """
   Full query to generate lifelist.
   """
-  def lifelist_query(user, filter) do
-    from l in subquery(lifers_query(user, filter)),
+  @spec lifelist_query(Lifelist.Scope.t()) :: Ecto.Query.t()
+  @spec lifelist_query(Lifelist.Scope.t(), Lifelist.filter()) :: Ecto.Query.t()
+  def lifelist_query(scope, filter \\ []) do
+    from l in subquery(lifers_query(scope, filter)),
       order_by: [asc: l.observ_date, asc_nulls_last: l.start_time, asc: l.id]
   end
 
-  defp lifers_query(user, filter) do
-    from [o, c] in observations_filtered(user, filter),
+  defp lifers_query(scope, filter) do
+    from [o, c] in observations_filtered(scope, filter),
       distinct: o.taxon_key,
       order_by: [asc: o.taxon_key, asc: c.observ_date, asc_nulls_last: c.start_time, asc: o.id],
       select: %{
@@ -34,10 +37,12 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   @doc """
   Main entrypoint that converts filter into a query that returns observations matching it.
   """
-  def observations_filtered(user, filter \\ [])
+  @spec observations_filtered(Lifelist.Scope.t()) :: Ecto.Query.t()
+  @spec observations_filtered(Lifelist.Scope.t(), Lifelist.filter()) :: Ecto.Query.t()
+  def observations_filtered(scope, filter \\ [])
 
-  def observations_filtered(user, %Filter{} = filter) do
-    base = from([o, c] in observation_base(user))
+  def observations_filtered(scope, %Filter{} = filter) do
+    base = from([o, c] in observation_base(scope))
 
     Map.from_struct(filter)
     |> Enum.reduce(base, fn filter, query ->
@@ -61,26 +66,26 @@ defmodule Kjogvi.Birding.Lifelist.Query do
           query
       end
     end)
-    |> apply_privacy_filter(filter)
   end
 
   def observations_filtered(user, filter) do
     filter |> Filter.discombo!() |> then(&observations_filtered(user, &1))
   end
 
-  defp observation_base(%{id: id} = _user) do
-    from o in Observation,
-      as: :observation,
-      join: c in assoc(o, :card),
-      as: :card,
-      where: o.unreported == false and c.user_id == ^id
-  end
+  defp observation_base(scope) do
+    %{user: %{id: user_id}, include_private: include_private} = scope
 
-  defp apply_privacy_filter(query, %{include_hidden: true}) do
-    query
-  end
+    query =
+      from o in Observation,
+        as: :observation,
+        join: c in assoc(o, :card),
+        as: :card,
+        where: o.unreported == false and c.user_id == ^user_id
 
-  defp apply_privacy_filter(query, %{include_hidden: false}) do
-    Observation.Query.exclude_hidden(query)
+    if include_private do
+      query
+    else
+      Observation.Query.exclude_hidden(query)
+    end
   end
 end

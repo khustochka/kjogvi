@@ -16,11 +16,11 @@ defmodule KjogviWeb.HomeController do
     primary_lists = [
       {
         "Last 5 lifers",
-        Birding.Lifelist.top(user, @top_lifelist_num)
+        Birding.Lifelist.top(%Birding.Lifelist.Scope{user: user}, @top_lifelist_num)
       },
       {
         Live.Lifelist.Presenter.title(year: 2025),
-        Birding.Lifelist.top(user, @top_lifelist_num, year: 2025)
+        Birding.Lifelist.top(%Birding.Lifelist.Scope{user: user}, @top_lifelist_num, year: 2025)
       }
     ]
 
@@ -34,7 +34,9 @@ defmodule KjogviWeb.HomeController do
             [
               {
                 Live.Lifelist.Presenter.title(location: loc),
-                Birding.Lifelist.top(user, @top_lifelist_num, location: loc)
+                Birding.Lifelist.top(%Birding.Lifelist.Scope{user: user}, @top_lifelist_num,
+                  location: loc
+                )
               }
             ]
         else

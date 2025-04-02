@@ -15,23 +15,23 @@ defmodule Kjogvi.Birding.Lifelist do
   alias __MODULE__.Filter
   alias __MODULE__.Result
 
-  @type user() :: %Kjogvi.Users.User{} | %{id: integer()}
+  @type scope() :: Lifelist.Scope.t()
   @type filter() :: %Filter{} | keyword()
 
   # === MAIN API ===
 
-  @spec generate(user()) :: Result.t()
-  @spec generate(user(), filter()) :: Result.t()
+  @spec generate(scope()) :: Result.t()
+  @spec generate(scope(), filter()) :: Result.t()
   @doc """
   Generate lifelist based on provided filter options.
   """
-  def generate(user, filter \\ []) do
-    generate_with_species(user, filter)
+  def generate(scope, filter \\ []) do
+    generate_with_species(scope, filter)
     |> Location.Query.preload_all_locations()
     |> Enum.reverse()
     |> then(fn list ->
       %Result{
-        user: user,
+        user: scope.user,
         filter: filter,
         list: list,
         total: length(list)
@@ -40,8 +40,8 @@ defmodule Kjogvi.Birding.Lifelist do
     |> maybe_add_extras()
   end
 
-  @spec top(user(), integer()) :: Result.t()
-  @spec top(user(), integer(), filter()) :: Result.t()
+  @spec top(scope(), integer()) :: Result.t()
+  @spec top(scope(), integer(), filter()) :: Result.t()
   @doc """
   Get N newest species on the list based on provided filter options.
   """
@@ -104,8 +104,8 @@ defmodule Kjogvi.Birding.Lifelist do
 
   # ===
 
-  defp generate_with_species(user, filter) do
-    Lifelist.Query.lifelist_query(user, filter)
+  defp generate_with_species(scope, filter) do
+    Lifelist.Query.lifelist_query(scope, filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Kjogvi.Birding.preload_taxa_and_species()

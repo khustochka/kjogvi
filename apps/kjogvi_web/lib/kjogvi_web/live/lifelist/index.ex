@@ -1,6 +1,7 @@
 defmodule KjogviWeb.Live.Lifelist.Index do
   @moduledoc false
 
+  alias Kjogvi.Birding.Lifelist
   use KjogviWeb, :live_view
 
   alias Kjogvi.Util
@@ -26,22 +27,23 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     user = assigns.user
     show_private_details = assigns.private_view && user.id == assigns.current_user.id
 
-    filter = build_filter(assigns.current_user, params, include_hidden: show_private_details)
+    lifelist_scope = build_scope(assigns)
+    filter = build_filter(assigns.current_user, params)
 
-    lifelist = Birding.Lifelist.generate(user, filter)
+    lifelist = Birding.Lifelist.generate(lifelist_scope, filter)
 
-    all_years = Birding.Lifelist.years(user)
+    all_years = Birding.Lifelist.years(lifelist_scope)
 
     years =
-      Birding.Lifelist.years(user, Map.delete(filter, :year))
+      Birding.Lifelist.years(lifelist_scope, Map.put(filter, :year, nil))
       |> then(&Util.Enum.zip_inclusion(all_years, &1))
 
     months =
-      Birding.Lifelist.months(user, Map.delete(filter, :month))
+      Birding.Lifelist.months(lifelist_scope, Map.put(filter, :month, nil))
       |> then(&Util.Enum.zip_inclusion(@all_months, &1))
 
     all_countries = Kjogvi.Geo.get_countries()
-    country_ids = Birding.Lifelist.country_ids(user, Map.delete(filter, :location))
+    country_ids = Birding.Lifelist.country_ids(lifelist_scope, Map.put(filter, :location, nil))
 
     locations =
       all_countries
@@ -280,12 +282,22 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  defp build_filter(user, params, include_hidden: include_hidden) do
+  defp build_filter(user, params) do
     KjogviWeb.Live.Lifelist.Params.to_filter(user, params)
     |> case do
-      {:ok, filter} -> %{filter | include_hidden: include_hidden}
+      {:ok, filter} -> filter
       {:error, _} -> raise Plug.BadRequestError
     end
+  end
+
+  def build_scope(assigns) do
+    %{
+      user: user,
+      current_user: current_user,
+      private_view: private_view
+    } = assigns
+
+    %Lifelist.Scope{user: user, include_private: private_view && user.id == current_user.id}
   end
 
   # Logged in user
