@@ -9,6 +9,7 @@ defmodule Kjogvi.Geo.Location.Query do
   import Ecto.Query
 
   alias Kjogvi.Geo.Location
+  alias Kjogvi.Repo
 
   def by_slug(query, slug) do
     from l in query, where: l.slug == ^slug
@@ -42,5 +43,48 @@ defmodule Kjogvi.Geo.Location.Query do
   def child_locations(%{id: id}) do
     from l in Location,
       where: fragment("? @> ?::bigint[]", l.ancestry, [^id]) or ^id == l.id
+  end
+
+  # Not sure they belong here.
+  def preload_public_location(things) do
+    things
+    |> preload_location_ancestors
+    |> Enum.map(fn thing ->
+      put_in(thing.public_location, Location.public_location(thing.location))
+    end)
+  end
+
+  def preload_all_locations(things) do
+    things
+    |> Repo.preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
+    |> preload_public_location()
+  end
+
+  def preload_location_ancestors(things) do
+    # Only preload ancestors for private locations
+    ancestor_loc_ids =
+      things
+      |> Enum.filter(fn lifer -> lifer.location.is_private end)
+      |> Enum.flat_map(& &1.location.ancestry)
+      |> Enum.uniq()
+
+    loci =
+      from(l in Location,
+        where: l.id in ^ancestor_loc_ids,
+        preload: [:cached_parent, :cached_city, :cached_subdivision, :country]
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn loc, acc -> Map.put(acc, loc.id, loc) end)
+
+    # TODO: Preload ancestors for those that are private too
+
+    things
+    |> Enum.map(fn thing ->
+      thing.location.ancestry
+      |> Enum.map(fn id -> loci[id] end)
+      |> then(fn ancestors ->
+        put_in(thing.location.ancestors, ancestors)
+      end)
+    end)
   end
 end
