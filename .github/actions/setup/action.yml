@@ -24,15 +24,14 @@ runs:
       with:
         path: '**/deps'
         key: ${{ runner.os }}-deps-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}
-        restore-keys: ${{ runner.os }}-deps-
+        restore-keys: ${{ runner.os }}--deps-
     - name: Restore build cache
       uses: actions/cache@v4
       with:
         path: '**/_build'
-        key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
+        key: ${{ runner.os }}-build-ex-${{ inputs.elixir }}-otp-${{ inputs.otp }}-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
         restore-keys: |
-          ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-
-          ${{ runner.os }}-build-
+          ${{ runner.os }}-build-$ex-${{ inputs.elixir }}-otp-${{ inputs.otp }}-{{ hashFiles('**/mix.lock') }}-
     - name: Install dependencies
       env:
         MIX_ENV: ${{ inputs.env }}
