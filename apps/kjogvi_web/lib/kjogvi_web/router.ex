@@ -97,12 +97,19 @@ defmodule KjogviWeb.Router do
     ornitho_web "/taxonomy",
       root_layout: {KjogviWeb.Layouts, :root},
       app_layout: {KjogviWeb.Layouts, :app},
-      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}, {KjogviWeb.UserAuth, :mount_main_user}]
+      on_mount: [
+        {KjogviWeb.DefaultMounts, :private_view},
+        {KjogviWeb.UserAuth, :ensure_admin},
+        {KjogviWeb.UserAuth, :mount_main_user}
+      ]
 
     live_dashboard "/dashboard",
       metrics: KjogviWeb.Telemetry,
       env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY"],
-      on_mount: [{KjogviWeb.UserAuth, :ensure_admin}, {KjogviWeb.UserAuth, :mount_main_user}]
+      on_mount: [
+        {KjogviWeb.UserAuth, :ensure_admin},
+        {KjogviWeb.UserAuth, :mount_main_user}
+      ]
   end
 
   # PUBLIC ROUTES
