@@ -32,6 +32,7 @@ defmodule Kjogvi.Birding.Lifelist do
     |> then(fn list ->
       %Result{
         user: scope.user,
+        include_private: scope.include_private,
         filter: filter,
         list: list,
         total: length(list)
@@ -45,8 +46,8 @@ defmodule Kjogvi.Birding.Lifelist do
   @doc """
   Get N newest species on the list based on provided filter options.
   """
-  def top(user, n, filter \\ []) when is_integer(n) and n > 0 do
-    Lifelist.Query.lifelist_query(user, filter)
+  def top(scope, n, filter \\ []) when is_integer(n) and n > 0 do
+    Lifelist.Query.lifelist_query(scope, filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Kjogvi.Birding.preload_taxa_and_species()
@@ -55,7 +56,8 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.reverse()
     |> then(fn list ->
       %Result{
-        user: user,
+        user: scope.user,
+        include_private: scope.include_private,
         filter: filter,
         list: Enum.take(list, n),
         total: length(list)
@@ -63,34 +65,40 @@ defmodule Kjogvi.Birding.Lifelist do
     end)
   end
 
+  @spec years(scope()) :: list(integer())
+  @spec years(scope(), filter()) :: list(integer())
   @doc """
   Get all years in a list based on provided filter options.
   """
-  def years(user, filter \\ []) do
-    Lifelist.Query.observations_filtered(user, filter)
+  def years(scope, filter \\ []) do
+    Lifelist.Query.observations_filtered(scope, filter)
     |> distinct(true)
     |> select([..., c], extract_year(c.observ_date))
     |> Repo.all()
     |> Enum.sort()
   end
 
+  @spec months(scope()) :: list(integer())
+  @spec months(scope(), filter()) :: list(integer())
   @doc """
   Get all months in a list based on provided filter options.
   """
-  def months(user, filter \\ []) do
-    Lifelist.Query.observations_filtered(user, filter)
+  def months(scope, filter \\ []) do
+    Lifelist.Query.observations_filtered(scope, filter)
     |> distinct(true)
     |> select([..., c], extract_month(c.observ_date))
     |> Repo.all()
     |> Enum.sort()
   end
 
+  @spec country_ids(scope()) :: list(integer())
+  @spec country_ids(scope(), filter()) :: list(integer())
   @doc """
   Get all country ids in a list based on provided filter options.
   """
-  def country_ids(user, filter \\ []) do
+  def country_ids(scope, filter \\ []) do
     location_ids =
-      Lifelist.Query.observations_filtered(user, filter)
+      Lifelist.Query.observations_filtered(scope, filter)
       |> distinct(true)
       |> select([_o, c], [c.location_id])
 

@@ -7,5 +7,5 @@ defmodule Kjogvi.Birding.Lifelist.Result do
 
   @type t() :: %__MODULE__{}
 
-  defstruct user: nil, filter: %Lifelist.Filter{}, list: [], total: 0, extras: %{}
+  defstruct user: nil, include_private: nil, filter: %Lifelist.Filter{}, list: [], total: 0, extras: %{}
 end

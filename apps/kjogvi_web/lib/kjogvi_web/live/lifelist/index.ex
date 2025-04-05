@@ -26,8 +26,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   def handle_params(params, _url, %{assigns: assigns} = socket) do
     lifelist_scope = assigns.lifelist_scope
 
-    show_private_details = lifelist_scope.include_private
-
     filter = build_filter(assigns.current_scope.user, params)
 
     lifelist = Birding.Lifelist.generate(lifelist_scope, filter)
@@ -57,8 +55,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         filter: filter,
         years: years,
         months: months,
-        locations: locations,
-        show_private_details: show_private_details
+        locations: locations
       )
       |> derive_current_path_query()
       |> derive_location_field()
@@ -253,7 +250,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     <.lifers_table
       id="lifelist-table"
-      show_private_details={@show_private_details}
+      show_private_details={@current_scope.private_view}
       lifelist={@lifelist}
       location_field={@location_field}
     />
@@ -276,7 +273,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
       <.lifers_table
         id="lifelist-heard-only-table"
-        show_private_details={@show_private_details}
+        show_private_details={@current_scope.private_view}
         lifelist={@lifelist.extras.heard_only}
         location_field={@location_field}
       />
@@ -314,7 +311,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     socket
     |> assign(
       :location_field,
-      if assigns.show_private_details do
+      if assigns.current_scope.private_view do
         :location
       else
         :public_location
