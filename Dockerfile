@@ -66,11 +66,11 @@ COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
 COPY apps/ornitho_web/assets apps/ornitho_web/assets
 COPY apps/ornitho_web/dist apps/ornitho_web/dist
 
-# compile assets
-RUN mix assets.deploy
-
 # Compile the release
 RUN mix compile
+
+# compile assets
+RUN mix assets.deploy
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
