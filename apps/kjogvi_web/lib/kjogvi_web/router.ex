@@ -140,19 +140,12 @@ defmodule KjogviWeb.Router do
   scope "/", KjogviWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    registration_on_mount = [
-      {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated},
-      {KjogviWeb.DefaultMounts, :default}
-    ]
-
-    Kjogvi.Config.with_single_user do
-      registration_on_mount =
-        registration_on_mount ++
-          [{KjogviWeb.DefaultMounts, :mount_main_user}]
-    end
-
     live_session :redirect_if_user_is_authenticated,
-      on_mount: registration_on_mount do
+      on_mount: [
+        {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated},
+        {KjogviWeb.DefaultMounts, :default},
+        {KjogviWeb.DefaultMounts, :mount_main_user}
+      ] do
       live "/users/log_in", UserLoginLive, :new
 
       Kjogvi.Config.with_multiuser do

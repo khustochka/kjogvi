@@ -30,4 +30,8 @@ defmodule Kjogvi.Config do
       end
     end
   end
+
+  def single_user_mode? do
+    !Application.get_env(:kjogvi, :multiuser, false)
+  end
 end

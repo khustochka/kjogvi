@@ -73,9 +73,9 @@ defmodule Kjogvi.Umbrella.MixProject do
         "run --no-start -e 'IO.puts(\"Running credo...\")'",
         "credo --format oneline --ignore design,consistency",
         "run --no-start -e 'IO.puts(\"Running dialyzer...\")'",
-        "dialyzer --format dialyxir --quiet"
-        # "run --no-start -e 'IO.puts(\"Running cycles detection...\")'",
-        # "xref graph --format cycles --label compile-connected --fail-above 0"
+        "dialyzer --format dialyxir --quiet",
+        "run --no-start -e 'IO.puts(\"Running cycles detection...\")'",
+        "xref graph --format cycles --label compile-connected --fail-above 0"
       ],
       "lint.github": [
         "run --no-start -e 'IO.puts(\"Checking formatting...\")'",
@@ -85,9 +85,9 @@ defmodule Kjogvi.Umbrella.MixProject do
         "run --no-start -e 'IO.puts(\"Running credo...\")'",
         "credo --format oneline --ignore design,consistency",
         "run --no-start -e 'IO.puts(\"Running dialyzer...\")'",
-        "dialyzer --format github --quiet"
-        # "run --no-start -e 'IO.puts(\"Running cycles detection...\")'",
-        # "xref graph --format cycles --label compile-connected --fail-above 0"
+        "dialyzer --format github --quiet",
+        "run --no-start -e 'IO.puts(\"Running cycles detection...\")'",
+        "xref graph --format cycles --label compile-connected --fail-above 0"
       ]
     ]
   end
