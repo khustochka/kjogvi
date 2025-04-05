@@ -7,6 +7,7 @@ defmodule KjogviWeb.UserAuth do
   import Phoenix.Controller
 
   alias Kjogvi.Users
+  alias Kjogvi.Scope
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -89,13 +90,15 @@ defmodule KjogviWeb.UserAuth do
   end
 
   @doc """
-  Authenticates the user by looking into the session
-  and remember me token.
+  Authenticates the current user and finds the main user.
+  Sets the scope.
   """
-  def fetch_current_user(conn, _opts) do
+  def fetch_current_scope(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Users.get_user_by_session_token(user_token)
-    assign(conn, :current_user, user)
+
+    scope = %Scope{user: user, main_user: Kjogvi.Settings.main_user()}
+    assign(conn, :current_scope, scope)
   end
 
   defp ensure_user_token(conn) do
@@ -116,10 +119,6 @@ defmodule KjogviWeb.UserAuth do
   Handles mounting and authenticating the current_user in LiveViews.
 
   ## `on_mount` arguments
-
-    * `:mount_current_user` - Assigns current_user
-      to socket assigns based on user_token, or nil if
-      there's no user_token or no matching user.
 
     * `:ensure_authenticated` - Authenticates the user from the session,
       and assigns the current_user to socket assigns based
@@ -150,14 +149,14 @@ defmodule KjogviWeb.UserAuth do
         live "/profile", ProfileLive, :index
       end
   """
-  def on_mount(:mount_current_user, _params, session, socket) do
-    {:cont, mount_current_user(socket, session)}
+  def on_mount(:mount_current_scope, _params, session, socket) do
+    {:cont, mount_current_scope(socket, session)}
   end
 
   def on_mount(:ensure_authenticated, _params, session, socket) do
-    socket = mount_current_user(socket, session)
+    socket = mount_current_scope(socket, session)
 
-    if socket.assigns.current_user do
+    if socket.assigns.current_scope.user do
       {:cont, socket}
     else
       socket =
@@ -170,9 +169,9 @@ defmodule KjogviWeb.UserAuth do
   end
 
   def on_mount(:ensure_admin, _params, session, socket) do
-    socket = mount_current_user(socket, session)
+    socket = mount_current_scope(socket, session)
 
-    socket.assigns.current_user
+    socket.assigns.current_scope.user
     |> then(fn user ->
       if user && Kjogvi.Users.admin?(user) do
         {:cont, socket}
@@ -187,20 +186,31 @@ defmodule KjogviWeb.UserAuth do
   end
 
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
-    socket = mount_current_user(socket, session)
+    socket = mount_current_scope(socket, session)
 
-    if socket.assigns.current_user do
+    if socket.assigns.current_scope.user do
       {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
     else
       {:cont, socket}
     end
   end
 
-  defp mount_current_user(socket, session) do
-    Phoenix.Component.assign_new(socket, :current_user, fn ->
-      if user_token = session["user_token"] do
-        Users.get_user_by_session_token(user_token)
-      end
+  def on_mount(:mount_private_view, _params, _session, socket) do
+    scope = socket.assigns.current_scope
+
+    {:cont,
+     socket
+     |> Phoenix.Component.assign(:current_scope, %{scope | private_view: true})}
+  end
+
+  defp mount_current_scope(socket, session) do
+    Phoenix.Component.assign_new(socket, :current_scope, fn ->
+      user =
+        if user_token = session["user_token"] do
+          Users.get_user_by_session_token(user_token)
+        end
+
+      %Scope{user: user, main_user: Kjogvi.Settings.main_user()}
     end)
   end
 
@@ -208,7 +218,7 @@ defmodule KjogviWeb.UserAuth do
   Used for routes that require the user to not be authenticated.
   """
   def redirect_if_user_is_authenticated(conn, _opts) do
-    if conn.assigns[:current_user] do
+    if conn.assigns.current_scope.user do
       conn
       |> redirect(to: signed_in_path(conn))
       |> halt()
@@ -224,7 +234,7 @@ defmodule KjogviWeb.UserAuth do
   they use the application at all, here would be a good place.
   """
   def require_authenticated_user(conn, _opts) do
-    if conn.assigns[:current_user] do
+    if conn.assigns.current_scope.user do
       conn
     else
       conn
@@ -239,7 +249,7 @@ defmodule KjogviWeb.UserAuth do
   Used for routes that require admin.
   """
   def require_admin(conn, _opts) do
-    conn.assigns[:current_user]
+    conn.assigns.current_scope.user
     |> then(fn user ->
       if user && Users.admin?(user) do
         conn

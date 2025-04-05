@@ -16,7 +16,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _url, %{assigns: assigns} = socket) do
-    card0 = Birding.fetch_card(assigns.current_user, id)
+    card0 = Birding.fetch_card(assigns.current_scope.user, id)
     obs = card0.observations |> Kjogvi.Birding.preload_taxa_and_species()
     card = %{card0 | observations: obs}
 

@@ -1,11 +1,11 @@
 <div class="bg-neutral-800 text-sm md:text-[0.8125rem] font-semibold py-1 px-1 md:px-2 text-center">
-  <.access_control user={@current_user}>
+  <.access_control user={@current_scope.user}>
     <:guest_access>
       <.login_menu />
     </:guest_access>
   </.access_control>
 
-  <.admin_menu current_user={@current_user} />
+  <.admin_menu current_user={@current_scope.user} />
 </div>
 
 <header class="px-4 sm:px-6 lg:px-8">
@@ -39,7 +39,7 @@
   </div>
 </header>
 <main class="px-4 pb-4 sm:px-6 lg:px-8">
-  <div :if={@private_view} class="bg-orange-400 text-white p-2 text-center">
+  <div :if={@current_scope.private_view} class="bg-orange-400 text-white p-2 text-center">
     Private view
   </div>
   <div class="mx-auto mt-4 max-w-5xl">

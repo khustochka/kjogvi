@@ -19,17 +19,12 @@ defmodule KjogviWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
 
+    plug :fetch_current_scope
+
+    # TODO: maybe include in :fetch_current_scope or only use plug for /
     Kjogvi.Config.with_single_user do
-      plug :fetch_main_user
       plug :verify_main_user
     end
-
-    plug :fetch_current_user
-    plug :set_default_assigns
-  end
-
-  pipeline :private_view do
-    plug :set_override_assigns, private_view: true
   end
 
   pipeline :api do
@@ -55,13 +50,12 @@ defmodule KjogviWeb.Router do
   # AUTHENTICATED USER ROUTES
 
   scope "/my", KjogviWeb.Live do
-    pipe_through [:browser, :private_view, :require_authenticated_user]
+    pipe_through [:browser, :set_private_view, :require_authenticated_user]
 
     live_session :require_authenticated_user,
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_authenticated},
-        {KjogviWeb.DefaultMounts, :mount_main_user},
-        {KjogviWeb.DefaultMounts, :private_view}
+        {KjogviWeb.UserAuth, :mount_private_view}
       ] do
       live "/locations", My.Locations.Index, :index
       live "/locations/countries", My.Countries.Index, :index
@@ -82,13 +76,12 @@ defmodule KjogviWeb.Router do
   # ADMIN ROUTES
 
   scope "/", KjogviWeb do
-    pipe_through [:browser, :private_view, :require_admin]
+    pipe_through [:browser, :set_private_view, :require_admin]
 
     live_session :admin_paths,
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.DefaultMounts, :mount_main_user},
-        {KjogviWeb.DefaultMounts, :private_view}
+        {KjogviWeb.UserAuth, :mount_private_view}
       ] do
       live "/admin/tasks", Live.Admin.Tasks.Index, :index
       post "/admin/tasks/legacy_import", Admin.TasksController, :legacy_import
@@ -99,8 +92,7 @@ defmodule KjogviWeb.Router do
       app_layout: {KjogviWeb.Layouts, :app},
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.DefaultMounts, :mount_main_user},
-        {KjogviWeb.DefaultMounts, :private_view}
+        {KjogviWeb.UserAuth, :mount_private_view}
       ]
 
     live_dashboard "/dashboard",
@@ -108,8 +100,7 @@ defmodule KjogviWeb.Router do
       env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY"],
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.DefaultMounts, :mount_main_user},
-        {KjogviWeb.DefaultMounts, :private_view}
+        {KjogviWeb.UserAuth, :mount_private_view}
       ]
   end
 
@@ -120,9 +111,7 @@ defmodule KjogviWeb.Router do
 
     live_session :open_current_user,
       on_mount: [
-        {KjogviWeb.DefaultMounts, :default},
-        {KjogviWeb.DefaultMounts, :mount_main_user},
-        {KjogviWeb.UserAuth, :mount_current_user}
+        {KjogviWeb.UserAuth, :mount_current_scope}
       ] do
       live "/", Live.Lifelist.Index, :public_view
       live "/:year_or_location", Live.Lifelist.Index, :public_view
@@ -142,9 +131,7 @@ defmodule KjogviWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [
-        {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated},
-        {KjogviWeb.DefaultMounts, :default},
-        {KjogviWeb.DefaultMounts, :mount_main_user}
+        {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}
       ] do
       live "/users/log_in", UserLoginLive, :new
 
@@ -166,8 +153,7 @@ defmodule KjogviWeb.Router do
     Kjogvi.Config.with_multiuser do
       live_session :current_user,
         on_mount: [
-          {KjogviWeb.DefaultMounts, :default},
-          {KjogviWeb.UserAuth, :mount_current_user}
+          {KjogviWeb.UserAuth, :mount_current_scope}
         ] do
         live "/users/confirm/:token", UserConfirmationLive, :edit
         live "/users/confirm", UserConfirmationInstructionsLive, :new

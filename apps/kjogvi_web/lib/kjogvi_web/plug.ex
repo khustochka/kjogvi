@@ -5,10 +5,6 @@ defmodule KjogviWeb.Plug do
 
   use KjogviWeb, :controller
 
-  @override_assign_keys [
-    :private_view
-  ]
-
   @doc """
   If a non-root URL ends with a slash '/', do a permanent redirect to a URL that
   removes it.
@@ -30,16 +26,11 @@ defmodule KjogviWeb.Plug do
     end
   end
 
-  @doc """
-  Finds the main user in single-user mode.
-  """
-  def fetch_main_user(conn, _opts) do
-    conn
-    |> assign(:main_user, Kjogvi.Settings.main_user())
-  end
-
-  def verify_main_user(%{request_path: "/setup" <> _} = conn, _opts) do
-    if conn.assigns[:main_user] do
+  def verify_main_user(
+        %{request_path: "/setup" <> _, assigns: %{current_scope: scope}} = conn,
+        _opts
+      ) do
+    if scope.main_user do
       conn
       |> put_status(:not_found)
       |> put_view(Application.get_env(:kjogvi_web, KjogviWeb.Endpoint)[:render_errors][:formats])
@@ -50,8 +41,8 @@ defmodule KjogviWeb.Plug do
     end
   end
 
-  def verify_main_user(conn, _opts) do
-    if conn.assigns[:main_user] do
+  def verify_main_user(%{assigns: %{current_scope: scope}} = conn, _opts) do
+    if scope.main_user do
       conn
     else
       conn
@@ -60,19 +51,8 @@ defmodule KjogviWeb.Plug do
     end
   end
 
-  def set_default_assigns(conn, _opts) do
+  def set_private_view(%{assigns: %{current_scope: scope}} = conn, _opts) do
     conn
-    |> assign(:private_view, false)
-  end
-
-  def set_override_assigns(conn, opts) do
-    for key <- @override_assign_keys, reduce: conn do
-      acc ->
-        if Keyword.has_key?(opts, key) do
-          acc |> assign(key, opts[key])
-        else
-          acc
-        end
-    end
+    |> assign(:current_scope, %{scope | private_view: true})
   end
 end

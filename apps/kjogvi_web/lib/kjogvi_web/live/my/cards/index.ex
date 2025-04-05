@@ -26,7 +26,8 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       Map.get(params, "page", "1")
       |> String.to_integer()
 
-    cards = Birding.get_cards(assigns.current_user, %{page: page, page_size: @cards_per_page})
+    cards =
+      Birding.get_cards(assigns.current_scope.user, %{page: page, page_size: @cards_per_page})
 
     {
       :noreply,

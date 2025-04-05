@@ -37,7 +37,7 @@ defmodule Kjogvi.Birding.Lifelist do
         total: length(list)
       }
     end)
-    |> maybe_add_extras()
+    |> then(&maybe_add_extras(scope, &1))
   end
 
   @spec top(scope(), integer()) :: Result.t()
@@ -113,7 +113,7 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.uniq_by(& &1.species.code)
   end
 
-  defp maybe_add_extras(%{filter: filter = %{exclude_heard_only: true}, user: user} = result) do
+  defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do
     sp_codes =
       result.list
       |> Enum.map(& &1.species.code)
@@ -121,7 +121,7 @@ defmodule Kjogvi.Birding.Lifelist do
     new_filter = %{filter | exclude_heard_only: false}
 
     full_list =
-      generate_with_species(user, new_filter)
+      generate_with_species(scope, new_filter)
 
     heard_only_list =
       full_list
@@ -140,7 +140,7 @@ defmodule Kjogvi.Birding.Lifelist do
     %{result | extras: %{heard_only: heard_only_list}}
   end
 
-  defp maybe_add_extras(list) do
+  defp maybe_add_extras(_scope, list) do
     list
   end
 end
