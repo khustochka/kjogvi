@@ -113,7 +113,7 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.uniq_by(& &1.species.code)
   end
 
-  defp maybe_add_extras(result = %{filter: filter = %{exclude_heard_only: true}, user: user}) do
+  defp maybe_add_extras(%{filter: filter = %{exclude_heard_only: true}, user: user} = result) do
     sp_codes =
       result.list
       |> Enum.map(& &1.species.code)

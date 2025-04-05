@@ -62,7 +62,7 @@ defmodule Ornitho.Finder.Taxon do
     |> Ornithologue.repo().paginate(page: page, page_size: page_size)
   end
 
-  def with_parent_species(result = %Scrivener.Page{entries: entries}) do
+  def with_parent_species(%Scrivener.Page{entries: entries} = result) do
     %Scrivener.Page{result | entries: with_parent_species(entries)}
   end
 

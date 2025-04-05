@@ -94,7 +94,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     """
   end
 
-  def present_taxon(assigns = %{taxon: nil}) do
+  def present_taxon(%{taxon: nil} = assigns) do
     ~H"""
     <div class="text-slate-400">
       {@taxon_key}
