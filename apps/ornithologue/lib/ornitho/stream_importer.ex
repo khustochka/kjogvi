@@ -39,12 +39,19 @@ defmodule Ornitho.StreamImporter do
       @spec slug() :: String.t()
       def file_path(), do: @file_path
 
-      def create_taxa(book) do
-        create_taxa_from_stream(book, file_streamer(file_path()))
+      def create_taxa(config, book) do
+        case file_streamer(config, file_path()) do
+          {:error, _} = err -> err
+          stream -> create_taxa_from_stream(book, stream)
+        end
       end
 
-      defp file_streamer(path) do
-        adapter().file_streamer(path)
+      defp file_streamer(config, path) do
+        adapter().file_streamer(config, path)
+      end
+
+      defp validate_config do
+        adapter().validate_config()
       end
 
       defp config() do

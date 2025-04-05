@@ -8,7 +8,11 @@ defmodule Ornitho.Importer.Test.NoTaxa do
     description: "This is a test book",
     publication_date: ~D[2018-08-14]
 
-  def create_taxa(_book) do
+  def create_taxa(_config, _book) do
     {:ok, []}
+  end
+
+  def validate_config do
+    {:ok, nil}
   end
 end

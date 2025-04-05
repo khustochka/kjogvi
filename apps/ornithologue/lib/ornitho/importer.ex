@@ -66,20 +66,21 @@ defmodule Ornitho.Importer do
       def process_import(opts \\ []) do
         force = opts[:force]
 
-        Ops.transaction(
-          fn ->
-            with {:ok, _} <- prepare_repo(force: force),
-                 {:ok, book} <- create_book(),
-                 {:ok, _} = result <- create_taxa(book),
-                 {1, _} <- update_imported_time(book) do
-              result
-            else
-              {:error, e} when is_binary(e) -> raise(e)
-              {:error, e} -> raise(inspect(e))
-            end
-          end,
-          timeout: Ornitho.Importer.import_timeout()
-        )
+        with {:ok, config} <- validate_config() do
+          Ops.transaction(
+            fn ->
+              with {:ok, _} <- prepare_repo(force: force),
+                   {:ok, book} <- create_book(),
+                   {:ok, _} = result <- create_taxa(config, book),
+                   {1, _} <- update_imported_time(book) do
+                result
+              else
+                {:error, e} -> Ops.rollback(e)
+              end
+            end,
+            timeout: Ornitho.Importer.import_timeout()
+          )
+        end
       end
 
       defp prepare_repo(opts \\ []) do

@@ -35,7 +35,7 @@ defmodule Ornitho.Importer.Demo.V1 do
     }
   ]
 
-  def create_taxa(book) do
+  def create_taxa(_config, book) do
     case Ops.Taxon.create_many(book, @taxa_list) do
       {:ok, m} ->
         {:ok, m}
@@ -48,5 +48,9 @@ defmodule Ornitho.Importer.Demo.V1 do
         #{inspect(changeset.errors, pretty: true)}
         """
     end
+  end
+
+  def validate_config do
+    {:ok, nil}
   end
 end

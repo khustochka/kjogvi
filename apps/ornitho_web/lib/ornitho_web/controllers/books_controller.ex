@@ -15,8 +15,11 @@ defmodule OrnithoWeb.BooksController do
     conn =
       if importer_string in Ornitho.Importer.legit_importers_string() do
         importer = String.to_existing_atom(importer_string)
-        importer.process_import()
-        conn
+
+        case importer.process_import() do
+          {:ok, _} -> conn
+          {:error, err} -> conn |> put_flash(:error, err)
+        end
       else
         conn
         |> put_flash(:error, "Not an allowed importer.")
