@@ -11,7 +11,7 @@ defmodule KjogviWeb.BirdingComponents do
     <span class="species_link">
       <strong phx-no-format class="font-normal small-caps text-[0.95rem]">
         <.link
-          patch={~p"/species/#{@species.name_sci}"}
+          patch={~p"/species/#{@species}"}
           class="px-1 py-0.5 no-underline bg-lime-200 hover:bg-lime-300"
         ><%= @species.name_en %></.link>
       </strong>

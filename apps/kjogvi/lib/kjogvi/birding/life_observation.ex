@@ -6,6 +6,8 @@ defmodule Kjogvi.Birding.LifeObservation do
 
   use Kjogvi.Schema
 
+  alias Kjogvi.Pages.Species
+
   @primary_key false
   embedded_schema do
     field :id, :integer
@@ -17,7 +19,7 @@ defmodule Kjogvi.Birding.LifeObservation do
     belongs_to(:card, Kjogvi.Birding.Card)
 
     field :taxon, :map, virtual: true
-    field :species, :map, virtual: true
+    embeds_one :species, Species
 
     field :public_location, :any,
       virtual: true,

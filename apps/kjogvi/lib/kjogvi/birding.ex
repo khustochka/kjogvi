@@ -6,6 +6,7 @@ defmodule Kjogvi.Birding do
   import Ecto.Query
 
   alias Kjogvi.Repo
+  alias Kjogvi.Pages.Species
 
   alias __MODULE__.Observation
   alias __MODULE__.Card
@@ -36,7 +37,7 @@ defmodule Kjogvi.Birding do
 
     for obs <- observations do
       taxon = taxa[obs.taxon_key]
-      %{obs | taxon: taxon, species: Ornitho.Schema.Taxon.species(taxon)}
+      %{obs | taxon: taxon, species: Ornitho.Schema.Taxon.species(taxon) |> Species.from_taxon()}
     end
   end
 end
