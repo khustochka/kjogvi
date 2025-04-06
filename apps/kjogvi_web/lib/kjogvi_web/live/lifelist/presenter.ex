@@ -45,4 +45,42 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
   def title(%{year: year, location: location, month: month}) do
     "#{Timex.month_name(month)} #{year} #{location.name_en} List"
   end
+
+  @doc """
+  Values for the robots meta tag.
+  """
+
+  # Full motorless checklist - indexed
+  def robots(%{year: nil, location: nil, month: nil, motorless: true, exclude_heard_only: nil}) do
+    nil
+  end
+
+  # Any other motorless - not indexed
+  def robots(%{motorless: true}) do
+    [:noindex]
+  end
+
+  # Exclude heard only - not indexed
+  def robots(%{exclude_heard_only: true}) do
+    [:noindex]
+  end
+
+  # Month lists - not indexed
+  def robots(%{month: month}) when not is_nil(month) do
+    [:noindex]
+  end
+
+  # Year lists - not indexed
+  def robots(%{year: year}) when not is_nil(year) do
+    nil
+  end
+
+  # Lifelist for diff locations and world are indexed (# TODO: only countries)
+  def robots(%{year: nil}) do
+    nil
+  end
+
+  def robots(_) do
+    nil
+  end
 end

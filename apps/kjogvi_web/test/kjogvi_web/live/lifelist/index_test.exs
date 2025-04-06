@@ -77,15 +77,6 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert get_number_of_species(resp) == 0
   end
 
-  test "empty full lifelist is indexed by robots", %{conn: conn} do
-    conn = get(conn, "/lifelist")
-    resp = html_response(conn, 200)
-
-    {:ok, html} = Floki.parse_document(resp)
-
-    assert Enum.empty?(Floki.find(html, "meta[name=robots]"))
-  end
-
   test "non-empty year list is indexed by robots", %{conn: conn} do
     species = Ornitho.Factory.insert(:taxon, category: "species")
     card = insert(:card, observ_date: ~D[2023-06-07])

@@ -276,25 +276,15 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     |> assign(:robots, [:noindex])
   end
 
-  # Month lists are not indexed
-  defp derive_robots(%{assigns: %{filter: %{month: month}}} = socket) when not is_nil(month) do
-    socket
-    |> assign(:robots, [:noindex])
-  end
-
-  # Lifelist for diff locations and world are index (# TODO: only countries)
-  defp derive_robots(%{assigns: %{filter: %{year: nil}}} = socket) do
-    socket
-  end
-
-  # Empty lists are not indexed
+  # Empty list is not indexed
   defp derive_robots(%{assigns: %{lifelist: %{list: []}}} = socket) do
     socket
     |> assign(:robots, [:noindex])
   end
 
-  defp derive_robots(socket) do
+  defp derive_robots(%{assigns: assigns} = socket) do
     socket
+    |> assign(:robots, Presenter.robots(assigns.filter))
   end
 
   defp header_style(%{year: nil, location: nil}) do
