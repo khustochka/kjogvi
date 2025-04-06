@@ -66,6 +66,7 @@ defmodule Kjogvi.Umbrella.MixProject do
       setup: ["cmd mix setup"],
       "ecto.setup": ["ecto.create --quiet", "ecto.migrate --quiet"],
       lint: [
+        "compile --warnings-as-errors",
         "run --no-start -e 'IO.puts(\"Checking formatting...\")'",
         "format --check-formatted",
         "run --no-start -e 'IO.puts(\"Checking for unused dependencies...\")'",
@@ -78,6 +79,7 @@ defmodule Kjogvi.Umbrella.MixProject do
         "xref graph --format cycles --label compile-connected --fail-above 0"
       ],
       "lint.github": [
+        "compile --warnings-as-errors",
         "run --no-start -e 'IO.puts(\"Checking formatting...\")'",
         "format --check-formatted",
         "run --no-start -e 'IO.puts(\"Checking for unused dependencies...\")'",
