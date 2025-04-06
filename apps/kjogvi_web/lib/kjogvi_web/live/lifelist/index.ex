@@ -158,12 +158,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={is_nil(@filter.month)} class="font-semibold not-italic">All months</em>
         <.link
           :if={not is_nil(@filter.month)}
-          patch={
-            lifelist_path(
-              @current_scope,
-              %{@filter | month: nil}
-            )
-          }
+          patch={lifelist_path(@current_scope, %{@filter | month: nil})}
         >
           All months
         </.link>

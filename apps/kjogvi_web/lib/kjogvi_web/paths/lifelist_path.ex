@@ -40,43 +40,39 @@ defmodule KjogviWeb.Paths.LifelistPath do
     |> then(&{year, location, &1})
   end
 
-  defp lifelist_gen_path(%{private_view: true} = _scope, year, location, query) do
-    my_lifelist_p(year, location, query)
+  defp lifelist_gen_path(scope, year, location, query) do
+    if scope.private_view do
+      lifelist_p(:my, year, location, query)
+    else
+      lifelist_p(:public, year, location, query)
+    end
   end
 
-  defp lifelist_gen_path(_scope, year, location, query) do
-    lifelist_p(year, location, query)
+  defp lifelist_p(publicity, nil = _year, nil = _location, query) do
+    case publicity do
+      :public -> ~p"/lifelist?#{query}"
+      :my -> ~p"/my/lifelist?#{query}"
+    end
   end
 
-  defp lifelist_p(nil = _year, nil = _location, query) do
-    ~p"/lifelist?#{query}"
+  defp lifelist_p(publicity, year, nil = _location, query) do
+    case publicity do
+      :public -> ~p"/lifelist/#{year}?#{query}"
+      :my -> ~p"/my/lifelist/#{year}?#{query}"
+    end
   end
 
-  defp lifelist_p(year, nil = _location, query) do
-    ~p"/lifelist/#{year}?#{query}"
+  defp lifelist_p(publicity, nil = _year, location, query) do
+    case publicity do
+      :public -> ~p"/lifelist/#{location}?#{query}"
+      :my -> ~p"/my/lifelist/#{location}?#{query}"
+    end
   end
 
-  defp lifelist_p(nil = _year, location, query) do
-    ~p"/lifelist/#{location}?#{query}"
-  end
-
-  defp lifelist_p(year, location, query) do
-    ~p"/lifelist/#{year}/#{location}?#{query}"
-  end
-
-  defp my_lifelist_p(nil = _year, nil = _location, query) do
-    ~p"/my/lifelist?#{query}"
-  end
-
-  defp my_lifelist_p(year, nil = _location, query) do
-    ~p"/my/lifelist/#{year}?#{query}"
-  end
-
-  defp my_lifelist_p(nil = _year, location, query) do
-    ~p"/my/lifelist/#{location}?#{query}"
-  end
-
-  defp my_lifelist_p(year, location, query) do
-    ~p"/my/lifelist/#{year}/#{location}?#{query}"
+  defp lifelist_p(publicity, year, location, query) do
+    case publicity do
+      :public -> ~p"/lifelist/#{year}/#{location}?#{query}"
+      :my -> ~p"/my/lifelist/#{year}/#{location}?#{query}"
+    end
   end
 end

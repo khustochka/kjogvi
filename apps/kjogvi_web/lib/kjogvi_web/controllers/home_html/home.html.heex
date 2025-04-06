@@ -7,7 +7,7 @@
     :for={{header, lifelist} <- @lists}
     list={lifelist.list}
     total={lifelist.total}
-    href={lifelist_path(lifelist.filter)}
+    href={lifelist_path(@current_scope, lifelist.filter)}
     class="mb-8 md:mb-0"
   >
     <:header>{header}</:header>
