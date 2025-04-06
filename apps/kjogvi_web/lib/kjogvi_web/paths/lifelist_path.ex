@@ -8,27 +8,27 @@ defmodule KjogviWeb.Paths.LifelistPath do
   alias KjogviWeb.Paths
   alias Kjogvi.Birding.Lifelist
 
-  @filter_exclude_from_query [:include_hidden]
+  @filter_exclude_from_query []
 
-  def lifelist_path(path_opts \\ [], query \\ nil, privacy_opts \\ [])
+  def lifelist_path(scope, path_opts \\ [])
 
-  def lifelist_path(%Lifelist.Filter{} = filter, query, privacy_opts) do
-    {year, location, query_params} = split_params(filter, query)
+  def lifelist_path(scope, %Lifelist.Filter{} = filter) do
+    {year, location, query_params} = split_params(filter)
 
-    lifelist_gen_path(year, location, query_params, privacy_opts)
+    lifelist_gen_path(scope, year, location, query_params)
   end
 
-  def lifelist_path(path_opts, query, privacy_opts) when is_map(path_opts) do
+  def lifelist_path(scope, path_opts) when is_map(path_opts) do
     path_opts
     |> Map.to_list()
-    |> lifelist_path(query, privacy_opts)
+    |> lifelist_path(scope)
   end
 
-  def lifelist_path(path_opts, query, privacy_opts) do
-    lifelist_path(Lifelist.Filter.discombo!(path_opts), query, privacy_opts)
+  def lifelist_path(scope, path_opts) do
+    lifelist_path(scope, Lifelist.Filter.discombo!(path_opts))
   end
 
-  def split_params(filter, query) do
+  def split_params(filter) do
     {%{year: year, location: location}, query_filters} =
       filter
       |> Map.from_struct()
@@ -36,20 +36,15 @@ defmodule KjogviWeb.Paths.LifelistPath do
 
     query_filters
     |> Map.drop(@filter_exclude_from_query)
-    |> Map.merge(Map.new(query || []))
     |> Paths.clean_query()
-    |> then(&{year, location, Paths.clean_query(&1)})
+    |> then(&{year, location, &1})
   end
 
-  def split_params(%{year: year, location: location}) do
-    {year, location, nil}
-  end
-
-  defp lifelist_gen_path(year, location, query, private_view: true) do
+  defp lifelist_gen_path(%{private_view: true} = _scope, year, location, query) do
     my_lifelist_p(year, location, query)
   end
 
-  defp lifelist_gen_path(year, location, query, _) do
+  defp lifelist_gen_path(_scope, year, location, query) do
     lifelist_p(year, location, query)
   end
 

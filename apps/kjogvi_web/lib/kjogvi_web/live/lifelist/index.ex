@@ -57,7 +57,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         months: months,
         locations: locations
       )
-      |> derive_current_path_query()
       |> derive_location_field()
       |> derive_page_header()
       |> derive_page_title()
@@ -90,11 +89,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={!@filter.exclude_heard_only} class="font-semibold not-italic">Include all</em>
         <.link
           :if={@filter.exclude_heard_only}
-          patch={
-            lifelist_path(%{@filter | exclude_heard_only: false}, @current_path_query,
-              private_view: @current_scope.private_view
-            )
-          }
+          patch={lifelist_path(@current_scope, %{@filter | exclude_heard_only: false})}
         >
           Include all
         </.link>
@@ -103,11 +98,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={@filter.exclude_heard_only} class="font-semibold not-italic">Separate heard only</em>
         <.link
           :if={!@filter.exclude_heard_only}
-          patch={
-            lifelist_path(%{@filter | exclude_heard_only: true}, @current_path_query,
-              private_view: @current_scope.private_view
-            )
-          }
+          patch={lifelist_path(@current_scope, %{@filter | exclude_heard_only: true})}
         >
           Separate heard only
         </.link>
@@ -119,11 +110,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={!@filter.motorless} class="font-semibold not-italic">Include all</em>
         <.link
           :if={@filter.motorless}
-          patch={
-            lifelist_path(%{@filter | motorless: false}, @current_path_query,
-              private_view: @current_scope.private_view
-            )
-          }
+          patch={lifelist_path(@current_scope, %{@filter | motorless: false})}
         >
           Include all
         </.link>
@@ -132,11 +119,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={@filter.motorless} class="font-semibold not-italic">Motorless only</em>
         <.link
           :if={!@filter.motorless}
-          patch={
-            lifelist_path(%{@filter | motorless: true}, @current_path_query,
-              private_view: @current_scope.private_view
-            )
-          }
+          patch={lifelist_path(@current_scope, %{@filter | motorless: true})}
         >
           Motorless only
         </.link>
@@ -148,11 +131,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={is_nil(@filter.year)} class="font-semibold not-italic">All years</em>
         <.link
           :if={not is_nil(@filter.year)}
-          patch={
-            lifelist_path(%{@filter | year: nil}, @current_path_query,
-              private_view: @current_scope.private_view
-            )
-          }
+          patch={lifelist_path(@current_scope, %{@filter | year: nil})}
         >
           All years
         </.link>
@@ -163,11 +142,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <em class="font-semibold not-italic">{year}</em>
           <% else %>
             <%= if active do %>
-              <.link patch={
-                lifelist_path(%{@filter | year: year}, @current_path_query,
-                  private_view: @current_scope.private_view
-                )
-              }>
+              <.link patch={lifelist_path(@current_scope, %{@filter | year: year})}>
                 {year}
               </.link>
             <% else %>
@@ -184,8 +159,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <.link
           :if={not is_nil(@filter.month)}
           patch={
-            lifelist_path(%{@filter | month: nil}, Keyword.delete(@current_path_query, :month),
-              private_view: @current_scope.private_view
+            lifelist_path(
+              @current_scope,
+              %{@filter | month: nil}
             )
           }
         >
@@ -198,11 +174,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <em class="font-semibold not-italic">{Timex.month_shortname(month)}</em>
           <% else %>
             <%= if active do %>
-              <.link patch={
-                lifelist_path(%{@filter | month: month}, @current_path_query,
-                  private_view: @current_scope.private_view
-                )
-              }>
+              <.link patch={lifelist_path(@current_scope, %{@filter | month: month})}>
                 {Timex.month_shortname(month)}
               </.link>
             <% else %>
@@ -218,11 +190,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <em :if={is_nil(@filter.location)} class="font-semibold not-italic">All countries</em>
         <.link
           :if={not is_nil(@filter.location)}
-          patch={
-            lifelist_path(%{@filter | location: nil}, @current_path_query,
-              private_view: @current_scope.private_view
-            )
-          }
+          patch={lifelist_path(@current_scope, %{@filter | location: nil})}
         >
           All countries
         </.link>
@@ -233,11 +201,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <em class="font-semibold not-italic">{location.name_en}</em>
           <% else %>
             <%= if active do %>
-              <.link patch={
-                lifelist_path(%{@filter | location: location}, @current_path_query,
-                  private_view: @current_scope.private_view
-                )
-              }>
+              <.link patch={lifelist_path(@current_scope, %{@filter | location: location})}>
                 {location.name_en}
               </.link>
             <% else %>
@@ -289,24 +253,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     end
   end
 
-  # Logged in user
-  defp derive_current_path_query(%{assigns: %{current_user: current_user} = _assigns} = socket)
-       when not is_nil(current_user) do
-    # Include here params only available to logged in user
-    query =
-      []
-      |> Keyword.reject(fn {_, val} -> !val end)
-
-    socket
-    |> assign(:current_path_query, query)
-  end
-
-  # Guest user
-  defp derive_current_path_query(socket) do
-    socket
-    |> assign(:current_path_query, [])
-  end
-
   defp derive_location_field(%{assigns: assigns} = socket) do
     socket
     |> assign(
@@ -327,6 +273,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   defp derive_page_title(%{assigns: assigns} = socket) do
     socket
     |> assign(:page_title, assigns[:page_header] || Presenter.title(assigns.filter))
+  end
+
+  # Private view not indexed
+  defp derive_robots(%{assigns: %{current_scope: %{private_view: true}}} = socket) do
+    socket
+    |> assign(:robots, [:noindex])
   end
 
   # Month lists are not indexed
