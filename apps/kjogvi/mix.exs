@@ -65,6 +65,8 @@ defmodule Kjogvi.MixProject do
       {:swoosh, "~> 1.17.0"},
       {:finch, "~> 0.13"},
       {:req, "~> 0.5"},
+      {:http_cookie, "~> 0.7.0"},
+      {:floki, ">= 0.30.0"},
       {:scrivener_ecto, "~> 3.0"},
       {:nimble_options, "~> 1.1"},
       {:ornithologue, in_umbrella: true},
