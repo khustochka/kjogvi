@@ -1,9 +1,9 @@
-defmodule Kjogvi.Ebird.Client.Login do
+defmodule Kjogvi.Ebird.Web.Client.Login do
   @moduledoc """
   eBird login flow.
   """
 
-  alias Kjogvi.Ebird.Client
+  alias Kjogvi.Ebird.Web.Client
 
   @sign_in_link "/home?forceLogin=true"
 
@@ -29,10 +29,9 @@ defmodule Kjogvi.Ebird.Client.Login do
   """
   @spec login(keyword()) :: {:ok, HttpCookie.Jar.t()} | {:error, any()}
   def login(credentials) do
-    req = Req.new(base_url: Client.base_url()) |> HttpCookie.ReqPlugin.attach()
     cookie_jar = HttpCookie.Jar.new(cookie_opts: [reject_public_suffixes: false])
 
-    case click_sign_in(req, cookie_jar) do
+    case click_sign_in(cookie_jar) do
       {:ok, cookie_jar, form_details} ->
         form_details
         |> Keyword.merge(credentials)
@@ -43,8 +42,8 @@ defmodule Kjogvi.Ebird.Client.Login do
     end
   end
 
-  defp click_sign_in(req, cookie_jar) do
-    with {:ok, resp} <- Req.get(req, url: @sign_in_link, cookie_jar: cookie_jar),
+  defp click_sign_in(cookie_jar) do
+    with {:ok, resp} <- Req.get(Client.req(), url: @sign_in_link, cookie_jar: cookie_jar),
          {:ok, form_details} <- extract_form_details(resp) do
       %{private: %{cookie_jar: cookie_jar}} = resp
       {:ok, cookie_jar, form_details}
