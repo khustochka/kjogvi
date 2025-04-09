@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.3 (Homebrew)
--- Dumped by pg_dump version 17.3
+-- Dumped from database version 17.4 (Homebrew)
+-- Dumped by pg_dump version 17.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -32,7 +32,7 @@ CREATE TABLE public.books (
     name character varying(256) NOT NULL,
     description text,
     publication_date date NOT NULL,
-    extras jsonb,
+    extras jsonb DEFAULT '{}'::jsonb,
     imported_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
@@ -115,7 +115,7 @@ CREATE TABLE public.taxa (
     "order" character varying(255),
     family character varying(255),
     parent_species_id bigint,
-    extras jsonb,
+    extras jsonb DEFAULT '{}'::jsonb,
     sort_order integer NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL

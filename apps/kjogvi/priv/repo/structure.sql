@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.3 (Homebrew)
--- Dumped by pg_dump version 17.3
+-- Dumped from database version 17.4 (Homebrew)
+-- Dumped by pg_dump version 17.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -390,6 +390,13 @@ CREATE INDEX cards_location_id_index ON public.cards USING btree (location_id);
 --
 
 CREATE INDEX cards_observ_date_location_id_index ON public.cards USING btree (observ_date, location_id);
+
+
+--
+-- Name: cards_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cards_user_id_index ON public.cards USING btree (user_id);
 
 
 --

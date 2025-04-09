@@ -15,7 +15,7 @@ defmodule Ornitho.Migrations.V01 do
       add :name, :string, null: false, size: 256
       add :description, :text
       add :publication_date, :date, null: false
-      add :extras, :map
+      add :extras, :map, default: "{}"
       add :imported_at, :utc_datetime_usec
 
       timestamps()
@@ -40,7 +40,7 @@ defmodule Ornitho.Migrations.V01 do
       add :family, :string
       add :parent_species_id, references("taxa", on_delete: :nilify_all)
       # family_en, species_group, extinct, extinct_year, changes, range, ebird_order_num_str
-      add :extras, :map
+      add :extras, :map, default: "{}"
       add :sort_order, :integer, null: false
 
       timestamps()

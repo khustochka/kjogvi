@@ -5,5 +5,7 @@ defmodule Kjogvi.Repo.Migrations.AddUserToCards do
     alter table("cards") do
       add :user_id, references(:users, on_delete: :restrict), null: false
     end
+
+    create index(:cards, [:user_id])
   end
 end
