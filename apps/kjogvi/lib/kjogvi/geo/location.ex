@@ -66,10 +66,6 @@ defmodule Kjogvi.Geo.Location do
     location.name_en
   end
 
-  def name_local_part(%{loc_type: loc_type}) when loc_type in ["country", "subdivision"] do
-    nil
-  end
-
   def name_local_part(%{cached_city: cached_city} = location) do
     postfix =
       [cached_city]
@@ -78,10 +74,6 @@ defmodule Kjogvi.Geo.Location do
 
     [name_with_parent(location) | postfix]
     |> Enum.join(", ")
-  end
-
-  def name_administrative_part(%{loc_type: "country"} = location) do
-    location.name_en
   end
 
   def name_administrative_part(location) do
@@ -94,7 +86,7 @@ defmodule Kjogvi.Geo.Location do
 
   def long_name(location) do
     [name_local_part(location), name_administrative_part(location)]
-    |> Enum.reject(&is_nil(&1))
+    |> Enum.reject(&(is_nil(&1) || &1 == ""))
     |> Enum.join(", ")
   end
 
