@@ -50,7 +50,7 @@ defmodule KjogviWeb.Router do
 
   # AUTHENTICATED USER ROUTES
 
-  scope "/my", KjogviWeb.Live do
+  scope "/my", KjogviWeb do
     pipe_through [:browser, :set_private_view, :require_authenticated_user]
 
     live_session :require_authenticated_user,
@@ -58,20 +58,22 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :ensure_authenticated},
         {KjogviWeb.UserAuth, :mount_private_view}
       ] do
-      live "/locations", My.Locations.Index, :index
-      live "/locations/countries", My.Countries.Index, :index
+      live "/locations", Live.My.Locations.Index, :index
+      live "/locations/countries", Live.My.Countries.Index, :index
 
-      live "/cards", My.Cards.Index, :index
-      live "/cards/page/:page", My.Cards.Index, :index
-      live "/cards/:id", My.Cards.Show, :show
+      live "/cards", Live.My.Cards.Index, :index
+      live "/cards/page/:page", Live.My.Cards.Index, :index
+      live "/cards/:id", Live.My.Cards.Show, :show
 
-      live "/account/settings", My.Account.Settings, :edit
-      live "/account/settings/confirm_email/:token", My.Account.Settings, :confirm_email
+      live "/account/settings", Live.My.Account.Settings, :edit
+      live "/account/settings/confirm_email/:token", Live.My.Account.Settings, :confirm_email
 
-      live "/lifelist", Lifelist.Index, :index
-      live "/lifelist/:year_or_location", Lifelist.Index, :index
-      live "/lifelist/:year/:location", Lifelist.Index, :index
+      live "/lifelist", Live.Lifelist.Index, :index
+      live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
+      live "/lifelist/:year/:location", Live.Lifelist.Index, :index
     end
+
+    post "/account/settings", UserController, :update
   end
 
   # ADMIN ROUTES

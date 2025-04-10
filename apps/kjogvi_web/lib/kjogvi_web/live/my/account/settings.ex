@@ -78,6 +78,47 @@ defmodule KjogviWeb.Live.My.Account.Settings do
           </:actions>
         </CoreComponents.simple_form>
       </div>
+
+      <div>
+        <h2 class="text-2xl font-header font-semibold leading-none text-zinc-600 mt-6">
+          User settings
+        </h2>
+        <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
+          Ebird settings
+        </h3>
+
+        <div>
+          <CoreComponents.simple_form
+            for={@settings_form}
+            id="settings_form"
+            action={~p"/my/account/settings"}
+            method="post"
+          >
+            <.inputs_for :let={settings_form} field={@settings_form[:extras]}>
+              <.inputs_for :let={ebird_form} field={settings_form[:ebird]}>
+                <CoreComponents.input
+                  field={ebird_form[:username]}
+                  label="Username"
+                  id="ebird_username"
+                  value={@current_scope.user.extras.ebird.username}
+                />
+                <CoreComponents.input
+                  field={ebird_form[:password]}
+                  type="password"
+                  label="Password"
+                  id="ebird_password"
+                  value={@current_scope.user.extras.ebird.password}
+                />
+              </.inputs_for>
+            </.inputs_for>
+            <:actions>
+              <CoreComponents.button phx-disable-with="Saving...">
+                Update
+              </CoreComponents.button>
+            </:actions>
+          </CoreComponents.simple_form>
+        </div>
+      </div>
     </div>
     """
   end
@@ -99,6 +140,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     user = socket.assigns.current_scope.user
     email_changeset = Users.change_user_email(user)
     password_changeset = Users.change_user_password(user)
+    settings_changeset = Kjogvi.Users.User.settings_changeset(user, %{})
 
     socket =
       socket
@@ -108,6 +150,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:trigger_submit, false)
+      |> assign(:settings_form, to_form(settings_changeset))
 
     {:ok, socket}
   end

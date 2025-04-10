@@ -217,7 +217,8 @@ CREATE TABLE public.users (
     confirmed_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    roles character varying(255)[] DEFAULT ARRAY[]::character varying[]
+    roles character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    extras jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -552,3 +553,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240120044005);
 INSERT INTO public."schema_migrations" (version) VALUES (20240627032425);
 INSERT INTO public."schema_migrations" (version) VALUES (20240628031751);
 INSERT INTO public."schema_migrations" (version) VALUES (20250111042455);
+INSERT INTO public."schema_migrations" (version) VALUES (20250408014804);

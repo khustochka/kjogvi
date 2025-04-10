@@ -226,6 +226,16 @@ defmodule Kjogvi.Users do
     end
   end
 
+  def update_user_settings(%User{} = user, attrs) do
+    user
+    |> User.settings_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, user} -> {:ok, user}
+      {:error, :user, changeset} -> {:error, changeset}
+    end
+  end
+
   ## Session
 
   @doc """

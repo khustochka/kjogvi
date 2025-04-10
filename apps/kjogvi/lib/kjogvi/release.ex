@@ -15,6 +15,7 @@ defmodule Kjogvi.Release do
     end
   end
 
+  @spec rollback(atom(), any()) :: {:ok, any(), any()}
   def rollback(repo, version) do
     _ = load_app()
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))

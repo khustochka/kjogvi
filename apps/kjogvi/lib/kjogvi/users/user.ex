@@ -1,10 +1,12 @@
 defmodule Kjogvi.Users.User do
   @moduledoc """
-  A schema representing user/
+  A schema representing user.
   """
 
   use Kjogvi.Schema
   import Ecto.Changeset
+
+  alias Kjogvi.Users.User.Extras
 
   schema "users" do
     field :email, :string
@@ -13,6 +15,7 @@ defmodule Kjogvi.Users.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime_usec
     field :roles, {:array, :string}
+    embeds_one :extras, Extras, on_replace: :update, defaults_to_struct: true
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -56,6 +59,15 @@ defmodule Kjogvi.Users.User do
     |> put_change(:roles, [Kjogvi.Users.admin_role()])
     |> validate_email(opts)
     |> validate_password(opts)
+  end
+
+  @doc """
+  Changeset for user's extra settings.
+  """
+  def settings_changeset(user, attrs, _opts \\ []) do
+    user
+    |> cast(attrs, [])
+    |> cast_embed(:extras)
   end
 
   defp validate_email(changeset, opts) do
@@ -173,5 +185,20 @@ defmodule Kjogvi.Users.User do
     else
       add_error(changeset, :current_password, "is not valid")
     end
+  end
+
+  @doc """
+  Determines if the user is configured for sync eBird update: has username, can ask for password.
+  """
+  def ebird_configured_sync?(user) do
+    not is_nil(user.extras.ebird.username)
+  end
+
+  @doc """
+  Determines if the user is configured for async eBird update: has username and password.
+  """
+  def ebird_configured_async?(user) do
+    not is_nil(user.extras.ebird.username) &&
+      not is_nil(user.extras.ebird.password)
   end
 end
