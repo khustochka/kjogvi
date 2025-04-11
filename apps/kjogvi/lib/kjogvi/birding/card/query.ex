@@ -74,4 +74,19 @@ defmodule Kjogvi.Birding.Card.Query do
       select_merge: %{observation_count: count(obs.id)}
     )
   end
+
+  def all_ebird_ids(query) do
+    from(c in query,
+      where: not is_nil(c.ebird_id),
+      select: c.ebird_id
+    )
+  end
+
+  def find_new_checklists(query, new_ebird_ids) do
+    from(
+      l in fragment("SELECT checklist_id FROM UNNEST(?::text[]) AS checklist_id", ^new_ebird_ids),
+      where: l.checklist_id not in subquery(all_ebird_ids(query)),
+      select: l.checklist_id
+    )
+  end
 end

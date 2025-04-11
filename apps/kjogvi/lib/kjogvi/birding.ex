@@ -40,4 +40,14 @@ defmodule Kjogvi.Birding do
       %{obs | taxon: taxon, species: Ornitho.Schema.Taxon.species(taxon) |> Species.from_taxon()}
     end
   end
+
+  def find_new_checklists(user, checklists) do
+    new_ebird_ids =
+      Card
+      |> Card.Query.by_user(user)
+      |> Card.Query.find_new_checklists(Enum.map(checklists, & &1.ebird_id))
+      |> Repo.all()
+
+    Enum.filter(checklists, &(&1.ebird_id in new_ebird_ids))
+  end
 end

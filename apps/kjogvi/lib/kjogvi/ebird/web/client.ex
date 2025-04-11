@@ -23,7 +23,13 @@ defmodule Kjogvi.Ebird.Web.Client do
   * count - the number of checklists
   * start - the index of the first one (1 is the newest).
   """
-  def preload_checklists(credentials, start \\ 1, count \\ 100) do
+  def preload_checklists(credentials, start \\ 1, count \\ 100)
+
+  def preload_checklists(%{username: username, password: password}, start, count) do
+    preload_checklists([username: username, password: password], start, count)
+  end
+
+  def preload_checklists(credentials, start, count) do
     with {:ok, cookie_jar} <- Login.login(credentials),
          {:ok, resp} <- fetch_checklists_page(cookie_jar, start, count) do
       extract_checklists(resp)
