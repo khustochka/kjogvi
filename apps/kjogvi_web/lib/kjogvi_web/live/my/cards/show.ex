@@ -64,11 +64,11 @@ defmodule KjogviWeb.Live.My.Cards.Show do
         {@card.observers}
       </:item>
     </CoreComponents.list>
-    <h2 class="py-4">Notes</h2>
+    <.h2 class="py-4">Notes</.h2>
     <p>
       {@card.notes}
     </p>
-    <h2 class="py-4">Observations</h2>
+    <.h2 class="py-4">Observations</.h2>
     <p :if={Enum.empty?(@card.observations)}>
       This card has no observations.
     </p>

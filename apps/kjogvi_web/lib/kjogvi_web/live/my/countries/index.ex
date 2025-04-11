@@ -31,9 +31,9 @@ defmodule KjogviWeb.Live.My.Countries.Index do
     <.link patch={~p{/my/locations/countries}}>Countries</.link>
     <.link patch={~p{/my/locations}}>Locations</.link>
 
-    <.header_single>
+    <.h1>
       Countries
-    </.header_single>
+    </.h1>
 
     <CoreComponents.table id="countries" rows={@countries}>
       <:col :let={country} label="id">{country.id}</:col>

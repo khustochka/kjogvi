@@ -109,8 +109,8 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
 
   def render(assigns) do
     ~H"""
-    <.header_single>Admin Tasks</.header_single>
-    <h2 class="text-2xl font-header font-semibold leading-none text-zinc-600 mt-6">Legacy Import</h2>
+    <.h1>Admin Tasks</.h1>
+    <.h2>Legacy Import</.h2>
     <CoreComponents.simple_form
       for={nil}
       phx-submit="legacy_import"
@@ -125,7 +125,7 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
       </:actions>
     </CoreComponents.simple_form>
 
-    <h2 class="text-2xl font-header font-semibold leading-none text-zinc-600 mt-6">eBird preload</h2>
+    <.h2>eBird preload</.h2>
     <CoreComponents.simple_form for={nil} phx-submit="ebird_preload">
       <:actions>
         <%= if @ebird_preload_async_result.loading do %>

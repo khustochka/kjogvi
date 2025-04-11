@@ -1,9 +1,9 @@
 <section class={@class}>
-  <h2 class="text-[2rem] font-semibold font-header text-green-700 mb-2">
-    <.link patch={@href} class="no-underline border-b-2 border-b-green-600">
+  <.h2 class="!text-[2rem] !mb-4">
+    <.link patch={@href} class="no-underline border-b-2 text-green-700 border-b-green-600">
       {render_slot(@header)}
     </.link>
-  </h2>
+  </.h2>
   <div :if={@total == 0} class="flex gap-2 items-center">
     <div><.icon name="hero-clipboard" class="text-zinc-500" /></div>
     <div>

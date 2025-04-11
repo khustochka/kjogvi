@@ -39,9 +39,9 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <.header_single>
+    <.h1>
       Cards
-    </.header_single>
+    </.h1>
 
     <CoreComponents.table id="cards" rows={@cards}>
       <:col :let={card} label="id">

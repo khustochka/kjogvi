@@ -10,9 +10,9 @@ defmodule KjogviWeb.SpeciesHTML do
 
   def show(assigns) do
     ~H"""
-    <.header_single>
+    <.h1>
       {@species.name_sci}
-    </.header_single>
+    </.h1>
     """
   end
 end

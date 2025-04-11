@@ -68,7 +68,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <.header font_style={header_style(assigns)}>
+    <.header_with_subheader class={header_style(assigns)}>
       {@page_header}
       <:subheader>
         <%= if @filter.motorless do %>
@@ -82,7 +82,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           &nbsp;
         <% end %>
       </:subheader>
-    </.header>
+    </.header_with_subheader>
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
@@ -288,10 +288,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   defp header_style(%{year: nil, location: nil}) do
-    "semibold"
+    ""
   end
 
   defp header_style(_assigns) do
-    "medium"
+    "!font-medium"
   end
 end

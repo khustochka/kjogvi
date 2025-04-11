@@ -40,15 +40,15 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     <.link patch={~p{/my/locations/countries}}>Countries</.link>
     <.link patch={~p{/my/locations}}>Locations</.link>
 
-    <.header_single>
+    <.h1>
       Locations
-    </.header_single>
+    </.h1>
 
     <div class="mb-3">
       {render_with_children(%{locations: @top_locations, all_locations: @locations})}
     </div>
 
-    <h2 class="text-lg font-semibold mb-3">Special locations</h2>
+    <.h2>Special locations</.h2>
 
     <ul class="list-disc">
       <%= for location <- @specials do %>

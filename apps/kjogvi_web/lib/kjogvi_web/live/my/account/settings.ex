@@ -80,9 +80,9 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       </div>
 
       <div>
-        <h2 class="text-2xl font-header font-semibold leading-none text-zinc-600 mt-6">
+        <.h2>
           User settings
-        </h2>
+        </.h2>
         <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
           Ebird settings
         </h3>
