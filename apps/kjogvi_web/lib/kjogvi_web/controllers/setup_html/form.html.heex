@@ -11,6 +11,8 @@
     <CoreComponents.input field={@form[:email]} type="email" label="Email" required />
     <CoreComponents.input field={@form[:password]} type="password" label="Password" required />
 
+    <input type="hidden" name="setup_code" value={@setup_code} />
+
     <:actions>
       <CoreComponents.button phx-disable-with="Creating account..." class="w-full">
         Create an account

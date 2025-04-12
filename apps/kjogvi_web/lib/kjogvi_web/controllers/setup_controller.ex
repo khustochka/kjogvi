@@ -8,16 +8,16 @@ defmodule KjogviWeb.SetupController do
 
   @rand_size 32
 
-  plug :put_layout, false when action in [:enter, :new]
+  plug :put_layout, false when action in [:enter, :form]
   plug :put_setup_code when action == :enter
-  plug :verify_setup_code when action == :new
+  plug :verify_setup_code when action in [:form, :create]
 
   def enter(conn, _params) do
     conn
     |> render(:enter)
   end
 
-  def new(conn, _params) do
+  def form(conn, _params) do
     form =
       Users.change_user_registration(%User{})
       |> Phoenix.Component.to_form(as: "user")
@@ -25,7 +25,8 @@ defmodule KjogviWeb.SetupController do
     conn
     |> assign(:check_errors, false)
     |> assign(:form, form)
-    |> render(:new)
+    |> assign(:setup_code, get_session(conn, :setup_code))
+    |> render(:form)
   end
 
   def create(conn, %{"user" => user_params}) do
@@ -34,7 +35,7 @@ defmodule KjogviWeb.SetupController do
         conn
         |> delete_session(:setup_code)
         |> put_flash(:info, "Admin user set up.")
-        |> render(:success)
+        |> redirect(to: ~p"/users/log_in")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         form = Phoenix.Component.to_form(changeset, as: "user")
@@ -71,15 +72,17 @@ defmodule KjogviWeb.SetupController do
   end
 
   defp verify_setup_code(%{params: params} = conn, _opts) do
-    %{"code" => code} = params
+    code = params["setup_code"]
+    expected_code = get_session(conn, :setup_code)
 
-    if code == get_session(conn, :setup_code) do
+    if !is_nil(expected_code) && code == expected_code do
       conn
     else
       conn
       |> delete_session(:setup_code)
-      |> put_flash(:error, "Incorrect code")
+      |> put_flash(:error, "Incorrect code.")
       |> redirect(to: ~p"/setup")
+      |> halt()
     end
   end
 end
