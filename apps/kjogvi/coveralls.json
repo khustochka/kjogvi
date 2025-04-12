@@ -1,0 +1,7 @@
+{
+    "skip_files": [
+      "lib/kjogvi/legacy",
+      "lib/mix/tasks/legacy\\.import\\.ex",
+      "lib/mix/tasks/legacy"
+    ]
+  }

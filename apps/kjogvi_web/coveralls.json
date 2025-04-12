@@ -1,5 +1,5 @@
 {
-    "skip_files": [
-      "lib/kjogvi_web/components/core_components.ex"
-    ]
-  }
+  "skip_files": [
+    "lib/kjogvi_web/components/core_components.ex"
+  ]
+}
