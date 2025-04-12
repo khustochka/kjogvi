@@ -84,7 +84,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
           User settings
         </.h2>
         <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
-          Ebird settings
+          eBird settings
         </h3>
 
         <div>
@@ -102,13 +102,22 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                   id="ebird_username"
                   value={@current_scope.user.extras.ebird.username}
                 />
-                <CoreComponents.input
-                  field={ebird_form[:password]}
-                  type="password"
-                  label="Password"
-                  id="ebird_password"
-                  value={@current_scope.user.extras.ebird.password}
-                />
+                <div>
+                  <CoreComponents.input
+                    field={ebird_form[:password]}
+                    type={(@ebird_password_show && "text") || "password"}
+                    label="Password"
+                    id="ebird_password"
+                    value={@current_scope.user.extras.ebird.password}
+                  />
+                  <span
+                    phx-click="toggle_ebird_password_visibility"
+                    class="hover:cursor-pointer text-zinc-500"
+                  >
+                    <.icon name="hero-eye-solid" class="w-6 h-6" />
+                    <span class="sr-only">Show/hide password</span>
+                  </span>
+                </div>
               </.inputs_for>
             </.inputs_for>
             <:actions>
@@ -151,6 +160,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:trigger_submit, false)
       |> assign(:settings_form, to_form(settings_changeset))
+      |> assign(:ebird_password_show, false)
 
     {:ok, socket}
   end
@@ -215,5 +225,11 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
     end
+  end
+
+  def handle_event("toggle_ebird_password_visibility", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:ebird_password_show, !socket.assigns.ebird_password_show)}
   end
 end
