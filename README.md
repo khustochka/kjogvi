@@ -1,23 +1,45 @@
 # Kjógvi [^1]
 
-## Run via Docker (prod demo)
+## Run in development
 
-1. Build the image:
+1. Start the PostgreSQL database server:
    
    ```bash
-   docker compose build
+   docker compose up -d
    ```
-2. Start the containers (web container will be failing on the first run):
+
+   Database runs on port 5498, see the `compose.yaml` file for credentials.
+
+2. Install the dependencies:
    
    ```bash
-   docker compose up
+   mix deps.get
    ```
-3. To create the databases (if they do not exist) and migrate:
+
+3. Start the server:
 
    ```bash
-   docker compose exec web bin/migrate
+   iex -S mix phx.server
    ```
 
-Application will be available on http://localhost:5040.
+   Application will be available on http://localhost:4000.
+
+4. When run first, you will be prompted to run the migrations.
+
+5. To setup admin user, find the setup code in the log.
+
+### To run the tests:
+
+1. Create the test DB:
+
+   ```bash
+   MIX_ENV=test mix ecto.setup
+   ```
+
+2. Run the tests:
+
+   ```bash
+   mix test
+   ```
 
 [^1]: Pronounced [ˈtʃɛkvɪ].

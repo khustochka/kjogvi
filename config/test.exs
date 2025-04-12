@@ -10,23 +10,18 @@ config :bcrypt_elixir, :log_rounds, 1
 # Run `mix help test` for more information.
 config :kjogvi, Kjogvi.Repo,
   hostname: System.get_env("DATABASE_HOST", "localhost"),
-  port: System.get_env("DATABASE_PORT"),
-  password: System.get_env("DATABASE_PASSWORD"),
+  port: System.get_env("DATABASE_PORT", "5498"),
+  username: System.get_env("DATABASE_USER", "kjogvi"),
+  password: System.get_env("DATABASE_PASSWORD", "kjogvi"),
   database: System.get_env("DATABASE_NAME", "kjogvi_test#{System.get_env("MIX_TEST_PARTITION")}"),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
-# nil username fails, no username uses the current user
-db_user = System.get_env("DATABASE_USER")
-
-if db_user do
-  config :kjogvi, Kjogvi.Repo, username: db_user
-end
-
 config :kjogvi, Kjogvi.OrnithoRepo,
   hostname: System.get_env("DATABASE_ORNITHO_HOST", "localhost"),
-  port: System.get_env("DATABASE_ORNITHO_PORT"),
-  password: System.get_env("DATABASE_ORNITHO_PASSWORD"),
+  port: System.get_env("DATABASE_ORNITHO_PORT", "5498"),
+  username: System.get_env("DATABASE_ORNITHO_USER", "kjogvi"),
+  password: System.get_env("DATABASE_ORNITHO_PASSWORD", "kjogvi"),
   database:
     System.get_env(
       "DATABASE_ORNITHO_NAME",
