@@ -4,15 +4,19 @@ defmodule Kjogvi.Ebird.Web do
   """
 
   alias Kjogvi.Users.User
-  alias Kjogvi.Ebird
+  alias Kjogvi.Ebird.Web.Client
+  alias Kjogvi.Ebird.Web.Checklist
   alias Kjogvi.Birding
+  alias Kjogvi.Types
 
   @doc """
   Preload user's checklists from eBird. Select only those that are not yet imported.
   """
+  @spec preload_new_checklists_for_user(Client.Login.credentials()) ::
+          Types.result([Checklist.Meta.t()])
   def preload_new_checklists_for_user(user) do
     if User.ebird_configured_async?(user) do
-      with {:ok, checklists} <- Ebird.Web.Client.preload_checklists(user.extras.ebird) do
+      with {:ok, checklists} <- Client.preload_checklists(user.extras.ebird) do
         {:ok, Birding.find_new_checklists(user, checklists)}
       end
     else

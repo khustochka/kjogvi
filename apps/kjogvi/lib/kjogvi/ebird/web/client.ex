@@ -5,6 +5,7 @@ defmodule Kjogvi.Ebird.Web.Client do
 
   alias Kjogvi.Ebird.Web.Checklist
   alias Kjogvi.Ebird.Web.Client.Login
+  alias Kjogvi.Types
 
   @base_url "https://ebird.org"
 
@@ -23,7 +24,11 @@ defmodule Kjogvi.Ebird.Web.Client do
   * count - the number of checklists
   * start - the index of the first one (1 is the newest).
   """
-  def preload_checklists(credentials, start \\ 1, count \\ 100) do
+  @spec preload_checklists(Login.credentials()) :: Types.result([Checklist.Meta.t()])
+  @spec preload_checklists(Login.credentials(), integer()) :: Types.result([Checklist.Meta.t()])
+  @spec preload_checklists(Login.credentials(), integer(), integer()) ::
+          Types.result([Checklist.Meta.t()])
+  def preload_checklists(credentials, count \\ 100, start \\ 1) do
     with {:ok, cookie_jar} <- Login.login(credentials),
          {:ok, resp} <- fetch_checklists_page(cookie_jar, start, count) do
       extract_checklists(resp)

@@ -6,6 +6,8 @@ defmodule Kjogvi.Users.User do
   use Kjogvi.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
   alias Kjogvi.Users.User.Extras
 
   schema "users" do
