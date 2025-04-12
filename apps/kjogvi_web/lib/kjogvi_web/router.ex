@@ -71,14 +71,17 @@ defmodule KjogviWeb.Router do
       live "/lifelist", Live.Lifelist.Index, :index
       live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
       live "/lifelist/:year/:location", Live.Lifelist.Index, :index
+
+      live "/imports", Live.My.Imports.Index, :index
     end
 
     post "/account/settings", UserController, :update
+    post "/imports/legacy", My.ImportsController, :legacy
   end
 
   # ADMIN ROUTES
 
-  scope "/", KjogviWeb do
+  scope "/admin", KjogviWeb do
     pipe_through [:browser, :set_private_view, :require_admin]
 
     live_session :admin_paths,
@@ -86,8 +89,7 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :ensure_admin},
         {KjogviWeb.UserAuth, :mount_private_view}
       ] do
-      live "/admin/tasks", Live.Admin.Tasks.Index, :index
-      post "/admin/tasks/legacy_import", Admin.TasksController, :legacy_import
+      # No paths yet
     end
 
     ornitho_web "/taxonomy",

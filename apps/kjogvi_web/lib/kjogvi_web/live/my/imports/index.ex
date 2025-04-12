@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Admin.Tasks.Index do
+defmodule KjogviWeb.Live.My.Imports.Index do
   @moduledoc false
 
   use KjogviWeb, :live_view
@@ -10,7 +10,7 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
     {
       :ok,
       socket
-      |> assign(:page_title, "Admin Tasks")
+      |> assign(:page_title, "Import Tasks")
       |> assign(:legacy_import_async_result, %AsyncResult{})
       |> assign(:ebird_preload_async_result, %AsyncResult{})
       |> assign(:ebird_checklists, [])
@@ -109,13 +109,9 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
 
   def render(assigns) do
     ~H"""
-    <.h1>Admin Tasks</.h1>
+    <.h1>Import Tasks</.h1>
     <.h2>Legacy Import</.h2>
-    <CoreComponents.simple_form
-      for={nil}
-      phx-submit="legacy_import"
-      action={~p"/admin/tasks/legacy_import"}
-    >
+    <CoreComponents.simple_form for={nil} phx-submit="legacy_import" action={~p"/my/imports/legacy"}>
       <:actions>
         <%= if @legacy_import_async_result.loading do %>
           <CoreComponents.button disabled>processing...</CoreComponents.button>

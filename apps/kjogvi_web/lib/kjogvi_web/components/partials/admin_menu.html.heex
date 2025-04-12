@@ -15,19 +15,19 @@
         Lifelist
       </.link>
     </.admin_menu_item>
+    <.admin_menu_item>
+      <.link href={~p"/my/imports"} class="no-underline hover:underline">
+        Imports
+      </.link>
+    </.admin_menu_item>
     <%= if Kjogvi.Users.admin?(@current_user) do %>
       <.admin_menu_item>
-        <.link href={~p"/taxonomy"} class="no-underline hover:underline">
+        <.link href={~p"/admin/taxonomy"} class="no-underline hover:underline">
           Taxonomy
         </.link>
       </.admin_menu_item>
       <.admin_menu_item>
-        <.link href={~p"/admin/tasks"} class="no-underline hover:underline">
-          Admin tasks
-        </.link>
-      </.admin_menu_item>
-      <.admin_menu_item>
-        <.link href={~p"/dashboard"} class="no-underline hover:underline">
+        <.link href={~p"/admin/dashboard"} class="no-underline hover:underline">
           Live Dashboard
         </.link>
       </.admin_menu_item>
