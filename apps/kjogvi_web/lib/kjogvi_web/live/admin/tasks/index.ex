@@ -70,10 +70,10 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
     {:noreply, socket}
   end
 
-  def handle_async(:legacy_import, {:exit, reason}, socket) do
+  def handle_async(:legacy_import, {:exit, _reason}, socket) do
     socket =
       socket
-      |> put_flash(:error, "Legacy import failed: #{inspect(reason)}")
+      |> put_flash(:error, "Legacy import failed: Server error.")
       |> assign(:legacy_import_async_result, %AsyncResult{})
 
     {:noreply, socket}
@@ -98,10 +98,10 @@ defmodule KjogviWeb.Live.Admin.Tasks.Index do
     {:noreply, socket}
   end
 
-  def handle_async(:ebird_preload, {:exit, reason}, socket) do
+  def handle_async(:ebird_preload, {:exit, _reason}, socket) do
     socket =
       socket
-      |> put_flash(:error, "eBird preload failed: #{inspect(reason)}")
+      |> put_flash(:error, "eBird preload failed: Server error")
       |> assign(:ebird_preload_async_result, %AsyncResult{})
 
     {:noreply, socket}
