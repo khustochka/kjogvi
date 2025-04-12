@@ -24,9 +24,9 @@
 
    Application will be available on http://localhost:4000.
 
-4. When run first, you will be prompted to run the migrations.
+4. When run first time, you will be prompted to run the migrations.
 
-5. To setup admin user, find the setup code in the log.
+5. To setup admin user, find the setup code in the logs.
 
 ### To run the tests:
 
