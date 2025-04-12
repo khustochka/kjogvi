@@ -22,8 +22,8 @@ defmodule KjogviWeb.FlashComponents do
   def main_flash(assigns) do
     ~H"""
     <div id={@id}>
-      <.flash_default kind={:info} title={gettext("Success!")} flash={@flash} />
-      <.flash_default kind={:error} title={gettext("Error!")} flash={@flash} />
+      <.flash_default kind={:info} id={"#{@id}-info"} title={gettext("Success!")} flash={@flash} />
+      <.flash_default kind={:error} id={"#{@id}-error"} title={gettext("Error!")} flash={@flash} />
     </div>
     """
   end

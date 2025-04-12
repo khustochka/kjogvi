@@ -96,7 +96,7 @@ defmodule KjogviWeb.BaseComponents do
       "text-zinc-600",
       "text-2xl",
       "leading-[1.4]",
-      "mt-6",
+      # "mt-0",
       "mb-8",
       class
     ]
