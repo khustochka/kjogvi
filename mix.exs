@@ -78,6 +78,10 @@ defmodule Kjogvi.Umbrella.MixProject do
         "run --no-start -e 'IO.puts(\"Running cycles detection...\")'",
         "xref graph --format cycles --label compile-connected --fail-above 0"
       ],
+      "lint.fix": [
+        "format",
+        "lint"
+      ],
       "lint.github": [
         "compile --warnings-as-errors",
         "run --no-start -e 'IO.puts(\"Checking formatting...\")'",
