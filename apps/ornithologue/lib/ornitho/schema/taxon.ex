@@ -119,4 +119,10 @@ defmodule Ornitho.Schema.Taxon do
   defp saveable_fields(:update) do
     saveable_fields(:create) -- [:book_id]
   end
+
+  def dismantle_key(key) do
+    ["", book_slug, book_version, taxon_code] = String.split(key, "/")
+
+    {book_slug, book_version, taxon_code}
+  end
 end

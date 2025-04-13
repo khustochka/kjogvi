@@ -108,9 +108,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
   def present_taxon(assigns) do
     ~H"""
     <div>
-      <.link href={"/taxonomy#{@taxon_key}"} target="_blank">
-        {@taxon_key}
-      </.link>
+      <.taxon_code_link key={@taxon_key} target="_blank" />
     </div>
     <div>
       <b class="font-semibold">{@taxon.name_en}</b>
