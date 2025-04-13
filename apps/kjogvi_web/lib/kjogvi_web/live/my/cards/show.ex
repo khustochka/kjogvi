@@ -34,7 +34,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     <CoreComponents.header>
       Card #{@card.id}
       <:subtitle>
-        {@card.observ_date} · {Geo.Location.long_name(@card.location)}
+        {format_date(@card.observ_date)} · {Geo.Location.long_name(@card.location)}
 
         <span :if={@card.motorless} title="Motorless">
           <.icon name="fa-solid-bicycle" />
@@ -44,7 +44,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
 
     <CoreComponents.list>
       <:item title="Effort">{@card.effort_type}</:item>
-      <:item title="Start time">{@card.start_time}</:item>
+      <:item title="Start time">{format_time(@card.start_time)}</:item>
       <:item title="Duration">
         <%= with duration when not is_nil(duration) <- @card.duration_minutes do %>
           {duration} min

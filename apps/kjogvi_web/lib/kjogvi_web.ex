@@ -101,6 +101,7 @@ defmodule KjogviWeb do
       # import KjogviWeb.CoreComponents
       import KjogviWeb.AccessComponents
       import KjogviWeb.BaseComponents
+      import KjogviWeb.HeaderComponents
       import KjogviWeb.FlashComponents
       import KjogviWeb.IconComponents
       import KjogviWeb.MetaComponents

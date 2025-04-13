@@ -32,7 +32,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
               <i class="whitespace-nowrap">{lifer.species.name_sci}</i> --%>
             </td>
             <td class="p-0 py-4 pr-6 text-center whitespace-nowrap">
-              {format_observation_date(lifer.observ_date)}
+              {format_date(lifer.observ_date)}
             </td>
             <td class="p-0 py-4 pr-6">
               <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>

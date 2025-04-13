@@ -50,8 +50,8 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       <:col :let={card} label="Location">
         {Geo.Location.long_name(card.location)}
       </:col>
-      <:col :let={card} label="Date">{card.observ_date}</:col>
-      <:col :let={card} label="Start time">{card.start_time}</:col>
+      <:col :let={card} label="Date">{format_date(card.observ_date)}</:col>
+      <:col :let={card} label="Start time">{format_time(card.start_time)}</:col>
       <:col :let={card} label="Effort">{card.effort_type}</:col>
       <:col :let={card} label="M/L">
         <span :if={card.motorless} title="Motorless">
