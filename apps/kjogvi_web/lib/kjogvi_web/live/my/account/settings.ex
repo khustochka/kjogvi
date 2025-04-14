@@ -105,13 +105,15 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                 <div>
                   <CoreComponents.input
                     field={ebird_form[:password]}
-                    type={(@ebird_password_show && "text") || "password"}
+                    type="password"
                     label="Password"
                     id="ebird_password"
                     value={@current_scope.user.extras.ebird.password}
                   />
                   <span
-                    phx-click="toggle_ebird_password_visibility"
+                    phx-click={
+                      JS.toggle_attribute({:type, :password, :text}, to: "input#ebird_password")
+                    }
                     class="hover:cursor-pointer text-zinc-500"
                   >
                     <.icon name="hero-eye-solid" class="w-6 h-6" />
@@ -225,11 +227,5 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
     end
-  end
-
-  def handle_event("toggle_ebird_password_visibility", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(:ebird_password_show, !socket.assigns.ebird_password_show)}
   end
 end
