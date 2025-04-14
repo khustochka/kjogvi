@@ -7,6 +7,8 @@ defmodule Kjogvi.Repo.Migrations.CreateUsersAuthTables do
     create table(:users) do
       add :email, :citext, null: false
       add :hashed_password, :string, null: false
+      add :roles, {:array, :string}, default: []
+      add :extras, :map, default: "{}"
       add :confirmed_at, :utc_datetime_usec
 
       timestamps(type: :utc_datetime_usec)

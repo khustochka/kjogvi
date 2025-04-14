@@ -30,7 +30,8 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
 
     create index(:locations, :slug, unique: true)
     create index(:locations, :ancestry, using: "GIN")
-    create index(:locations, :country_id)
+    create index(:locations, :country_id, where: "country_id IS NOT NULL")
+    create index(:locations, :location_type, where: "location_type IS NOT NULL")
 
     # Cards
 
@@ -74,6 +75,7 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
       add :notes, :text
       add :private_notes, :text
       add :unreported, :boolean, default: false, null: false
+      add :hidden, :boolean, null: false, default: false
       add :ebird_obs_id, :string
 
       timestamps(null: true)
