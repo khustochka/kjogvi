@@ -22,15 +22,10 @@ defmodule KjogviWeb.Live.Lifelist.Params do
   end
 
   defp add_param(acc, {"year_or_location", year_or_location}, opts) do
-    cond do
-      year_or_location =~ @valid_year_regex ->
-        add_success(acc, {:year, String.to_integer(year_or_location)})
-
-      year_or_location =~ ~r/\A\d+\Z/ ->
-        add_error(acc, "Invalid year value.")
-
-      true ->
-        add_param(acc, {"location", year_or_location}, opts)
+    if year_or_location =~ ~r/\A\d+\Z/ do
+      add_param(acc, {"year", year_or_location}, opts)
+    else
+      add_param(acc, {"location", year_or_location}, opts)
     end
   end
 

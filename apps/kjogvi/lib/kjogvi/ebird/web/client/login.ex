@@ -64,10 +64,9 @@ defmodule Kjogvi.Ebird.Web.Client.Login do
   def extract_form_details(resp) do
     with {:ok, doc} <- Floki.parse_document(resp.body),
          form <- Floki.find(doc, @login_form_css) do
-      @login_form_fields_to_add
-      |> Enum.reduce(%{}, fn field, acc ->
-        Map.put(acc, field, extract_form_field(form, field))
-      end)
+      for field <- @login_form_fields_to_add, reduce: %{} do
+        acc -> Map.put(acc, field, extract_form_field(form, field))
+      end
       |> then(&{:ok, &1})
     end
   end

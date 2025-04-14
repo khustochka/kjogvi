@@ -14,10 +14,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
         |> transform_keys
       end
 
-    five_mr_slugs =
-      locations
-      |> Enum.filter(& &1.is_5mr)
-      |> Enum.map(& &1.slug)
+    five_mr_slugs = for loc <- locations, loc.is_5mr, do: loc.slug
 
     _ = Kjogvi.Repo.insert_all(Kjogvi.Geo.Location, locations)
 

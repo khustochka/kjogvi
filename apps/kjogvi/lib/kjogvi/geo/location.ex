@@ -68,9 +68,11 @@ defmodule Kjogvi.Geo.Location do
 
   def name_local_part(%{cached_city: cached_city} = location) do
     postfix =
-      [cached_city]
-      |> Enum.reject(&is_nil(&1))
-      |> Enum.map(& &1.name_en)
+      if is_nil(cached_city) do
+        []
+      else
+        [cached_city.name_en]
+      end
 
     [name_with_parent(location) | postfix]
     |> Enum.join(", ")

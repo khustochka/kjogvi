@@ -4,7 +4,7 @@ defmodule Kjogvi.Util.Enum do
   """
 
   @doc """
-  Zips a list with a boolean represention inclusion of each element in a sublist. Lists order
+  Zips a list with a boolean representing inclusion of each element in a sublist. Lists order
   should match.
 
   ## Examples
