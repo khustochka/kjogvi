@@ -28,6 +28,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   def handle_event("start_preload", _params, socket) do
     {:noreply,
      socket
+     |> clear_flash()
      |> put_flash(:info, "eBird import in progress...")
      |> assign(:ebird_checklists, [])
      |> start_ebird_preload()}
@@ -44,6 +45,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   def handle_async(:ebird_preload, {:ok, {:ok, ebird_checklists}}, socket) do
     socket =
       socket
+      |> clear_flash()
       |> put_flash(:info, "eBird preload done.")
       |> assign(:ebird_checklists, ebird_checklists)
       |> assign(:async_result, AsyncResult.ok(%AsyncResult{}, :ok))
@@ -54,6 +56,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   def handle_async(:ebird_preload, {:ok, {:error, reason}}, socket) do
     socket =
       socket
+      |> clear_flash()
       |> put_flash(:error, "eBird preload failed: #{reason}")
       |> assign(:async_result, %AsyncResult{})
 
@@ -63,6 +66,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   def handle_async(:ebird_preload, {:exit, _reason}, socket) do
     socket =
       socket
+      |> clear_flash()
       |> put_flash(:error, "eBird preload failed: Server error")
       |> assign(:async_result, %AsyncResult{})
 

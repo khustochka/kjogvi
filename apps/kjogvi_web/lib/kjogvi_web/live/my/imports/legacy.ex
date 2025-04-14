@@ -26,6 +26,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
   def handle_event("start_import", _params, socket) do
     {:noreply,
      socket
+     |> clear_flash()
      |> put_flash(:info, "Legacy import in progress...")
      |> start_import()}
   end
@@ -42,6 +43,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
   def handle_async(:legacy_import, {:ok, :ok = _success_result}, socket) do
     socket =
       socket
+      |> clear_flash()
       |> put_flash(:info, "Legacy import done.")
       |> assign(:async_result, AsyncResult.ok(%AsyncResult{}, :ok))
 
@@ -51,6 +53,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
   def handle_async(:legacy_import, {:exit, _reason}, socket) do
     socket =
       socket
+      |> clear_flash()
       |> put_flash(:error, "Legacy import failed: Server error.")
       |> assign(:async_result, %AsyncResult{})
 
