@@ -96,7 +96,7 @@ config :ornithologue, Ornitho.Importer,
 
 config :ornithologue, Ornitho.StreamImporter,
   adapter: Ornitho.StreamImporter.LocalAdapter,
-  path_prefix: "priv"
+  path_prefix: "apps/ornithologue/priv"
 
 # KJOGVI
 
