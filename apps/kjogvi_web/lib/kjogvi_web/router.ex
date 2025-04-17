@@ -65,6 +65,10 @@ defmodule KjogviWeb.Router do
       live "/cards/page/:page", Live.My.Cards.Index, :index
       live "/cards/:id", Live.My.Cards.Show, :show
 
+      live "/images", Live.My.Images.Index, :index
+      live "/images/new", Live.My.Images.Form, :new
+      live "/images/:slug", Live.My.Images.Show, :show
+
       live "/account/settings", Live.My.Account.Settings, :edit
       live "/account/settings/confirm_email/:token", Live.My.Account.Settings, :confirm_email
 
@@ -74,6 +78,8 @@ defmodule KjogviWeb.Router do
 
       live "/imports", Live.My.Imports.Index, :index
     end
+
+    post "/images", My.ImagesController, :create
 
     post "/account/settings", UserController, :update
     post "/imports/legacy", My.ImportsController, :legacy

@@ -8,3 +8,7 @@ defimpl Phoenix.Param, for: Kjogvi.Pages.Species do
     |> String.replace(" ", "_", global: false)
   end
 end
+
+defimpl Phoenix.Param, for: Kjogvi.Media.Image do
+  def to_param(image), do: image.slug
+end

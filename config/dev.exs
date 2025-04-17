@@ -128,3 +128,9 @@ config :phoenix, :stacktrace_depth, 20
 #   adapter: Kjogvi.Legacy.Adapters.Download,
 #   url: System.get_env("LEGACY_URL"),
 #   api_key: System.get_env("LEGACY_API_KEY")
+
+# WAFFLE
+
+config :waffle,
+  storage: Waffle.Storage.Local,
+  storage_dir_prefix: "apps/kjogvi_web/priv/static"
