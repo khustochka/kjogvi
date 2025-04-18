@@ -62,8 +62,9 @@ defmodule OrnithoWeb.BooksHTML do
           <.simple_form
             for={nil}
             phx-submit="import"
-            action={OrnithoWeb.LinkHelper.import_path(@conn, importer: importer)}
+            action={OrnithoWeb.LinkHelper.import_path(@conn)}
           >
+            <input type="hidden" name="importer" value={importer} />
             <:actions>
               <.button phx-disable-with="processing...">Import</.button>
             </:actions>

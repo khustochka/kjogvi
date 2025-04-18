@@ -20,12 +20,19 @@ defmodule Kjogvi.Birding do
     |> Repo.paginate(page: page, page_size: page_size)
   end
 
-  def fetch_card(user, id) do
+  def fetch_card_with_observations(user, id) do
     Card
     |> Card.Query.by_user(user)
     |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
     |> Repo.get!(id)
     |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
+    |> then(fn card ->
+      Map.replace(
+        card,
+        :observations,
+        card.observations |> Kjogvi.Birding.preload_taxa_and_species()
+      )
+    end)
   end
 
   def preload_taxa_and_species(observations) do

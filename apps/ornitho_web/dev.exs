@@ -121,7 +121,7 @@ defmodule DemoWeb.Endpoint do
 
   @session_options [
     store: :cookie,
-    key: "_live_view_key",
+    key: "_ornitho_web_key",
     signing_salt: "/VEDsdfsffMnp5",
     same_site: "Lax"
   ]
@@ -135,10 +135,15 @@ defmodule DemoWeb.Endpoint do
   plug Phoenix.LiveReloader
   plug Phoenix.CodeReloader
 
-  plug Plug.Session, @session_options
-
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
+
+  plug Plug.Parsers,
+    parsers: [:urlencoded, :multipart, :json],
+    pass: ["*/*"],
+    json_decoder: Phoenix.json_library()
+
+  plug Plug.Session, @session_options
   plug DemoWeb.Router
 end
 

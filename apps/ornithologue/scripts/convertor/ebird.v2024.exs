@@ -23,9 +23,9 @@ defmodule Convertor.Ebird.V2024 do
     "extinct year" => {:string, :extinct_year}
   }
 
-  @ebird_taxonomy_file "priv/import/ebird/v2024/eBird_taxonomy_v2024.csv"
-  @clements_checklist_file "priv/import/ebird/v2024/eBird-Clements-v2024-integrated-checklist-October-2024-rev.csv"
-  @output_file "priv/import/ebird/v2024/ornithologue_ebird_v2024.csv"
+  @ebird_taxonomy_file "priv/convert/ebird/v2024/eBird_taxonomy_v2024.csv"
+  @clements_checklist_file "priv/convert/ebird/v2024/eBird-Clements-v2024-integrated-checklist-October-2024-rev.csv"
+  @output_file "priv/convert/ebird/v2024/ornithologue_ebird_v2024.csv"
 
   def convert do
     extract_taxa_from_csv(@ebird_taxonomy_file)
