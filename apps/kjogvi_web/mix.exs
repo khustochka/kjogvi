@@ -45,9 +45,11 @@ defmodule KjogviWeb.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  defp extra_apps(:default), do: [:logger, :runtime_tools]
-  defp extra_apps(:test), do: extra_apps(:default)
-  defp extra_apps(_), do: extra_apps(:default) ++ [:os_mon, :opentelemetry]
+  defp extra_apps(:minimal), do: [:logger, :runtime_tools]
+  defp extra_apps(:default), do: extra_apps(:minimal) ++ [:os_mon, :opentelemetry]
+  defp extra_apps(:test), do: extra_apps(:minimal)
+  defp extra_apps(:dev), do: extra_apps(:default) ++ [:observer, :wx]
+  defp extra_apps(_), do: extra_apps(:default)
 
   # Specifies your project dependencies.
   #
