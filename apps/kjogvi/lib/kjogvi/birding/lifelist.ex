@@ -47,12 +47,7 @@ defmodule Kjogvi.Birding.Lifelist do
   Get N newest species on the list based on provided filter options.
   """
   def top(scope, n, filter \\ []) when is_integer(n) and n > 0 do
-    Lifelist.Query.lifelist_query(scope, filter)
-    |> Repo.all()
-    |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Kjogvi.Birding.preload_taxa_and_species()
-    |> Enum.filter(& &1.species)
-    |> Enum.uniq_by(& &1.species.code)
+    generate_with_species(scope, filter)
     |> Enum.reverse()
     |> then(fn list ->
       %Result{
