@@ -104,7 +104,9 @@ defmodule Kjogvi.Birding.Lifelist do
 
     from(c in Kjogvi.Geo.Location)
     |> Geo.Location.Query.countries()
-    |> join(:inner, [c], l in Kjogvi.Geo.Location, on: c.id == l.country_id or c.id == l.id)
+    |> join(:inner, [c], l in Kjogvi.Geo.Location,
+      on: c.id == l.cached_country_id or c.id == l.id
+    )
     |> where([_c, l], l.id in subquery(location_ids))
     |> select([c], c.id)
     |> Repo.all()

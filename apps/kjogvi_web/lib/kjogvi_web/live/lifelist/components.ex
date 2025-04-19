@@ -37,7 +37,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
             <td class="p-0 py-4 pr-6">
               <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>
                 {Geo.Location.name_local_part(location)} ·
-                <%= with country when not is_nil(country) <- location.country do %>
+                <%= with country when not is_nil(country) <- location.cached_country do %>
                   <span class="font-semibold whitespace-nowrap">
                     {Geo.Location.name_administrative_part(location)}
                   </span>

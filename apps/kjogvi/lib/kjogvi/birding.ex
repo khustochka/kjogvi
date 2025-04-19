@@ -15,7 +15,7 @@ defmodule Kjogvi.Birding do
     Card
     |> Card.Query.by_user(user)
     |> order_by([{:desc, :observ_date}, {:desc, :id}])
-    |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
+    |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :cached_country])
     |> Card.Query.load_observation_count()
     |> Repo.paginate(page: page, page_size: page_size)
   end
@@ -23,7 +23,7 @@ defmodule Kjogvi.Birding do
   def fetch_card_with_observations(user, id) do
     Card
     |> Card.Query.by_user(user)
-    |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
+    |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :cached_country])
     |> Repo.get!(id)
     |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
     |> then(fn card ->

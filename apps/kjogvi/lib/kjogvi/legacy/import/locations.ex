@@ -101,7 +101,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
     |> Map.put(:location_type, location_type)
     |> Map.put(:is_patch, loc.patch)
     |> Map.put(:is_private, loc.private_loc)
-    |> Map.put(:country_id, loc.cached_country_id)
+    |> Map.put(:cached_country_id, loc.cached_country_id)
     |> Map.put(:inserted_at, time)
     |> Map.put(:updated_at, time)
   end

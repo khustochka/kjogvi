@@ -13,14 +13,15 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
       add :location_type, :string, size: 32
       add :ancestry, {:array, :bigint}
       add :iso_code, :string, size: 3
-      add :is_private, :boolean, default: false, null: false
       add :is_patch, :boolean, default: false, null: false
       add :is_5mr, :boolean, default: false, null: false
       add :lat, :numeric, scale: 5, precision: 8
       add :lon, :numeric, scale: 5, precision: 8
       add :public_index, :smallint
+      add :is_private, :boolean, default: false, null: false
+      add :cached_public_location_id, references("locations", on_delete: :nilify_all)
       # TODO: null: false
-      add :country_id, references("locations", on_delete: :restrict)
+      add :cached_country_id, references("locations", on_delete: :restrict)
       add :cached_parent_id, references("locations", on_delete: :nilify_all)
       add :cached_city_id, references("locations", on_delete: :nilify_all)
       add :cached_subdivision_id, references("locations", on_delete: :nilify_all)
@@ -30,7 +31,7 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
 
     create index(:locations, :slug, unique: true)
     create index(:locations, :ancestry, using: "GIN")
-    create index(:locations, :country_id, where: "country_id IS NOT NULL")
+    create index(:locations, :cached_country_id, where: "cached_country_id IS NOT NULL")
     create index(:locations, :location_type, where: "location_type IS NOT NULL")
 
     # Cards

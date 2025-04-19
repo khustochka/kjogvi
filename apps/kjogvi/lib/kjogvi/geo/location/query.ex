@@ -17,10 +17,10 @@ defmodule Kjogvi.Geo.Location.Query do
     :name_en,
     :location_type,
     :is_private,
-    :country_id,
     :cached_parent_id,
     :cached_city_id,
     :cached_subdivision_id,
+    :cached_country_id,
     :ancestry
   ]
 
@@ -81,7 +81,7 @@ defmodule Kjogvi.Geo.Location.Query do
            cached_parent: minimal_select(),
            cached_city: minimal_select(),
            cached_subdivision: minimal_select(),
-           country: minimal_select()
+           cached_country: minimal_select()
          ]}
     )
     |> preload_public_location()
@@ -102,7 +102,7 @@ defmodule Kjogvi.Geo.Location.Query do
           cached_parent: ^minimal_select(),
           cached_city: ^minimal_select(),
           cached_subdivision: ^minimal_select(),
-          country: ^minimal_select()
+          cached_country: ^minimal_select()
         ]
       )
       |> minimal_select()

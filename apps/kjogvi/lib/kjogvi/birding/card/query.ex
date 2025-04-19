@@ -58,7 +58,7 @@ defmodule Kjogvi.Birding.Card.Query do
   # defp filter_by_location(query, %{id: id, location_type: "country"}) do
   #   from [_, c] in query,
   #     join: l in assoc(c, :location),
-  #     where: l.country_id == ^id or l.id == ^id
+  #     where: l.cached_country_id == ^id or l.id == ^id
   # end
 
   # defp filter_by_location(query, %{id: id}) do

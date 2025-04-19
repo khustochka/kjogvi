@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.4 (Homebrew)
+-- Dumped from database version 16.3
 -- Dumped by pg_dump version 17.4
 
 SET statement_timeout = 0;
@@ -93,13 +93,14 @@ CREATE TABLE public.locations (
     location_type character varying(32),
     ancestry bigint[],
     iso_code character varying(3),
-    is_private boolean DEFAULT false NOT NULL,
     is_patch boolean DEFAULT false NOT NULL,
     is_5mr boolean DEFAULT false NOT NULL,
     lat numeric(8,5),
     lon numeric(8,5),
     public_index smallint,
-    country_id bigint,
+    is_private boolean DEFAULT false NOT NULL,
+    cached_public_location_id bigint,
+    cached_country_id bigint,
     cached_parent_id bigint,
     cached_city_id bigint,
     cached_subdivision_id bigint,
@@ -140,10 +141,10 @@ CREATE TABLE public.observations (
     notes text,
     private_notes text,
     unreported boolean DEFAULT false NOT NULL,
+    hidden boolean DEFAULT false NOT NULL,
     ebird_obs_id character varying(255),
     inserted_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    hidden boolean DEFAULT false NOT NULL
+    updated_at timestamp without time zone
 );
 
 
@@ -214,11 +215,11 @@ CREATE TABLE public.users (
     id bigint NOT NULL,
     email public.citext NOT NULL,
     hashed_password character varying(255) NOT NULL,
+    roles character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    extras jsonb DEFAULT '{}'::jsonb,
     confirmed_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    roles character varying(255)[] DEFAULT ARRAY[]::character varying[],
-    extras jsonb DEFAULT '{}'::jsonb
+    updated_at timestamp without time zone NOT NULL
 );
 
 
@@ -408,10 +409,17 @@ CREATE INDEX locations_ancestry_index ON public.locations USING gin (ancestry);
 
 
 --
--- Name: locations_country_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: locations_cached_country_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX locations_country_id_index ON public.locations USING btree (country_id);
+CREATE INDEX locations_cached_country_id_index ON public.locations USING btree (cached_country_id) WHERE (cached_country_id IS NOT NULL);
+
+
+--
+-- Name: locations_location_type_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX locations_location_type_index ON public.locations USING btree (location_type) WHERE (location_type IS NOT NULL);
 
 
 --
@@ -488,6 +496,14 @@ ALTER TABLE ONLY public.locations
 
 
 --
+-- Name: locations locations_cached_country_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT locations_cached_country_id_fkey FOREIGN KEY (cached_country_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: locations locations_cached_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -496,19 +512,19 @@ ALTER TABLE ONLY public.locations
 
 
 --
+-- Name: locations locations_cached_public_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT locations_cached_public_location_id_fkey FOREIGN KEY (cached_public_location_id) REFERENCES public.locations(id) ON DELETE SET NULL;
+
+
+--
 -- Name: locations locations_cached_subdivision_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.locations
     ADD CONSTRAINT locations_cached_subdivision_id_fkey FOREIGN KEY (cached_subdivision_id) REFERENCES public.locations(id) ON DELETE SET NULL;
-
-
---
--- Name: locations locations_country_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_country_id_fkey FOREIGN KEY (country_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
 
 
 --
@@ -551,6 +567,3 @@ INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
 INSERT INTO public."schema_migrations" (version) VALUES (20240120044005);
 INSERT INTO public."schema_migrations" (version) VALUES (20240627032425);
-INSERT INTO public."schema_migrations" (version) VALUES (20240628031751);
-INSERT INTO public."schema_migrations" (version) VALUES (20250111042455);
-INSERT INTO public."schema_migrations" (version) VALUES (20250408014804);

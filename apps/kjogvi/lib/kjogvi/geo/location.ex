@@ -21,8 +21,9 @@ defmodule Kjogvi.Geo.Location do
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
-    belongs_to(:country, Location)
+    belongs_to(:cached_public_location, Location)
 
+    belongs_to(:cached_country, Location)
     belongs_to(:cached_parent, Location)
     belongs_to(:cached_city, Location)
     belongs_to(:cached_subdivision, Location)
@@ -79,7 +80,7 @@ defmodule Kjogvi.Geo.Location do
   end
 
   def name_administrative_part(location) do
-    %{cached_subdivision: cached_subdivision, country: country} = location
+    %{cached_subdivision: cached_subdivision, cached_country: country} = location
 
     [cached_subdivision, country]
     |> Enum.reject(&is_nil(&1))

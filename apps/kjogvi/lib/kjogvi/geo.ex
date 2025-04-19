@@ -22,7 +22,7 @@ defmodule Kjogvi.Geo do
   def get_upper_level_locations do
     good_children_ids =
       from(Location)
-      |> where([l], l.location_type in ["country", "region"] or is_nil(l.country_id))
+      |> where([l], l.location_type in ["country", "region"] or is_nil(l.cached_country_id))
       |> select(fragment("distinct unnest(array_append(ancestry, id))"))
 
     # Need to add null type, because it is not matching != "special"
