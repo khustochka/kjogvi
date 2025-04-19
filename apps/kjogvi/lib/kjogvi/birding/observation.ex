@@ -9,6 +9,7 @@ defmodule Kjogvi.Birding.Observation do
   schema "observations" do
     belongs_to(:card, Kjogvi.Birding.Card)
     field :taxon_key, :string
+    field :cached_species_key, :string
     field :quantity, :string
     field :voice, :boolean, default: false
     field :notes, :string
@@ -26,8 +27,8 @@ defmodule Kjogvi.Birding.Observation do
   end
 
   @doc false
-  def changeset(card, attrs) do
-    card
+  def changeset(observation, attrs) do
+    observation
     |> cast(attrs, [])
     |> validate_required([
       :card_id,
@@ -35,5 +36,10 @@ defmodule Kjogvi.Birding.Observation do
       :voice,
       :unreported
     ])
+  end
+
+  def cache_species_changeset(observation, attrs) do
+    observation
+    |> cast(attrs, [:cached_species_key])
   end
 end

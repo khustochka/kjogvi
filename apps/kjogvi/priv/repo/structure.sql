@@ -136,6 +136,7 @@ CREATE TABLE public.observations (
     id bigint NOT NULL,
     card_id bigint NOT NULL,
     taxon_key character varying(255) NOT NULL,
+    cached_species_key character varying(255),
     quantity character varying(255),
     voice boolean DEFAULT false NOT NULL,
     notes text,
@@ -427,6 +428,13 @@ CREATE INDEX locations_location_type_index ON public.locations USING btree (loca
 --
 
 CREATE UNIQUE INDEX locations_slug_index ON public.locations USING btree (slug);
+
+
+--
+-- Name: observations_cached_species_key_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX observations_cached_species_key_index ON public.observations USING btree (cached_species_key);
 
 
 --

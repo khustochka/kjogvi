@@ -1,6 +1,12 @@
 defmodule Kjogvi.Legacy.Import.Observations do
   @moduledoc false
 
+  alias Kjogvi.Repo
+  alias Kjogvi.Birding.Observation
+  alias Ornitho.Schema.Taxon
+
+  import Ecto.Query
+
   def import(columns_str, rows, _opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
 
@@ -11,16 +17,35 @@ defmodule Kjogvi.Legacy.Import.Observations do
         |> transform_keys
       end
 
-    _ = Kjogvi.Repo.insert_all(Kjogvi.Birding.Observation, obs)
+    _ = Repo.insert_all(Kjogvi.Birding.Observation, obs)
 
-    Kjogvi.Repo.query!(
-      "SELECT setval('observations_id_seq', (SELECT MAX(id) FROM observations));"
-    )
+    Repo.query!("SELECT setval('observations_id_seq', (SELECT MAX(id) FROM observations));")
+
+    keys =
+      Observation
+      |> distinct([:taxon_key])
+      |> Repo.all()
+      |> Enum.map(& &1.taxon_key)
+
+    taxa = Ornithologue.get_taxa_and_species(keys)
+
+    for {key, taxon} <- taxa, not is_nil(taxon.parent_species) or taxon.category == "species" do
+      species_key =
+        if taxon.category == "species" do
+          key
+        else
+          Taxon.key(taxon.parent_species)
+        end
+
+      Observation
+      |> where(taxon_key: ^key)
+      |> Repo.update_all(set: [cached_species_key: species_key])
+    end
   end
 
   def truncate do
-    _ = Kjogvi.Repo.query!("TRUNCATE observations;")
-    _ = Kjogvi.Repo.query!("ALTER SEQUENCE observations_id_seq RESTART;")
+    _ = Repo.query!("TRUNCATE observations;")
+    _ = Repo.query!("ALTER SEQUENCE observations_id_seq RESTART;")
   end
 
   defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs) do

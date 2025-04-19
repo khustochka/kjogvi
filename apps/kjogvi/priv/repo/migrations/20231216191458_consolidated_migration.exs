@@ -71,6 +71,7 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
     create table(:observations) do
       add :card_id, references("cards", on_delete: :restrict), null: false
       add :taxon_key, :string, null: false
+      add :cached_species_key, :string
       add :quantity, :string
       add :voice, :boolean, default: false, null: false
       add :notes, :text
@@ -84,5 +85,6 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
 
     create index(:observations, [:card_id])
     create index(:observations, [:taxon_key])
+    create index(:observations, [:cached_species_key])
   end
 end
