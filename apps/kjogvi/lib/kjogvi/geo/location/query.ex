@@ -11,6 +11,24 @@ defmodule Kjogvi.Geo.Location.Query do
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
 
+  @minimal_select [
+    :id,
+    :slug,
+    :name_en,
+    :location_type,
+    :is_private,
+    :country_id,
+    :cached_parent_id,
+    :cached_city_id,
+    :cached_subdivision_id,
+    :ancestry
+  ]
+
+  def minimal_select(query \\ Location) do
+    from(query)
+    |> select(^@minimal_select)
+  end
+
   def by_slug(query, slug) do
     from l in query, where: l.slug == ^slug
   end
@@ -56,7 +74,16 @@ defmodule Kjogvi.Geo.Location.Query do
 
   def preload_all_locations(things) do
     things
-    |> Repo.preload(location: [:cached_parent, :cached_city, :cached_subdivision, :country])
+    |> Repo.preload(
+      location:
+        {minimal_select(),
+         [
+           cached_parent: minimal_select(),
+           cached_city: minimal_select(),
+           cached_subdivision: minimal_select(),
+           country: minimal_select()
+         ]}
+    )
     |> preload_public_location()
   end
 
@@ -71,8 +98,14 @@ defmodule Kjogvi.Geo.Location.Query do
     loci =
       from(l in Location,
         where: l.id in ^ancestor_loc_ids,
-        preload: [:cached_parent, :cached_city, :cached_subdivision, :country]
+        preload: [
+          cached_parent: ^minimal_select(),
+          cached_city: ^minimal_select(),
+          cached_subdivision: ^minimal_select(),
+          country: ^minimal_select()
+        ]
       )
+      |> minimal_select()
       |> Repo.all()
       |> Enum.reduce(%{}, fn loc, acc -> Map.put(acc, loc.id, loc) end)
 

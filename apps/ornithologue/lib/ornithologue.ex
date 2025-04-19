@@ -5,6 +5,8 @@ defmodule Ornithologue do
 
   import Ecto.Query
 
+  alias Ornitho.Query
+  alias Ornitho.Query.Utils
   alias Ornitho.Schema.Book
   alias Ornitho.Schema.Taxon
 
@@ -18,17 +20,20 @@ defmodule Ornithologue do
   def get_taxa_and_species(key_list) do
     by_book = extract_books_and_codes(key_list)
 
-    # No books is a starting point
     books =
-      Enum.reduce(Map.keys(by_book), where(Book, fragment("1 = 0")), fn {slug, version}, query ->
-        query |> or_where(slug: ^slug, version: ^version)
-      end)
+      from(book in Book,
+        where: ^Utils.tuple_in([:slug, :version], Map.keys(by_book))
+      )
+      |> Query.Book.select_signature()
       |> repo().all()
 
     books
     |> Enum.reduce(%{}, fn book, acc ->
       grouped =
-        Ornitho.Finder.Taxon.by_codes(book, by_book[{book.slug, book.version}])
+        Query.Taxon.by_book(book)
+        |> Query.Taxon.select_minimal()
+        |> Query.Taxon.by_codes(by_book[{book.slug, book.version}])
+        |> repo().all()
         |> repo().preload(:parent_species)
         |> Enum.group_by(&Taxon.key(%{&1 | book: book}))
         |> Enum.map(fn {key, [val | _]} -> {key, val} end)

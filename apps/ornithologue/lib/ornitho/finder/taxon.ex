@@ -14,7 +14,7 @@ defmodule Ornitho.Finder.Taxon do
   @doc "Find a taxon in a book by scientific name"
   @spec by_name_sci(Book.t(), String.t()) :: Taxon.t() | nil
   def by_name_sci(book, name_sci) do
-    Query.Taxon.base_taxon(book)
+    Query.Taxon.by_book(book)
     |> where(name_sci: ^name_sci)
     |> Ornithologue.repo().one()
   end
@@ -22,21 +22,21 @@ defmodule Ornitho.Finder.Taxon do
   @doc "Find a taxon in a book by code"
   @spec by_code(Book.t(), String.t()) :: Taxon.t() | nil
   def by_code(book, code) do
-    Query.Taxon.base_taxon(book)
+    Query.Taxon.by_book(book)
     |> where(code: ^code)
     |> Ornithologue.repo().one()
   end
 
   @doc "Find a taxon in a book by code, raise if not found"
   def by_code!(book, code) do
-    Query.Taxon.base_taxon(book)
+    Query.Taxon.by_book(book)
     |> where(code: ^code)
     |> Ornithologue.repo().one!()
   end
 
   @doc "Find taxa in a book by a list of codes"
   def by_codes(book, codes) do
-    Query.Taxon.base_taxon(book)
+    Query.Taxon.by_book(book)
     |> where([t], t.code in ^codes)
     |> Ornithologue.repo().all()
   end
@@ -45,7 +45,7 @@ defmodule Ornitho.Finder.Taxon do
   def search(book, search_term, opts \\ []) do
     limit = opts[:limit] || @search_results_limit
 
-    Query.Taxon.base_taxon(book)
+    Query.Taxon.by_book(book)
     |> Query.Taxon.ordered()
     |> limit(^limit)
     |> Query.Taxon.search(search_term)
@@ -57,7 +57,7 @@ defmodule Ornitho.Finder.Taxon do
     page = opts[:page] || 1
     page_size = opts[:page_size] || @default_page_size
 
-    Query.Taxon.base_taxon(book)
+    Query.Taxon.by_book(book)
     |> Query.Taxon.ordered()
     |> Ornithologue.repo().paginate(page: page, page_size: page_size)
   end

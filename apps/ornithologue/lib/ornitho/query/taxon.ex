@@ -7,9 +7,32 @@ defmodule Ornitho.Query.Taxon do
 
   alias Ornitho.Schema.Taxon
 
-  def base_taxon(book) do
-    from(Taxon, as: :taxon)
+  @select_minimal [
+    :id,
+    :book_id,
+    :code,
+    :name_sci,
+    :name_en,
+    :category,
+    :sort_order,
+    :parent_species_id,
+    :order,
+    :family
+  ]
+
+  def by_book(query \\ Taxon, book) do
+    from(query)
     |> where(book_id: ^book.id)
+  end
+
+  def by_codes(query, codes) do
+    from(query)
+    |> where([t], t.code in ^codes)
+  end
+
+  def select_minimal(query) do
+    from(query)
+    |> select(^@select_minimal)
   end
 
   def ordered(query) do
@@ -18,7 +41,7 @@ defmodule Ornitho.Query.Taxon do
   end
 
   def base_ordered(book) do
-    base_taxon(book)
+    by_book(book)
     |> ordered()
   end
 

@@ -12,6 +12,10 @@ defmodule Ornitho.Query.Book do
     |> order_by(^Book.default_order())
   end
 
+  def select_signature(query) do
+    from query, select: [:id, :slug, :version]
+  end
+
   @spec by_signature(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def by_signature(query, slug, version) do
     from([..., book: b] in query,

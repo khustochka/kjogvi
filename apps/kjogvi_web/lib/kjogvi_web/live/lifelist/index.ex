@@ -230,12 +230,16 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         Heard only
       </h3>
 
-      <.lifers_table
-        id="lifelist-heard-only-table"
-        show_private_details={@current_scope.private_view}
-        lifelist={@lifelist.extras.heard_only}
-        location_field={@location_field}
-      />
+      <%= if length(@lifelist.extras.heard_only.list) > 0 do %>
+        <.lifers_table
+          id="lifelist-heard-only-table"
+          show_private_details={@current_scope.private_view}
+          lifelist={@lifelist.extras.heard_only}
+          location_field={@location_field}
+        />
+      <% else %>
+        <p>No heard only birds</p>
+      <% end %>
     <% end %>
     """
   end
