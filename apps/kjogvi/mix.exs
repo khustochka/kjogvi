@@ -67,7 +67,7 @@ defmodule Kjogvi.MixProject do
       {:req, "~> 0.5"},
       {:http_cookie, "~> 0.7.0"},
       {:floki, ">= 0.30.0"},
-      {:timex, "~> 3.0"},
+      {:timex, github: "bitwalker/timex", ref: "cc649c7a586f1266b17d57aff3c6eb1a56116ca2"},
       {:scrivener_ecto, "~> 3.0"},
       {:nimble_options, "~> 1.1"},
       {:ornithologue, in_umbrella: true},
