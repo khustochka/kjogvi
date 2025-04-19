@@ -3,6 +3,9 @@ defmodule Kjogvi.Legacy.Import.Locations do
 
   import Ecto.Query
 
+  alias Kjogvi.Repo
+  alias Kjogvi.Geo.Location
+
   def import(columns_str, rows, _opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
 
@@ -16,41 +19,48 @@ defmodule Kjogvi.Legacy.Import.Locations do
 
     five_mr_slugs = for loc <- locations, loc.is_5mr, do: loc.slug
 
-    _ = Kjogvi.Repo.insert_all(Kjogvi.Geo.Location, locations)
+    _ = Repo.insert_all(Kjogvi.Geo.Location, locations)
 
-    _ = Kjogvi.Repo.query!("SELECT setval('locations_id_seq', (SELECT MAX(id) FROM locations));")
+    _ = Repo.query!("SELECT setval('locations_id_seq', (SELECT MAX(id) FROM locations));")
 
     five_mr_loc =
       from(l in Kjogvi.Geo.Location, where: l.slug == "5mr")
       |> preload(:special_child_locations)
-      |> Kjogvi.Repo.one()
+      |> Repo.one()
 
     five_mr_children =
       from(l in Kjogvi.Geo.Location, where: l.slug in ^five_mr_slugs)
-      |> Kjogvi.Repo.all()
+      |> Repo.all()
 
     five_mr_loc
     |> Ecto.Changeset.change(%{special_child_locations: five_mr_children})
-    |> Kjogvi.Repo.update()
+    |> Repo.update()
 
     arabat_loc =
       from(l in Kjogvi.Geo.Location, where: l.slug == "arabat_spit")
       |> preload(:special_child_locations)
-      |> Kjogvi.Repo.one()
+      |> Repo.one()
 
     arabat_children =
       from(l in Kjogvi.Geo.Location, where: l.slug in ["arabatska_khersonska", "arabatska_krym"])
-      |> Kjogvi.Repo.all()
+      |> Repo.all()
 
     arabat_loc
     |> Ecto.Changeset.change(%{special_child_locations: arabat_children})
-    |> Kjogvi.Repo.update()
+    |> Repo.update()
+
+    Location
+    |> Repo.all()
+    |> Enum.each(fn loc ->
+      Location.set_public_location_changeset(loc)
+      |> Repo.update()
+    end)
   end
 
   def truncate do
-    _ = Kjogvi.Repo.query!("TRUNCATE special_locations, locations CASCADE;")
-    _ = Kjogvi.Repo.query!("ALTER SEQUENCE locations_id_seq RESTART;")
-    _ = Kjogvi.Repo.query!("ALTER SEQUENCE special_locations_id_seq RESTART;")
+    _ = Repo.query!("TRUNCATE special_locations, locations CASCADE;")
+    _ = Repo.query!("ALTER SEQUENCE locations_id_seq RESTART;")
+    _ = Repo.query!("ALTER SEQUENCE special_locations_id_seq RESTART;")
   end
 
   defp convert_ancestry(%{ancestry: nil} = loc) do
