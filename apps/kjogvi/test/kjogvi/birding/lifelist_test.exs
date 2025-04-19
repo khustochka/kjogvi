@@ -334,5 +334,28 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       assert Enum.map(result.list, & &1.species.code) == [taxon2.code]
     end
+
+    test "works with private locations" do
+      public_loc = insert(:location)
+
+      private_loc =
+        insert(:location,
+          is_private: true,
+          ancestry: [public_loc.id],
+          cached_public_location: public_loc
+        )
+
+      user = user_fixture()
+      card = insert(:card, user: user, location: private_loc)
+
+      taxon = Ornitho.Factory.insert(:taxon)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      result = Kjogvi.Birding.Lifelist.generate(scope)
+
+      assert length(result.list) == 1
+    end
   end
 end

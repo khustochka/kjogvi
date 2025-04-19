@@ -21,6 +21,7 @@ defmodule Kjogvi.Geo.Location.Query do
     :cached_city_id,
     :cached_subdivision_id,
     :cached_country_id,
+    :cached_public_location_id,
     :ancestry
   ]
 
@@ -63,15 +64,6 @@ defmodule Kjogvi.Geo.Location.Query do
       where: fragment("? @> ?::bigint[]", l.ancestry, [^id]) or ^id == l.id
   end
 
-  # Not sure they belong here.
-  def preload_public_location(things) do
-    things
-    |> preload_location_ancestors
-    |> Enum.map(fn thing ->
-      put_in(thing.public_location, Location.public_location(thing.location))
-    end)
-  end
-
   def preload_all_locations(things) do
     things
     |> Repo.preload(
@@ -81,10 +73,29 @@ defmodule Kjogvi.Geo.Location.Query do
            cached_parent: minimal_select(),
            cached_city: minimal_select(),
            cached_subdivision: minimal_select(),
-           cached_country: minimal_select()
+           cached_country: minimal_select(),
+           cached_public_location:
+             {minimal_select(),
+              [
+                cached_parent: minimal_select(),
+                cached_city: minimal_select(),
+                cached_subdivision: minimal_select(),
+                cached_country: minimal_select()
+              ]}
          ]}
     )
-    |> preload_public_location()
+    |> Enum.map(fn thing ->
+      loc =
+        if thing.location.is_private do
+          thing.location.cached_public_location
+        else
+          thing.location
+        end
+
+      thing
+      |> Map.put(:public_location, loc)
+      |> Map.put(:public_location_id, loc.id)
+    end)
   end
 
   def preload_location_ancestors(things) do

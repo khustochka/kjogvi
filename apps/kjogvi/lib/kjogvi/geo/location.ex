@@ -74,7 +74,7 @@ defmodule Kjogvi.Geo.Location do
   end
 
   def set_public_location_changeset(%Location{is_private: true} = location) do
-    attrs = %{cached_public_location_id: public_location(location).id}
+    attrs = %{cached_public_location_id: raw_public_location(location).id}
 
     location
     |> cast(attrs, [:cached_public_location_id])
@@ -121,11 +121,11 @@ defmodule Kjogvi.Geo.Location do
     |> Enum.join(", ")
   end
 
-  def public_location(%{is_private: false} = location) do
+  def raw_public_location(%{is_private: false} = location) do
     location
   end
 
-  def public_location(%{ancestors: ancestors}) when is_list(ancestors) do
+  def raw_public_location(%{ancestors: ancestors}) when is_list(ancestors) do
     ancestors
     |> Enum.reverse()
     |> Enum.find(fn loc ->
@@ -133,9 +133,9 @@ defmodule Kjogvi.Geo.Location do
     end)
   end
 
-  def public_location(location) do
+  def raw_public_location(location) do
     add_ancestors(location)
-    |> public_location()
+    |> raw_public_location()
   end
 
   def add_ancestors(location) do
