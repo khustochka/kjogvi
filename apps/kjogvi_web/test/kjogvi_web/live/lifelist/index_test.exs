@@ -32,6 +32,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
     insert(:observation,
       taxon_key: Ornitho.Schema.Taxon.key(taxon),
+      cached_species_key: nil,
       card: insert(:main_user_card)
     )
 

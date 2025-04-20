@@ -48,6 +48,19 @@ defmodule Kjogvi.Birding do
     end
   end
 
+  def preload_species(observations) do
+    all_species =
+      for obs <- observations, uniq: true do
+        obs.cached_species_key
+      end
+      |> Ornithologue.get_taxa_and_species()
+
+    for obs <- observations do
+      species = all_species[obs.cached_species_key]
+      %{obs | cached_species: species, species: Species.from_taxon(species)}
+    end
+  end
+
   def find_new_checklists(user, checklists) do
     new_ebird_ids =
       Card

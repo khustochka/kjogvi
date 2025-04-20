@@ -113,7 +113,7 @@ defmodule Kjogvi.Birding.Lifelist do
     Lifelist.Query.lifelist_query(scope, filter)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Kjogvi.Birding.preload_taxa_and_species()
+    |> Kjogvi.Birding.preload_species()
     |> Enum.filter(& &1.species)
     |> Enum.uniq_by(& &1.species.code)
   end

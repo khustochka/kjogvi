@@ -28,7 +28,9 @@ defmodule Kjogvi.Factory do
 
   def observation_factory do
     %Kjogvi.Birding.Observation{
-      card: build(:card)
+      card: build(:card),
+      # For spuhs and subspecies this needs to be explicitly set.
+      cached_species_key: fn obs -> obs.taxon_key end
     }
   end
 end

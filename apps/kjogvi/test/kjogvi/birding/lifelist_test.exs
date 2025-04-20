@@ -62,6 +62,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Lifelist.Scope{user: obs.card.user, include_private: false}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
+
+      assert length(result.list) == 1
       assert hd(result.list).species.name_sci == taxon.name_sci
     end
 
@@ -72,10 +74,17 @@ defmodule Kjogvi.Birding.LifelistTest do
       taxon =
         Ornitho.Factory.insert(:taxon, book: book, category: "issf", parent_species: species)
 
-      obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      obs =
+        insert(:observation,
+          taxon_key: Ornitho.Schema.Taxon.key(taxon),
+          cached_species_key: Ornitho.Schema.Taxon.key(species)
+        )
+
       scope = %Lifelist.Scope{user: obs.card.user, include_private: false}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
+
+      assert length(result.list) == 1
       assert hd(result.list).species.name_sci == species.name_sci
     end
 
@@ -89,7 +98,13 @@ defmodule Kjogvi.Birding.LifelistTest do
         Ornitho.Factory.insert(:taxon, book: book, category: "issf", parent_species: species)
 
       card1 = insert(:card, observ_date: ~D[2022-06-11], user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(subspecies))
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(subspecies),
+        cached_species_key: Ornitho.Schema.Taxon.key(species)
+      )
+
       card2 = insert(:card, observ_date: ~D[2023-08-19], user: user)
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(species))
 
@@ -100,7 +115,10 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "does not include spuh observation" do
       taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
-      obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      obs =
+        insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon), cached_species_key: nil)
+
       scope = %Lifelist.Scope{user: obs.card.user, include_private: false}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
