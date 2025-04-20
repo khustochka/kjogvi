@@ -10,14 +10,18 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   alias Kjogvi.Birding.Card
   alias Kjogvi.Birding.Observation
 
+  @typep filter_or_keyword() :: Lifelist.filter() | keyword()
+
   @doc """
   Full query to generate lifelist.
   """
   @spec lifelist_query(Lifelist.Scope.t()) :: Ecto.Query.t()
-  @spec lifelist_query(Lifelist.Scope.t(), Lifelist.filter()) :: Ecto.Query.t()
-  def lifelist_query(scope, filter \\ []) do
+  @spec lifelist_query(Lifelist.Scope.t(), filter_or_keyword()) :: Ecto.Query.t()
+  @spec lifelist_query(Lifelist.Scope.t(), filter_or_keyword(), keyword()) :: Ecto.Query.t()
+  def lifelist_query(scope, filter \\ [], opts \\ []) do
     from l in subquery(lifers_query(scope, filter)),
-      order_by: [asc: l.observ_date, asc_nulls_last: l.start_time, asc: l.id]
+      order_by: [desc: l.observ_date, desc_nulls_last: l.start_time, desc: l.id],
+      limit: ^opts[:limit]
   end
 
   defp lifers_query(scope, filter) do

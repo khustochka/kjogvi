@@ -28,7 +28,6 @@ defmodule Kjogvi.Birding.Lifelist do
   def generate(scope, filter \\ []) do
     generate_with_species(scope, filter)
     |> Location.Query.preload_all_locations()
-    |> Enum.reverse()
     |> then(fn list ->
       %Result{
         user: scope.user,
@@ -47,15 +46,18 @@ defmodule Kjogvi.Birding.Lifelist do
   Get N newest species on the list based on provided filter options.
   """
   def top(scope, n, filter \\ []) when is_integer(n) and n > 0 do
-    generate_with_species(scope, filter)
-    |> Enum.reverse()
+    total_species =
+      Lifelist.Query.lifelist_query(scope, filter)
+      |> Repo.aggregate(:count)
+
+    generate_with_species(scope, filter, limit: n)
     |> then(fn list ->
       %Result{
         user: scope.user,
         include_private: scope.include_private,
         filter: filter,
         list: Enum.take(list, n),
-        total: length(list)
+        total: total_species
       }
     end)
   end
@@ -109,13 +111,11 @@ defmodule Kjogvi.Birding.Lifelist do
 
   # ===
 
-  defp generate_with_species(scope, filter) do
-    Lifelist.Query.lifelist_query(scope, filter)
+  defp generate_with_species(scope, filter, opts \\ []) do
+    Lifelist.Query.lifelist_query(scope, filter, opts)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Kjogvi.Birding.preload_species()
-    |> Enum.filter(& &1.species)
-    |> Enum.uniq_by(& &1.species.code)
   end
 
   defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do
@@ -134,7 +134,6 @@ defmodule Kjogvi.Birding.Lifelist do
         life_obs.species.code in sp_codes
       end)
       |> Location.Query.preload_all_locations()
-      |> Enum.reverse()
       |> then(fn list ->
         %Result{
           list: list,
