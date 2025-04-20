@@ -48,7 +48,9 @@ defmodule Kjogvi.Legacy.Import.Locations do
     arabat_loc
     |> Ecto.Changeset.change(%{special_child_locations: arabat_children})
     |> Repo.update()
+  end
 
+  def after_import do
     Location
     |> Repo.all()
     |> Enum.each(fn loc ->

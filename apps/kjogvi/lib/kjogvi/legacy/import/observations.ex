@@ -20,7 +20,9 @@ defmodule Kjogvi.Legacy.Import.Observations do
     _ = Repo.insert_all(Kjogvi.Birding.Observation, obs)
 
     Repo.query!("SELECT setval('observations_id_seq', (SELECT MAX(id) FROM observations));")
+  end
 
+  def after_import do
     keys =
       Observation
       |> distinct([:taxon_key])

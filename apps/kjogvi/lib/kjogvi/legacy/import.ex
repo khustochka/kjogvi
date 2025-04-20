@@ -34,6 +34,7 @@ defmodule Kjogvi.Legacy.Import do
     results = adapter().fetch_page(object_type, fetcher, page)
 
     if Enum.empty?(results.rows) do
+      after_import(object_type)
       :ok
     else
       put_loaded(object_type, results.columns, results.rows, opts)
@@ -51,6 +52,18 @@ defmodule Kjogvi.Legacy.Import do
 
   defp put_loaded(:observations, columns, rows, opts) do
     Kjogvi.Legacy.Import.Observations.import(columns, rows, opts)
+  end
+
+  defp after_import(:locations) do
+    Kjogvi.Legacy.Import.Locations.after_import()
+  end
+
+  defp after_import(:cards) do
+    # Kjogvi.Legacy.Import.Cards.after_import()
+  end
+
+  defp after_import(:observations) do
+    Kjogvi.Legacy.Import.Observations.after_import()
   end
 
   def config do
