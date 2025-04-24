@@ -12,13 +12,14 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       <:subtitle>Manage your account email address and password settings</:subtitle>
     </CoreComponents.header>
 
-    <div class="space-y-12 divide-y">
+    <div class="divide-y divide-zinc-200">
       <div>
         <CoreComponents.simple_form
           for={@email_form}
           id="email_form"
           phx-submit="update_email"
           phx-change="validate_email"
+          class="mb-6"
         >
           <CoreComponents.input field={@email_form[:email]} type="email" label="Email" required />
           <CoreComponents.input
@@ -35,7 +36,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
           </:actions>
         </CoreComponents.simple_form>
       </div>
-      <div>
+      <div class="mb-6">
         <CoreComponents.simple_form
           for={@password_form}
           id="password_form"
@@ -44,6 +45,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
           phx-change="validate_password"
           phx-submit="update_password"
           phx-trigger-action={@trigger_submit}
+          class="mb-6"
         >
           <input
             name={@password_form[:email].name}

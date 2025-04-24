@@ -25,10 +25,9 @@ if config_env() == :dev do
 
   # Configure tailwind (the version is required)
   config :tailwind,
-    version: "3.4.17",
+    version: "4.1.4",
     ornitho_web: [
       args: ~w(
-        --config=tailwind.config.js
         --input=css/app.css
         --output=../dist/css/app.css
       ),

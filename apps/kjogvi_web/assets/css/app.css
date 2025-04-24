@@ -1,16 +1,63 @@
-@import "tailwindcss/base";
+/* See the Tailwind configuration guide for advanced usage
+   https://tailwindcss.com/docs/configuration */
 
-/* @import "extend_base"; */
+@import "tailwindcss" source(none);
+@source "../css";
+@source "../js";
+@source "../../lib/kjogvi_web";
+@source "../../../../apps/ornitho_web/css";
+@source "../../../../apps/ornitho_web/js";
+@source "../../../../apps/ornitho_web/lib/ornitho_web";
 
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+@plugin "@tailwindcss/aspect-ratio";
+
+/* A Tailwind plugin that makes "hero-#{ICON}" classes available.
+      The heroicons installation itself is managed by your mix.exs */
+@plugin "../vendor/heroicons";
+
+/* Makes "hero-#{ICON}" classes available. */
+@plugin "../vendor/font-awesome";
+
+/* Add variants based on LiveView classes */
+/* 
+Allows prefixing tailwind classes with LiveView classes to add rules
+only when LiveView classes are applied, for example:
+
+    <div class="phx-click-loading:animate-ping">
+*/
+@custom-variant phx-click-loading ([".phx-click-loading&", ".phx-click-loading &"]);
+@custom-variant phx-submit-loading ([".phx-submit-loading&", ".phx-submit-loading &"]);
+@custom-variant phx-change-loading ([".phx-change-loading&", ".phx-change-loading &"]);
+
+/* Make LiveView wrapper divs transparent for layout */
+[data-phx-root-id] {
+  display: contents
+}
 
 
-@layer utilities {
-    .small-caps {
-      font-variant: small-caps;
-    }
+/* ------ mine -------- */
+
+@theme {
+  --color-brand: #FD4F00;
+  --font-header: 'Rubik', 'sans-serif', 'ui-sans-serif', 'system-ui';
+}
+
+@layer base {
+  a {
+    @apply underline;
   }
 
+  :root {
+    /* font-size: 18px; */
+    text-underline-offset: 2px;
+    text-decoration-skip-ink: none;
+  }
+}
+
+@utility small-caps {
+  font-variant: small-caps;
+}
 
 /* This file is for your main application CSS */
