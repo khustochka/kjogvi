@@ -13,6 +13,16 @@ defmodule KjogviWeb.Live.My.Imports.Index do
     }
   end
 
+  def handle_info({:legacy_import_progress, %{message: message}}, socket) do
+    send_update(Imports.Legacy,
+      id: "legacy-import",
+      source: :legacy_import_progress,
+      message: message
+    )
+
+    {:noreply, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <.h1>Import Tasks</.h1>

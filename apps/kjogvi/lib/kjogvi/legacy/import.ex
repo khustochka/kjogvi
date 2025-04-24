@@ -1,12 +1,27 @@
 defmodule Kjogvi.Legacy.Import do
   @moduledoc false
 
-  def run(user) do
+  def run(user, opts \\ []) do
     :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(), fn ->
-      prepare_import()
-      perform_import(:locations)
-      perform_import(:cards, user: user)
-      perform_import(:observations)
+      import_id = opts[:import_id]
+
+      with_progress_subscription(import_id, "Preparing legacy import...", fn ->
+        prepare_import()
+      end)
+
+      with_progress_subscription(import_id, "Importing locations...", fn ->
+        perform_import(:locations)
+      end)
+
+      with_progress_subscription(import_id, "Importing cards...", fn ->
+        perform_import(:cards, user: user)
+      end)
+
+      with_progress_subscription(import_id, "Importing observations...", fn ->
+        perform_import(:observations)
+      end)
+
+      with_progress_subscription(import_id, "Legacy import done.")
 
       {:ok, telemetry_metadata()}
     end)
@@ -28,6 +43,34 @@ defmodule Kjogvi.Legacy.Import do
 
       {result, telemetry_metadata()}
     end)
+  end
+
+  def subscribe_progress(import_id) do
+    Phoenix.PubSub.subscribe(Kjogvi.PubSub, progress_key(import_id))
+  end
+
+  defp with_progress_subscription(import_id, message, func \\ nil) do
+    broadcast_progress(import_id, message)
+
+    if func do
+      func.()
+    end
+  end
+
+  defp broadcast_progress(nil, _message) do
+    :ok
+  end
+
+  defp broadcast_progress(import_id, message) do
+    Phoenix.PubSub.broadcast(
+      Kjogvi.PubSub,
+      progress_key(import_id),
+      {:legacy_import_progress, %{message: message}}
+    )
+  end
+
+  defp progress_key(import_id) do
+    "legacy_import:progress:#{import_id}"
   end
 
   defp load(object_type, fetcher, page, opts) do

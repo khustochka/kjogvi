@@ -23,19 +23,28 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     }
   end
 
+  def update(%{source: :legacy_import_progress, message: message}, socket) do
+    {:ok,
+     socket
+     |> put_flash(:info, message)}
+  end
+
   def handle_event("start_import", _params, socket) do
     {:noreply,
      socket
-     |> clear_flash()
-     |> put_flash(:info, "Legacy import in progress...")
      |> start_import()}
   end
 
   defp start_import(%{assigns: %{user: user}} = socket) do
+    import_id = Ecto.UUID.generate()
+    Kjogvi.Legacy.Import.subscribe_progress(import_id)
+
     socket
+    |> clear_flash()
     |> assign(:async_result, AsyncResult.loading())
+    |> put_flash(:info, "Legacy import in progress...")
     |> start_async(:legacy_import, fn ->
-      Kjogvi.Legacy.Import.run(user)
+      Kjogvi.Legacy.Import.run(user, import_id: import_id)
       :ok
     end)
   end
