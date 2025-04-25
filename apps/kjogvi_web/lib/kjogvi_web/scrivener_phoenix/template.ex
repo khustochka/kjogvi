@@ -13,7 +13,7 @@ defmodule KjogviWeb.Scrivener.Phoenix.Template do
   @link_wrap_class "border"
   @gap_wrap_class "disabled border-0"
   @shared_page_num_class "page-link inline-block whitespace-nowrap py-2 px-4 w-full h-full"
-  @link_class "#{@shared_page_num_class} hover:bg-zinc-200"
+  @link_class "#{@shared_page_num_class} hover:bg-zinc-200 no-underline"
   @gap_class "inline-block py-2 px-2"
 
   defp li_wrap(content, options) do

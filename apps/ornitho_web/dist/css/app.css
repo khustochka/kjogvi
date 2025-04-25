@@ -806,6 +806,9 @@
   .italic {
     font-style: italic;
   }
+  .no-underline {
+    text-decoration-line: none;
+  }
   .opacity-0 {
     opacity: 0%;
   }
