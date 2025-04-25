@@ -3,31 +3,25 @@ defmodule Kjogvi.Legacy.Import do
 
   def run(user, opts \\ []) do
     :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(), fn ->
-      import_id = opts[:import_id]
+      new_opts = opts ++ [user: user]
 
-      with_progress_subscription(import_id, "Preparing legacy import...", fn ->
-        prepare_import()
-      end)
+      prepare_import(new_opts)
 
-      with_progress_subscription(import_id, "Importing locations...", fn ->
-        perform_import(:locations)
-      end)
+      perform_import(:locations, new_opts)
 
-      with_progress_subscription(import_id, "Importing cards...", fn ->
-        perform_import(:cards, user: user)
-      end)
+      perform_import(:cards, new_opts)
 
-      with_progress_subscription(import_id, "Importing observations...", fn ->
-        perform_import(:observations)
-      end)
+      perform_import(:observations, new_opts)
 
-      with_progress_subscription(import_id, "Legacy import done.")
+      broadcast_progress(opts[:import_id], "Legacy import done.")
 
       {:ok, telemetry_metadata()}
     end)
   end
 
-  def prepare_import do
+  def prepare_import(opts \\ []) do
+    broadcast_progress(opts[:import_id], "Preparing legacy import...")
+
     :telemetry.span([:kjogvi, :legacy, :import, :prepare], telemetry_metadata(), fn ->
       Kjogvi.Legacy.Import.Observations.truncate()
       Kjogvi.Legacy.Import.Cards.truncate()
@@ -38,8 +32,10 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   def perform_import(object_type, opts \\ []) do
+    broadcast_progress(opts[:import_id], "Importing #{Atom.to_string(object_type)}...")
+
     :telemetry.span([:kjogvi, :legacy, :import, object_type], telemetry_metadata(), fn ->
-      result = load(object_type, adapter().init(), 1, opts)
+      result = load(object_type, adapter().init(), {1, 0}, opts)
 
       {result, telemetry_metadata()}
     end)
@@ -47,14 +43,6 @@ defmodule Kjogvi.Legacy.Import do
 
   def subscribe_progress(import_id) do
     Phoenix.PubSub.subscribe(Kjogvi.PubSub, progress_key(import_id))
-  end
-
-  defp with_progress_subscription(import_id, message, func \\ nil) do
-    broadcast_progress(import_id, message)
-
-    if func do
-      func.()
-    end
   end
 
   defp broadcast_progress(nil, _message) do
@@ -73,15 +61,17 @@ defmodule Kjogvi.Legacy.Import do
     "legacy_import:progress:#{import_id}"
   end
 
-  defp load(object_type, fetcher, page, opts) do
+  defp load(object_type, fetcher, {page, loaded}, opts) do
     results = adapter().fetch_page(object_type, fetcher, page)
 
     if Enum.empty?(results.rows) do
-      after_import(object_type)
+      after_import(object_type, opts)
       :ok
     else
       put_loaded(object_type, results.columns, results.rows, opts)
-      load(object_type, fetcher, page + 1, opts)
+      count = loaded + length(results.rows)
+      broadcast_progress(opts[:import_id], "Importing #{Atom.to_string(object_type)}... #{count}")
+      load(object_type, fetcher, {page + 1, count}, opts)
     end
   end
 
@@ -97,15 +87,17 @@ defmodule Kjogvi.Legacy.Import do
     Kjogvi.Legacy.Import.Observations.import(columns, rows, opts)
   end
 
-  defp after_import(:locations) do
+  defp after_import(:locations, opts) do
+    broadcast_progress(opts[:import_id], "Caching public locations...")
     Kjogvi.Legacy.Import.Locations.after_import()
   end
 
-  defp after_import(:cards) do
+  defp after_import(:cards, _opts) do
     # Kjogvi.Legacy.Import.Cards.after_import()
   end
 
-  defp after_import(:observations) do
+  defp after_import(:observations, opts) do
+    broadcast_progress(opts[:import_id], "Caching observation species...")
     Kjogvi.Legacy.Import.Observations.after_import()
   end
 
