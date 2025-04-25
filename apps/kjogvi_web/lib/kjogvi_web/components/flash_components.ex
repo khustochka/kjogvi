@@ -136,7 +136,7 @@ defmodule KjogviWeb.FlashComponents do
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
-      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      phx-click={#JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
         "flex justify-between gap-2 mr-2 mb-2 z-50 p-3",
@@ -152,9 +152,9 @@ defmodule KjogviWeb.FlashComponents do
         </div>
         <p class="text-sm leading-5">{msg}</p>
       </div>
-      <button type="button" class="group p-2" aria-label={gettext("close")}>
+      <%!-- <button type="button" class="group p-2" aria-label={gettext("close")}>
         <.icon name="hero-x-mark-solid" class="h-5 w-5 opacity-40 group-hover:opacity-70" />
-      </button>
+      </button> --%>
     </div>
     """
   end
