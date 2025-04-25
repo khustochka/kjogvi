@@ -17,7 +17,7 @@
       The heroicons installation itself is managed by your mix.exs */
 @plugin "../vendor/heroicons";
 
-/* Makes "hero-#{ICON}" classes available. */
+/* Makes "fa-#{ICON}" classes available. */
 @plugin "../vendor/font-awesome";
 
 /* Add variants based on LiveView classes */
