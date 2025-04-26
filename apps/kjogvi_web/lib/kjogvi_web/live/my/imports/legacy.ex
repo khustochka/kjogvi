@@ -23,10 +23,27 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     }
   end
 
-  def update(%{source: :legacy_import_progress, message: message}, socket) do
+  def update(%{status: :ok, data: data}, socket) do
     {:ok,
      socket
-     |> put_flash(:info, message)}
+     |> clear_flash()
+     |> put_flash(:info, data.message)
+     |> assign(:async_result, AsyncResult.ok(%AsyncResult{}, :ok))}
+  end
+
+  def update(%{status: :error, data: data}, socket) do
+    {:ok,
+     socket
+     |> clear_flash()
+     |> put_flash(:error, "Legacy import failed: " <> data.message)
+     |> assign(:async_result, AsyncResult.failed(%AsyncResult{}, data.message))}
+  end
+
+  def update(%{status: :progress, data: data}, socket) do
+    {:ok,
+     socket
+     |> clear_flash()
+     |> put_flash(:info, data.message)}
   end
 
   def handle_event("start_import", _params, socket) do
@@ -39,35 +56,39 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     import_id = Ecto.UUID.generate()
     Kjogvi.Legacy.Import.subscribe_progress(import_id)
 
+    %{ref: ref} =
+      Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn ->
+        Kjogvi.Legacy.Import.run(user, import_id: import_id)
+        {:ok, %{message: "Legacy import done."}}
+      end)
+
+    send(self(), {:register_import, __MODULE__, ref})
+
     socket
     |> clear_flash()
     |> assign(:async_result, AsyncResult.loading())
     |> put_flash(:info, "Legacy import in progress...")
-    |> start_async(:legacy_import, fn ->
-      Kjogvi.Legacy.Import.run(user, import_id: import_id)
-      :ok
-    end)
   end
 
-  def handle_async(:legacy_import, {:ok, :ok = _success_result}, socket) do
-    socket =
-      socket
-      |> clear_flash()
-      |> put_flash(:info, "Legacy import done.")
-      |> assign(:async_result, AsyncResult.ok(%AsyncResult{}, :ok))
+  # def handle_async(:legacy_import, {:ok, :ok = _success_result}, socket) do
+  #   socket =
+  #     socket
+  #     |> clear_flash()
+  #     |> put_flash(:info, "Legacy import done.")
+  #     |> assign(:async_result, AsyncResult.ok(%AsyncResult{}, :ok))
 
-    {:noreply, socket}
-  end
+  #   {:noreply, socket}
+  # end
 
-  def handle_async(:legacy_import, {:exit, _reason}, socket) do
-    socket =
-      socket
-      |> clear_flash()
-      |> put_flash(:error, "Legacy import failed: Server error.")
-      |> assign(:async_result, %AsyncResult{})
+  # def handle_async(:legacy_import, {:exit, _reason}, socket) do
+  #   socket =
+  #     socket
+  #     |> clear_flash()
+  #     |> put_flash(:error, "Legacy import failed: Server error.")
+  #     |> assign(:async_result, %AsyncResult{})
 
-    {:noreply, socket}
-  end
+  #   {:noreply, socket}
+  # end
 
   def render(assigns) do
     ~H"""
