@@ -16,11 +16,10 @@ defmodule Ornitho.Ops.Book do
     |> Ornithologue.repo().insert()
   end
 
-  def mark_book_imported(book) do
-    Query.Book.base_book()
-    |> Query.Book.by_id(book.id)
-    |> Query.Book.touch_imported_at()
-    |> Ornithologue.repo().update_all([])
+  def finalize_imported_book(book, taxa_count) do
+    book
+    |> Book.finalize_changeset(taxa_count: taxa_count)
+    |> Ornithologue.repo().update()
   end
 
   def delete(slug, version) do

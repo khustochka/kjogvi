@@ -12,6 +12,8 @@ defmodule Ornitho.Schema.Book do
   """
   use Ornitho.Schema
 
+  import Ecto.Changeset
+
   alias __MODULE__
   alias Ornitho.Schema.Taxon
 
@@ -28,12 +30,11 @@ defmodule Ornitho.Schema.Book do
     field(:extras, :map)
     # Time when the taxa were imported
     field(:imported_at, :utc_datetime_usec)
+    field(:taxa_count, :integer)
 
     has_many(:taxa, Taxon, preload_order: [asc: :sort_order])
 
     timestamps()
-
-    field :taxa_count, :integer, virtual: true
   end
 
   def default_order do
@@ -45,6 +46,12 @@ defmodule Ornitho.Schema.Book do
     |> changeset_common_process(attrs)
   end
 
+  def finalize_changeset(%Book{} = book, taxa_count: taxa_count) do
+    book
+    |> change(imported_at: DateTime.utc_now())
+    |> change(taxa_count: taxa_count)
+  end
+
   def updating_changeset(%Book{} = book, attrs \\ %{}) do
     book
     |> changeset_common_process(attrs)
@@ -52,9 +59,9 @@ defmodule Ornitho.Schema.Book do
 
   defp changeset_common_process(%Book{} = book, attrs) do
     book
-    |> Ecto.Changeset.cast(attrs, saveable_fields())
-    |> Ecto.Changeset.validate_required([:slug, :version, :name])
-    |> Ecto.Changeset.unique_constraint([:version, :slug], name: "books_slug_version_index")
+    |> cast(attrs, saveable_fields())
+    |> validate_required([:slug, :version, :name])
+    |> unique_constraint([:version, :slug], name: "books_slug_version_index")
   end
 
   defp saveable_fields do

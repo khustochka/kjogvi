@@ -2,8 +2,6 @@ defmodule OrnithoWeb.BooksControllerTest do
   use OrnithoWeb.ConnCase, async: true
   use OrnithoWeb.OrnithoCase, async: true
 
-  alias Ornitho.Ops
-
   describe "GET /taxonomy" do
     test "No books", %{conn: conn} do
       conn = get(conn, "/taxonomy")
@@ -12,19 +10,6 @@ defmodule OrnithoWeb.BooksControllerTest do
 
     test "Book with no taxa", %{conn: conn} do
       book = insert(:book)
-      conn = get(conn, "/taxonomy")
-      resp = html_response(conn, 200)
-      assert resp =~ book.slug
-      assert resp =~ book.version
-      assert resp =~ book.name
-    end
-
-    test "Book with taxa", %{conn: conn} do
-      book = insert(:book)
-      insert(:taxon, book: book)
-      insert(:taxon, book: book)
-      Ops.Book.mark_book_imported(book)
-
       conn = get(conn, "/taxonomy")
       resp = html_response(conn, 200)
       assert resp =~ book.slug

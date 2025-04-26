@@ -11,6 +11,11 @@ defmodule Ornitho.StreamImporter do
         file_path: /import/demo/v1/ornithologue_demo_v1.csv
   """
 
+  alias Ornitho.Schema.Book
+
+  @callback create_taxa_from_stream(book :: Book.t(), stream :: Enumerable.t()) ::
+              {:ok, integer()} | {:error, any()}
+
   @required_keys [:file_path]
 
   defmacro __using__(opts) do
@@ -31,14 +36,14 @@ defmodule Ornitho.StreamImporter do
     end
 
     quote bind_quoted: [opts: opts] do
-      @file_path opts[:file_path]
+      @behaviour Ornitho.StreamImporter
 
-      @callback create_taxa_from_stream(book :: Book, stream :: Stream) ::
-                  {:ok, any()} | {:error, any()}
+      @file_path opts[:file_path]
 
       @spec slug() :: String.t()
       def file_path(), do: @file_path
 
+      @impl Ornitho.Importer
       def create_taxa(config, book) do
         case file_streamer(config, file_path()) do
           {:error, _} = err -> err
@@ -50,7 +55,8 @@ defmodule Ornitho.StreamImporter do
         adapter().file_streamer(config, path)
       end
 
-      defp validate_config do
+      @impl Ornitho.Importer
+      def validate_config do
         adapter().validate_config()
       end
 

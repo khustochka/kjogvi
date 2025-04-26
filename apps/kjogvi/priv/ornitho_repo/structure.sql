@@ -33,6 +33,7 @@ CREATE TABLE public.books (
     description text,
     publication_date date NOT NULL,
     extras jsonb DEFAULT '{}'::jsonb,
+    taxa_count integer,
     imported_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL

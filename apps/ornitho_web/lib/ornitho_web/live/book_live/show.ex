@@ -10,7 +10,6 @@ defmodule OrnithoWeb.Live.Book.Show do
   def mount(%{"slug" => slug, "version" => version}, _session, socket) do
     book =
       Ornitho.Finder.Book.by_signature!(slug, version)
-      |> Ornitho.Finder.Book.load_taxa_count()
 
     {:ok,
      socket

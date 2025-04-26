@@ -2,7 +2,7 @@ defmodule OrnithoWeb.BooksController do
   use OrnithoWeb, :controller
 
   def index(conn, _params) do
-    books = Ornitho.Finder.Book.with_taxa_count()
+    books = Ornitho.Finder.Book.all()
 
     conn
     |> assign(:books, books)

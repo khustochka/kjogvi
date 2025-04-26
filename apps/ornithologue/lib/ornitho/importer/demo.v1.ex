@@ -35,21 +35,18 @@ defmodule Ornitho.Importer.Demo.V1 do
     }
   ]
 
+  @impl Ornitho.Importer
   def create_taxa(_config, book) do
     case Ops.Taxon.create_many(book, @taxa_list) do
-      {:ok, m} ->
-        {:ok, m}
+      {:ok, rows} ->
+        {:ok, length(Map.keys(rows))}
 
-      {:error, attrs, changeset, _} ->
-        raise """
-        Failed to insert:
-        #{inspect(attrs, pretty: true)};
-        errors:
-        #{inspect(changeset.errors, pretty: true)}
-        """
+      {:error, _attrs, changeset, _} ->
+        {:error, inspect(changeset.errors, pretty: true)}
     end
   end
 
+  @impl Ornitho.Importer
   def validate_config do
     {:ok, nil}
   end

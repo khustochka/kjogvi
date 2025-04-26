@@ -17,6 +17,7 @@ defmodule Ornitho.Importer.Ebird.V2023 do
   use Ornitho.StreamImporter,
     file_path: "import/ebird/v2023/ornithologue_ebird_v2023.csv"
 
+  @impl Ornitho.StreamImporter
   def create_taxa_from_stream(book, stream) do
     stream
     |> CSV.decode(headers: true)

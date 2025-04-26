@@ -21,7 +21,7 @@ defmodule OrnithoWeb.TimeComponents do
         {Calendar.strftime(@time, "%-d %b %Y")}
       </nobr>
       <nobr>
-        {Calendar.strftime(@time, "%X")}
+        {Calendar.strftime(@time, "%m:%S")}
       </nobr>
     </time>
     """

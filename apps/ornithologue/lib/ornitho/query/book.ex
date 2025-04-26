@@ -29,14 +29,6 @@ defmodule Ornitho.Query.Book do
     )
   end
 
-  def with_taxa_count(query) do
-    from([..., book: b] in query,
-      left_join: t in assoc(b, :taxa),
-      group_by: b.id,
-      select_merge: %{taxa_count: count(t.id)}
-    )
-  end
-
   def touch_imported_at(query) do
     query
     |> update(set: [imported_at: fragment("NOW()")])

@@ -10,6 +10,11 @@ defmodule Ornitho.Importer do
         name: "Demo book"
   """
 
+  alias Ornitho.Schema.Book
+
+  @callback create_taxa(config :: map(), book :: Book.t()) :: {:ok, integer()} | {:error, any()}
+  @callback validate_config() :: {:ok, any()} | {:error, any()}
+
   @required_keys [:slug, :version, :name]
   @default_import_timeout 30_000
 
@@ -31,6 +36,8 @@ defmodule Ornitho.Importer do
     end
 
     quote bind_quoted: [opts: opts] do
+      @behaviour Ornitho.Importer
+
       import Ecto.Query, only: [from: 2]
 
       alias Ornitho.Schema.{Book, Taxon}
@@ -42,8 +49,6 @@ defmodule Ornitho.Importer do
       @description opts[:description]
       @publication_date opts[:publication_date]
       @extras opts[:extras]
-
-      @callback create_taxa(book :: Book) :: {:ok, any()} | {:error, any()}
 
       @spec slug() :: String.t()
       def slug(), do: @slug
@@ -71,8 +76,8 @@ defmodule Ornitho.Importer do
             fn ->
               with {:ok, _} <- prepare_repo(force: force),
                    {:ok, book} <- create_book(),
-                   {:ok, _} = result <- create_taxa(config, book),
-                   {1, _} <- update_imported_time(book) do
+                   {:ok, taxa_count} = result <- create_taxa(config, book),
+                   {:ok, _} <- finalize_imported_book(book, taxa_count) do
                 result
               else
                 {:error, e} -> Ops.rollback(e)
@@ -117,8 +122,8 @@ defmodule Ornitho.Importer do
         Ops.Book.create(book_attributes())
       end
 
-      defp update_imported_time(book) do
-        Ops.Book.mark_book_imported(book)
+      defp finalize_imported_book(book, taxa_count) do
+        Ops.Book.finalize_imported_book(book, taxa_count)
       end
     end
   end

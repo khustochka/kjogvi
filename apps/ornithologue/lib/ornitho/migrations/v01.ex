@@ -16,6 +16,7 @@ defmodule Ornitho.Migrations.V01 do
       add :description, :text
       add :publication_date, :date, null: false
       add :extras, :map, default: "{}"
+      add :taxa_count, :integer
       add :imported_at, :utc_datetime_usec
 
       timestamps()
