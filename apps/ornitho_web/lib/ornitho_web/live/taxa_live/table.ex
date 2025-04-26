@@ -118,8 +118,6 @@ defmodule OrnithoWeb.Live.Taxa.Table do
     |> JS.hide(to: ".toggle-taxon-data-icon-close")
   end
 
-  # BUG: if the row is expanded and you navigate to another page, the row with the same
-  # number stays expanded.
   def toggle_taxon_extra_data(code) do
     collapse_all_extra_data()
     |> JS.toggle(to: ".taxon-extra-data-#{code}")
