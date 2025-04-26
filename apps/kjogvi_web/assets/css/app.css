@@ -45,14 +45,18 @@ only when LiveView classes are applied, for example:
 }
 
 @layer base {
-  a {
-    @apply underline;
-  }
-
   :root {
     /* font-size: 18px; */
     text-underline-offset: 2px;
     text-decoration-skip-ink: none;
+  }
+  a {
+    text-decoration: underline;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 
