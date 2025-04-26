@@ -116,6 +116,7 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Kjogvi.Birding.preload_species()
+    |> Enum.reject(&is_nil(&1.species))
   end
 
   defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do

@@ -125,6 +125,16 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert result.list == []
     end
 
+    test "does not include observation with unknown cached species" do
+      obs =
+        insert(:observation, taxon_key: "/abc/v1/taxon", cached_species_key: "/abc/v1/species")
+
+      scope = %Lifelist.Scope{user: obs.card.user, include_private: false}
+
+      result = Kjogvi.Birding.Lifelist.generate(scope)
+      assert result.list == []
+    end
+
     test "filtered by year" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
