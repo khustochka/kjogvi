@@ -77,12 +77,11 @@ defmodule OrnithoWeb.Live.Taxa.Show do
     </div>
     <div :if={@taxon.child_taxa != []} class="mt-6">
       <h2>Child taxa</h2>
-      <.live_component
-        module={OrnithoWeb.Live.Taxa.Table}
-        id="child-taxa-table"
+      <OrnithoWeb.Live.Taxa.Table.render
         book={@book}
         taxa={@taxon.child_taxa}
         skip_parent_species={true}
+        link_builder={&OrnithoWeb.LinkHelper.path(@socket, &1)}
       />
     </div>
     """

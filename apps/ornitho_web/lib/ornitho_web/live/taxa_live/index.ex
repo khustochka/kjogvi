@@ -54,12 +54,11 @@ defmodule OrnithoWeb.Live.Taxa.Index do
         />
       </form>
 
-      <.live_component
-        module={OrnithoWeb.Live.Taxa.Table}
-        id="taxa-table"
+      <OrnithoWeb.Live.Taxa.Table.render
         book={@book}
         taxa={@taxa}
         search_term={@search_term}
+        link_builder={&OrnithoWeb.LinkHelper.path(@socket, &1)}
       />
 
       <%= if !@search_enabled do %>

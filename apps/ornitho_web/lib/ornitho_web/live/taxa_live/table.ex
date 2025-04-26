@@ -1,18 +1,22 @@
 defmodule OrnithoWeb.Live.Taxa.Table do
   @moduledoc false
 
-  use OrnithoWeb, :live_component
+  use Phoenix.Component
 
+  import OrnithoWeb.CoreComponents
   import OrnithoWeb.TaxaComponents
+
+  alias Phoenix.LiveView.JS
 
   attr :book, Ornitho.Schema.Book, required: true
   attr :taxa, :list, required: true
+  attr :link_builder, :any, required: true
   attr :skip_parent_species, :boolean, default: false
   attr :search_term, :string, default: nil
 
   def render(assigns) do
     ~H"""
-    <div id={@id} class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
+    <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
       <table class="mt-6 w-[40rem] sm:w-full">
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
@@ -43,12 +47,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                     <div>
                       <strong>
                         <.link
-                          navigate={
-                            OrnithoWeb.LinkHelper.path(
-                              @socket,
-                              "/#{@book.slug}/#{@book.version}/#{taxon.code}"
-                            )
-                          }
+                          navigate={@link_builder.("/#{@book.slug}/#{@book.version}/#{taxon.code}")}
                           phx-no-format
                         ><.sci_name taxon={taxon} search_term={@search_term} /></.link>
                       </strong>
@@ -68,10 +67,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                 <.link
                   :if={taxon.parent_species}
                   navigate={
-                    OrnithoWeb.LinkHelper.path(
-                      @socket,
-                      "/#{@book.slug}/#{@book.version}/#{taxon.parent_species.code}"
-                    )
+                    @link_builder.("/#{@book.slug}/#{@book.version}/#{taxon.parent_species.code}")
                   }
                 >
                   <.sci_name taxon={taxon.parent_species} />
@@ -84,8 +80,8 @@ defmodule OrnithoWeb.Live.Taxa.Table do
               <td class="p-0 py-4 pr-6">
                 <span
                   phx-click={toggle_taxon_extra_data(taxon.code)}
-                  phx-target={@myself}
                   class="hover:cursor-pointer"
+                  id={"taxon-extra-data-trigger-#{taxon.code}"}
                 >
                   <.icon name="hero-chevron-down-solid" class="w-6 h-6 toggle-taxon-data-icon-open" />
                   <.icon
@@ -96,7 +92,10 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                 </span>
               </td>
             </tr>
-            <tr class={["hidden taxon-extra-data", "taxon-extra-data-#{taxon.code}"]}>
+            <tr
+              class={["hidden taxon-extra-data", "taxon-extra-data-#{taxon.code}"]}
+              id={"taxon-extra-data-#{taxon.code}"}
+            >
               <td></td>
               <td class="p-0 py-4 pr-6" colspan={if @skip_parent_species, do: 4, else: 5}>
                 <.list>
