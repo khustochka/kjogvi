@@ -63,9 +63,12 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   end
 
   defp start_ebird_preload(%{assigns: %{user: user}} = socket) do
+    import_id = Ecto.UUID.generate()
+    Ebird.Web.subscribe_progress(:preload, import_id)
+
     %{ref: ref} =
       Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn ->
-        Ebird.Web.preload_new_checklists_for_user(user)
+        Ebird.Web.preload_new_checklists_for_user(user, import_id: import_id)
       end)
 
     send(self(), {:register_import, __MODULE__, ref})

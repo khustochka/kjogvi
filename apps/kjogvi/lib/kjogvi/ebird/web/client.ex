@@ -3,6 +3,7 @@ defmodule Kjogvi.Ebird.Web.Client do
   HTTP client to query eBird.
   """
 
+  alias Kjogvi.Ebird
   alias Kjogvi.Ebird.Web.Checklist
   alias Kjogvi.Ebird.Web.Client.Login
   alias Kjogvi.Types
@@ -24,13 +25,17 @@ defmodule Kjogvi.Ebird.Web.Client do
   * count - the number of checklists
   * start - the index of the first one (1 is the newest).
   """
-  @spec preload_checklists(Login.credentials()) :: Types.result([Checklist.Meta.t()])
-  @spec preload_checklists(Login.credentials(), integer()) :: Types.result([Checklist.Meta.t()])
-  @spec preload_checklists(Login.credentials(), integer(), integer()) ::
+  @spec preload_checklists(Login.credentials(), keyword()) :: Types.result([Checklist.Meta.t()])
+  @spec preload_checklists(Login.credentials(), integer(), keyword()) ::
           Types.result([Checklist.Meta.t()])
-  def preload_checklists(credentials, count \\ 100, start \\ 1) do
-    with {:ok, cookie_jar} <- Login.login(credentials),
+  @spec preload_checklists(Login.credentials(), integer(), integer(), keyword()) ::
+          Types.result([Checklist.Meta.t()])
+  def preload_checklists(credentials, count \\ 100, start \\ 1, opts) do
+    with _ <- Ebird.Web.broadcast_progress(opts[:import_id], "Logging in..."),
+         {:ok, cookie_jar} <- Login.login(credentials),
+         _ <- Ebird.Web.broadcast_progress(opts[:import_id], "Finding the latest checklist..."),
          {:ok, resp} <- fetch_checklists_page(cookie_jar, start, count) do
+      Ebird.Web.broadcast_progress(opts[:import_id], "Fetching the latest checklist...")
       extract_checklists(resp)
     end
   end

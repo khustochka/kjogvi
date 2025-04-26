@@ -41,6 +41,16 @@ defmodule KjogviWeb.Live.My.Imports.Index do
     {:noreply, socket}
   end
 
+  def handle_info({"ebird_preload_progress", data}, socket) do
+    send_update(Imports.Ebird,
+      id: "ebird-import",
+      status: :progress,
+      data: data
+    )
+
+    {:noreply, socket}
+  end
+
   # Successful import tasks should return {:ok, data}
   def handle_info({ref, {:ok, data}}, socket) do
     pass_back(:ok, ref, data, socket)
