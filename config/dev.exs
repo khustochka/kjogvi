@@ -80,7 +80,8 @@ config :kjogvi_web, KjogviWeb.Endpoint,
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/kjogvi_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/kjogvi_web/(controllers|live|components)/.*(ex|heex)$",
+      ~r"lib/ornitho_web/(controllers|live|components)/.*(ex|heex)$"
     ]
   ]
 
