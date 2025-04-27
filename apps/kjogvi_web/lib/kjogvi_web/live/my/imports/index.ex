@@ -68,9 +68,9 @@ defmodule KjogviWeb.Live.My.Imports.Index do
     ~H"""
     <.h1>Import Tasks</.h1>
 
-    <div class="lg:grid lg:grid-cols-2 lg:gap-x-14 lg:gap-y-8">
+    <div class="lg:flex lg:flex-wrap lg:gap-8 lg:items-start">
       <%= for module <- imports(), {header, id} = imports_data(module) do %>
-        <div class="border border-slate-300 rounded-lg p-6 mb-6">
+        <div class="border border-slate-300 rounded-lg p-6 mb-8 lg:mb-0 lg:basis-15/31 lg:grow-0">
           <.h2>{header}</.h2>
           <.live_component module={module} user={@current_scope.user} id={id} />
         </div>
