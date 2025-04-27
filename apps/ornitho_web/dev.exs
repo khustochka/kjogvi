@@ -50,7 +50,7 @@ Application.put_env(:ornitho_web, DemoWeb.Endpoint,
   ],
   live_reload: [
     patterns: [
-      ~r"dist/.*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/ornitho_web/(controllers|live|components)/.*(ex|heex)$"
     ]

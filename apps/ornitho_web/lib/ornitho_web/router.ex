@@ -26,8 +26,8 @@ defmodule OrnithoWeb.Router do
 
           live_session session_name, session_opts do
             # Assets
-            get "/css-:md5", OrnithoWeb.Assets, :css, as: :ornitho_web_asset
-            get "/js-:md5", OrnithoWeb.Assets, :js, as: :ornitho_web_asset
+            get "/app.css", OrnithoWeb.Assets, :css, as: :ornitho_web_asset
+            get "/app.js", OrnithoWeb.Assets, :js, as: :ornitho_web_asset
 
             get "/", OrnithoWeb.BooksController, :index, route_opts
             post "/import", OrnithoWeb.BooksController, :import, route_opts

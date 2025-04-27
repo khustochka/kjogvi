@@ -27,7 +27,7 @@ defmodule OrnithoWeb.Layouts do
       Phoenix.VerifiedRoutes.unverified_path(
         conn,
         conn.private.phoenix_router,
-        "#{prefix}/#{asset}-#{hash}"
+        "#{prefix}/app.#{asset}"
       )
     else
       apply(

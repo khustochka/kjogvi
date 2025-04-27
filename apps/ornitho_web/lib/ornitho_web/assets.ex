@@ -10,11 +10,11 @@ defmodule OrnithoWeb.Assets do
       path
     end
 
-  css_path = Path.join(__DIR__, "../../dist/css/app.css")
+  css_path = Path.join(__DIR__, "../../priv/static/assets/app.css")
   @external_resource css_path
   @css File.read!(css_path)
 
-  js_path = Path.join(__DIR__, "../../dist/js/app.js")
+  js_path = Path.join(__DIR__, "../../priv/static/assets/app.js")
   @external_resource js_path
 
   @js """

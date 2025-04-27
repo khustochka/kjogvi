@@ -13,9 +13,8 @@ if config_env() == :dev do
       args: ~w(
           js/app.js
           --bundle
-          --minify
           --target=es2017
-          --outdir=../dist/js
+          --outdir=../priv/static/assets
           --external:/fonts/*
           --external:/images/*
         ),
@@ -29,7 +28,7 @@ if config_env() == :dev do
     ornitho_web: [
       args: ~w(
         --input=css/app.css
-        --output=../dist/css/app.css
+        --output=../priv/static/assets/app.css
       ),
       cd: Path.expand("../assets", __DIR__)
     ]
