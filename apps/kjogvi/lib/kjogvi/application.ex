@@ -12,6 +12,8 @@ defmodule Kjogvi.Application do
 
     Kjogvi.Opentelemetry.setup()
 
+    Kjogvi.Store.ChecklistsPreload.init()
+
     children = [
       Kjogvi.Repo,
       Kjogvi.OrnithoRepo,
