@@ -4,8 +4,11 @@ Logger.configure(level: :debug)
 
 Application.put_env(:ornitho_web, DemoWeb.OrnithoRepo,
   url: System.get_env("DATABASE_ORNITHO_URL"),
-  database: "ornithologue_dev",
-  hostname: "localhost",
+  hostname: System.get_env("DATABASE_ORNITHO_HOST", "localhost"),
+  port: System.get_env("DATABASE_ORNITHO_PORT", "5498"),
+  username: System.get_env("DATABASE_ORNITHO_USER", "kjogvi"),
+  password: System.get_env("DATABASE_ORNITHO_PASSWORD", "kjogvi"),
+  database: System.get_env("DATABASE_ORNITHO_NAME", "ornithologue_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

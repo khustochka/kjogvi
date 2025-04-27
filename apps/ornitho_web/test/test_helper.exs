@@ -1,7 +1,14 @@
 Application.put_env(:ornitho_web, Kjogvi.OrnithoRepo,
   url: System.get_env("DATABASE_ORNITHO_URL"),
-  hostname: "localhost",
-  database: "ornitho_test#{System.get_env("MIX_TEST_PARTITION")}",
+  hostname: System.get_env("DATABASE_ORNITHO_HOST", "localhost"),
+  port: System.get_env("DATABASE_ORNITHO_PORT", "5498"),
+  username: System.get_env("DATABASE_ORNITHO_USER", "kjogvi"),
+  password: System.get_env("DATABASE_ORNITHO_PASSWORD", "kjogvi"),
+  database:
+    System.get_env(
+      "DATABASE_ORNITHO_NAME",
+      "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}"
+    ),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 )
