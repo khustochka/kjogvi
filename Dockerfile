@@ -64,7 +64,7 @@ COPY apps/ornitho_web/priv apps/ornitho_web/priv
 
 COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
 COPY apps/ornitho_web/assets apps/ornitho_web/assets
-COPY apps/ornitho_web/dist apps/ornitho_web/dist
+# COPY apps/ornitho_web/dist apps/ornitho_web/dist
 
 # Compile the release
 RUN mix compile
@@ -89,9 +89,9 @@ RUN apt-get update -y && \
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 WORKDIR "/app"
 RUN chown nobody /app
