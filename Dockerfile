@@ -64,7 +64,7 @@ COPY apps/ornitho_web/priv apps/ornitho_web/priv
 
 COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
 COPY apps/ornitho_web/assets apps/ornitho_web/assets
-# COPY apps/ornitho_web/dist apps/ornitho_web/dist
+COPY apps/ornitho_web/dist apps/ornitho_web/dist
 
 # Compile the release
 RUN mix compile
