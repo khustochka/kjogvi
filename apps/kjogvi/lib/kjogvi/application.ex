@@ -12,12 +12,11 @@ defmodule Kjogvi.Application do
 
     Kjogvi.Opentelemetry.setup()
 
-    Kjogvi.Store.ChecklistsPreload.init()
-
     children = [
       Kjogvi.Repo,
       Kjogvi.OrnithoRepo,
       Kjogvi.Cache,
+      {Kjogvi.Store.ChecklistsPreload, name: Kjogvi.Store.ChecklistsPreload},
       {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Kjogvi.PubSub},
       # Start the Finch HTTP client for sending emails

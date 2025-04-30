@@ -3,38 +3,58 @@ defmodule Kjogvi.Store.ChecklistsPreload do
   Store for preloaded checklist metadata.
   """
 
-  @ets_table_name :ebird_checklists_preload
+  use GenServer
 
-  def init do
-    :ets.new(@ets_table_name, [:set, :named_table, :public])
-  end
+  defstruct last_preload_time: nil, preloaded_checklists: []
 
   def last_preload_time do
-    :ets.lookup(@ets_table_name, :last_preload_time)
-    |> extract()
+    GenServer.call(__MODULE__, :last_preload_time)
   end
 
   def preloaded_checklists do
-    :ets.lookup(@ets_table_name, :preloaded_checklists)
-    |> extract([])
+    GenServer.call(__MODULE__, :preloaded_checklists)
   end
 
   def reset_preloads do
-    :ets.delete(@ets_table_name, :preloaded_checklists)
-    :ets.delete(@ets_table_name, :last_preload_time)
+    GenServer.cast(__MODULE__, :reset_preloads)
   end
 
   def store_checklists(checklists) do
-    :ets.insert(@ets_table_name, [
-      {:preloaded_checklists, checklists},
-      {:last_preload_time, DateTime.utc_now()}
-    ])
+    GenServer.cast(__MODULE__, {:store_checklists, checklists})
   end
 
-  defp extract(list, default \\ nil) do
-    case list do
-      [] -> default
-      [{_, smth}] -> smth
-    end
+  # Callbacks
+
+  @impl true
+  def init(_) do
+    {:ok, struct(__MODULE__)}
+  end
+
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, {}, opts)
+  end
+
+  @impl true
+  def handle_call(:last_preload_time, _from, state) do
+    {:reply, state.last_preload_time, state}
+  end
+
+  def handle_call(:preloaded_checklists, _from, state) do
+    {:reply, state.preloaded_checklists, state}
+  end
+
+  @impl true
+  def handle_cast(:reset_preloads, _state) do
+    {:noreply, struct(__MODULE__)}
+  end
+
+  def handle_cast({:store_checklists, checklists}, _state) do
+    state =
+      struct(
+        __MODULE__,
+        %{preloaded_checklists: checklists, last_preload_time: DateTime.utc_now()}
+      )
+
+    {:noreply, state}
   end
 end
