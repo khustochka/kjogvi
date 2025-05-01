@@ -14,7 +14,6 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
       :ok,
       socket
       |> assign(:async_result, %AsyncResult{})
-      |> assign_preloads_data()
     }
   end
 
@@ -23,11 +22,12 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
       :ok,
       socket
       |> assign(:user, user)
+      |> assign_preloads_data()
     }
   end
 
   def update(%{status: :ok, data: ebird_checklists}, socket) do
-    Store.ChecklistsPreload.store_checklists(ebird_checklists)
+    Store.ChecklistPreload.store_checklists(socket.assigns.user, ebird_checklists)
 
     {:ok,
      socket
@@ -69,7 +69,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     import_id = Ecto.UUID.generate()
     Ebird.Web.subscribe_progress(:preload, import_id)
 
-    Store.ChecklistsPreload.reset_preloads()
+    Store.ChecklistPreload.reset_preloads(user)
 
     %{ref: ref} =
       Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn ->
@@ -117,9 +117,9 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
       <p>
         <b>Last preloaded:</b>
         <span>
-          <%= if @last_preload_time do %>
-            <time time={@last_preload_time}>
-              {Calendar.strftime(@last_preload_time, "%-d %b %Y %m:%S")}
+          <%= if @preloads.last_preload_time do %>
+            <time time={@preloads.last_preload_time}>
+              {Calendar.strftime(@preloads.last_preload_time, "%-d %b %Y %m:%S")}
             </time>
           <% else %>
             <i>no data</i>
@@ -127,7 +127,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
         </span>
       </p>
 
-      <ul :for={checklist <- @ebird_checklists} class="my-4">
+      <ul :for={checklist <- @preloads.checklists} class="my-4">
         <li>
           {checklist.date}, {checklist.time}, {checklist.location}
         </li>
@@ -138,7 +138,6 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
 
   defp assign_preloads_data(socket) do
     socket
-    |> assign(:last_preload_time, Store.ChecklistsPreload.last_preload_time())
-    |> assign(:ebird_checklists, Store.ChecklistsPreload.preloaded_checklists())
+    |> assign(:preloads, Store.ChecklistPreload.get_preloads(socket.assigns.user))
   end
 end
