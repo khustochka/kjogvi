@@ -6,13 +6,14 @@ defmodule OrnithoWeb.Live.Taxa.Table do
   import OrnithoWeb.CoreComponents
   import OrnithoWeb.TaxaComponents
 
+  alias OrnithoWeb.Live.Taxa.SearchState
   alias Phoenix.LiveView.JS
 
   attr :book, Ornitho.Schema.Book, required: true
   attr :taxa, :list, required: true
   attr :link_builder, :any, required: true
   attr :skip_parent_species, :boolean, default: false
-  attr :search_term, :string, default: nil
+  attr :search_state, :any, default: struct(SearchState)
 
   def render(assigns) do
     ~H"""
@@ -38,7 +39,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
               </td>
               <td class="p-0 py-4 pr-6">
                 <span class="font-mono">
-                  <.highlighted content={taxon.code} term={@search_term} />
+                  <.highlighted content={taxon.code} search_state={@search_state} />
                 </span>
               </td>
               <td class="p-0 py-4 pr-6">
@@ -49,7 +50,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                         <.link
                           navigate={@link_builder.("/#{@book.slug}/#{@book.version}/#{taxon.code}")}
                           phx-no-format
-                        ><.sci_name taxon={taxon} search_term={@search_term} /></.link>
+                        ><.sci_name taxon={taxon} search_state={@search_state} /></.link>
                       </strong>
                       <.category_tag :if={taxon.category} category={taxon.category} />
                       <.extinct_tag taxon={taxon} />
@@ -60,7 +61,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                   </div>
                 </div>
                 <div>
-                  <.highlighted content={taxon.name_en} term={@search_term} />
+                  <.highlighted content={taxon.name_en} search_state={@search_state} />
                 </div>
               </td>
               <td :if={!@skip_parent_species} class="p-0 py-4 pr-6 text-center">

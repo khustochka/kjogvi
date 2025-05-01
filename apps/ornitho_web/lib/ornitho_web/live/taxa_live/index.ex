@@ -5,7 +5,8 @@ defmodule OrnithoWeb.Live.Taxa.Index do
 
   import Scrivener.PhoenixView
 
-  @minimum_search_term_length 3
+  alias OrnithoWeb.Live.Taxa.SearchState
+
   @taxa_per_page 25
   @pagination_opts [window: 2, template: OrnithoWeb.Scrivener.Phoenix.Template]
 
@@ -21,10 +22,17 @@ defmodule OrnithoWeb.Live.Taxa.Index do
 
   @impl true
   def handle_event("search_updated", %{"search_term" => search_term}, socket) do
-    {:noreply,
-     socket
-     |> assign_search_state(search_term)
-     |> assign_taxa}
+    search_params =
+      if search_term == "" do
+        []
+      else
+        [search_term: search_term]
+      end
+
+    path =
+      OrnithoWeb.LinkHelper.book_path(socket, socket.assigns.book, 1, search_params)
+
+    {:noreply, socket |> push_patch(to: path)}
   end
 
   attr :book, Ornitho.Schema.Book, required: true
@@ -41,6 +49,7 @@ defmodule OrnithoWeb.Live.Taxa.Index do
         role="search"
         class="mt-5 mb-4"
         phx-change="search_updated"
+        phx-submit="search_updated"
         phx-target={@myself}
         phx-debounce="200"
       >
@@ -49,7 +58,7 @@ defmodule OrnithoWeb.Live.Taxa.Index do
           name="search_term"
           label="Search taxa"
           id="search_term"
-          value={@search_term}
+          value={@search_state.term}
           errors={[]}
         />
       </form>
@@ -57,11 +66,11 @@ defmodule OrnithoWeb.Live.Taxa.Index do
       <OrnithoWeb.Live.Taxa.Table.render
         book={@book}
         taxa={@taxa}
-        search_term={@search_term}
+        search_state={@search_state}
         link_builder={&OrnithoWeb.LinkHelper.path(@socket, &1)}
       />
 
-      <%= if !@search_enabled do %>
+      <%= if !@search_state.enabled do %>
         {paginate(
           @socket,
           @taxa,
@@ -74,22 +83,9 @@ defmodule OrnithoWeb.Live.Taxa.Index do
     """
   end
 
-  defp assign_search_state(socket, nil = _search_term) do
+  defp assign_search_state(socket, search_term) do
     socket
-    |> assign(:search_term, nil)
-    |> assign(:search_enabled, false)
-  end
-
-  defp assign_search_state(socket, "" = _search_term) do
-    assign_search_state(socket, nil)
-  end
-
-  defp assign_search_state(socket, search_term) when is_binary(search_term) do
-    normalized_term = String.trim(search_term)
-
-    socket
-    |> assign(:search_term, normalized_term)
-    |> assign(:search_enabled, String.length(normalized_term) >= @minimum_search_term_length)
+    |> assign(:search_state, SearchState.assign_search_term(search_term))
   end
 
   defp assign_taxa(socket) do
@@ -97,12 +93,12 @@ defmodule OrnithoWeb.Live.Taxa.Index do
     |> assign(:taxa, get_taxa(socket.assigns))
   end
 
-  defp get_taxa(%{book: book, search_enabled: false, page_num: page_num}) do
+  defp get_taxa(%{book: book, search_state: %{enabled: false}, page_num: page_num}) do
     Ornitho.Finder.Taxon.paginate(book, page: page_num, page_size: @taxa_per_page)
     |> Ornitho.Finder.Taxon.with_parent_species()
   end
 
-  defp get_taxa(%{book: book, search_enabled: true, search_term: search_term}) do
+  defp get_taxa(%{book: book, search_state: %{enabled: true, term: search_term}}) do
     Ornitho.Finder.Taxon.search(book, search_term, limit: 15)
     |> Ornitho.Finder.Taxon.with_parent_species()
   end

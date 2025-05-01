@@ -2,6 +2,7 @@ defmodule OrnithoWeb.TaxaComponents do
   @moduledoc """
   UI Components for rendering taxa
   """
+  alias OrnithoWeb.Live.Taxa.SearchState
   use OrnithoWeb, :html
 
   use Gettext, backend: OrnithoWeb.Gettext
@@ -115,24 +116,24 @@ defmodule OrnithoWeb.TaxaComponents do
   attr :taxon, Ornitho.Schema.Taxon, required: true
   # TODO: merge classes
   attr :rest, :global, default: %{class: "italic sci_name"}
-  attr :search_term, :string, default: nil
+  attr :search_state, :any, default: struct(SearchState)
 
   def sci_name(assigns) do
-    ~H"<em {@rest}><.highlighted content={@taxon.name_sci} term={@search_term} /></em>"
+    ~H"<em {@rest}><.highlighted content={@taxon.name_sci} search_state={@search_state} /></em>"
   end
 
   attr :content, :string, required: true
-  attr :term, :string
+  attr :search_state, :any, default: struct(SearchState)
 
   def highlighted(assigns) do
     ~H"""
-    {if is_nil(@term) || @term == "", do: @content, else: highlighted_content(assigns)}
+    {if @search_state.enabled, do: highlighted_content(assigns), else: @content}
     """
   end
 
   defp highlighted_content(assigns) do
     ~H"""
-    <.unchanged phx-no-format><%= for vals <- split_for_highlight(@content, @term) do %><%= maybe_highlighted(vals) %><% end %></.unchanged>
+    <.unchanged phx-no-format><%= for vals <- split_for_highlight(@content, @search_state.term) do %><%= maybe_highlighted(vals) %><% end %></.unchanged>
     """
   end
 
