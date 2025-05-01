@@ -32,7 +32,7 @@ defmodule Kjogvi.Ebird.Web.Client.Login do
   """
   @spec login(credentials()) :: {:ok, HttpCookie.Jar.t()} | {:error, any()}
   def login(%{username: username, password: password}) do
-    cookie_jar = HttpCookie.Jar.new(cookie_opts: [reject_public_suffixes: false])
+    cookie_jar = HttpCookie.Jar.new()
 
     case click_sign_in(cookie_jar) do
       {:ok, cookie_jar, form_details} ->
