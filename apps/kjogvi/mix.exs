@@ -79,6 +79,7 @@ defmodule Kjogvi.MixProject do
       {:opentelemetry_api, "~> 1.4"},
       {:opentelemetry_ecto, "~> 1.2"},
       {:opentelemetry_exporter, "~> 1.6"},
+      {:opentelemetry_req, "~> 1.0"},
       {:opentelemetry_telemetry, "~> 1.1.1"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]

@@ -7,6 +7,7 @@ defmodule Kjogvi.Ebird.Web.Client do
   alias Kjogvi.Ebird.Web.Checklist
   alias Kjogvi.Ebird.Web.Client.Login
   alias Kjogvi.Types
+  alias OpenTelemetry.SemConv.Incubating.URLAttributes
 
   @base_url "https://ebird.org"
 
@@ -16,7 +17,9 @@ defmodule Kjogvi.Ebird.Web.Client do
 
   @doc false
   def req do
-    Req.new(base_url: @base_url) |> HttpCookie.ReqPlugin.attach()
+    Req.new(base_url: @base_url)
+    |> HttpCookie.ReqPlugin.attach()
+    |> OpentelemetryReq.attach(opt_in_attrs: [URLAttributes.url_template()])
   end
 
   @doc """
@@ -44,6 +47,7 @@ defmodule Kjogvi.Ebird.Web.Client do
     req()
     |> Req.get(
       url: "/mychecklists",
+      path_params: [[]],
       params: [
         currentRow: start,
         rowsPerPage: count,

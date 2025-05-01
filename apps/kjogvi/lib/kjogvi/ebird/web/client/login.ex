@@ -46,7 +46,8 @@ defmodule Kjogvi.Ebird.Web.Client.Login do
   end
 
   defp click_sign_in(cookie_jar) do
-    with {:ok, resp} <- Req.get(Client.req(), url: @sign_in_link, cookie_jar: cookie_jar),
+    with {:ok, resp} <-
+           Req.get(Client.req(), url: @sign_in_link, path_params: [[]], cookie_jar: cookie_jar),
          {:ok, form_details} <- extract_form_details(resp) do
       %{private: %{cookie_jar: cookie_jar}} = resp
       {:ok, cookie_jar, form_details}
@@ -80,10 +81,11 @@ defmodule Kjogvi.Ebird.Web.Client.Login do
       @default_form_details
       |> Map.merge(form_details)
 
-    Req.new(base_url: @cas_base_url)
-    |> HttpCookie.ReqPlugin.attach()
+    Client.req()
+    |> Req.Request.merge_options(base_url: @cas_base_url)
     |> Req.post(
       url: @cas_form_action,
+      path_params: [[]],
       form: form_fields,
       cookie_jar: cookie_jar
     )

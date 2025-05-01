@@ -5,6 +5,7 @@ defmodule Kjogvi.Legacy.Adapters.Download do
 
   def init() do
     Req.new(base_url: base_url(), auth: auth())
+    |> OpentelemetryReq.attach()
     |> Req.Request.put_header("accept", "application/json")
   end
 
