@@ -46,8 +46,7 @@ defmodule Kjogvi.Telemetry.Sampler do
 
   def drop_trace?(span_name, attributes) do
     cond do
-      # I don't care about WS connection
-      # FIXME: not traced now?
+      # May be unnecessary: WS connections are not not traced now
       span_name == "Websocket" ->
         true
 

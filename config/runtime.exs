@@ -29,7 +29,7 @@ cond do
       sampler: {:parent_based, %{root: {Kjogvi.Telemetry.Sampler, %{}}}},
       traces_exporter: {:opentelemetry_exporter, %{}}
 
-  # TODO: Below stopped working for unclear reason
+  # NOTE: Below stopped working for unclear reason
   # traces_exporter: {Kjogvi.Opentelemetry.Exporter, []}
 
   true ->

@@ -49,7 +49,7 @@ defmodule Ornitho.Schema.Taxon do
     "/#{slug}/#{version}/#{code}"
   end
 
-  # FIXME: try to get rid of this
+  # TODO: try to get rid of this
   def species(nil = _taxon) do
     nil
   end

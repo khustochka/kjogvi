@@ -1,4 +1,4 @@
-# TODO: disabled because it does not start any processes. Revisit in the future.
+# NOTE: disabled because it does not start any processes. Revisit in the future.
 # defmodule OrnithoWeb.Application do
 #   # See https://hexdocs.pm/elixir/Application.html
 #   # for more information on OTP Applications

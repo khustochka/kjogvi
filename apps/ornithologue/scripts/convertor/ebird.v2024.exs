@@ -144,7 +144,7 @@ defmodule Convertor.Ebird.V2024 do
     end
   end
 
-  # FIXME: Authority will be added in future list update
+  # NOTE: Authority will be added in future list update
 
   # {authority_string, has_brackets?}
   defp extract_authority("" = _authority), do: {nil, nil}

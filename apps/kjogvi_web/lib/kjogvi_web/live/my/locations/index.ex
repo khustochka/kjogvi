@@ -36,7 +36,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <%!-- FIXME: Extract to partial --%>
+    <%!-- TODO: Extract to partial --%>
     <.link patch={~p{/my/locations/countries}}>Countries</.link>
     <.link patch={~p{/my/locations}}>Locations</.link>
 

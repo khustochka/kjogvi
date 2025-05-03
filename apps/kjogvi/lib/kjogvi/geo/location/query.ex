@@ -120,8 +120,6 @@ defmodule Kjogvi.Geo.Location.Query do
       |> Repo.all()
       |> Enum.reduce(%{}, fn loc, acc -> Map.put(acc, loc.id, loc) end)
 
-    # TODO: Preload ancestors for those that are private too
-
     things
     |> Enum.map(fn thing ->
       thing.location.ancestry

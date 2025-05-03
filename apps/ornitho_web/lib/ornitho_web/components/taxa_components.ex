@@ -114,12 +114,15 @@ defmodule OrnithoWeb.TaxaComponents do
   Renders a taxon scientific name, which should be always italisized.
   """
   attr :taxon, Ornitho.Schema.Taxon, required: true
-  # TODO: merge classes
-  attr :rest, :global, default: %{class: "italic sci_name"}
   attr :search_state, :any, default: struct(SearchState)
+  attr :class, :any, default: nil
 
   def sci_name(assigns) do
-    ~H"<em {@rest}><.highlighted content={@taxon.name_sci} search_state={@search_state} /></em>"
+    ~H"""
+    <em class={[~w[italic sci_name], @class]} phx-no-format><.highlighted
+        content={@taxon.name_sci}
+        search_state={@search_state} /></em>
+    """
   end
 
   attr :content, :string, required: true
