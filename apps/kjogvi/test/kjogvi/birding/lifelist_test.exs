@@ -45,6 +45,47 @@ defmodule Kjogvi.Birding.LifelistTest do
     end
   end
 
+  describe "months/1" do
+    test "returns months that have cards and observation" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+      taxon = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      assert Kjogvi.Birding.Lifelist.months(scope) == [7, 11]
+    end
+
+    test "returns months in correct order" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+      taxon = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card2 = insert(:card, observ_date: ~D"2022-07-16", user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      assert Kjogvi.Birding.Lifelist.months(scope) == [7, 11]
+    end
+
+    test "does not include years with unreported observations only" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+      taxon = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon),
+        unreported: true
+      )
+
+      card2 = insert(:card, observ_date: ~D"2022-07-16", user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      assert Kjogvi.Birding.Lifelist.months(scope) == [7]
+    end
+  end
+
   describe "generate/1" do
     test "works with no observations of the desired user" do
       user = user_fixture()
@@ -217,6 +258,34 @@ defmodule Kjogvi.Birding.LifelistTest do
       insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, location: ukraine, year: 2022)
+      assert length(result.list) == 1
+    end
+
+    test "filtered by month" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      result = Kjogvi.Birding.Lifelist.generate(scope, month: 7)
+      assert length(result.list) == 1
+    end
+
+    test "filtered by motorless" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+      taxon1 = Ornitho.Factory.insert(:taxon)
+      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user, motorless: true)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      taxon2 = Ornitho.Factory.insert(:taxon)
+      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      result = Kjogvi.Birding.Lifelist.generate(scope, motorless: true)
       assert length(result.list) == 1
     end
 
