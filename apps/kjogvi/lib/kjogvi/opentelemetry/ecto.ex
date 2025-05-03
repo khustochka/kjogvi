@@ -26,6 +26,7 @@ defmodule Kjogvi.Opentelemetry.Ecto do
     |> Enum.map(fn str ->
       str
       |> Macro.underscore()
+      # credo:disable-for-next-line Credo.Check.Warning.UnsafeToAtom
       |> String.to_atom()
     end)
   end

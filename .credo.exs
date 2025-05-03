@@ -156,7 +156,12 @@
           {Credo.Check.Warning.UnusedRegexOperation, []},
           {Credo.Check.Warning.UnusedStringOperation, []},
           {Credo.Check.Warning.UnusedTupleOperation, []},
-          {Credo.Check.Warning.UnsafeExec, []}
+          {Credo.Check.Warning.UnsafeExec, []},
+
+          {Credo.Check.Warning.LeakyEnvironment, []},
+          {Credo.Check.Warning.MapGetUnsafePass, []},
+          {Credo.Check.Warning.MixEnv, []},
+          {Credo.Check.Warning.UnsafeToAtom, []}
         ],
         disabled: [
           #
@@ -193,10 +198,10 @@
           {Credo.Check.Refactor.RejectFilter, []},
           {Credo.Check.Refactor.VariableRebinding, []},
           {Credo.Check.Warning.LazyLogging, []},
-          {Credo.Check.Warning.LeakyEnvironment, []},
-          {Credo.Check.Warning.MapGetUnsafePass, []},
-          {Credo.Check.Warning.MixEnv, []},
-          {Credo.Check.Warning.UnsafeToAtom, []}
+          # {Credo.Check.Warning.LeakyEnvironment, []},
+          # {Credo.Check.Warning.MapGetUnsafePass, []},
+          # {Credo.Check.Warning.MixEnv, []},
+          # {Credo.Check.Warning.UnsafeToAtom, []}
 
           # {Credo.Check.Refactor.MapInto, []},
 
