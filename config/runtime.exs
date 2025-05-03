@@ -23,6 +23,9 @@ cond do
     config :opentelemetry,
       traces_exporter: {:otel_exporter_stdout, []}
 
+  System.get_env("OTEL_EXPORTER_DISABLE") in ~w(true 1) ->
+    config :opentelemetry, traces_exporter: :none
+
   System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") ->
     config :opentelemetry,
       span_processor: :batch,
