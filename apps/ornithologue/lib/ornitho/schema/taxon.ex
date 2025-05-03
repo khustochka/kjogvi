@@ -10,7 +10,8 @@ defmodule Ornitho.Schema.Taxon do
   """
   use Ornitho.Schema
 
-  alias Ornitho.Schema.{Book, Taxon}
+  alias Ornitho.Schema.Book
+  alias Ornitho.Schema.Taxon
 
   @required_fields [:name_sci, :name_en, :code, :category, :sort_order, :book_id]
   @default_order [asc: :sort_order]

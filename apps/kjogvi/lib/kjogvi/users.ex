@@ -6,7 +6,9 @@ defmodule Kjogvi.Users do
   import Ecto.Query, warn: false
   alias Kjogvi.Repo
 
-  alias Kjogvi.Users.{User, UserToken, UserNotifier}
+  alias Kjogvi.Users.User
+  alias Kjogvi.Users.UserToken
+  alias Kjogvi.Users.UserNotifier
 
   @admin_role "admin"
 

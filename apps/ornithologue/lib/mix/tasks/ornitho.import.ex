@@ -31,7 +31,7 @@ defmodule Mix.Tasks.Ornitho.Import do
     case OptionParser.parse!(args, strict: @switches, aliases: @aliases) do
       {opts, [importer_name]} ->
         force = opts[:force]
-        importer = Module.concat([importer_name])
+        importer = Module.safe_concat([importer_name])
 
         with {:ok, _} <- ensure_module_exists(importer),
              {:ok, _} <- ensure_function_exported(importer),

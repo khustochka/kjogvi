@@ -40,7 +40,8 @@ defmodule Ornitho.Importer do
 
       import Ecto.Query, only: [from: 2]
 
-      alias Ornitho.Schema.{Book, Taxon}
+      alias Ornitho.Schema.Book
+      alias Ornitho.Schema.Taxon
       alias Ornitho.Ops
 
       @slug opts[:slug]

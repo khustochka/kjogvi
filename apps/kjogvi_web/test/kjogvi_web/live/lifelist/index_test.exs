@@ -69,7 +69,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert not (html =~ species1.name_en)
   end
 
-  @tag :skip
+  @tag skip: "Not implemented yet"
   # See branch empty_lifelist_404
   test "empty year lifelist returns Not Found, but still renders", %{conn: conn} do
     conn = get(conn, "/lifelist/2022")

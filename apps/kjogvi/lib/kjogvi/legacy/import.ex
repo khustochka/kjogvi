@@ -3,7 +3,7 @@ defmodule Kjogvi.Legacy.Import do
 
   def run(user, opts \\ []) do
     :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(), fn ->
-      new_opts = opts ++ [user: user]
+      new_opts = Keyword.put(opts, :user, user)
 
       prepare_import(new_opts)
 

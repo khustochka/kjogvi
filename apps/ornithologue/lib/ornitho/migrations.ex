@@ -77,10 +77,13 @@ defmodule Ornitho.Migrations do
 
   defp change(range, direction) do
     for index <- range do
-      pad_idx = String.pad_leading(to_string(index), 2, "0")
+      pad_idx =
+        index
+        |> to_string()
+        |> String.pad_leading(2, "0")
 
       [__MODULE__, "V#{pad_idx}"]
-      |> Module.concat()
+      |> Module.safe_concat()
       |> apply(direction, [])
     end
 

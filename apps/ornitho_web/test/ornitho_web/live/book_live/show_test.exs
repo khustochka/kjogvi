@@ -1,5 +1,5 @@
 defmodule OrnithoWeb.Live.Book.ShowTest do
-  use OrnithoWeb.ConnCase
+  use OrnithoWeb.ConnCase, async: true
   use OrnithoWeb.OrnithoCase, async: true
 
   import Phoenix.LiveViewTest

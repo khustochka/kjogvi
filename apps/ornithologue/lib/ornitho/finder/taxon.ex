@@ -6,7 +6,8 @@ defmodule Ornitho.Finder.Taxon do
   import Ecto.Query
 
   alias Ornitho.Query
-  alias Ornitho.Schema.{Book, Taxon}
+  alias Ornitho.Schema.Book
+  alias Ornitho.Schema.Taxon
 
   @search_results_limit 10
   @default_page_size 25

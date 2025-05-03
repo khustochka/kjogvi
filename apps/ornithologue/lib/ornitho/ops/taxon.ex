@@ -3,7 +3,8 @@ defmodule Ornitho.Ops.Taxon do
   Functions for operations with taxa.
   """
 
-  alias Ornitho.Schema.{Book, Taxon}
+  alias Ornitho.Schema.Book
+  alias Ornitho.Schema.Taxon
   alias Ecto.Multi
 
   def create(%Book{} = book, attrs) do

@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Ornitho.ImportTest do
-  use Ornitho.RepoCase
+  use Ornitho.RepoCase, async: false
 
   alias Ornitho.Importer
 
