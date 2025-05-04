@@ -93,7 +93,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
     {:ok, html} = Floki.parse_document(resp)
 
-    assert Enum.empty?(Floki.find(html, "meta[name=robots]"))
+    assert html |> Floki.find("meta[name=robots]") |> Enum.empty?()
   end
 
   test "empty year list is not indexed by robots", %{conn: conn} do
@@ -120,7 +120,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
     {:ok, html2} = Floki.parse_document(doc2)
 
-    assert Enum.empty?(Floki.find(html2, "meta[name=robots]"))
+    assert html2 |> Floki.find("meta[name=robots]") |> Enum.empty?()
   end
 
   test "lifelist filtered by location", %{conn: conn} do
