@@ -45,7 +45,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.25.2",
+  version: "0.25.3",
   kjogvi_web: [
     args: ~w(
         js/app.js
@@ -61,7 +61,7 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "4.1.4",
+  version: "4.1.5",
   kjogvi_web: [
     args: ~w(
       --input=css/app.css

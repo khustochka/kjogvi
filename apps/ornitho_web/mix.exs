@@ -58,7 +58,6 @@ defmodule OrnithoWeb.MixProject do
       {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
       {:ornithologue, in_umbrella: true},
       {:jason, "~> 1.2"},
-      {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.20"},
 
       # Assets
@@ -77,6 +76,7 @@ defmodule OrnithoWeb.MixProject do
       {:telemetry_metrics, "~> 1.0", only: [:dev, :test]},
       {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
       {:bandit, "~> 1.2", only: [:dev, :test]},
+      {:floki, ">= 0.30.0", only: [:test]},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},

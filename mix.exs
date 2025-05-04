@@ -80,6 +80,7 @@ defmodule Kjogvi.Umbrella.MixProject do
       ],
       "lint.fix": [
         "format",
+        "deps.unlock --unused",
         "lint"
       ],
       "lint.github": [
