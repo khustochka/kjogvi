@@ -76,7 +76,7 @@ defmodule OrnithoWeb.MixProject do
       {:telemetry_metrics, "~> 1.0", only: [:dev, :test]},
       {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
       {:bandit, "~> 1.2", only: [:dev, :test]},
-      {:floki, ">= 0.30.0", only: [:test]},
+      {:floki, ">= 0.30.0"},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},

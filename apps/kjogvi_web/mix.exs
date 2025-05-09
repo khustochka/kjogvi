@@ -88,7 +88,7 @@ defmodule KjogviWeb.MixProject do
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.5"},
       {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
-      {:floki, ">= 0.30.0", only: [:test]},
+      {:floki, ">= 0.30.0"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:opentelemetry, "~> 1.5"},
       {:opentelemetry_api, "~> 1.4"},
