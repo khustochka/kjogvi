@@ -26,7 +26,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   def handle_params(params, _url, %{assigns: assigns} = socket) do
     lifelist_scope = assigns.lifelist_scope
 
-    filter = build_filter(assigns.current_scope.user, params)
+    filter = build_filter(assigns.current_scope, params)
 
     lifelist = Birding.Lifelist.generate(lifelist_scope, filter)
 
@@ -244,8 +244,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  defp build_filter(user, params) do
-    KjogviWeb.Live.Lifelist.Params.to_filter(user, params)
+  defp build_filter(scope, params) do
+    KjogviWeb.Live.Lifelist.Params.to_filter(scope, params)
     |> case do
       {:ok, filter} -> filter
       {:error, _} -> raise Plug.BadRequestError

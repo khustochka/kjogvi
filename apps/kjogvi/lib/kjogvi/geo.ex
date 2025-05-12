@@ -46,17 +46,19 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
-  def location_by_slug(user, slug) do
+  def location_by_slug(slug) do
     Location
-    |> Location.Query.for_user(user)
     |> Location.Query.by_slug(slug)
     |> Repo.one()
   end
 
-  def location_by_slug!(user, slug) do
-    Location
-    |> Location.Query.for_user(user)
+  def location_by_slug_scope(scope, slug) do
+    if is_nil(scope.user) or not scope.private_view do
+      Location |> Location.Query.only_public()
+    else
+      Location
+    end
     |> Location.Query.by_slug(slug)
-    |> Repo.one!()
+    |> Repo.one()
   end
 end

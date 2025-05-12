@@ -8,9 +8,9 @@ defmodule KjogviWeb.Live.Lifelist.Params do
   @valid_year_regex ~r/\A\d{4}\Z/
   @months Enum.map(1..12, &Integer.to_string/1)
 
-  def to_filter(user, params) do
+  def to_filter(scope, params) do
     Enum.reduce(params, {:ok, []}, fn el, acc ->
-      add_param(acc, el, user: user, params: params)
+      add_param(acc, el, scope)
     end)
     |> case do
       {:ok, result} ->
@@ -21,16 +21,16 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
-  defp add_param(acc, {"year_or_location", year_or_location}, opts) do
+  defp add_param(acc, {"year_or_location", year_or_location}, scope) do
     if year_or_location =~ ~r/\A\d+\Z/ do
-      add_param(acc, {"year", year_or_location}, opts)
+      add_param(acc, {"year", year_or_location}, scope)
     else
-      add_param(acc, {"location", year_or_location}, opts)
+      add_param(acc, {"location", year_or_location}, scope)
     end
   end
 
-  defp add_param(acc, {"location", location_slug}, opts) do
-    case Kjogvi.Geo.location_by_slug(opts[:user], location_slug) do
+  defp add_param(acc, {"location", location_slug}, scope) do
+    case Kjogvi.Geo.location_by_slug_scope(scope, location_slug) do
       nil ->
         add_error(acc, "Invalid location.")
 
@@ -39,7 +39,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
-  defp add_param(acc, {"year", year}, _opts) do
+  defp add_param(acc, {"year", year}, _scope) do
     if year =~ @valid_year_regex do
       add_success(acc, {:year, String.to_integer(year)})
     else
@@ -47,7 +47,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
-  defp add_param(acc, {"month", month}, _opts) do
+  defp add_param(acc, {"month", month}, _scope) do
     if month in @months do
       add_success(acc, {:month, String.to_integer(month)})
     else
@@ -55,7 +55,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
-  defp add_param(acc, {"motorless", motorless}, _opts) do
+  defp add_param(acc, {"motorless", motorless}, _scope) do
     if motorless == "true" do
       add_success(acc, {:motorless, true})
     else
@@ -63,7 +63,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
-  defp add_param(acc, {"exclude_heard_only", exclude_heard_only}, _opts) do
+  defp add_param(acc, {"exclude_heard_only", exclude_heard_only}, _scope) do
     if exclude_heard_only == "true" do
       add_success(acc, {:exclude_heard_only, true})
     else
@@ -71,7 +71,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
-  defp add_param(acc, {_, _}, _opts) do
+  defp add_param(acc, {_, _}, _scope) do
     acc
   end
 
