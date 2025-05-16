@@ -44,7 +44,7 @@
     <.admin_menu_item>
       <.link
         href={~p"/my/account/settings"}
-        class="text-[0.94rem] text-zinc-200 md:text-[0.9rem] underline"
+        class="text-zinc-200 text-[0.95rem] no-underline border-b-slate-300 border-b-1 p-[1px]"
       >
         {@current_user.email}
       </.link>
@@ -53,7 +53,7 @@
       <.form_as_link
         action={~p"/users/log_out"}
         method="delete"
-        class="no-underline font-normal text-[0.9rem] text-zinc-900 bg-slate-50 py-0.5 px-2"
+        class="no-underline font-normal text-[0.9rem] text-zinc-900 bg-slate-50 py-0.5 px-2 rounded"
       >
         Log out
       </.form_as_link>

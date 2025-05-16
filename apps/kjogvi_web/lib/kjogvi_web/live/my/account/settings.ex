@@ -104,21 +104,25 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                   id="ebird_username"
                   value={@current_scope.user.extras.ebird.username}
                 />
-                <div>
+                <div class="relative">
                   <CoreComponents.input
                     field={ebird_form[:password]}
                     type="password"
                     label="Password"
                     id="ebird_password"
+                    class="pe-10"
                     value={@current_scope.user.extras.ebird.password}
                   />
                   <span
                     phx-click={
-                      JS.toggle_attribute({:type, :password, :text}, to: "input#ebird_password")
+                      JS.toggle_attribute({:type, :password, :text}, to: "input#ebird_password") |>
+                      JS.toggle(to: "span.hero-eye") |>
+                      JS.toggle(to: "span.hero-eye-slash")
                     }
-                    class="hover:cursor-pointer text-zinc-500"
+                    class="hover:cursor-pointer text-zinc-500 absolute px-1 end-0 inset-y-1"
                   >
-                    <.icon name="hero-eye-solid" class="w-6 h-6" />
+                    <.icon name="hero-eye" class="w-5 h-5 block" />
+                    <.icon name="hero-eye-slash" class="w-5 h-5 block hidden" />
                     <span class="sr-only">Show/hide password</span>
                   </span>
                 </div>
