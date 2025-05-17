@@ -64,4 +64,14 @@ only when LiveView classes are applied, for example:
   font-variant: small-caps;
 }
 
+/* Elements that should be visible when JS is disabled */
+.no-js .js-hidden-element {
+  display: block; /* or whatever display value is appropriate */
+}
+
+/* Elements that should be hidden by default when JS is enabled */
+.js-hidden-element {
+  display: none;
+}
+
 /* This file is for your main application CSS */

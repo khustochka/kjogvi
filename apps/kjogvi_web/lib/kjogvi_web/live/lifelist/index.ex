@@ -10,6 +10,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   alias KjogviWeb.Live.Lifelist.Presenter
 
   import KjogviWeb.Live.Lifelist.Components
+  import KjogviWeb.LifelistComponents
 
   @all_months 1..12
 
@@ -126,32 +127,31 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </li>
     </ul>
 
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
-      <li class="whitespace-nowrap">
-        <em :if={is_nil(@filter.year)} class="font-semibold not-italic">All years</em>
-        <.link
-          :if={not is_nil(@filter.year)}
-          patch={lifelist_path(@current_scope, %{@filter | year: nil})}
-        >
-          All years
-        </.link>
-      </li>
-      <%= for {year, active} <- @years do %>
-        <li>
-          <%= if @filter.year == year do %>
-            <em class="font-semibold not-italic">{year}</em>
+    <div class="mt-6 text-sm font-semibold leading-6 text-zinc-600">
+      Year:
+    </div>
+    <div class="mb-6 mt-1">
+      <.bivalve_select selected={@filter.year} id="lifelist-year-selector">
+        <:left href={lifelist_path(@current_scope, %{@filter | year: nil})}>
+          All time
+        </:left>
+        <:placeholder>
+          <%= if is_nil(@filter.year) do %>
+            Select year
           <% else %>
-            <%= if active do %>
-              <.link patch={lifelist_path(@current_scope, %{@filter | year: year})}>
-                {year}
-              </.link>
-            <% else %>
-              <span class="text-gray-500">{year}</span>
-            <% end %>
+            <span class="sr-only">Selected year:</span>
+            {@filter.year}
           <% end %>
-        </li>
-      <% end %>
-    </ul>
+        </:placeholder>
+        <:item
+          :for={{year, _active} <- @years}
+          key={year}
+          href={lifelist_path(@current_scope, %{@filter | year: year})}
+        >
+          {year}
+        </:item>
+      </.bivalve_select>
+    </div>
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
       <li class="whitespace-nowrap">
