@@ -103,6 +103,7 @@ defmodule KjogviWeb do
       import KjogviWeb.BaseComponents
       import KjogviWeb.HeaderComponents
       import KjogviWeb.FlashComponents
+      import KjogviWeb.FormComponents
       import KjogviWeb.IconComponents
       import KjogviWeb.MetaComponents
       import KjogviWeb.NavigationComponents

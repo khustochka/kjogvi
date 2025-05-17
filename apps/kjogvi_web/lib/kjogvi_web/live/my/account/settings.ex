@@ -22,7 +22,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
           class="mb-6"
         >
           <CoreComponents.input field={@email_form[:email]} type="email" label="Email" required />
-          <CoreComponents.input
+          <.input
             field={@email_form[:current_password]}
             name="current_password"
             id="current_password_for_email"
@@ -53,7 +53,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
             id="hidden_user_email"
             value={@current_email}
           />
-          <CoreComponents.input
+          <.input
             field={@password_form[:current_password]}
             name="current_password"
             type="password"
@@ -62,13 +62,8 @@ defmodule KjogviWeb.Live.My.Account.Settings do
             value={@current_password}
             required
           />
-          <CoreComponents.input
-            field={@password_form[:password]}
-            type="password"
-            label="New password"
-            required
-          />
-          <CoreComponents.input
+          <.input field={@password_form[:password]} type="password" label="New password" required />
+          <.input
             field={@password_form[:password_confirmation]}
             type="password"
             label="Confirm new password"
@@ -104,27 +99,14 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                   id="ebird_username"
                   value={@current_scope.user.extras.ebird.username}
                 />
-                <div class="relative">
-                  <CoreComponents.input
+                <div>
+                  <.input
                     field={ebird_form[:password]}
                     type="password"
                     label="Password"
                     id="ebird_password"
-                    class="pe-10"
                     value={@current_scope.user.extras.ebird.password}
                   />
-                  <span
-                    phx-click={
-                      JS.toggle_attribute({:type, :password, :text}, to: "input#ebird_password") |>
-                      JS.toggle(to: "span.hero-eye") |>
-                      JS.toggle(to: "span.hero-eye-slash")
-                    }
-                    class="hover:cursor-pointer text-zinc-500 absolute px-1 end-0 inset-y-1"
-                  >
-                    <.icon name="hero-eye" class="w-5 h-5 block" />
-                    <.icon name="hero-eye-slash" class="w-5 h-5 block hidden" />
-                    <span class="sr-only">Show/hide password</span>
-                  </span>
                 </div>
               </.inputs_for>
             </.inputs_for>
