@@ -1,0 +1,8 @@
+.lifers-list {
+  counter-reset: lifers var(--lifersTotal, 0);
+}
+
+.lifers-list li .counter::before {
+  content: counter(lifers) ".";
+  counter-increment: lifers -1;
+}
