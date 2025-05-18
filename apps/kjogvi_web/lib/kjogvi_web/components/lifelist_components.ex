@@ -12,6 +12,14 @@ defmodule KjogviWeb.LifelistComponents do
   attr :selected, :any, required: true, doc: "key of the currently selected item"
   attr :id, :string, required: true
 
+  attr :widths, :string,
+    default: "w-1/2 sm:w-1/4 md:w-1/5 lg:w-1/6 xl:w-1/7",
+    doc: "Default widths for items"
+
+  attr :selector_widths, :string,
+    default: "w-1/2 sm:w-1/4 md:w-1/5 lg:w-1/6 xl:w-1/7",
+    doc: "Default widths for selector"
+
   slot :placeholder, required: true, doc: "placeholder text for selector"
 
   slot :left, required: true do
@@ -21,13 +29,19 @@ defmodule KjogviWeb.LifelistComponents do
   slot :item do
     attr :key, :string
     attr :href, :string
+    attr :active, :boolean
   end
 
   def bivalve_select(assigns) do
     ~H"""
     <div id={@id} class="bivalve-select" phx-mounted={JS.hide(to: {:inner, ".bivalve-ul-items"})}>
       <ul class="bivalve-ul-selector flex flex-wrap gap-0 mb-2">
-        <.bivalve_li :for={left <- @left} data-bivalve-left selected={is_nil(@selected)}>
+        <.bivalve_li
+          :for={left <- @left}
+          data-bivalve-left
+          selected={is_nil(@selected)}
+          widths={@selector_widths}
+        >
           <%= if is_nil(@selected) do %>
             <.bivalve_pill_span>
               <em class="not-italic font-bold">{render_slot(left)}</em>
@@ -43,6 +57,7 @@ defmodule KjogviWeb.LifelistComponents do
           data-bivalve-placeholder
           class="relative hover:cursor-pointer"
           selected={not is_nil(@selected)}
+          widths={@selector_widths}
           phx-click={JS.toggle(to: "##{@id} .bivalve-ul-items")}
         >
           <.bivalve_pill_span>
@@ -63,15 +78,25 @@ defmodule KjogviWeb.LifelistComponents do
 
       <div class="bivalve-ul-items js-hidden-element">
         <ul class="flex flex-wrap gap-0">
-          <.bivalve_li :for={item <- @item} data-bivalve-item selected={item.key == @selected}>
-            <%= if item.key == @selected do %>
-              <.bivalve_pill_span>
-                <em class="not-italic font-bold">{render_slot(item)}</em>
-              </.bivalve_pill_span>
-            <% else %>
-              <.bivalve_pill_link patch={item.href} id={@id}>
-                {render_slot(item)}
-              </.bivalve_pill_link>
+          <.bivalve_li
+            :for={item <- @item}
+            data-bivalve-item
+            selected={item.key == @selected}
+            widths={@widths}
+          >
+            <%= cond do %>
+              <% item.key == @selected -> %>
+                <.bivalve_pill_span>
+                  <em class="not-italic font-bold">{render_slot(item)}</em>
+                </.bivalve_pill_span>
+              <% Map.get(item, :active) == false -> %>
+                <.bivalve_pill_span>
+                  <span class="text-gray-500">{render_slot(item)}</span>
+                </.bivalve_pill_span>
+              <% true -> %>
+                <.bivalve_pill_link patch={item.href} id={@id}>
+                  {render_slot(item)}
+                </.bivalve_pill_link>
             <% end %>
           </.bivalve_li>
         </ul>
@@ -82,6 +107,7 @@ defmodule KjogviWeb.LifelistComponents do
 
   attr :class, :any, default: nil
   attr :selected, :boolean, default: false
+  attr :widths, :string, required: true
   attr :rest, :global
   slot :inner_block
 
@@ -89,7 +115,7 @@ defmodule KjogviWeb.LifelistComponents do
     ~H"""
     <li
       class={[
-        bivalve_li_classes(),
+        bivalve_li_classes(@widths),
         @class,
         (@selected && "bg-sky-100 text-sky-900 border-sky-400 z-1") || "border-slate-300"
       ]}
@@ -125,9 +151,11 @@ defmodule KjogviWeb.LifelistComponents do
     """
   end
 
-  defp bivalve_li_classes do
-    "block w-1/2 text-center mb-1 border-1 " <>
-      "sm:w-1/4 md:w-1/5 lg:w-1/6 xl:w-1/7 mb-[-1px] mr-[-1px]"
+  defp bivalve_li_classes(widths) do
+    [
+      "block text-center mb-1 border-1 mb-[-1px] mr-[-1px]",
+      widths
+    ]
   end
 
   defp bivalve_pill_classes do
@@ -135,6 +163,6 @@ defmodule KjogviWeb.LifelistComponents do
   end
 
   defp bivalve_link_classes do
-    "text-sky-600 underline underline-offset-4 decoration-1 decoration-dotted decoration-sky-400"
+    "text-sky-600 underline underline-offset-4 decoration-1 decoration-dashed decoration-sky-400"
   end
 end
