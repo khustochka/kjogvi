@@ -18,15 +18,17 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       style={"--lifersTotal:#{@lifelist.total + 1};"}
     >
       <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
+        <%!-- ch is the width of a "0" --%>
         <li
           value={@lifelist.total - i}
-          class="py-6 border-b-1 border-gray-200 grid grid-cols-[auto_1fr_auto_1fr] gap-x-2 gap-y-1 items-center"
+          class="py-6 border-b-1 border-gray-200 grid grid-cols-[3.5ch_2fr_auto_3fr] gap-x-2 md:gap-x-6 gap-y-1 items-top md:items-center"
         >
-          <span class="counter text-gray-500 col-span-1 align-right"></span>
+          <span class="counter text-gray-500 col-span-1 align-right justify-self-end xself-baseline">
+          </span>
           <div class="mb-1 col-span-3 md:col-span-1">
             <.species_link species={lifer.species} />
           </div>
-          <div class="col-start-2 col-end-5 md:col-span-1 align-left justify-self-end text-right text-sm text-zinc-600 md:px-6">
+          <div class="col-start-2 col-end-5 md:col-span-1 align-left justify-self-end text-right text-sm text-zinc-600">
             <time time={lifer.observ_date}>
               {format_date(lifer.observ_date)}
             </time>
