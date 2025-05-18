@@ -147,6 +147,13 @@ defmodule Kjogvi.Geo.Location do
       where: l.id in ^ancestry
     )
     |> Kjogvi.Repo.all()
+    |> Enum.group_by(& &1.id)
+    |> then(fn map ->
+      ancestry
+      |> Enum.map(fn id ->
+        map[id] |> hd()
+      end)
+    end)
   end
 
   defp name_with_parent(%{is_patch: true} = location) do

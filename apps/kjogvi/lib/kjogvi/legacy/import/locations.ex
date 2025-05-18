@@ -54,7 +54,8 @@ defmodule Kjogvi.Legacy.Import.Locations do
     Location
     |> Repo.all()
     |> Enum.each(fn loc ->
-      Location.set_public_location_changeset(loc)
+      loc
+      |> Location.set_public_location_changeset()
       |> Repo.update()
     end)
   end
