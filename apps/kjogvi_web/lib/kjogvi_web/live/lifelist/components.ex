@@ -102,7 +102,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
 
         <.bivalve_li
           data-bivalve-placeholder
-          class="relative hover:cursor-pointer"
+          class="relative hover:cursor-pointer pr-4"
           selected={not is_nil(@selected)}
           widths={@selector_widths}
           phx-click={JS.toggle(to: "##{@id} .bivalve-ul-items")}
