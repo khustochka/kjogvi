@@ -35,7 +35,6 @@
 
 @theme {
   --color-brand: #FD4F00;
-  --font-header: 'Rubik', 'sans-serif', 'ui-sans-serif', 'system-ui';
 }
 
 @layer base {
