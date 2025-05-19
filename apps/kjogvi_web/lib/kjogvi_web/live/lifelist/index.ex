@@ -184,7 +184,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </.bivalve_select>
     </div>
 
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
+    <ul class="flex flex-wrap gap-x-4 gap-y-2 my-8">
       <li class="whitespace-nowrap">
         <em :if={is_nil(@filter.location)} class="font-semibold not-italic">All countries</em>
         <.link

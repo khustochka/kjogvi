@@ -12,9 +12,13 @@ defmodule KjogviWeb.Live.Lifelist.Components do
 
   def lifers_list(assigns) do
     ~H"""
+    <div class="md:py-1 hidden md:grid md:grid-cols-[3.5ch_2fr_auto_3fr] md:gap-x-6 md:gap-y-1 md:items-center text-gray-400 text-sm">
+      <span class="col-start-3 col-end-4 justify-self-center">Date</span>
+      <span class="col-start-4 col-end-5 justify-self-center">Location</span>
+    </div>
     <ol
       id={@id}
-      class="lifers-list mt-6 border-t-1 border-gray-200"
+      class="lifers-list border-t-1 border-gray-200"
       style={"--lifersTotal:#{@lifelist.total + 1};"}
     >
       <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
@@ -23,8 +27,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
           value={@lifelist.total - i}
           class="py-6 border-b-1 border-gray-200 grid grid-cols-[3.5ch_2fr_auto_3fr] gap-x-2 md:gap-x-6 gap-y-1 items-top md:items-center"
         >
-          <span class="counter text-gray-500 col-span-1 align-right justify-self-end xself-baseline">
-          </span>
+          <span class="counter text-gray-500 col-span-1 align-right justify-self-end"></span>
           <div class="mb-1 col-span-3 md:col-span-1">
             <.species_link species={lifer.species} />
           </div>
@@ -180,7 +183,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     <.link
       patch={@patch}
       class={[bivalve_pill_classes(), bivalve_link_classes()]}
-      phx-click={JS.hide(to: "##{@id} .bivalve-ul-items") |> JS.patch(@patch)}
+      phx-click={JS.hide(to: "##{@id} .bivalve-ul-items")}
     >
       {render_slot(@inner_block)}
     </.link>
