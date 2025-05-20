@@ -219,28 +219,23 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <% end %>
     </ul>
 
-    <.lifers_list
-      id="lifelist-table"
-      show_private_details={@current_scope.private_view}
-      lifelist={@lifelist}
-      location_field={@location_field}
-    />
+    <h2 class="p-4 my-6 bg-emerald-100 text-emerald-700 rounded">
+      <.species_count_header lifelist={@lifelist} />
+    </h2>
+
+    <div class="mb-8">
+      <.lifers_list
+        id="lifelist-table"
+        show_private_details={@current_scope.private_view}
+        lifelist={@lifelist}
+        location_field={@location_field}
+      />
+    </div>
 
     <%= if @filter.exclude_heard_only do %>
-      <h3
-        id="heard-only-list"
-        class={[
-          "text-2xl",
-          "font-header",
-          "font-semibold",
-          "leading-none",
-          "text-zinc-500",
-          "mt-8",
-          "mb-4"
-        ]}
-      >
+      <.h3 id="heard-only-list" class="md:!mb-2">
         Heard only
-      </h3>
+      </.h3>
 
       <%= if length(@lifelist.extras.heard_only.list) > 0 do %>
         <.lifers_list
@@ -309,5 +304,25 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp header_style(_assigns) do
     "!font-medium"
+  end
+
+  defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: false}}} = assigns) do
+    ~H"""
+    <span class="text-2xl font-bold">{@lifelist.total}</span> species recorded.
+    """
+  end
+
+  defp species_count_header(%{lifelist: %{extras: %{heard_only: %{list: []}}}} = assigns) do
+    ~H"""
+    <span class="text-2xl font-bold">{@lifelist.total}</span> species seen, no heard only.
+    """
+  end
+
+  defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: true}}} = assigns) do
+    ~H"""
+    <span class="text-2xl font-bold">{@lifelist.total}</span>
+    species seen,
+    <a href="#heard-only-list"><span class="text-2xl font-bold">{length(@lifelist.extras.heard_only.list)}</span> heard only</a>.
+    """
   end
 end
