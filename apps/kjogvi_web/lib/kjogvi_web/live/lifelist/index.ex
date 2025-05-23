@@ -219,9 +219,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <% end %>
     </ul>
 
-    <h2 class="p-4 my-6 bg-emerald-100 text-emerald-700 rounded">
+    <div class="sm:flex sm:gap-4 my-4">
       <.species_count_header lifelist={@lifelist} />
-    </h2>
+    </div>
 
     <div class="mb-8">
       <.lifers_list
@@ -248,6 +248,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <p>No heard only birds</p>
       <% end %>
     <% end %>
+
+    <.link_to_top />
     """
   end
 
@@ -308,21 +310,31 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: false}}} = assigns) do
     ~H"""
-    <span class="text-2xl font-bold">{@lifelist.total}</span> species recorded.
+    <div class="sm:w-full p-4 my-2 bg-emerald-100 text-emerald-700 rounded">
+      <span class="text-2xl font-bold">{@lifelist.total}</span> species recorded.
+    </div>
     """
   end
 
   defp species_count_header(%{lifelist: %{extras: %{heard_only: %{list: []}}}} = assigns) do
     ~H"""
-    <span class="text-2xl font-bold">{@lifelist.total}</span> species seen, no heard only.
+    <div class="sm:w-1/2 p-4 my-2 bg-emerald-100 text-emerald-700 rounded">
+      <span class="text-2xl font-bold">{@lifelist.total}</span> species seen.
+    </div>
+    <div class="sm:w-1/2 p-4 my-2 bg-purple-100 text-purple-700 rounded">
+      No heard only species.
+    </div>
     """
   end
 
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: true}}} = assigns) do
     ~H"""
-    <span class="text-2xl font-bold">{@lifelist.total}</span>
-    species seen,
-    <a href="#heard-only-list"><span class="text-2xl font-bold">{length(@lifelist.extras.heard_only.list)}</span> heard only</a>.
+    <div class="sm:w-1/2 p-4 my-2 bg-emerald-100 text-emerald-700 rounded">
+      <span class="text-2xl font-bold">{@lifelist.total}</span> species seen.
+    </div>
+    <div class="sm:w-1/2 p-4 my-2 bg-purple-100 text-purple-800 rounded">
+      <a href="#heard-only-list"><span class="text-2xl font-bold">{length(@lifelist.extras.heard_only.list)}</span> species heard only</a>.
+    </div>
     """
   end
 end
