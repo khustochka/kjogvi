@@ -47,6 +47,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
                 <span class="font-medium whitespace-nowrap">
                   {Geo.Location.name_administrative_part(location)}
                 </span>
+                <span class="flag">{Kjogvi.Geo.Location.to_flag_emoji(country)}</span>
               <% end %>
             <% end %>
           </div>

@@ -16,6 +16,7 @@ defmodule Kjogvi.Geo.Location.Query do
     :slug,
     :name_en,
     :location_type,
+    :iso_code,
     :is_private,
     :cached_parent_id,
     :cached_city_id,

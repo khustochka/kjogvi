@@ -156,6 +156,18 @@ defmodule Kjogvi.Geo.Location do
     end)
   end
 
+  def to_flag_emoji(%{iso_code: nil}) do
+    ""
+  end
+
+  def to_flag_emoji(%{iso_code: iso_code}) do
+    iso_code
+    |> String.upcase()
+    |> String.to_charlist()
+    |> Enum.map(&(&1 + 127_397))
+    |> to_string()
+  end
+
   defp name_with_parent(%{is_patch: true} = location) do
     full_name(location)
   end
