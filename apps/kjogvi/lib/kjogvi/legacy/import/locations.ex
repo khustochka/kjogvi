@@ -88,12 +88,10 @@ defmodule Kjogvi.Legacy.Import.Locations do
       if slug in ["5mr", "arabat_spit"] do
         "special"
       else
-        case loc_type do
-          "" -> nil
-          "subcountry" -> "region"
-          "state" -> "region"
-          "oblast" -> "region"
-          _ -> loc_type
+        if loc_type == "" do
+          nil
+        else
+          loc_type
         end
       end
 
