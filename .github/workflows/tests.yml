@@ -17,7 +17,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           env: dev
-          elixir: v1.18.3
+          elixir: v1.18.4
           otp: '27'
       - name: Run lint
         env:
@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - elixir: 'v1.18.3'
+          - elixir: 'v1.18.4'
             otp: '27'
           - elixir: 'v1.17.3'
             otp: '27'
