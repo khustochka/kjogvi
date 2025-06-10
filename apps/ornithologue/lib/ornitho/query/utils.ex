@@ -5,11 +5,8 @@ defmodule Ornitho.Query.Utils do
 
   import Ecto.Query
 
-  @like_special_symbols ~r/(%|_|\\)/
-  @like_replace_pattern "\\\\\\1"
-
   def sanitize_like(str) do
-    String.replace(str, @like_special_symbols, @like_replace_pattern)
+    String.replace(str, ~r/(%|_|\\)/, "\\\\\\1")
   end
 
   def tuple_in(fields, values) do

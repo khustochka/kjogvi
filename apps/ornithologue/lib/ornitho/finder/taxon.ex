@@ -64,7 +64,7 @@ defmodule Ornitho.Finder.Taxon do
   end
 
   def with_parent_species(%Scrivener.Page{entries: entries} = result) do
-    %Scrivener.Page{result | entries: with_parent_species(entries)}
+    %{result | entries: with_parent_species(entries)}
   end
 
   def with_parent_species(taxon_or_taxa) do

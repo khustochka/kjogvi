@@ -5,7 +5,6 @@ defmodule KjogviWeb.Live.Lifelist.Params do
 
   alias Kjogvi.Birding
 
-  @valid_year_regex ~r/\A\d{4}\Z/
   @months Enum.map(1..12, &Integer.to_string/1)
 
   def to_filter(scope, params) do
@@ -40,7 +39,7 @@ defmodule KjogviWeb.Live.Lifelist.Params do
   end
 
   defp add_param(acc, {"year", year}, _scope) do
-    if year =~ @valid_year_regex do
+    if year =~ valid_year_regex() do
       add_success(acc, {:year, String.to_integer(year)})
     else
       add_error(acc, "Invalid year value.")
@@ -89,5 +88,9 @@ defmodule KjogviWeb.Live.Lifelist.Params do
 
   def add_error({:error, errors}, text) do
     {:error, [text | errors]}
+  end
+
+  defp valid_year_regex do
+    ~r/\A\d{4}\Z/
   end
 end

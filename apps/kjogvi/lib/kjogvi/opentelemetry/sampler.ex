@@ -8,9 +8,6 @@ defmodule Kjogvi.Telemetry.Sampler do
 
   @behaviour :otel_sampler
 
-  # source: https://arathunku.com/b/2024/notes-on-adding-opentelemetry-to-an-elixir-app/
-  @ignored_get_paths ~r/^\/(assets\/|fonts\/|live\/|phoenix\/|dev\/|favicon|site\.webmanifest).*/
-
   @impl :otel_sampler
   def setup(_sampler_opts), do: []
 
@@ -54,11 +51,16 @@ defmodule Kjogvi.Telemetry.Sampler do
       # span_name == "kjogvi.repo.query:schema_migrations" -> true
 
       span_name == :GET &&
-          (attributes[:"url.path"] || "") =~ @ignored_get_paths ->
+          (attributes[:"url.path"] || "") =~ ignored_get_paths() ->
         true
 
       true ->
         false
     end
+  end
+
+  # source: https://arathunku.com/b/2024/notes-on-adding-opentelemetry-to-an-elixir-app/
+  defp ignored_get_paths do
+    ~r/^\/(assets\/|fonts\/|live\/|phoenix\/|dev\/|favicon|site\.webmanifest).*/
   end
 end
