@@ -50,6 +50,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       |> assign(:search_term, "")
       |> assign(:expanded_locations, continent_ids)
       |> assign(:child_locations, child_locations)
+      |> assign(:ancestor_cache, %{})
     }
   end
 
@@ -82,10 +83,22 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         []
       end
 
+    # Preload ancestor names for search results that have ancestry
+    ancestor_cache =
+      if search_results != [] do
+        search_results
+        |> Enum.flat_map(& &1.ancestry)
+        |> Enum.uniq()
+        |> load_ancestor_names()
+      else
+        %{}
+      end
+
     {:noreply,
      socket
      |> assign(:search_term, search_term)
-     |> assign(:search_results, search_results)}
+     |> assign(:search_results, search_results)
+     |> assign(:ancestor_cache, ancestor_cache)}
   end
 
   @impl true
@@ -120,6 +133,19 @@ defmodule KjogviWeb.Live.My.Locations.Index do
      socket
      |> assign(:expanded_locations, new_expanded)
      |> assign(:child_locations, new_child_locations)}
+  end
+
+  # Load ancestor names by their IDs
+  defp load_ancestor_names(ancestor_ids) when is_list(ancestor_ids) do
+    if ancestor_ids == [] do
+      %{}
+    else
+      Geo.get_locations()
+      |> Enum.filter(fn loc -> loc.id in ancestor_ids end)
+      |> Enum.reduce(%{}, fn loc, acc ->
+        Map.put(acc, loc.id, loc.name_en)
+      end)
+    end
   end
 
   @impl true
@@ -287,7 +313,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               <%!-- Show location path/breadcrumb --%>
               <div :if={length(location.ancestry) > 0} class="mt-2 text-xs text-gray-500">
                 <span class="font-medium">Path:</span>
-                <.location_breadcrumb ancestry={location.ancestry} current_location={location} />
+                <.location_breadcrumb ancestry={location.ancestry} ancestor_cache={@ancestor_cache} />
               </div>
             </div>
           <% end %>
@@ -494,13 +520,14 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   end
 
   def location_breadcrumb(assigns) do
-    # This is a simple implementation - in a real app you might want to fetch the ancestor names
     ~H"""
     <span class="text-gray-400">
-      <%= for ancestor_id <- @ancestry do %>
-        ID:{ancestor_id} >
+      <%= for {ancestor_id, index} <- Enum.with_index(@ancestry) do %>
+        <%= if index > 0 do %>
+          >
+        <% end %>
+        {Map.get(@ancestor_cache, ancestor_id, "Unknown")}
       <% end %>
-      {@current_location.name_en}
     </span>
     """
   end
