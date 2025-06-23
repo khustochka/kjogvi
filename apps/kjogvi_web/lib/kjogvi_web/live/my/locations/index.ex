@@ -172,114 +172,116 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     ~H"""
     <div class="space-y-6">
       <%!-- Header with navigation and search --%>
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center space-x-4">
-            <h1 class="text-2xl font-bold text-gray-900">Location Management</h1>
-            <div class="flex space-x-2">
-              <.link
-                patch={~p"/my/locations"}
-                class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 border border-blue-200"
-              >
-                Hierarchy
-              </.link>
-              <.link
-                patch={~p"/my/locations/countries"}
-                class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 border border-gray-200"
-              >
-                Countries
-              </.link>
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Location Management</h1>
+              <div class="flex space-x-2">
+                <.link
+                  patch={~p"/my/locations"}
+                  class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 border border-blue-200"
+                >
+                  Hierarchy
+                </.link>
+                <.link
+                  patch={~p"/my/locations/countries"}
+                  class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 border border-gray-200"
+                >
+                  Countries
+                </.link>
+              </div>
             </div>
           </div>
-        </div>
 
-        <%!-- Search input - always visible --%>
-        <div class="mb-4">
-          <form phx-change="search" class="max-w-md">
-            <input
-              type="text"
-              name="search"
-              value={@search_term}
-              placeholder="Search locations by name, slug, or country code..."
-              class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              phx-debounce="300"
-            />
-          </form>
+          <%!-- Search input - always visible --%>
+          <div class="w-full">
+            <form phx-change="search" class="w-full max-w-md">
+              <input
+                type="text"
+                name="search"
+                value={@search_term}
+                placeholder="Search locations by name, slug, or country code..."
+                class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                phx-debounce="300"
+              />
+            </form>
 
-          <%!-- Search results count --%>
-          <div :if={@search_term != ""} class="mt-2 text-sm text-gray-600">
-            <%= if String.length(@search_term) < 2 do %>
-              Type at least 2 characters to search...
-            <% else %>
-              {length(@search_results)} location(s) found
-              <%= if length(@search_results) == 50 do %>
-                (showing first 50 results)
+            <%!-- Search results count --%>
+            <div :if={@search_term != ""} class="mt-2 text-sm text-gray-600">
+              <%= if String.length(@search_term) < 2 do %>
+                Type at least 2 characters to search...
+              <% else %>
+                {length(@search_results)} location(s) found
+                <%= if length(@search_results) == 50 do %>
+                  (showing first 50 results)
+                <% end %>
               <% end %>
-            <% end %>
+            </div>
           </div>
-        </div>
 
-        <%!-- Stats summary --%>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-          <div class="flex items-center">
-            <svg
-              class="w-4 h-4 mr-2 text-blue-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+          <%!-- Stats summary --%>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
+            <div class="flex items-center">
+              <svg
+                class="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-              </path>
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                >
+                </path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
+                >
+                </path>
+              </svg>
+              <span>{length(@top_locations || [])} top-level locations</span>
+            </div>
+            <div class="flex items-center">
+              <svg
+                class="w-4 h-4 mr-2 text-green-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-              </path>
-            </svg>
-            <span>{length(@top_locations || [])} top-level locations</span>
-          </div>
-          <div class="flex items-center">
-            <svg
-              class="w-4 h-4 mr-2 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                >
+                </path>
+              </svg>
+              <span>{length(@specials || [])} special locations</span>
+            </div>
+            <div class="flex items-center">
+              <svg
+                class="w-4 h-4 mr-2 text-purple-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-              </path>
-            </svg>
-            <span>{length(@specials || [])} special locations</span>
-          </div>
-          <div class="flex items-center">
-            <svg
-              class="w-4 h-4 mr-2 text-purple-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              >
-              </path>
-            </svg>
-            <span>
-              {if @all_locations == [], do: 862, else: length(@all_locations)} total locations
-            </span>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                >
+                </path>
+              </svg>
+              <span>
+                {if @all_locations == [], do: 862, else: length(@all_locations)} total locations
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -287,11 +289,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <%!-- Search results --%>
       <div
         :if={@search_term != "" and String.length(@search_term) >= 2}
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
       >
         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <svg
-            class="w-5 h-5 mr-2 text-blue-500"
+            class="w-5 h-5 mr-2 text-blue-500 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -310,13 +312,15 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <div :if={length(@search_results) > 0} class="space-y-2">
           <%= for location <- @search_results do %>
             <div class="border border-gray-100 rounded-lg p-4 hover:border-gray-200 transition-colors">
-              <div class="flex items-center justify-between">
-                <.location_card location={location} show_type={false} />
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <.location_card location={location} show_type={false} />
+                </div>
 
-                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                <div class="flex items-center space-x-4 text-sm text-gray-500 flex-shrink-0">
                   <.link
                     href={~p"/my/lifelist/#{location.slug}"}
-                    class="text-blue-600 hover:text-blue-700 text-base"
+                    class="text-blue-600 hover:text-blue-700 text-base px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
                   >
                     Lifelist
                   </.link>
@@ -353,7 +357,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       </div>
 
       <%!-- Main locations hierarchy (hidden when searching) --%>
-      <div :if={@search_term == ""} class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div
+        :if={@search_term == ""}
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
+      >
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Location Hierarchy</h2>
 
         <div :if={@top_locations && length(@top_locations) > 0} class="space-y-2">
@@ -400,11 +407,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <%!-- Special locations section --%>
       <div
         :if={@specials && length(@specials) > 0}
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
       >
         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <svg
-            class="w-5 h-5 mr-2 text-yellow-500"
+            class="w-5 h-5 mr-2 text-yellow-500 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -420,7 +427,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           Special Locations
         </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <%= for location <- @specials do %>
             <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4 hover:shadow-md transition-shadow">
               <.location_card location={location} show_type={true} />
@@ -435,8 +442,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   def render_location(assigns) do
     ~H"""
     <div class="border border-gray-100 rounded-lg mb-2 hover:border-gray-200 transition-colors">
-      <div class="flex items-center justify-between p-4">
-        <div class="flex items-center space-x-3 flex-1">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-4">
+        <div class="flex items-center space-x-3 flex-1 min-w-0">
           <%!-- Expand/collapse button only for locations with children --%>
           <%= if has_children?(@location.id) do %>
             <button
@@ -461,13 +468,15 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             <div class="flex-shrink-0 p-1 w-6 h-6"></div>
           <% end %>
 
-          <.location_card location={@location} show_type={false} />
+          <div class="flex-1 min-w-0">
+            <.location_card location={@location} show_type={false} />
+          </div>
         </div>
 
-        <div class="flex items-center space-x-4 text-sm text-gray-500">
+        <div class="flex items-center space-x-4 text-sm text-gray-500 flex-shrink-0 sm:ml-4">
           <.link
             href={~p"/my/lifelist/#{@location.slug}"}
-            class="text-blue-600 hover:text-blue-700 text-base"
+            class="text-blue-600 hover:text-blue-700 text-base px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
           >
             Lifelist
           </.link>
@@ -476,7 +485,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
       <%!-- Children locations --%>
       <%= if MapSet.member?(@expanded_locations, @location.id) && @child_locations[@location.id] do %>
-        <div class="ml-6 pb-2 pr-4 border-t border-gray-50">
+        <div class="ml-4 sm:ml-6 pb-2 pr-4 border-t border-gray-50">
           <div class="pt-2">
             <%= for child <- @child_locations[@location.id] do %>
               <.render_location
@@ -495,7 +504,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   def location_card(assigns) do
     ~H"""
-    <div class="flex items-center space-x-3">
+    <div class="flex items-center space-x-3 min-w-0">
       <div class="flex-shrink-0">
         <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
           <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -518,37 +527,39 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       </div>
 
       <div class="flex-1 min-w-0">
-        <div class="flex items-center space-x-2">
-          <p class="text-sm font-medium text-gray-900 truncate">{@location.name_en}</p>
-          <%= if @location.is_private do %>
-            <svg
-              class="w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              title="Private"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
+          <div class="flex items-center space-x-2 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate">{@location.name_en}</p>
+            <%= if @location.is_private do %>
+              <svg
+                class="w-4 h-4 text-gray-400 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                title="Private"
               >
-              </path>
-            </svg>
-          <% end %>
-          <span
-            :if={@location.iso_code && @location.iso_code != ""}
-            class="text-gray-600 font-mono text-sm"
-          >
-            {String.upcase(@location.iso_code)}
-          </span>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                >
+                </path>
+              </svg>
+            <% end %>
+            <span
+              :if={@location.iso_code && @location.iso_code != ""}
+              class="text-gray-600 font-mono text-sm flex-shrink-0"
+            >
+              {String.upcase(@location.iso_code)}
+            </span>
+          </div>
         </div>
-        <div class="flex items-center space-x-2 mt-1">
-          <p class="text-xs text-gray-500">{@location.slug}</p>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0 mt-1">
+          <p class="text-xs text-gray-500 truncate">{@location.slug}</p>
           <span
             :if={@location.location_type}
-            class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
+            class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full flex-shrink-0"
           >
             {@location.location_type}
           </span>
