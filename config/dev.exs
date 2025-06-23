@@ -3,7 +3,7 @@ import Config
 # Configure your database
 config :kjogvi, Kjogvi.Repo,
   hostname: System.get_env("DATABASE_HOST", "localhost"),
-  port: System.get_env("DATABASE_PORT", "5432"),
+  port: System.get_env("DATABASE_PORT", "5498"),
   username: System.get_env("DATABASE_USER", "kjogvi"),
   password: System.get_env("DATABASE_PASSWORD", "kjogvi"),
   database: System.get_env("DATABASE_NAME", "kjogvi_dev"),
@@ -14,7 +14,7 @@ config :kjogvi, Kjogvi.Repo,
 
 config :kjogvi, Kjogvi.OrnithoRepo,
   hostname: System.get_env("DATABASE_ORNITHO_HOST", "localhost"),
-  port: System.get_env("DATABASE_ORNITHO_PORT", "5432"),
+  port: System.get_env("DATABASE_ORNITHO_PORT", "5498"),
   username: System.get_env("DATABASE_ORNITHO_USER", "kjogvi"),
   password: System.get_env("DATABASE_ORNITHO_PASSWORD", "kjogvi"),
   database: System.get_env("DATABASE_ORNITHO_NAME", "ornithologue_dev"),
