@@ -36,15 +36,12 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         Map.put(acc, continent.id, direct_children)
       end)
 
-    # Load all locations for search immediately
-    all_locations = Geo.get_locations()
-
     {
       :ok,
       socket
       |> assign(:page_title, "Locations")
       |> assign(:top_locations, top_locations)
-      |> assign(:all_locations, all_locations)
+      |> assign(:all_locations, [])
       |> assign(:search_results, [])
       |> assign(:specials, Geo.get_specials())
       |> assign(:search_term, "")
@@ -66,21 +63,32 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   def handle_event("search", %{"search" => search_term}, socket) do
     search_term = String.trim(search_term)
 
-    search_results =
+    {search_results, all_locations} =
       if search_term != "" and String.length(search_term) >= 2 do
-        socket.assigns.all_locations
-        |> Enum.filter(fn location ->
-          search_term_lower = String.downcase(search_term)
+        # Load all locations if not already loaded
+        all_locations =
+          if socket.assigns.all_locations == [] do
+            Geo.get_locations()
+          else
+            socket.assigns.all_locations
+          end
 
-          String.contains?(String.downcase(location.name_en), search_term_lower) or
-            String.contains?(String.downcase(location.slug), search_term_lower) or
-            (location.iso_code &&
-               String.contains?(String.downcase(location.iso_code), search_term_lower))
-        end)
-        # Limit results to 50 for performance
-        |> Enum.take(50)
+        search_results =
+          all_locations
+          |> Enum.filter(fn location ->
+            search_term_lower = String.downcase(search_term)
+
+            String.contains?(String.downcase(location.name_en), search_term_lower) or
+              String.contains?(String.downcase(location.slug), search_term_lower) or
+              (location.iso_code &&
+                 String.contains?(String.downcase(location.iso_code), search_term_lower))
+          end)
+          # Limit results to 50 for performance
+          |> Enum.take(50)
+
+        {search_results, all_locations}
       else
-        []
+        {[], socket.assigns.all_locations}
       end
 
     # Preload ancestor names for search results that have ancestry
@@ -89,7 +97,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         search_results
         |> Enum.flat_map(& &1.ancestry)
         |> Enum.uniq()
-        |> load_ancestor_names()
+        |> load_ancestor_names(socket.assigns.all_locations)
       else
         %{}
       end
@@ -98,6 +106,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
      socket
      |> assign(:search_term, search_term)
      |> assign(:search_results, search_results)
+     |> assign(:all_locations, all_locations)
      |> assign(:ancestor_cache, ancestor_cache)}
   end
 
@@ -135,7 +144,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
      |> assign(:child_locations, new_child_locations)}
   end
 
-  # Load ancestor names by their IDs
   # Check if a location has potential children by querying the database
   defp has_children?(location_id) do
     Geo.get_child_locations(location_id)
@@ -147,11 +155,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     end)
   end
 
-  defp load_ancestor_names(ancestor_ids) when is_list(ancestor_ids) do
+  defp load_ancestor_names(ancestor_ids, all_locations) when is_list(ancestor_ids) do
     if ancestor_ids == [] do
       %{}
     else
-      Geo.get_locations()
+      all_locations
       |> Enum.filter(fn loc -> loc.id in ancestor_ids end)
       |> Enum.reduce(%{}, fn loc, acc ->
         Map.put(acc, loc.id, loc.name_en)
@@ -270,7 +278,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </path>
             </svg>
             <span>
-              {length(@all_locations)} total locations
+              {if @all_locations == [], do: 862, else: length(@all_locations)} total locations
             </span>
           </div>
         </div>
@@ -306,12 +314,21 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 <.location_card location={location} show_type={false} />
 
                 <div class="flex items-center space-x-2 text-sm text-gray-500">
-                  <span
-                    :if={location.cards_count && location.cards_count > 0}
-                    class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+                  <%= if location.is_private do %>
+                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                      🔒 Private
+                    </span>
+                  <% else %>
+                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                      🌍 Public
+                    </span>
+                  <% end %>
+                  <.link
+                    href={~p"/my/lifelist/#{location.slug}"}
+                    class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200"
                   >
-                    {location.cards_count} cards
-                  </span>
+                    View Lifelist
+                  </.link>
                   <span
                     :if={location.location_type}
                     class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
@@ -463,12 +480,21 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
 
         <div class="flex items-center space-x-2 text-sm text-gray-500">
-          <span
-            :if={@location.cards_count}
-            class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+          <%= if @location.is_private do %>
+            <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+              🔒 Private
+            </span>
+          <% else %>
+            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+              🌍 Public
+            </span>
+          <% end %>
+          <.link
+            href={~p"/my/lifelist/#{@location.slug}"}
+            class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200"
           >
-            {@location.cards_count} cards
-          </span>
+            View Lifelist
+          </.link>
           <span
             :if={@location.location_type}
             class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
