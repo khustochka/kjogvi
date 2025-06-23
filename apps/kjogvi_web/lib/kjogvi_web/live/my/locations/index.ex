@@ -314,27 +314,12 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 <.location_card location={location} show_type={false} />
 
                 <div class="flex items-center space-x-2 text-sm text-gray-500">
-                  <%= if location.is_private do %>
-                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                      🔒 Private
-                    </span>
-                  <% else %>
-                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                      🌍 Public
-                    </span>
-                  <% end %>
                   <.link
                     href={~p"/my/lifelist/#{location.slug}"}
-                    class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200"
+                    class="text-blue-600 hover:text-blue-700 text-sm"
                   >
                     View Lifelist
                   </.link>
-                  <span
-                    :if={location.location_type}
-                    class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
-                  >
-                    {location.location_type}
-                  </span>
                 </div>
               </div>
 
@@ -480,27 +465,12 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
 
         <div class="flex items-center space-x-2 text-sm text-gray-500">
-          <%= if @location.is_private do %>
-            <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-              🔒 Private
-            </span>
-          <% else %>
-            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-              🌍 Public
-            </span>
-          <% end %>
           <.link
             href={~p"/my/lifelist/#{@location.slug}"}
-            class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200"
+            class="text-blue-600 hover:text-blue-700 text-sm"
           >
             View Lifelist
           </.link>
-          <span
-            :if={@location.location_type}
-            class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
-          >
-            {@location.location_type}
-          </span>
         </div>
       </div>
 
@@ -548,11 +518,33 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       </div>
 
       <div class="flex-1 min-w-0">
-        <p class="text-sm font-medium text-gray-900 truncate">{@location.name_en}</p>
+        <div class="flex items-center space-x-2">
+          <p class="text-sm font-medium text-gray-900 truncate">{@location.name_en}</p>
+          <%= if @location.is_private do %>
+            <svg
+              class="w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              title="Private"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              >
+              </path>
+            </svg>
+          <% end %>
+        </div>
         <div class="flex items-center space-x-2 text-xs text-gray-500">
           <span class="truncate">{@location.slug}</span>
           <span :if={@location.iso_code && @location.iso_code != ""} class="font-mono">
             {String.upcase(@location.iso_code)}
+          </span>
+          <span :if={@location.location_type} class="text-gray-400">
+            {@location.location_type}
           </span>
         </div>
       </div>
