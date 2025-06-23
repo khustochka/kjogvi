@@ -313,7 +313,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               <div class="flex items-center justify-between">
                 <.location_card location={location} show_type={false} />
 
-                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                <div class="flex items-center space-x-4 text-sm text-gray-500">
                   <span
                     :if={location.iso_code && location.iso_code != ""}
                     class="text-gray-700 font-mono font-semibold text-base"
@@ -470,7 +470,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           <.location_card location={@location} show_type={false} />
         </div>
 
-        <div class="flex items-center space-x-2 text-sm text-gray-500">
+        <div class="flex items-center space-x-4 text-sm text-gray-500">
           <span
             :if={@location.iso_code && @location.iso_code != ""}
             class="text-gray-700 font-mono font-semibold text-base"
@@ -549,6 +549,15 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </path>
             </svg>
           <% end %>
+          <span
+            :if={@location.iso_code && @location.iso_code != ""}
+            class="text-gray-600 font-mono text-sm"
+          >
+            {String.upcase(@location.iso_code)}
+          </span>
+        </div>
+        <div class="flex items-center space-x-2 mt-1">
+          <p class="text-xs text-gray-500">{@location.slug}</p>
           <span
             :if={@location.location_type}
             class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
