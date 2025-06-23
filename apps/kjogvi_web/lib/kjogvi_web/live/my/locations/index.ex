@@ -1,3 +1,6 @@
+==> kjogvi
+Compiling 1 file (.ex)
+Generated kjogvi app
 defmodule KjogviWeb.Live.My.Locations.Index do
   @moduledoc false
 
@@ -24,6 +27,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       |> assign(:specials, Geo.get_specials())
       |> assign(:search_term, "")
       |> assign(:show_search, false)
+      |> assign(:expanded_locations, MapSet.new())
+      |> assign(:child_locations, %{})
     }
   end
 
@@ -43,6 +48,30 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   @impl true
   def handle_event("search", %{"search" => search_term}, socket) do
     {:noreply, assign(socket, :search_term, search_term)}
+  end
+
+  @impl true
+  def handle_event("toggle_location", %{"location_id" => location_id_str}, socket) do
+    location_id = String.to_integer(location_id_str)
+    expanded_locations = socket.assigns.expanded_locations
+    child_locations = socket.assigns.child_locations
+
+    {new_expanded, new_child_locations} =
+      if MapSet.member?(expanded_locations, location_id) do
+        # Collapse - remove from expanded and clear children
+        {MapSet.delete(expanded_locations, location_id), Map.delete(child_locations, location_id)}
+      else
+        # Expand - add to expanded and load children
+        children = Geo.get_child_locations(location_id)
+
+        {MapSet.put(expanded_locations, location_id),
+         Map.put(child_locations, location_id, children)}
+      end
+
+    {:noreply,
+     socket
+     |> assign(:expanded_locations, new_expanded)
+     |> assign(:child_locations, new_child_locations)}
   end
 
   @impl true
@@ -168,7 +197,13 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Location Hierarchy</h2>
 
         <div :if={@top_locations && length(@top_locations) > 0} class="space-y-2">
-          {render_location_tree(%{locations: @top_locations, all_locations: @locations, level: 0})}
+          {render_location_tree(%{
+            locations: @top_locations,
+            all_locations: @locations,
+            expanded_locations: @expanded_locations,
+            child_locations: @child_locations,
+            level: 0
+          })}
         </div>
 
         <div
@@ -241,47 +276,167 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     <div class={"ml-#{@level * 4}"}>
       <%= for location <- @locations do %>
         <div class="border border-gray-100 rounded-lg mb-2 hover:border-gray-200 transition-colors">
-          <details open class="[&_svg]:open:-rotate-90">
-            <summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 rounded-lg">
-              <div class="flex items-center space-x-3">
+          <div class="flex items-center justify-between p-4">
+            <div class="flex items-center space-x-3 flex-1">
+              <%!-- Expand/collapse button for regions and countries --%>
+              <button
+                :if={location.location_type in ["country", "region"]}
+                phx-click="toggle_location"
+                phx-value-location_id={location.id}
+                class="flex-shrink-0 p-1 hover:bg-gray-100 rounded"
+              >
                 <svg
-                  class="w-4 h-4 rotate-0 transform text-gray-400 transition-all duration-200"
+                  class={[
+                    "w-4 h-4 transform transition-transform duration-200",
+                    if(MapSet.member?(@expanded_locations, location.id),
+                      do: "rotate-90",
+                      else: "rotate-0"
+                    ),
+                    "text-gray-400"
+                  ]}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
-                {location_card(%{location: location, show_type: false})}
+              </button>
+
+              <%!-- Location icon for non-expandable locations --%>
+              <div
+                :if={location.location_type not in ["country", "region"]}
+                class="w-6 h-6 flex items-center justify-center"
+              >
+                <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
               </div>
 
-              <div class="flex items-center space-x-2 text-sm text-gray-500">
-                <span
-                  :if={location.cards_count}
-                  class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
-                >
-                  {location.cards_count} cards
-                </span>
-                <span
-                  :if={location.location_type}
-                  class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
-                >
-                  {location.location_type}
-                </span>
-              </div>
-            </summary>
+              {location_card(%{location: location, show_type: false})}
+            </div>
 
-            <div :if={@all_locations[location.id]} class="ml-6 pb-2 pr-4">
-              {render_location_tree(%{
-                locations: @all_locations[location.id],
-                all_locations: @all_locations,
+            <div class="flex items-center space-x-2 text-sm text-gray-500">
+              <span
+                :if={location.cards_count}
+                class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+              >
+                {location.cards_count} cards
+              </span>
+              <span
+                :if={location.location_type}
+                class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
+              >
+                {location.location_type}
+              </span>
+            </div>
+          </div>
+
+          <%!-- Children locations --%>
+          <div
+            :if={MapSet.member?(@expanded_locations, location.id) && @child_locations[location.id]}
+            class="ml-6 pb-2 pr-4 border-t border-gray-50"
+          >
+            <div class="pt-2">
+              {render_child_locations(%{
+                child_locations: @child_locations[location.id],
+                expanded_locations: @expanded_locations,
+                child_locations_map: @child_locations,
                 level: @level + 1
               })}
             </div>
-          </details>
+          </div>
+
+          <%!-- Static children for non-expandable hierarchy --%>
+          <div :if={@all_locations[location.id]} class="ml-6 pb-2 pr-4 border-t border-gray-50">
+            <div class="pt-2">
+              {render_location_tree(%{
+                locations: @all_locations[location.id],
+                all_locations: @all_locations,
+                expanded_locations: @expanded_locations,
+                child_locations: @child_locations,
+                level: @level + 1
+              })}
+            </div>
+          </div>
         </div>
       <% end %>
     </div>
+    """
+  end
+
+  def render_child_locations(assigns) do
+    ~H"""
+    <%= for {parent_id, children} <- @child_locations do %>
+      <div class="space-y-2">
+        <%= for child <- children do %>
+          <div class="border border-gray-50 rounded-lg p-3 hover:border-gray-100 transition-colors">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3 flex-1">
+                <%!-- Expand/collapse button for regions --%>
+                <button
+                  :if={child.location_type == "region"}
+                  phx-click="toggle_location"
+                  phx-value-location_id={child.id}
+                  class="flex-shrink-0 p-1 hover:bg-gray-100 rounded"
+                >
+                  <svg
+                    class={[
+                      "w-3 h-3 transform transition-transform duration-200",
+                      if(MapSet.member?(@expanded_locations, child.id),
+                        do: "rotate-90",
+                        else: "rotate-0"
+                      ),
+                      "text-gray-400"
+                    ]}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+
+                <%!-- Location icon for non-expandable locations --%>
+                <div
+                  :if={child.location_type != "region"}
+                  class="w-5 h-5 flex items-center justify-center"
+                >
+                  <div class="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                </div>
+
+                {location_card(%{location: child, show_type: false})}
+              </div>
+
+              <div class="flex items-center space-x-2 text-xs text-gray-500">
+                <span
+                  :if={child.cards_count}
+                  class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium"
+                >
+                  {child.cards_count}
+                </span>
+                <span
+                  :if={child.location_type}
+                  class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full"
+                >
+                  {child.location_type}
+                </span>
+              </div>
+            </div>
+
+            <%!-- Nested children --%>
+            <div
+              :if={MapSet.member?(@expanded_locations, child.id) && @child_locations_map[child.id]}
+              class="ml-4 mt-2 pt-2 border-t border-gray-50"
+            >
+              {render_child_locations(%{
+                child_locations: @child_locations_map[child.id],
+                expanded_locations: @expanded_locations,
+                child_locations_map: @child_locations_map,
+                level: @level + 1
+              })}
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
     """
   end
 
