@@ -6,7 +6,6 @@ defmodule Kjogvi.Geo do
   import Ecto.Query
 
   alias Kjogvi.Repo
-
   alias __MODULE__.Location
 
   def get_countries do
