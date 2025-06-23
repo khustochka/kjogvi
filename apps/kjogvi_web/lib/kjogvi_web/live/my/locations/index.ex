@@ -53,10 +53,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   @impl true
   def handle_params(_params, _url, socket) do
-    {
-      :noreply,
-      socket
-    }
+    {:noreply, socket}
   end
 
   @impl true
@@ -144,49 +141,17 @@ defmodule KjogviWeb.Live.My.Locations.Index do
      |> assign(:child_locations, new_child_locations)}
   end
 
-  # Check if a location has potential children by querying the database
-  defp has_children?(location_id) do
-    Geo.get_child_locations(location_id)
-    |> Enum.any?(fn child ->
-      case child.ancestry do
-        [] -> false
-        ancestry -> List.last(ancestry) == location_id
-      end
-    end)
-  end
-
-  defp load_ancestor_names(ancestor_ids, all_locations) when is_list(ancestor_ids) do
-    if ancestor_ids == [] do
-      %{}
-    else
-      all_locations
-      |> Enum.filter(fn loc -> loc.id in ancestor_ids end)
-      |> Enum.reduce(%{}, fn loc, acc ->
-        Map.put(acc, loc.id, loc.name_en)
-      end)
-    end
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
       <%!-- Header outside the box --%>
-      <h1 class="text-2xl font-bold text-gray-900">Locations</h1>
+      <.h1>
+        Locations
+      </.h1>
 
       <%!-- Search bar - full width --%>
       <div class="w-full">
-        <form phx-change="search" class="w-full">
-          <input
-            type="text"
-            name="search"
-            value={@search_term}
-            placeholder="Search locations by name, slug, or country code..."
-            class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            phx-debounce="300"
-          />
-        </form>
-
         <%!-- Search results count --%>
         <div :if={@search_term != ""} class="mt-2 text-sm text-gray-600">
           <%= if String.length(@search_term) < 2 do %>
@@ -198,6 +163,17 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             <% end %>
           <% end %>
         </div>
+
+        <form phx-change="search" class="w-full">
+          <input
+            type="text"
+            name="search"
+            value={@search_term}
+            placeholder="Search locations by name, slug, or country code..."
+            class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            phx-debounce="300"
+          />
+        </form>
       </div>
 
       <%!-- Stats summary --%>
@@ -558,5 +534,28 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <% end %>
     </span>
     """
+  end
+
+  # Check if a location has potential children by querying the database
+  defp has_children?(location_id) do
+    Geo.get_child_locations(location_id)
+    |> Enum.any?(fn child ->
+      case child.ancestry do
+        [] -> false
+        ancestry -> List.last(ancestry) == location_id
+      end
+    end)
+  end
+
+  defp load_ancestor_names(ancestor_ids, all_locations) when is_list(ancestor_ids) do
+    if ancestor_ids == [] do
+      %{}
+    else
+      all_locations
+      |> Enum.filter(fn loc -> loc.id in ancestor_ids end)
+      |> Enum.reduce(%{}, fn loc, acc ->
+        Map.put(acc, loc.id, loc.name_en)
+      end)
+    end
   end
 end
