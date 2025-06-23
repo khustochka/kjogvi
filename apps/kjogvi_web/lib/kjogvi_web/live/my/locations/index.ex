@@ -36,16 +36,18 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         Map.put(acc, continent.id, direct_children)
       end)
 
+    # Load all locations for search immediately
+    all_locations = Geo.get_locations()
+
     {
       :ok,
       socket
       |> assign(:page_title, "Locations")
       |> assign(:top_locations, top_locations)
-      |> assign(:all_locations, [])
+      |> assign(:all_locations, all_locations)
       |> assign(:search_results, [])
       |> assign(:specials, Geo.get_specials())
       |> assign(:search_term, "")
-      |> assign(:show_search, true)
       |> assign(:expanded_locations, continent_ids)
       |> assign(:child_locations, child_locations)
     }
@@ -57,26 +59,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       :noreply,
       socket
     }
-  end
-
-  @impl true
-  def handle_event("toggle_search", _params, socket) do
-    show_search = !socket.assigns.show_search
-
-    # Load all locations when search is opened for the first time
-    all_locations =
-      if show_search and socket.assigns.all_locations == [] do
-        Geo.get_locations()
-      else
-        socket.assigns.all_locations
-      end
-
-    {:noreply,
-     socket
-     |> assign(:show_search, show_search)
-     |> assign(:all_locations, all_locations)
-     |> assign(:search_term, "")
-     |> assign(:search_results, [])}
   end
 
   @impl true
@@ -166,7 +148,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </div>
         </div>
 
-        <%!-- Search input --%>
+        <%!-- Search input - always visible --%>
         <div class="mb-4">
           <form phx-change="search" class="max-w-md">
             <input
@@ -251,11 +233,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </path>
             </svg>
             <span>
-              <%= if length(@all_locations) > 0 do %>
-                {length(@all_locations)} total locations
-              <% else %>
-                Hierarchical structure
-              <% end %>
+              {length(@all_locations)} total locations
             </span>
           </div>
         </div>
@@ -263,7 +241,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
       <%!-- Search results --%>
       <div
-        :if={@show_search and @search_term != "" and String.length(@search_term) >= 2}
+        :if={@search_term != "" and String.length(@search_term) >= 2}
         class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
       >
         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -336,10 +314,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       </div>
 
       <%!-- Main locations hierarchy (hidden when searching) --%>
-      <div
-        :if={!@show_search or @search_term == ""}
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-      >
+      <div :if={@search_term == ""} class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Location Hierarchy</h2>
 
         <div :if={@top_locations && length(@top_locations) > 0} class="space-y-2">
@@ -424,6 +399,24 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div class="flex items-center justify-between p-4">
         <div class="flex items-center space-x-3 flex-1">
           <%!-- Expand/collapse button for all locations --%>
+          <button
+            phx-click="toggle_location"
+            phx-value-location_id={@location.id}
+            class="flex-shrink-0 p-1 hover:bg-gray-50 rounded transition-colors"
+          >
+            <svg
+              class={[
+                "w-4 h-4 text-gray-500 transition-transform duration-200",
+                if(MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: "")
+              ]}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+              </path>
+            </svg>
+          </button>
 
           <.location_card location={@location} show_type={false} />
         </div>
