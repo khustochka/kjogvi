@@ -3,6 +3,8 @@ defmodule Kjogvi.Geo do
   Geography related functionality (countries, regions, locations).
   """
 
+  @formatter_opts [plugins: []]
+
   import Ecto.Query
 
   alias Kjogvi.Repo
