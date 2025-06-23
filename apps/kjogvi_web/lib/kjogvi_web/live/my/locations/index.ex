@@ -314,12 +314,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 <.location_card location={location} show_type={false} />
 
                 <div class="flex items-center space-x-4 text-sm text-gray-500">
-                  <span
-                    :if={location.iso_code && location.iso_code != ""}
-                    class="text-gray-700 font-mono font-semibold text-base"
-                  >
-                    {String.upcase(location.iso_code)}
-                  </span>
                   <.link
                     href={~p"/my/lifelist/#{location.slug}"}
                     class="text-blue-600 hover:text-blue-700 text-base"
@@ -471,12 +465,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
 
         <div class="flex items-center space-x-4 text-sm text-gray-500">
-          <span
-            :if={@location.iso_code && @location.iso_code != ""}
-            class="text-gray-700 font-mono font-semibold text-base"
-          >
-            {String.upcase(@location.iso_code)}
-          </span>
           <.link
             href={~p"/my/lifelist/#{@location.slug}"}
             class="text-blue-600 hover:text-blue-700 text-base"
