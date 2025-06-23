@@ -136,6 +136,17 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   end
 
   # Load ancestor names by their IDs
+  # Check if a location has potential children by querying the database
+  defp has_children?(location_id) do
+    Geo.get_child_locations(location_id)
+    |> Enum.any?(fn child ->
+      case child.ancestry do
+        [] -> false
+        ancestry -> List.last(ancestry) == location_id
+      end
+    end)
+  end
+
   defp load_ancestor_names(ancestor_ids) when is_list(ancestor_ids) do
     if ancestor_ids == [] do
       %{}
@@ -424,25 +435,29 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     <div class="border border-gray-100 rounded-lg mb-2 hover:border-gray-200 transition-colors">
       <div class="flex items-center justify-between p-4">
         <div class="flex items-center space-x-3 flex-1">
-          <%!-- Expand/collapse button for all locations --%>
-          <button
-            phx-click="toggle_location"
-            phx-value-location_id={@location.id}
-            class="flex-shrink-0 p-1 hover:bg-gray-50 rounded transition-colors"
-          >
-            <svg
-              class={[
-                "w-4 h-4 text-gray-500 transition-transform duration-200",
-                if(MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: "")
-              ]}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <%!-- Expand/collapse button only for locations with children --%>
+          <%= if has_children?(@location.id) do %>
+            <button
+              phx-click="toggle_location"
+              phx-value-location_id={@location.id}
+              class="flex-shrink-0 p-1 hover:bg-gray-50 rounded transition-colors"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
-              </path>
-            </svg>
-          </button>
+              <svg
+                class={[
+                  "w-4 h-4 text-gray-500 transition-transform duration-200",
+                  if(MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: "")
+                ]}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                </path>
+              </svg>
+            </button>
+          <% else %>
+            <div class="flex-shrink-0 p-1 w-6 h-6"></div>
+          <% end %>
 
           <.location_card location={@location} show_type={false} />
         </div>
