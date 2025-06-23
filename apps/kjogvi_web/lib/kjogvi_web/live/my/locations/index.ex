@@ -45,7 +45,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       |> assign(:search_results, [])
       |> assign(:specials, Geo.get_specials())
       |> assign(:search_term, "")
-      |> assign(:show_search, false)
+      |> assign(:show_search, true)
       |> assign(:expanded_locations, continent_ids)
       |> assign(:child_locations, child_locations)
     }
@@ -164,26 +164,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </.link>
             </div>
           </div>
-
-          <button
-            phx-click="toggle_search"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              >
-              </path>
-            </svg>
-            Search
-          </button>
         </div>
 
         <%!-- Search input --%>
-        <div :if={@show_search} class="mb-4">
+        <div class="mb-4">
           <form phx-change="search" class="max-w-md">
             <input
               type="text"
@@ -440,27 +424,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div class="flex items-center justify-between p-4">
         <div class="flex items-center space-x-3 flex-1">
           <%!-- Expand/collapse button for all locations --%>
-          <button
-            phx-click="toggle_location"
-            phx-value-location_id={@location.id}
-            class="flex-shrink-0 p-1 hover:bg-gray-100 rounded"
-          >
-            <svg
-              class={[
-                "w-4 h-4 transform transition-transform duration-200",
-                if(MapSet.member?(@expanded_locations, @location.id),
-                  do: "rotate-90",
-                  else: "rotate-0"
-                ),
-                "text-gray-400"
-              ]}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </button>
 
           <.location_card location={@location} show_type={false} />
         </div>
