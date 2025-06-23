@@ -60,12 +60,6 @@ defmodule Kjogvi.Geo do
     |> where([l], fragment("? @> ?::bigint[]", l.ancestry, [^parent_id]))
     |> where([l], l.location_type != "special" or is_nil(l.location_type))
     |> Repo.all()
-    |> Enum.group_by(fn location ->
-      case location.ancestry do
-        [] -> nil
-        ancestry -> List.last(ancestry)
-      end
-    end)
   end
 
   def get_locations do
