@@ -171,117 +171,97 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <%!-- Header with navigation and search --%>
+      <%!-- Header outside the box --%>
+      <h1 class="text-2xl font-bold text-gray-900">Locations</h1>
+
+      <%!-- Search bar - full width --%>
+      <div class="w-full">
+        <form phx-change="search" class="w-full">
+          <input
+            type="text"
+            name="search"
+            value={@search_term}
+            placeholder="Search locations by name, slug, or country code..."
+            class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            phx-debounce="300"
+          />
+        </form>
+
+        <%!-- Search results count --%>
+        <div :if={@search_term != ""} class="mt-2 text-sm text-gray-600">
+          <%= if String.length(@search_term) < 2 do %>
+            Type at least 2 characters to search...
+          <% else %>
+            {length(@search_results)} location(s) found
+            <%= if length(@search_results) == 50 do %>
+              (showing first 50 results)
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <%!-- Stats summary --%>
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <div class="space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-              <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Location Management</h1>
-              <div class="flex space-x-2">
-                <.link
-                  patch={~p"/my/locations"}
-                  class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 border border-blue-200"
-                >
-                  Hierarchy
-                </.link>
-                <.link
-                  patch={~p"/my/locations/countries"}
-                  class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 border border-gray-200"
-                >
-                  Countries
-                </.link>
-              </div>
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              >
+              </path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
+              >
+              </path>
+            </svg>
+            <span>{length(@top_locations || [])} top-level locations</span>
           </div>
-
-          <%!-- Search input - always visible --%>
-          <div class="w-full">
-            <form phx-change="search" class="w-full max-w-md">
-              <input
-                type="text"
-                name="search"
-                value={@search_term}
-                placeholder="Search locations by name, slug, or country code..."
-                class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                phx-debounce="300"
-              />
-            </form>
-
-            <%!-- Search results count --%>
-            <div :if={@search_term != ""} class="mt-2 text-sm text-gray-600">
-              <%= if String.length(@search_term) < 2 do %>
-                Type at least 2 characters to search...
-              <% else %>
-                {length(@search_results)} location(s) found
-                <%= if length(@search_results) == 50 do %>
-                  (showing first 50 results)
-                <% end %>
-              <% end %>
-            </div>
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-2 text-green-500 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+              >
+              </path>
+            </svg>
+            <span>{length(@specials || [])} special locations</span>
           </div>
-
-          <%!-- Stats summary --%>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
-            <div class="flex items-center">
-              <svg
-                class="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-2 text-purple-500 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                >
-                </path>
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
-                >
-                </path>
-              </svg>
-              <span>{length(@top_locations || [])} top-level locations</span>
-            </div>
-            <div class="flex items-center">
-              <svg
-                class="w-4 h-4 mr-2 text-green-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                >
-                </path>
-              </svg>
-              <span>{length(@specials || [])} special locations</span>
-            </div>
-            <div class="flex items-center">
-              <svg
-                class="w-4 h-4 mr-2 text-purple-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                >
-                </path>
-              </svg>
-              <span>
-                {if @all_locations == [], do: 862, else: length(@all_locations)} total locations
-              </span>
-            </div>
+              </path>
+            </svg>
+            <span>
+              {if @all_locations == [], do: 862, else: length(@all_locations)} total locations
+            </span>
           </div>
         </div>
       </div>
@@ -361,8 +341,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         :if={@search_term == ""}
         class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
       >
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Location Hierarchy</h2>
-
         <div :if={@top_locations && length(@top_locations) > 0} class="space-y-2">
           <%= for location <- @top_locations do %>
             <.render_location
