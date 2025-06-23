@@ -41,6 +41,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       socket
       |> assign(:page_title, "Locations")
       |> assign(:top_locations, top_locations)
+      |> assign(:all_locations, [])
+      |> assign(:search_results, [])
       |> assign(:specials, Geo.get_specials())
       |> assign(:search_term, "")
       |> assign(:show_search, false)
@@ -59,12 +61,49 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   @impl true
   def handle_event("toggle_search", _params, socket) do
-    {:noreply, assign(socket, :show_search, !socket.assigns.show_search)}
+    show_search = !socket.assigns.show_search
+
+    # Load all locations when search is opened for the first time
+    all_locations =
+      if show_search and socket.assigns.all_locations == [] do
+        Geo.get_locations()
+      else
+        socket.assigns.all_locations
+      end
+
+    {:noreply,
+     socket
+     |> assign(:show_search, show_search)
+     |> assign(:all_locations, all_locations)
+     |> assign(:search_term, "")
+     |> assign(:search_results, [])}
   end
 
   @impl true
   def handle_event("search", %{"search" => search_term}, socket) do
-    {:noreply, assign(socket, :search_term, search_term)}
+    search_term = String.trim(search_term)
+
+    search_results =
+      if search_term != "" and String.length(search_term) >= 2 do
+        socket.assigns.all_locations
+        |> Enum.filter(fn location ->
+          search_term_lower = String.downcase(search_term)
+
+          String.contains?(String.downcase(location.name_en), search_term_lower) or
+            String.contains?(String.downcase(location.slug), search_term_lower) or
+            (location.iso_code &&
+               String.contains?(String.downcase(location.iso_code), search_term_lower))
+        end)
+        # Limit results to 50 for performance
+        |> Enum.take(50)
+      else
+        []
+      end
+
+    {:noreply,
+     socket
+     |> assign(:search_term, search_term)
+     |> assign(:search_results, search_results)}
   end
 
   @impl true
@@ -150,10 +189,23 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               type="text"
               name="search"
               value={@search_term}
-              placeholder="Search locations..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Search locations by name, slug, or country code..."
+              class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              phx-debounce="300"
             />
           </form>
+
+          <%!-- Search results count --%>
+          <div :if={@search_term != ""} class="mt-2 text-sm text-gray-600">
+            <%= if String.length(@search_term) < 2 do %>
+              Type at least 2 characters to search...
+            <% else %>
+              {length(@search_results)} location(s) found
+              <%= if length(@search_results) == 50 do %>
+                (showing first 50 results)
+              <% end %>
+            <% end %>
+          </div>
         </div>
 
         <%!-- Stats summary --%>
@@ -214,13 +266,96 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               >
               </path>
             </svg>
-            <span>Hierarchical structure</span>
+            <span>
+              <%= if length(@all_locations) > 0 do %>
+                {length(@all_locations)} total locations
+              <% else %>
+                Hierarchical structure
+              <% end %>
+            </span>
           </div>
         </div>
       </div>
 
-      <%!-- Main locations hierarchy --%>
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <%!-- Search results --%>
+      <div
+        :if={@show_search and @search_term != "" and String.length(@search_term) >= 2}
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+      >
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <svg
+            class="w-5 h-5 mr-2 text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            >
+            </path>
+          </svg>
+          Search Results
+        </h2>
+
+        <div :if={length(@search_results) > 0} class="space-y-2">
+          <%= for location <- @search_results do %>
+            <div class="border border-gray-100 rounded-lg p-4 hover:border-gray-200 transition-colors">
+              <div class="flex items-center justify-between">
+                <.location_card location={location} show_type={false} />
+
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                  <span
+                    :if={location.cards_count && location.cards_count > 0}
+                    class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+                  >
+                    {location.cards_count} cards
+                  </span>
+                  <span
+                    :if={location.location_type}
+                    class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
+                  >
+                    {location.location_type}
+                  </span>
+                </div>
+              </div>
+
+              <%!-- Show location path/breadcrumb --%>
+              <div :if={length(location.ancestry) > 0} class="mt-2 text-xs text-gray-500">
+                <span class="font-medium">Path:</span>
+                <.location_breadcrumb ancestry={location.ancestry} current_location={location} />
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <div :if={length(@search_results) == 0} class="text-center py-8 text-gray-500">
+          <svg
+            class="w-12 h-12 mx-auto mb-4 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            >
+            </path>
+          </svg>
+          <p class="text-lg font-medium">No locations found</p>
+          <p class="text-sm">Try a different search term or check your spelling.</p>
+        </div>
+      </div>
+
+      <%!-- Main locations hierarchy (hidden when searching) --%>
+      <div
+        :if={!@show_search or @search_term == ""}
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+      >
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Location Hierarchy</h2>
 
         <div :if={@top_locations && length(@top_locations) > 0} class="space-y-2">
@@ -304,8 +439,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     <div class="border border-gray-100 rounded-lg mb-2 hover:border-gray-200 transition-colors">
       <div class="flex items-center justify-between p-4">
         <div class="flex items-center space-x-3 flex-1">
-          <%!-- Expand/collapse button for countries and regions --%>
-          <%!-- All locations can potentially have children, so show expand button for all --%>
+          <%!-- Expand/collapse button for all locations --%>
           <button
             phx-click="toggle_location"
             phx-value-location_id={@location.id}
@@ -400,6 +534,18 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
       </div>
     </div>
+    """
+  end
+
+  def location_breadcrumb(assigns) do
+    # This is a simple implementation - in a real app you might want to fetch the ancestor names
+    ~H"""
+    <span class="text-gray-400">
+      <%= for ancestor_id <- @ancestry do %>
+        ID:{ancestor_id} >
+      <% end %>
+      {@current_location.name_en}
+    </span>
     """
   end
 end
