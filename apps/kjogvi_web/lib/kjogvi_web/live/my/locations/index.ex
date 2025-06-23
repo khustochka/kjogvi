@@ -314,11 +314,17 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 <.location_card location={location} show_type={false} />
 
                 <div class="flex items-center space-x-2 text-sm text-gray-500">
+                  <span
+                    :if={location.iso_code && location.iso_code != ""}
+                    class="text-gray-700 font-mono font-semibold text-base"
+                  >
+                    {String.upcase(location.iso_code)}
+                  </span>
                   <.link
                     href={~p"/my/lifelist/#{location.slug}"}
-                    class="text-blue-600 hover:text-blue-700 text-sm"
+                    class="text-blue-600 hover:text-blue-700 text-base"
                   >
-                    View Lifelist
+                    Lifelist
                   </.link>
                 </div>
               </div>
@@ -465,11 +471,17 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
 
         <div class="flex items-center space-x-2 text-sm text-gray-500">
+          <span
+            :if={@location.iso_code && @location.iso_code != ""}
+            class="text-gray-700 font-mono font-semibold text-base"
+          >
+            {String.upcase(@location.iso_code)}
+          </span>
           <.link
             href={~p"/my/lifelist/#{@location.slug}"}
-            class="text-blue-600 hover:text-blue-700 text-sm"
+            class="text-blue-600 hover:text-blue-700 text-base"
           >
-            View Lifelist
+            Lifelist
           </.link>
         </div>
       </div>
@@ -537,13 +549,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </path>
             </svg>
           <% end %>
-        </div>
-        <div class="flex items-center space-x-2 text-xs text-gray-500">
-          <span class="truncate">{@location.slug}</span>
-          <span :if={@location.iso_code && @location.iso_code != ""} class="font-mono">
-            {String.upcase(@location.iso_code)}
-          </span>
-          <span :if={@location.location_type} class="text-gray-400">
+          <span
+            :if={@location.location_type}
+            class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
+          >
             {@location.location_type}
           </span>
         </div>
