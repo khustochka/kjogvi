@@ -35,8 +35,8 @@ map_location_data = fn row, columns ->
     cached_parent_id: row_map["cached_parent_id"],
     cached_city_id: row_map["cached_city_id"],
     cached_subdivision_id: row_map["cached_subdivision_id"],
-    inserted_at: DateTime.utc_now() |> DateTime.truncate(:second),
-    updated_at: DateTime.utc_now() |> DateTime.truncate(:second)
+    inserted_at: DateTime.utc_now(),
+    updated_at: DateTime.utc_now()
   }
 end
 
