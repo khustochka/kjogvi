@@ -40,6 +40,20 @@ map_location_data = fn row, columns ->
   }
 end
 
+# Sort rows by ancestry depth first to ensure parents are inserted before children
+sorted_rows =
+  rows
+  |> Enum.map(fn row ->
+    row_map = Enum.zip(columns, row) |> Enum.into(%{})
+
+    ancestry_depth =
+      if row_map["ancestry"], do: String.split(row_map["ancestry"], "/") |> length(), else: 0
+
+    {ancestry_depth, row}
+  end)
+  |> Enum.sort_by(fn {depth, _row} -> depth end)
+  |> Enum.map(fn {_depth, row} -> row end)
+
 # Clear existing locations
 Repo.delete_all(Location)
 IO.puts("Cleared existing locations")
@@ -50,11 +64,11 @@ Repo.query!("ALTER SEQUENCE locations_id_seq RESTART WITH 1")
 # Import locations in batches to handle large dataset
 chunk_size = 100
 
-rows
+sorted_rows
 |> Enum.chunk_every(chunk_size)
 |> Enum.with_index()
 |> Enum.each(fn {chunk, index} ->
-  IO.puts("Processing batch #{index + 1}/#{ceil(length(rows) / chunk_size)}...")
+  IO.puts("Processing batch #{index + 1}/#{ceil(length(sorted_rows) / chunk_size)}...")
 
   location_data = Enum.map(chunk, &map_location_data.(&1, columns))
 
