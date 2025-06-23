@@ -101,8 +101,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               >
                 Countries
               </.link>
-            </div>
-          </div>
+            <%!-- End fallback -->
+          <%!-- End fallback -->
 
           <button
             phx-click="toggle_search"
@@ -119,7 +119,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             </svg>
             Search
           </button>
-        </div>
+        <%!-- End fallback -->
 
         <%!-- Search input --%>
         <div :if={@show_search} class="mb-4">
@@ -132,7 +132,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </form>
-        </div>
+        <%!-- End fallback -->
 
         <%!-- Stats summary --%>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
@@ -159,7 +159,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </path>
             </svg>
             <span>{length(@top_locations || [])} top-level locations</span>
-          </div>
+          <%!-- End fallback -->
           <div class="flex items-center">
             <svg
               class="w-4 h-4 mr-2 text-green-500"
@@ -176,7 +176,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </path>
             </svg>
             <span>{length(@specials || [])} special locations</span>
-          </div>
+          <%!-- End fallback -->
           <div class="flex items-center">
             <svg
               class="w-4 h-4 mr-2 text-purple-500"
@@ -193,9 +193,9 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </path>
             </svg>
             <span>Hierarchical structure</span>
-          </div>
-        </div>
-      </div>
+          <%!-- End fallback -->
+        <%!-- End fallback -->
+      <%!-- End fallback -->
 
       <%!-- Main locations hierarchy --%>
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -209,8 +209,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               child_locations={@child_locations}
               level={0}
             />
-          <% end %>
-        </div>
+          <%!-- End expandable check -->
+        <%!-- End fallback -->
 
         <div
           :if={!@top_locations || length(@top_locations) == 0}
@@ -239,8 +239,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </svg>
           <p class="text-lg font-medium">No locations found</p>
           <p class="text-sm">Locations will appear here once they are added to the system.</p>
-        </div>
-      </div>
+        <%!-- End fallback -->
+      <%!-- End fallback -->
 
       <%!-- Special locations section --%>
       <div
@@ -269,11 +269,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           <%= for location <- @specials do %>
             <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4 hover:shadow-md transition-shadow">
               <.location_card location={location} show_type={true} />
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
+            <%!-- End fallback -->
+          <%!-- End expandable check -->
+        <%!-- End fallback -->
+      <%!-- End fallback -->
+    <%!-- End fallback -->
     """
   end
 
@@ -283,7 +283,30 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div class="flex items-center justify-between p-4">
         <div class="flex items-center space-x-3 flex-1">
           <%!-- Expand/collapse button for countries and regions --%>
-          <%= if @location.location_type in ["continent", "country", "region"] do %>
+          <%!-- All locations can potentially have children, so show expand button for all -->
+          <button
+            phx-click="toggle_location"
+            phx-value-location_id={@location.id}
+            class="flex-shrink-0 p-1 hover:bg-gray-100 rounded"
+          >
+            <svg
+              class={
+                [
+                  "w-4 h-4 transform transition-transform duration-200",
+                  if(MapSet.member?(@expanded_locations, @location.id),
+                    do: "rotate-90",
+                    else: "rotate-0"
+                  ),
+                  "text-gray-400"
+                ]
+              }
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
             <button
               phx-click="toggle_location"
               phx-value-location_id={@location.id}
@@ -305,15 +328,15 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
-          <% else %>
-            <%!-- Location icon for non-expandable locations --%>
-            <div class="w-6 h-6 flex items-center justify-center">
-              <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
-            </div>
-          <% end %>
+          <%!-- Location icon for all locations as fallback -->
+            <%!-- This section is no longer needed since all locations are expandable -->
+            <%!-- Fallback removed, all locations get expand buttons -->
+              <%!-- Fallback removed -->
+            <%!-- End fallback -->
+          <%!-- End expandable check -->
 
           <.location_card location={@location} show_type={false} />
-        </div>
+        <%!-- End fallback -->
 
         <div class="flex items-center space-x-2 text-sm text-gray-500">
           <span
@@ -328,8 +351,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           >
             {@location.location_type}
           </span>
-        </div>
-      </div>
+        <%!-- End fallback -->
+      <%!-- End fallback -->
 
       <%!-- Children locations --%>
       <%= if MapSet.member?(@expanded_locations, @location.id) && @child_locations[@location.id] do %>
@@ -342,11 +365,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 child_locations={@child_locations}
                 level={@level + 1}
               />
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
+            <%!-- End expandable check -->
+          <%!-- End fallback -->
+        <%!-- End fallback -->
+      <%!-- End expandable check -->
+    <%!-- End fallback -->
     """
   end
 
@@ -371,8 +394,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             >
             </path>
           </svg>
-        </div>
-      </div>
+        <%!-- End fallback -->
+      <%!-- End fallback -->
 
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-900 truncate">{@location.name_en}</p>
@@ -381,9 +404,9 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           <span :if={@location.iso_code && @location.iso_code != ""} class="font-mono">
             {String.upcase(@location.iso_code)}
           </span>
-        </div>
-      </div>
-    </div>
+        <%!-- End fallback -->
+      <%!-- End fallback -->
+    <%!-- End fallback -->
     """
   end
 end
