@@ -11,7 +11,7 @@ rows = data["rows"]
 IO.puts("Importing #{length(rows)} locations...")
 
 # Create a function to map row data to location attributes
-defp map_location_data(row, columns) do
+map_location_data = fn row, columns ->
   row_map = Enum.zip(columns, row) |> Enum.into(%{})
 
   %{
@@ -56,7 +56,7 @@ rows
 |> Enum.each(fn {chunk, index} ->
   IO.puts("Processing batch #{index + 1}/#{ceil(length(rows) / chunk_size)}...")
 
-  location_data = Enum.map(chunk, &map_location_data(&1, columns))
+  location_data = Enum.map(chunk, &map_location_data.(&1, columns))
 
   # Insert batch
   {count, _} =
