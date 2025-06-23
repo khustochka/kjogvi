@@ -4,7 +4,6 @@ defmodule Kjogvi.Geo do
   """
 
   import Ecto.Query
-  import Phoenix.LiveView.HTML
 
   alias Kjogvi.Repo
   alias __MODULE__.Location
