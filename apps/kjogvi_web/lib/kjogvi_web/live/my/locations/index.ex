@@ -320,7 +320,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 <div class="flex items-center space-x-4 text-sm text-gray-500 flex-shrink-0">
                   <.link
                     href={~p"/my/lifelist/#{location.slug}"}
-                    class="text-blue-600 hover:text-blue-700 text-base px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                    class="text-blue-600 hover:text-blue-700 text-sm lg:text-base hover:underline transition-colors"
                   >
                     Lifelist
                   </.link>
@@ -476,7 +476,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <div class="flex items-center space-x-4 text-sm text-gray-500 flex-shrink-0 sm:ml-4">
           <.link
             href={~p"/my/lifelist/#{@location.slug}"}
-            class="text-blue-600 hover:text-blue-700 text-base px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+            class="text-blue-600 hover:text-blue-700 text-sm lg:text-base hover:underline transition-colors"
           >
             Lifelist
           </.link>
@@ -559,7 +559,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           <p class="text-xs text-gray-500 truncate">{@location.slug}</p>
           <span
             :if={@location.location_type}
-            class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full flex-shrink-0"
+            class="inline px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
           >
             {@location.location_type}
           </span>
