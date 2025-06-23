@@ -283,7 +283,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div class="flex items-center justify-between p-4">
         <div class="flex items-center space-x-3 flex-1">
           <%!-- Expand/collapse button for countries and regions --%>
-          <%= if @location.location_type in ["country", "region"] do %>
+          <%= if @location.location_type in ["continent", "country", "region"] do %>
             <button
               phx-click="toggle_location"
               phx-value-location_id={@location.id}
