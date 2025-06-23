@@ -14,6 +14,28 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       locations
       |> Enum.filter(fn loc -> loc.ancestry == [] end)
 
+    # Auto-expand continents to show countries by default
+    continent_ids = top_locations |> Enum.map(& &1.id) |> MapSet.new()
+    
+    # Load children for all continents
+    child_locations =
+      top_locations
+      |> Enum.reduce(%{}, fn continent, acc ->
+        children = Geo.get_child_locations(continent.id)
+        
+        # Filter to only direct children (ancestry should end with this continent_id)
+        direct_children =
+          children
+          |> Enum.filter(fn child ->
+            case child.ancestry do
+              [] -> false
+              ancestry -> List.last(ancestry) == continent.id
+            end
+          end)
+        
+        Map.put(acc, continent.id, direct_children)
+      end)
+
     {
       :ok,
       socket
@@ -22,8 +44,256 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       |> assign(:specials, Geo.get_specials())
       |> assign(:search_term, "")
       |> assign(:show_search, false)
-      |> assign(:expanded_locations, MapSet.new())
-      |> assign(:child_locations, %{})
+      |> assign(:expanded_locations, continent_ids)
+      |> assign(:child_locations, child_locations)
+    }
+  end
+
+  @impl true
+  def handle_params(_params, _url, socket) do
+    {
+      :noreply,
+      socket
+    }
+  end
+
+  @impl true
+  def handle_event("toggle_search", _params, socket) do
+    {:noreply, assign(socket, :show_search, !socket.assigns.show_search)}
+  end
+
+  @impl true
+  def handle_event("search", %{"search" => search_term}, socket) do
+    {:noreply, assign(socket, :search_term, search_term)}
+  end
+
+  @impl true
+  def handle_event("toggle_location", %{"location_id" => location_id_str}, socket) do
+    location_id = String.to_integer(location_id_str)
+    expanded_locations = socket.assigns.expanded_locations
+    child_locations = socket.assigns.child_locations
+
+    {new_expanded, new_child_locations} =
+      if MapSet.member?(expanded_locations, location_id) do
+        # Collapse - remove from expanded and clear children
+        {MapSet.delete(expanded_locations, location_id), Map.delete(child_locations, location_id)}
+      else
+        # Expand - add to expanded and load children
+        children = Geo.get_child_locations(location_id)
+
+        # Filter to only direct children (ancestry should end with this location_id)
+        direct_children =
+          children
+          |> Enum.filter(fn child ->
+            case child.ancestry do
+              [] -> false
+              ancestry -> List.last(ancestry) == location_id
+            end
+          end)
+
+        {MapSet.put(expanded_locations, location_id),
+         Map.put(child_locations, location_id, direct_children)}
+      end
+
+    {:noreply,
+     socket
+     |> assign(:expanded_locations, new_expanded)
+     |> assign(:child_locations, new_child_locations)}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="space-y-6">
+      <%!-- Header with navigation and search --%>
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-4">
+            <h1 class="text-2xl font-bold text-gray-900">Location Management</h1>
+            <div class="flex space-x-2">
+              <.link
+                patch={~p"/my/locations"}
+                class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 border border-blue-200"
+              >
+                Hierarchy
+              </.link>
+              <.link
+                patch={~p"/my/locations/countries"}
+                class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 border border-gray-200"
+              >
+                Countries
+              </.link>
+            </div>
+          </div>
+
+          <button
+            phx-click="toggle_search"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              >
+              </path>
+            </svg>
+            Search
+          </button>
+        </div>
+
+        <%!-- Search input --%>
+        <div :if={@show_search} class="mb-4">
+          <form phx-change="search" class="max-w-md">
+            <input
+              type="text"
+              name="search"
+              value={@search_term}
+              placeholder="Search locations..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </form>
+        </div>
+
+        <%!-- Stats summary --%>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-2 text-blue-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              >
+              </path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              >
+              </path>
+            </svg>
+            <span>{length(@top_locations || [])} top-level locations</span>
+          </div>
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-2 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+              >
+              </path>
+            </svg>
+            <span>{length(@specials || [])} special locations</span>
+          </div>
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-2 text-purple-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              >
+              </path>
+            </svg>
+            <span>Hierarchical structure</span>
+          </div>
+        </div>
+      </div>
+
+      <%!-- Main locations hierarchy --%>
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Location Hierarchy</h2>
+
+        <div :if={@top_locations && length(@top_locations) > 0} class="space-y-2">
+          <%= for location <- @top_locations do %>
+            <.render_location
+              location={location}
+              expanded_locations={@expanded_locations}
+              child_locations={@child_locations}
+              level={0}
+            />
+          <% end %>
+        </div>
+
+        <div
+          :if={!@top_locations || length(@top_locations) == 0}
+          class="text-center py-8 text-gray-500"
+        >
+          <svg
+            class="w-12 h-12 mx-auto mb-4 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"defmodule KjogviWeb.Live.My.Locations.Index do
+  @moduledoc false
+
+  use KjogviWeb, :live_view
+
+  alias Kjogvi.Geo
+
+  @impl true
+  def mount(_params, _session, socket) do
+    # Start with only top-level locations (no parents)
+    locations = Geo.get_upper_level_locations()
+
+    top_locations =
+      locations
+      |> Enum.filter(fn loc -> loc.ancestry == [] end)
+
+    # Expand continents by default to show countries
+    continent_ids = 
+      top_locations
+      |> Enum.filter(fn loc -> loc.location_type == "continent" end)
+      |> Enum.map(& &1.id)
+      |> MapSet.new()
+
+    # Load children for all continents
+    child_locations = 
+      continent_ids
+      |> Enum.reduce(%{}, fn continent_id, acc ->
+        children = Geo.get_child_locations(continent_id)
+        
+        # Filter to only direct children (ancestry should end with this continent_id)
+        direct_children =
+          children
+          |> Enum.filter(fn child ->
+            case child.ancestry do
+              [] -> false
+              ancestry -> List.last(ancestry) == continent_id
+            end
+          end)
+        
+        Map.put(acc, continent_id, direct_children)
+      end)
+
+    {
+      :ok,
+      socket
+      |> assign(:page_title, "Locations")
+      |> assign(:top_locations, top_locations)
+      |> assign(:specials, Geo.get_specials())
+      |> assign(:search_term, "")
+      |> assign(:show_search, false)
+      |> assign(:expanded_locations, continent_ids)
+      |> assign(:child_locations, child_locations)
     }
   end
 
@@ -233,7 +503,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
             >
             </path>
           </svg>
@@ -361,7 +631,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
             >
             </path>
           </svg>
