@@ -34,6 +34,40 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
+  def get_all_locations_grouped do
+    locations = 
+      Location
+      |> Location.Query.load_cards_count()
+      |> where([l], l.location_type != "special" or is_nil(l.location_type))
+      |> Repo.all()
+
+    # Group locations by their parent ID (last element of ancestry)
+    grouped_locations =
+      locations
+      |> Enum.group_by(fn location ->
+        case location.ancestry do
+          [] -> nil
+          ancestry -> List.last(ancestry)
+        end
+      end)
+
+    {locations, grouped_locations}
+  end
+
+  def get_child_locations(parent_id) do
+    Location
+    |> Location.Query.load_cards_count()
+    |> where([l], fragment("? @> ?::bigint[]", l.ancestry, [^parent_id]))
+    |> where([l], l.location_type != "special" or is_nil(l.location_type))
+    |> Repo.all()
+    |> Enum.group_by(fn location ->
+      case location.ancestry do
+        [] -> nil
+        ancestry -> List.last(ancestry)
+      end
+    end)
+  end
+
   def get_locations do
     Location
     |> Location.Query.load_cards_count()
