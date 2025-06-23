@@ -1,6 +1,3 @@
-==> kjogvi
-Compiling 1 file (.ex)
-Generated kjogvi app
 defmodule KjogviWeb.Live.My.Locations.Index do
   @moduledoc false
 
