@@ -555,11 +555,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             </span>
           </div>
         </div>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0 mt-1">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
           <p class="text-xs text-gray-500 truncate">{@location.slug}</p>
           <span
             :if={@location.location_type}
-            class="inline px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
+            class="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full flex-shrink-0"
           >
             {@location.location_type}
           </span>
