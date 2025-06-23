@@ -35,7 +35,7 @@ defmodule Kjogvi.Geo do
   end
 
   def get_all_locations_grouped do
-    locations = 
+    locations =
       Location
       |> Location.Query.load_cards_count()
       |> where([l], l.location_type != "special" or is_nil(l.location_type))
