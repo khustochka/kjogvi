@@ -43,12 +43,7 @@ defmodule Kjogvi.Geo do
     # Group locations by their parent ID (last element of ancestry)
     grouped_locations =
       locations
-      |> Enum.group_by(fn location ->
-        case location.ancestry do
-          [] -> nil
-          ancestry -> List.last(ancestry)
-        end
-      end)
+      |> Enum.group_by(&List.last(&1.ancestry))
 
     {locations, grouped_locations}
   end
