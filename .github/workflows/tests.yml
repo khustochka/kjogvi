@@ -18,7 +18,7 @@ jobs:
         with:
           env: dev
           elixir: v1.18.4
-          otp: '27.0'
+          otp: '27.3.4.2'
       - name: Run lint
         env:
           MIX_ENV: dev
@@ -31,9 +31,9 @@ jobs:
       matrix:
         include:
           - elixir: 'v1.18.4'
-            otp: '27.0'
+            otp: '27.3.4.2'
           - elixir: 'v1.17.3'
-            otp: '27.0'
+            otp: '27.3.4.2'
           - elixir: 'v1.16.3'
             otp: '26.0'
     services:
