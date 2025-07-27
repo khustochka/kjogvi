@@ -55,7 +55,7 @@ defmodule Ornithologue.MixProject do
       {:csv, "~> 3.0"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
-      {:hackney, "~> 1.9"},
+      {:hackney, "~> 1.24"},
       {:sweet_xml, "~> 0.6"},
       {:configparser_ex, "~> 5.0", only: :dev},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
