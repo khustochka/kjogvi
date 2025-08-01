@@ -52,7 +52,7 @@ defmodule OrnithoWeb.MixProject do
   defp deps do
     [
       # Deps
-      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_live_view, "~> 1.0.17"},
       {:phoenix, "~> 1.7.20"},
       {:phoenix_html, "~> 4.1"},
       {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
