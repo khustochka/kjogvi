@@ -5,11 +5,15 @@ maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: [
 config :kjogvi, Kjogvi.Repo,
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+  # For machines with several cores, consider starting multiple pools of `pool_size`
+  # pool_count: 4,
   socket_options: maybe_ipv6
 
 config :kjogvi, Kjogvi.OrnithoRepo,
   url: System.get_env("DATABASE_ORNITHO_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+  # For machines with several cores, consider starting multiple pools of `pool_size`
+  # pool_count: 4,
   socket_options: maybe_ipv6
 
 if config_env() == :dev && System.get_env("BIND_PUBLIC") in ~w(true 1) do
@@ -137,18 +141,18 @@ if config_env() == :prod do
   # ## Configuring the mailer
   #
   # In production you need to configure the mailer to use a different adapter.
-  # Also, you may need to configure the Swoosh API client of your choice if you
-  # are not using SMTP. Here is an example of the configuration:
+  # Here is an example configuration for Mailgun:
   #
-  #     config :kjogvi, Kjogvi.Mailer,
+  #     config :kjogci, Kjogvi.Mailer,
   #       adapter: Swoosh.Adapters.Mailgun,
   #       api_key: System.get_env("MAILGUN_API_KEY"),
   #       domain: System.get_env("MAILGUN_DOMAIN")
   #
-  # For this example you need include a HTTP client required by Swoosh API client.
-  # Swoosh supports Hackney and Finch out of the box:
+  # Most non-SMTP adapters require an API client. Swoosh supports Req, Hackney,
+  # and Finch out-of-the-box. This configuration is typically done at
+  # compile-time in your config/prod.exs:
   #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
+  #     config :swoosh, :api_client, Swoosh.ApiClient.Req
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 

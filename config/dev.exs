@@ -39,7 +39,7 @@ end
 config :kjogvi_web, KjogviWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || "4000")],
   check_origin: false,
   code_reloader: true,
   debug_errors: System.get_env("SHOW_ERROR_PAGES") not in ~w{true 1},
@@ -77,11 +77,12 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 # Watch static and templates for browser reloading.
 config :kjogvi_web, KjogviWeb.Endpoint,
   live_reload: [
+    web_console_logger: true,
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/kjogvi_web/(controllers|live|components)/.*(ex|heex)$",
-      ~r"lib/ornitho_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/kjogvi_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$",
+      ~r"lib/ornitho_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$"
     ]
   ]
 
@@ -89,14 +90,16 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 config :kjogvi_web, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+config :logger, :default_formatter, format: "[$level] $message\n"
 
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
 config :phoenix_live_view,
-  # Include HEEx debug annotations as HTML comments in rendered markup
+  # Include debug annotations and locations in rendered markup.
+  # Changing this configuration will require mix clean and a full recompile.
   debug_heex_annotations: true,
+  debug_attributes: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
 

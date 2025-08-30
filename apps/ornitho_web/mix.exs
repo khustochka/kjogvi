@@ -14,7 +14,8 @@ defmodule OrnithoWeb.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:leex, :yecc] ++ Mix.compilers(),
+      compilers: [:phoenix_live_view, :leex, :yecc] ++ Mix.compilers(),
+      listeners: [Phoenix.CodeReloader],
       test_coverage: [tool: ExCoveralls]
     ]
   end

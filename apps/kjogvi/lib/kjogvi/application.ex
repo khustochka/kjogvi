@@ -19,8 +19,6 @@ defmodule Kjogvi.Application do
       {Kjogvi.Store.ChecklistPreload, name: Kjogvi.Store.ChecklistPreload},
       {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Kjogvi.PubSub},
-      # Start the Finch HTTP client for sending emails
-      {Finch, name: Kjogvi.Finch},
       {Task.Supervisor, name: Kjogvi.TaskSupervisor}
       # Start a worker by calling: Kjogvi.Worker.start_link(arg)
       # {Kjogvi.Worker, arg}

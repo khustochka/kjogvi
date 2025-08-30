@@ -63,7 +63,6 @@ defmodule Kjogvi.MixProject do
       {:cachex, "~> 4.0"},
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.18"},
-      {:finch, "~> 0.13"},
       {:req, "~> 0.5"},
       {:http_cookie, "~> 0.9"},
       {:floki, ">= 0.30.0"},
