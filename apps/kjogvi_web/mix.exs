@@ -56,11 +56,11 @@ defmodule KjogviWeb.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.7.20"},
+      {:phoenix, "~> 1.8.1"},
       {:phoenix_ecto, "~> 4.5"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 1.0.17"},
+      {:phoenix_live_view, "~> 1.1.8"},
       {:timex, github: "bitwalker/timex", ref: "cc649c7a586f1266b17d57aff3c6eb1a56116ca2"},
       {:phoenix_live_dashboard, "~> 0.8.4"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
@@ -95,7 +95,8 @@ defmodule KjogviWeb.MixProject do
       {:opentelemetry_phoenix, "~> 2.0.0", opentelemetry_phoenix_opts()},
       {:opentelemetry_bandit, "~> 0.3"},
       {:opentelemetry_exporter, "~> 1.6"},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:lazy_html, ">= 0.1.0", only: :test}
     ]
   end
 
