@@ -21,19 +21,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     child_locations =
       top_locations
       |> Enum.reduce(%{}, fn continent, acc ->
-        children = Geo.get_child_locations(continent.id)
-
-        # Filter to only direct children (ancestry should end with this continent_id)
-        direct_children =
-          children
-          |> Enum.filter(fn child ->
-            case child.ancestry do
-              [] -> false
-              ancestry -> List.last(ancestry) == continent.id
-            end
-          end)
-
-        Map.put(acc, continent.id, direct_children)
+        Map.put(acc, continent.id, direct_children(continent.id))
       end)
 
     {
@@ -118,21 +106,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         # Collapse - remove from expanded and clear children
         {MapSet.delete(expanded_locations, location_id), Map.delete(child_locations, location_id)}
       else
-        # Expand - add to expanded and load children
-        children = Geo.get_child_locations(location_id)
-
-        # Filter to only direct children (ancestry should end with this location_id)
-        direct_children =
-          children
-          |> Enum.filter(fn child ->
-            case child.ancestry do
-              [] -> false
-              ancestry -> List.last(ancestry) == location_id
-            end
-          end)
-
         {MapSet.put(expanded_locations, location_id),
-         Map.put(child_locations, location_id, direct_children)}
+         Map.put(child_locations, location_id, direct_children(location_id))}
       end
 
     {:noreply,
@@ -164,13 +139,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 stroke-linejoin="round"
                 stroke-width="2"
                 d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              >
-              </path>
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
               >
               </path>
             </svg>
@@ -343,13 +311,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
             >
             </path>
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
-            >
-            </path>
           </svg>
           <p class="text-lg font-medium">No locations found</p>
           <p class="text-sm">Locations will appear here once they are added to the system.</p>
@@ -467,13 +428,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
             >
             </path>
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 11a3 3 0 11-6 0 3 3 0 616 0z"
-            >
-            </path>
           </svg>
         </div>
       </div>
@@ -556,5 +510,17 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         Map.put(acc, loc.id, loc.name_en)
       end)
     end
+  end
+
+  defp direct_children(parent_id) do
+    children = Geo.get_child_locations(parent_id)
+
+    children
+    |> Enum.filter(fn child ->
+      case child.ancestry do
+        [] -> false
+        ancestry -> List.last(ancestry) == parent_id
+      end
+    end)
   end
 end
