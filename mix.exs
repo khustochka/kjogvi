@@ -8,6 +8,7 @@ defmodule Kjogvi.Umbrella.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
+      listeners: [Phoenix.CodeReloader],
       dialyzer: dialyzer(),
       test_coverage: [tool: ExCoveralls],
       releases: [
@@ -25,7 +26,8 @@ defmodule Kjogvi.Umbrella.MixProject do
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
-        "coveralls.html": :test
+        "coveralls.html": :test,
+        precommit: :test
       ]
     ]
   end
@@ -45,9 +47,10 @@ defmodule Kjogvi.Umbrella.MixProject do
   defp deps do
     [
       # Required to run "mix format" on ~H/.heex files from the umbrella root
-      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_live_view, "~> 1.1.8"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:lazy_html, ">= 0.1.0", only: :test}
     ]
   end
 
@@ -64,6 +67,7 @@ defmodule Kjogvi.Umbrella.MixProject do
     [
       # run `mix setup` in all child apps
       setup: ["cmd mix setup"],
+      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"],
       "ecto.setup": ["ecto.create --quiet", "ecto.migrate --quiet"],
       lint: [
         "compile --warnings-as-errors",

@@ -14,7 +14,8 @@ defmodule OrnithoWeb.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:leex, :yecc] ++ Mix.compilers(),
+      compilers: [:phoenix_live_view, :leex, :yecc] ++ Mix.compilers(),
+      listeners: [Phoenix.CodeReloader],
       test_coverage: [tool: ExCoveralls]
     ]
   end
@@ -52,8 +53,8 @@ defmodule OrnithoWeb.MixProject do
   defp deps do
     [
       # Deps
-      {:phoenix_live_view, "~> 1.0"},
-      {:phoenix, "~> 1.7.20"},
+      {:phoenix_live_view, "~> 1.1.8"},
+      {:phoenix, "~> 1.8.1"},
       {:phoenix_html, "~> 4.1"},
       {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
       {:ornithologue, in_umbrella: true},
@@ -77,6 +78,7 @@ defmodule OrnithoWeb.MixProject do
       {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
       {:bandit, "~> 1.2", only: [:dev, :test]},
       {:floki, ">= 0.30.0"},
+      {:lazy_html, ">= 0.1.0", only: :test},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
