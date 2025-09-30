@@ -38,8 +38,7 @@ jobs:
             otp: '26.0'
     services:
       postgres:
-        # Latest on fly.io is 16.4
-        image: postgres:16-alpine
+        image: postgres:17.6-bookworm
         ports:
           - "5432:5432"
         options: >-
