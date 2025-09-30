@@ -109,7 +109,11 @@ config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@k
 
 config :kjogvi, :legacy,
   adapter: Kjogvi.Legacy.Adapters.Local,
-  database: System.get_env("LEGACY_DATABASE")
+  database: System.get_env("LEGACY_DATABASE"),
+  port: String.to_integer(System.get_env("LEGACY_PORT") || "5432"),
+  hostname: System.get_env("LEGACY_HOSTNAME") || "localhost",
+  username: System.get_env("LEGACY_USERNAME"),
+  password: System.get_env("LEGACY_PASSWORD")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
