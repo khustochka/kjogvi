@@ -74,7 +74,7 @@ defmodule Kjogvi.MixProject do
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:ex_machina, "~> 2.8", only: :test},
       {:ecto_dev_logger, "~> 0.10", only: [:dev]},
-      {:opentelemetry, "~> 1.5"},
+      {:opentelemetry, "~> 1.6"},
       {:opentelemetry_api, "~> 1.4"},
       {:opentelemetry_ecto, "~> 1.2"},
       {:opentelemetry_exporter, "~> 1.6"},

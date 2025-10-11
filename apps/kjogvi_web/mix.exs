@@ -91,7 +91,7 @@ defmodule KjogviWeb.MixProject do
       {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
       {:floki, ">= 0.30.0"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
-      {:opentelemetry, "~> 1.5"},
+      {:opentelemetry, "~> 1.6"},
       {:opentelemetry_api, "~> 1.4"},
       {:opentelemetry_phoenix, "~> 2.0.0", opentelemetry_phoenix_opts()},
       {:opentelemetry_bandit, "~> 0.3"},
