@@ -6,3 +6,10 @@
 
 ## Tweak GC to run more often
 ##-env ERL_FULLSWEEP_AFTER 10
+
+# Disable epmd which becomes zombie process
+# https://erlangforums.com/t/epmd-becomes-zombie-when-starting-my-release-inside-docker/3036
+
+-env ERL_DIST_PORT 4369
+-erl_epmd_port 4369
+-start_epmd false
