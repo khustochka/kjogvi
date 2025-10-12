@@ -46,20 +46,16 @@ defmodule Kjogvi.Birding.Lifelist do
   Get N newest species on the list based on provided filter options.
   """
   def top(scope, n, filter \\ []) when is_integer(n) and n > 0 do
-    total_species =
-      Lifelist.Query.lifelist_query(scope, filter)
-      |> Repo.aggregate(:count)
+    list = generate_with_species(scope, filter)
+    total_species = length(list)
 
-    generate_with_species(scope, filter, limit: n)
-    |> then(fn list ->
-      %Result{
-        user: scope.user,
-        include_private: scope.include_private,
-        filter: filter,
-        list: Enum.take(list, n),
-        total: total_species
-      }
-    end)
+    %Result{
+      user: scope.user,
+      include_private: scope.include_private,
+      filter: filter,
+      list: Enum.take(list, n),
+      total: total_species
+    }
   end
 
   @spec years(scope()) :: list(integer())
