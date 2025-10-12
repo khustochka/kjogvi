@@ -82,6 +82,19 @@ RUN mix release
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
+# Labels 
+ARG GIT_REVISION=unspecified
+ARG GIT_REPOSITORY_URL=unspecified
+LABEL org.opencontainers.image.title="kjogvi"
+LABEL org.opencontainers.image.revision=$GIT_REVISION
+LABEL org.opencontainers.image.source=$GIT_REPOSITORY_URL
+
+ENV GIT_REVISION=${GIT_REVISION}
+ENV GIT_REPOSITORY_URL=${GIT_REPOSITORY_URL}
+# ENV DD_CONTAINER_LABELS_AS_TAGS='{"org.opencontainers.image.source":"git.repository_url","org.opencontainers.image.revision":"git.commit.sha"}'
+# Datadog expects repo URL without protocol.
+ENV DD_TAGS="git.repository_url:github.com/khustochka/kjogvi git.commit.sha:${GIT_REVISION}"
+
 RUN apt-get update -y && \
   apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates \
   postgresql-client file curl gzip bzip2 net-tools netcat-openbsd bind9-dnsutils procps \
