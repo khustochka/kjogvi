@@ -19,6 +19,8 @@ defmodule Kjogvi.Repo.Migrations.CreateSpeciesPages do
     create table(:species_taxa_mappings) do
       add :species_page_id, references("species_pages", on_delete: :restrict), null: false
       add :taxon_key, :string, null: false
+
+      timestamps()
     end
 
     create index(:species_taxa_mappings, [:species_page_id])

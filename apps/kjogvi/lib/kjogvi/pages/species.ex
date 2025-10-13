@@ -6,6 +6,7 @@ defmodule Kjogvi.Pages.Species do
   use Kjogvi.Schema
 
   import Ecto.Query
+  import Ecto.Changeset
 
   alias Ornitho.Schema.Taxon
   alias Kjogvi.Pages.Species
@@ -23,6 +24,22 @@ defmodule Kjogvi.Pages.Species do
     has_many :species_taxa_mappings, SpeciesTaxaMapping, foreign_key: :species_page_id
 
     timestamps()
+  end
+
+  def changeset(card, attrs) do
+    card
+    |> cast(attrs, [
+      :name_en,
+      :name_sci,
+      :order,
+      :family,
+      :extras,
+      :sort_order
+    ])
+    |> validate_required([
+      :name_sci,
+      :sort_order
+    ])
   end
 
   def from_slug(slug) do
@@ -45,7 +62,7 @@ defmodule Kjogvi.Pages.Species do
   def from_taxon_key(taxon_key) do
     query =
       from species in Species,
-        left_join: species_taxa_mapping in assoc(species, :species_taxa_mappings),
+        join: species_taxa_mapping in assoc(species, :species_taxa_mappings),
         where: species_taxa_mapping.taxon_key == ^taxon_key
 
     query

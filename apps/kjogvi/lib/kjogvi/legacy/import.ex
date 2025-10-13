@@ -97,7 +97,7 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   defp after_import(:observations, opts) do
-    broadcast_progress(opts[:import_id], "Caching observation species...")
+    broadcast_progress(opts[:import_id], "Promoting observation species...")
     Kjogvi.Legacy.Import.Observations.after_import()
   end
 

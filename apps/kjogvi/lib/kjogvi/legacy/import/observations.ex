@@ -17,12 +17,16 @@ defmodule Kjogvi.Legacy.Import.Observations do
         |> transform_keys
       end
 
-    _ = Repo.insert_all(Kjogvi.Birding.Observation, obs)
+    _ = Repo.insert_all(Observation, obs)
 
     Repo.query!("SELECT setval('observations_id_seq', (SELECT MAX(id) FROM observations));")
   end
 
   def after_import do
+    # Promoting
+    Kjogvi.Pages.promote_observations_by_query(Observation)
+
+    # Caching
     keys =
       Observation
       |> distinct([:taxon_key])

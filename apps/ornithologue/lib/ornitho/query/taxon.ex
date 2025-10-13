@@ -30,6 +30,11 @@ defmodule Ornitho.Query.Taxon do
     |> where([t], t.code in ^codes)
   end
 
+  def by_being_countable(query) do
+    query
+    |> where([t], t.category == "species" or not is_nil(t.parent_species))
+  end
+
   def select_minimal(query) do
     from(query)
     |> select(^@select_minimal)
