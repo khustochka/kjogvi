@@ -4,7 +4,10 @@ defmodule Kjogvi.Birding.Observation do
   """
 
   use Kjogvi.Schema
+
   import Ecto.Changeset
+
+  alias Kjogvi.Pages.SpeciesTaxaMapping
 
   schema "observations" do
     belongs_to(:card, Kjogvi.Birding.Card)
@@ -19,6 +22,11 @@ defmodule Kjogvi.Birding.Observation do
     # Not included in lifelist even for the owner
     field :unreported, :boolean, default: false
     field :ebird_obs_id, :string
+
+    belongs_to :species_taxa_mapping, SpeciesTaxaMapping,
+      foreign_key: :taxon_key,
+      references: :taxon_key,
+      define_field: false
 
     timestamps()
 

@@ -29,7 +29,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         >
           <span class="counter text-gray-500 col-span-1 align-right justify-self-end"></span>
           <div class="mb-1 col-span-3 md:col-span-1">
-            <.species_link species={lifer.species} />
+            <.species_link species={lifer.species_page} />
           </div>
           <div class="col-start-2 col-end-5 md:col-span-1 align-left justify-self-end text-right text-sm text-zinc-600">
             <time time={lifer.observ_date}>

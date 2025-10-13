@@ -25,10 +25,11 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   end
 
   defp lifers_query(scope, filter) do
-    from [o, c] in observations_filtered(scope, filter),
-      distinct: o.cached_species_key,
+    from [o, c, stm, species] in observations_filtered(scope, filter),
+      distinct: stm.species_page_id,
       order_by: [
-        asc: o.cached_species_key,
+        # FIXME: rethink order. Why start time is not included?
+        asc: species.sort_order,
         asc: c.observ_date,
         asc_nulls_last: c.start_time,
         asc: o.id
@@ -36,7 +37,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
       select: %{
         id: o.id,
         card_id: c.id,
-        cached_species_key: o.cached_species_key,
+        species_page_id: stm.species_page_id,
         observ_date: c.observ_date,
         start_time: c.start_time,
         location_id: c.location_id
@@ -87,10 +88,11 @@ defmodule Kjogvi.Birding.Lifelist.Query do
     query =
       from o in Observation,
         as: :observation,
-        join: c in assoc(o, :card),
-        as: :card,
+        join: c in assoc(o, :card), as: :card,
+        join: stm in assoc(o, :species_taxa_mapping),
+        join: species in assoc(stm, :species_page),
         where:
-          not is_nil(o.cached_species_key) and o.unreported == false and c.user_id == ^user_id
+          o.unreported == false and c.user_id == ^user_id
 
     if include_private do
       query

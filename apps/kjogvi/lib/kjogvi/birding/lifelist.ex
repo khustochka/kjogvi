@@ -66,7 +66,7 @@ defmodule Kjogvi.Birding.Lifelist do
   def years(scope, filter \\ []) do
     Lifelist.Query.observations_filtered(scope, filter)
     |> distinct(true)
-    |> select([..., c], extract_year(c.observ_date))
+    |> select([_o, c], extract_year(c.observ_date))
     |> Repo.all()
     |> Enum.sort()
   end
@@ -79,7 +79,7 @@ defmodule Kjogvi.Birding.Lifelist do
   def months(scope, filter \\ []) do
     Lifelist.Query.observations_filtered(scope, filter)
     |> distinct(true)
-    |> select([..., c], extract_month(c.observ_date))
+    |> select([_o, c], extract_month(c.observ_date))
     |> Repo.all()
     |> Enum.sort()
   end
@@ -111,8 +111,7 @@ defmodule Kjogvi.Birding.Lifelist do
     Lifelist.Query.lifelist_query(scope, filter, opts)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Kjogvi.Birding.preload_species()
-    |> Enum.reject(&is_nil(&1.species))
+    |> Kjogvi.Repo.preload(:species_page)
   end
 
   defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do
