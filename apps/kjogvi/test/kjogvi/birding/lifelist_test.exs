@@ -447,5 +447,30 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       assert length(result.list) == 1
     end
+
+    test "with heard only separated" do
+      user = user_fixture()
+
+      {taxon1, _} = Factory.create_species_taxon_with_page()
+      {taxon2, _} = Factory.create_species_taxon_with_page()
+      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon1),
+        voice: true
+      )
+
+      insert(:observation,
+        card: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon2)
+      )
+
+      scope = %Lifelist.Scope{user: user}
+      result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true)
+
+      assert length(result.list) == 1
+      assert length(result.extras.heard_only.list) == 1
+    end
   end
 end

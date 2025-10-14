@@ -22,10 +22,13 @@ defmodule Kjogvi.Birding.Lifelist do
 
   @spec generate(scope()) :: Result.t()
   @spec generate(scope(), filter()) :: Result.t()
+
   @doc """
   Generate lifelist based on provided filter options.
   """
-  def generate(scope, filter \\ []) do
+  def generate(scope, filter \\ [])
+
+  def generate(scope, %Filter{} = filter) do
     generate_with_species(scope, filter)
     |> Location.Query.preload_all_locations()
     |> then(fn list ->
@@ -40,12 +43,18 @@ defmodule Kjogvi.Birding.Lifelist do
     |> then(&maybe_add_extras(scope, &1))
   end
 
+  def generate(scope, filter) do
+    filter |> Filter.discombo!() |> then(&generate(scope, &1))
+  end
+
   @spec top(scope(), integer()) :: Result.t()
   @spec top(scope(), integer(), filter()) :: Result.t()
   @doc """
   Get N newest species on the list based on provided filter options.
   """
-  def top(scope, n, filter \\ []) when is_integer(n) and n > 0 do
+  def top(scope, n, filter \\ [])
+
+  def top(scope, n, %Filter{} = filter) when is_integer(n) and n > 0 do
     list = generate_with_species(scope, filter)
     total_species = length(list)
 
@@ -56,6 +65,10 @@ defmodule Kjogvi.Birding.Lifelist do
       list: Enum.take(list, n),
       total: total_species
     }
+  end
+
+  def top(scope, n, filter) do
+    filter |> Filter.discombo!() |> then(&top(scope, n, &1))
   end
 
   @spec years(scope()) :: list(integer())
@@ -115,9 +128,7 @@ defmodule Kjogvi.Birding.Lifelist do
   end
 
   defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do
-    sp_codes =
-      result.list
-      |> Enum.map(& &1.species.code)
+    species_pages = Enum.map(result.list, & &1.species_page_id)
 
     new_filter = %{filter | exclude_heard_only: false}
 
@@ -127,7 +138,7 @@ defmodule Kjogvi.Birding.Lifelist do
     heard_only_list =
       full_list
       |> Enum.reject(fn life_obs ->
-        life_obs.species.code in sp_codes
+        life_obs.species_page_id in species_pages
       end)
       |> Location.Query.preload_all_locations()
       |> then(fn list ->
