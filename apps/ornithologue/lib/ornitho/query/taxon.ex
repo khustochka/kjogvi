@@ -35,9 +35,14 @@ defmodule Ornitho.Query.Taxon do
     |> where([t], t.category == "species" or not is_nil(t.parent_species))
   end
 
-  def select_minimal(query) do
+  def select_by_format(query, format) do
     from(query)
-    |> select(^@select_minimal)
+    |> then(fn query ->
+      case format do
+        :full -> query
+        _else -> select(query, ^@select_minimal)
+      end
+    end)
   end
 
   def ordered(query) do

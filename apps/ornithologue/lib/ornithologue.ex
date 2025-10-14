@@ -12,12 +12,14 @@ defmodule Ornithologue do
 
   @spec get_taxa_and_species([String.t()]) :: %{String.t() => Ornitho.Schema.Taxon.t() | nil}
 
+  def get_taxa_and_species(key_list, opts \\ [])
+
   # This is not required, but helps avoid unnecessary SQL query
-  def get_taxa_and_species([]) do
+  def get_taxa_and_species([], _opts) do
     %{}
   end
 
-  def get_taxa_and_species(key_list) do
+  def get_taxa_and_species(key_list, opts) do
     by_book = extract_books_and_codes(key_list)
 
     books =
@@ -31,7 +33,7 @@ defmodule Ornithologue do
     |> Enum.reduce(%{}, fn book, acc ->
       grouped =
         Query.Taxon.by_book(book)
-        |> Query.Taxon.select_minimal()
+        |> Query.Taxon.select_by_format(opts[:format])
         |> Query.Taxon.by_codes(by_book[{book.slug, book.version}])
         |> repo().all()
         |> repo().preload(:parent_species)

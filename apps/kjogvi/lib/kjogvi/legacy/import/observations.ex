@@ -21,7 +21,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
 
   def after_import do
     # Promoting
-    Kjogvi.Pages.promote_observations_by_query(Observation)
+    Kjogvi.Pages.Promotion.promote_observations_by_query(Observation)
   end
 
   def truncate do

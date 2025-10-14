@@ -38,7 +38,7 @@ defmodule Kjogvi.Factory do
       |> Map.put_new(:category, "species")
 
     taxon = Ornitho.Factory.insert(:taxon, taxon_attrs)
-    species_page = Kjogvi.Pages.promote_taxon(taxon)
+    species_page = Kjogvi.Pages.Promotion.promote_taxon(taxon)
 
     {taxon, species_page}
   end
@@ -55,7 +55,7 @@ defmodule Kjogvi.Factory do
       |> Map.put_new(:parent_species, species)
 
     taxon = Ornitho.Factory.insert(:taxon, taxon_attrs)
-    species_page = Kjogvi.Pages.promote_taxon(taxon)
+    species_page = Kjogvi.Pages.Promotion.promote_taxon(taxon)
 
     {taxon, species_page}
   end

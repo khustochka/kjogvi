@@ -1,8 +1,9 @@
-defmodule Kjogvi.Pages do
+defmodule Kjogvi.Pages.Promotion do
   @moduledoc """
-  Operations with pages that represent species.
+  Promotiong means creating previouisly non-exisitng pages for species.
 
-  TODO: find better name/structure.
+  When a new observation is added, we may need to create a new species page,
+  otherwise it will not be included in the lifelist.
   """
 
   import Ecto.Query
@@ -13,6 +14,9 @@ defmodule Kjogvi.Pages do
   alias Kjogvi.Pages.Species
   alias Kjogvi.Pages.SpeciesTaxaMapping
   alias Kjogvi.Repo
+
+  # Extras fields to copy from taxon.
+  @extras_fields ["species_group", "extinct", "extinct_year"]
 
   # def promote_observations_by_list(observations) do
   #   taxa_keys = Enum.map(observations, & Map.take(&1, [:taxon_key]))
@@ -41,7 +45,7 @@ defmodule Kjogvi.Pages do
     unmapped_keys = Repo.all(query)
 
     unmapped_keys
-    |> Ornithologue.get_taxa_and_species()
+    |> Ornithologue.get_taxa_and_species(format: :full)
     |> Enum.uniq()
     |> Enum.map(fn {_key, taxon} -> promote_taxon(taxon) end)
   end
@@ -49,17 +53,14 @@ defmodule Kjogvi.Pages do
   def promote_taxon(taxon) do
     species = Taxon.species(taxon)
 
-    taxon_species_page = Species.from_taxon(taxon)
-    species_species_page = Species.from_taxon(species)
-
     cond do
       is_nil(species) ->
         nil
 
-      not is_nil(taxon_species_page) ->
+      not is_nil(taxon_species_page = Species.from_taxon(taxon)) ->
         taxon_species_page
 
-      not is_nil(species_species_page) ->
+      not is_nil(species_species_page = Species.from_taxon(species)) ->
         attach_taxon_to_species_page(species_species_page, taxon)
 
       :otherwise ->
@@ -86,8 +87,7 @@ defmodule Kjogvi.Pages do
         name_en: taxon.name_en,
         order: taxon.order,
         family: taxon.family,
-        # not all may be relevant
-        extras: taxon.extras,
+        extras: Map.take(taxon.extras, @extras_fields),
         sort_order: taxon.sort_order
       })
       |> Repo.insert()
