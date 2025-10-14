@@ -3,9 +3,6 @@ defmodule Kjogvi.Legacy.Import.Observations do
 
   alias Kjogvi.Repo
   alias Kjogvi.Birding.Observation
-  alias Ornitho.Schema.Taxon
-
-  import Ecto.Query
 
   def import(columns_str, rows, _opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
@@ -25,28 +22,6 @@ defmodule Kjogvi.Legacy.Import.Observations do
   def after_import do
     # Promoting
     Kjogvi.Pages.promote_observations_by_query(Observation)
-
-    # Caching
-    keys =
-      Observation
-      |> distinct([:taxon_key])
-      |> Repo.all()
-      |> Enum.map(& &1.taxon_key)
-
-    taxa = Ornithologue.get_taxa_and_species(keys)
-
-    for {key, taxon} <- taxa, not is_nil(taxon.parent_species) or taxon.category == "species" do
-      species_key =
-        if taxon.category == "species" do
-          key
-        else
-          Taxon.key(taxon.parent_species)
-        end
-
-      Observation
-      |> where(taxon_key: ^key)
-      |> Repo.update_all(set: [cached_species_key: species_key])
-    end
   end
 
   def truncate do
