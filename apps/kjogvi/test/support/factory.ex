@@ -44,7 +44,7 @@ defmodule Kjogvi.Factory do
   end
 
   def create_subspecies_taxon_with_page(attrs \\ []) do
-    book = attrs[:book] ||  Ornitho.Factory.insert(:book)
+    book = attrs[:book] || Ornitho.Factory.insert(:book)
 
     species = Ornitho.Factory.insert(:taxon, book: book)
 

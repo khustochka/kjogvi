@@ -337,7 +337,11 @@ defmodule Kjogvi.Birding.LifelistTest do
       result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true)
       assert length(result.list) == 2
 
-      assert Enum.map(result.list, & &1.species_page.name_sci) == [taxon3.name_sci, taxon1.name_sci]
+      assert Enum.map(result.list, & &1.species_page.name_sci) == [
+               taxon3.name_sci,
+               taxon1.name_sci
+             ]
+
       assert Enum.map(result.list, & &1.observ_date) == [card3.observ_date, card1.observ_date]
     end
 

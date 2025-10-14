@@ -88,11 +88,11 @@ defmodule Kjogvi.Birding.Lifelist.Query do
     query =
       from o in Observation,
         as: :observation,
-        join: c in assoc(o, :card), as: :card,
+        join: c in assoc(o, :card),
+        as: :card,
         join: stm in assoc(o, :species_taxa_mapping),
         join: species in assoc(stm, :species_page),
-        where:
-          o.unreported == false and c.user_id == ^user_id
+        where: o.unreported == false and c.user_id == ^user_id
 
     if include_private do
       query

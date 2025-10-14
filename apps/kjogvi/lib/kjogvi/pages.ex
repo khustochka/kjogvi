@@ -1,4 +1,10 @@
 defmodule Kjogvi.Pages do
+  @moduledoc """
+  Operations with pages that represent species.
+
+  TODO: find better name/structure.
+  """
+
   import Ecto.Query
 
   alias Ornitho.Schema.Taxon
