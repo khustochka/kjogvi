@@ -82,6 +82,7 @@ defmodule Kjogvi.Pages do
     {:ok, species_page} =
       Species.changeset(%Species{}, %{
         name_sci: taxon.name_sci,
+        common_name: taxon.name_en,
         name_en: taxon.name_en,
         order: taxon.order,
         family: taxon.family,

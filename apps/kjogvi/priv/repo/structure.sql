@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.3
--- Dumped by pg_dump version 17.4
+\restrict bUMLPZWttN5oTb9GwnzzQQ1oH97h0PgCSceCSGlMr0c1Ylwx2fMCAiIm4W6IxRF
+
+-- Dumped from database version 17.6 (Debian 17.6-2.pgdg12+1)
+-- Dumped by pg_dump version 18.0
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -136,7 +138,6 @@ CREATE TABLE public.observations (
     id bigint NOT NULL,
     card_id bigint NOT NULL,
     taxon_key character varying(255) NOT NULL,
-    cached_species_key character varying(255),
     quantity character varying(255),
     voice boolean DEFAULT false NOT NULL,
     notes text,
@@ -206,6 +207,75 @@ CREATE SEQUENCE public.special_locations_id_seq
 --
 
 ALTER SEQUENCE public.special_locations_id_seq OWNED BY public.special_locations.id;
+
+
+--
+-- Name: species_pages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.species_pages (
+    id bigint NOT NULL,
+    name_sci character varying(255) NOT NULL,
+    common_name character varying(255),
+    name_en character varying(255),
+    "order" character varying(255),
+    family character varying(255),
+    extras jsonb DEFAULT '{}'::jsonb,
+    sort_order integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: species_pages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.species_pages_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: species_pages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.species_pages_id_seq OWNED BY public.species_pages.id;
+
+
+--
+-- Name: species_taxa_mappings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.species_taxa_mappings (
+    id bigint NOT NULL,
+    species_page_id bigint NOT NULL,
+    taxon_key character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: species_taxa_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.species_taxa_mappings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: species_taxa_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.species_taxa_mappings_id_seq OWNED BY public.species_taxa_mappings.id;
 
 
 --
@@ -305,6 +375,20 @@ ALTER TABLE ONLY public.special_locations ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: species_pages id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.species_pages ALTER COLUMN id SET DEFAULT nextval('public.species_pages_id_seq'::regclass);
+
+
+--
+-- Name: species_taxa_mappings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.species_taxa_mappings ALTER COLUMN id SET DEFAULT nextval('public.species_taxa_mappings_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -356,6 +440,22 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.special_locations
     ADD CONSTRAINT special_locations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: species_pages species_pages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.species_pages
+    ADD CONSTRAINT species_pages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: species_taxa_mappings species_taxa_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.species_taxa_mappings
+    ADD CONSTRAINT species_taxa_mappings_pkey PRIMARY KEY (id);
 
 
 --
@@ -431,13 +531,6 @@ CREATE UNIQUE INDEX locations_slug_index ON public.locations USING btree (slug);
 
 
 --
--- Name: observations_cached_species_key_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX observations_cached_species_key_index ON public.observations USING btree (cached_species_key);
-
-
---
 -- Name: observations_card_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -456,6 +549,34 @@ CREATE INDEX observations_taxon_key_index ON public.observations USING btree (ta
 --
 
 CREATE INDEX special_locations_parent_location_id_index ON public.special_locations USING btree (parent_location_id);
+
+
+--
+-- Name: species_pages_name_sci_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX species_pages_name_sci_index ON public.species_pages USING btree (name_sci);
+
+
+--
+-- Name: species_pages_sort_order_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX species_pages_sort_order_index ON public.species_pages USING btree (sort_order);
+
+
+--
+-- Name: species_taxa_mappings_species_page_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX species_taxa_mappings_species_page_id_index ON public.species_taxa_mappings USING btree (species_page_id);
+
+
+--
+-- Name: species_taxa_mappings_taxon_key_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX species_taxa_mappings_taxon_key_index ON public.species_taxa_mappings USING btree (taxon_key);
 
 
 --
@@ -560,6 +681,14 @@ ALTER TABLE ONLY public.special_locations
 
 
 --
+-- Name: species_taxa_mappings species_taxa_mappings_species_page_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.species_taxa_mappings
+    ADD CONSTRAINT species_taxa_mappings_species_page_id_fkey FOREIGN KEY (species_page_id) REFERENCES public.species_pages(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: users_tokens users_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -571,7 +700,10 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
+\unrestrict bUMLPZWttN5oTb9GwnzzQQ1oH97h0PgCSceCSGlMr0c1Ylwx2fMCAiIm4W6IxRF
+
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
 INSERT INTO public."schema_migrations" (version) VALUES (20240120044005);
 INSERT INTO public."schema_migrations" (version) VALUES (20240627032425);
+INSERT INTO public."schema_migrations" (version) VALUES (20251013044023);

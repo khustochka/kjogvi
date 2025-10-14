@@ -4,6 +4,8 @@ defmodule Kjogvi.Repo.Migrations.CreateSpeciesPages do
   def change do
     create table(:species_pages) do
       add :name_sci, :string, null: false
+      # Name inherited from Taxonomy list, may be overwritten by name_en
+      add :common_name, :string
       add :name_en, :string
       add :order, :string
       add :family, :string
