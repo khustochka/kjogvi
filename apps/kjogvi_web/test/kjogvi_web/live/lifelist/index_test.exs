@@ -1,4 +1,5 @@
 defmodule KjogviWeb.Live.Lifelist.IndexTest do
+  alias Kjogvi.Factory
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -16,7 +17,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "renders with species observation", %{conn: conn} do
-    taxon = Ornitho.Factory.insert(:taxon, category: "species")
+    {taxon, _} = Factory.create_species_taxon_with_page()
 
     insert(:observation,
       taxon_key: Ornitho.Schema.Taxon.key(taxon),
@@ -32,7 +33,6 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
     insert(:observation,
       taxon_key: Ornitho.Schema.Taxon.key(taxon),
-      cached_species_key: nil,
       card: insert(:main_user_card)
     )
 
@@ -41,9 +41,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "renders with subspecies observation", %{conn: conn} do
-    book = Ornitho.Factory.insert(:book)
-    species = Ornitho.Factory.insert(:taxon, book: book, category: "species")
-    taxon = Ornitho.Factory.insert(:taxon, book: book, category: "issf", parent_species: species)
+    {taxon, _} = Factory.create_subspecies_taxon_with_page()
 
     insert(:observation,
       taxon_key: Ornitho.Schema.Taxon.key(taxon),
@@ -55,9 +53,9 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "filters by year", %{conn: conn} do
-    book = Ornitho.Factory.insert(:book)
-    species1 = Ornitho.Factory.insert(:taxon, book: book, category: "species")
-    species2 = Ornitho.Factory.insert(:taxon, book: book, category: "species")
+    {species1, _} = Factory.create_species_taxon_with_page()
+    {species2, _} = Factory.create_species_taxon_with_page()
+
     card1 = insert(:main_user_card, observ_date: ~D[2023-06-07])
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(species1))
     card2 = insert(:main_user_card, observ_date: ~D[2022-04-03])
@@ -79,7 +77,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "non-empty year list is indexed by robots", %{conn: conn} do
-    species = Ornitho.Factory.insert(:taxon, category: "species")
+    {species, _} = Factory.create_species_taxon_with_page()
     card = insert(:card, observ_date: ~D[2023-06-07])
 
     insert(:observation,
@@ -128,10 +126,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
-    taxon1 = Ornitho.Factory.insert(:taxon)
+    {taxon1, _} = Factory.create_species_taxon_with_page()
     card1 = insert(:main_user_card, location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    taxon2 = Ornitho.Factory.insert(:taxon)
+    {taxon2, _} = Factory.create_species_taxon_with_page()
     card2 = insert(:main_user_card, location: usa)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
@@ -146,13 +144,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
-    taxon1 = Ornitho.Factory.insert(:taxon)
+    {taxon1, _} = Factory.create_species_taxon_with_page()
     card1 = insert(:main_user_card, observ_date: ~D"2022-11-18", location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    taxon2 = Ornitho.Factory.insert(:taxon)
+    {taxon2, _} = Factory.create_species_taxon_with_page()
     card2 = insert(:main_user_card, observ_date: ~D"2023-07-16", location: brovary)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
-    taxon3 = Ornitho.Factory.insert(:taxon)
+    {taxon3, _} = Factory.create_species_taxon_with_page()
     card2 = insert(:main_user_card, observ_date: ~D"2022-07-16", location: usa)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
@@ -172,10 +170,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
-    taxon1 = Ornitho.Factory.insert(:taxon)
+    {taxon1, _} = Factory.create_species_taxon_with_page()
     card1 = insert(:main_user_card, observ_date: ~D"2022-11-18", location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    taxon2 = Ornitho.Factory.insert(:taxon)
+    {taxon2, _} = Factory.create_species_taxon_with_page()
     card2 = insert(:main_user_card, observ_date: ~D"2023-07-16", location: brovary)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 

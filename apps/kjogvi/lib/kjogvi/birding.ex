@@ -13,6 +13,7 @@ defmodule Kjogvi.Birding do
 
   def get_cards(user, %{page: page, page_size: page_size}) do
     Card
+    |> Card.Query.as_card()
     |> Card.Query.by_user(user)
     |> order_by([{:desc, :observ_date}, {:desc, :id}])
     |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :cached_country])
@@ -22,6 +23,7 @@ defmodule Kjogvi.Birding do
 
   def fetch_card_with_observations(user, id) do
     Card
+    |> Card.Query.as_card()
     |> Card.Query.by_user(user)
     |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :cached_country])
     |> Repo.get!(id)
@@ -51,6 +53,7 @@ defmodule Kjogvi.Birding do
   def find_new_checklists(user, checklists) do
     new_ebird_ids =
       Card
+      |> Card.Query.as_card()
       |> Card.Query.by_user(user)
       |> Card.Query.find_new_checklists(Enum.map(checklists, & &1.ebird_id))
       |> Repo.all()

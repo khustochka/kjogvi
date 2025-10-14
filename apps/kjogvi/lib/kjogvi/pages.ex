@@ -37,10 +37,10 @@ defmodule Kjogvi.Pages do
     unmapped_keys
     |> Ornithologue.get_taxa_and_species()
     |> Enum.uniq()
-    |> Enum.map(&promote_taxon/1)
+    |> Enum.map(fn {_key, taxon} -> promote_taxon(taxon) end)
   end
 
-  def promote_taxon({_key, taxon}) do
+  def promote_taxon(taxon) do
     species = Taxon.species(taxon)
 
     taxon_species_page = Species.from_taxon(taxon)

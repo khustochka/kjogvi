@@ -8,6 +8,10 @@ defmodule Kjogvi.Birding.Card.Query do
 
   alias Kjogvi.Geo
 
+  def as_card(query) do
+    from c in query, as: :card
+  end
+
   def by_year(query, year) when is_integer(year) do
     query
     |> where([..., card: c], extract_year(c.observ_date) == ^year)
