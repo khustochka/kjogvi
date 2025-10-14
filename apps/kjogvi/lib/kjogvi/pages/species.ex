@@ -15,6 +15,7 @@ defmodule Kjogvi.Pages.Species do
 
   schema "species_pages" do
     field(:name_en, :string)
+    field(:common_name, :string)
     field(:name_sci, :string)
     field(:order, :string)
     field(:family, :string)
@@ -30,6 +31,7 @@ defmodule Kjogvi.Pages.Species do
     card
     |> cast(attrs, [
       :name_en,
+      :common_name,
       :name_sci,
       :order,
       :family,
