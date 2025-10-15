@@ -32,6 +32,10 @@ defmodule Kjogvi.Birding.Card do
     has_many(:observations, Kjogvi.Birding.Observation)
     belongs_to(:user, Kjogvi.Users.User)
 
+    # Generated
+    field :cached_year, :integer
+    field :cached_month, :integer
+
     timestamps()
 
     field :observation_count, :integer, virtual: true

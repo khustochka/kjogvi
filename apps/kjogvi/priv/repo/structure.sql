@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict bUMLPZWttN5oTb9GwnzzQQ1oH97h0PgCSceCSGlMr0c1Ylwx2fMCAiIm4W6IxRF
+\restrict zzZhpYkdQHDjJPlJYKuv4TqoeSTb9oNrUGJO0wIViKyVid2FPTpvY0AtTMqktqi
 
 -- Dumped from database version 17.6 (Debian 17.6-2.pgdg12+1)
 -- Dumped by pg_dump version 18.0
@@ -61,7 +61,9 @@ CREATE TABLE public.cards (
     ebird_id character varying(255),
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    user_id bigint NOT NULL
+    user_id bigint NOT NULL,
+    cached_year integer GENERATED ALWAYS AS (EXTRACT(year FROM observ_date)) STORED,
+    cached_month integer GENERATED ALWAYS AS (EXTRACT(month FROM observ_date)) STORED
 );
 
 
@@ -475,6 +477,20 @@ ALTER TABLE ONLY public.users_tokens
 
 
 --
+-- Name: cards_cached_month_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cards_cached_month_index ON public.cards USING btree (cached_month);
+
+
+--
+-- Name: cards_cached_year_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cards_cached_year_index ON public.cards USING btree (cached_year);
+
+
+--
 -- Name: cards_ebird_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -700,10 +716,11 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict bUMLPZWttN5oTb9GwnzzQQ1oH97h0PgCSceCSGlMr0c1Ylwx2fMCAiIm4W6IxRF
+\unrestrict zzZhpYkdQHDjJPlJYKuv4TqoeSTb9oNrUGJO0wIViKyVid2FPTpvY0AtTMqktqi
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
 INSERT INTO public."schema_migrations" (version) VALUES (20240120044005);
 INSERT INTO public."schema_migrations" (version) VALUES (20240627032425);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013044023);
+INSERT INTO public."schema_migrations" (version) VALUES (20251015130047);

@@ -4,7 +4,6 @@ defmodule Kjogvi.Birding.Card.Query do
   """
 
   import Ecto.Query
-  import Kjogvi.Query.API
 
   alias Kjogvi.Geo
 
@@ -14,12 +13,12 @@ defmodule Kjogvi.Birding.Card.Query do
 
   def by_year(query, year) when is_integer(year) do
     query
-    |> where([..., card: c], extract_year(c.observ_date) == ^year)
+    |> where([..., card: c], c.cached_year == ^year)
   end
 
   def by_month(query, month) when is_integer(month) do
     query
-    |> where([..., card: c], extract_month(c.observ_date) == ^month)
+    |> where([..., card: c], c.cached_month == ^month)
   end
 
   def by_user(query, user) do

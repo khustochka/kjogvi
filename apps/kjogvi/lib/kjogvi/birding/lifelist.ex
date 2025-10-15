@@ -4,7 +4,6 @@ defmodule Kjogvi.Birding.Lifelist do
   """
 
   import Ecto.Query
-  import Kjogvi.Query.API
 
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
@@ -79,7 +78,7 @@ defmodule Kjogvi.Birding.Lifelist do
   def years(scope, filter \\ []) do
     Lifelist.Query.observations_filtered(scope, filter)
     |> distinct(true)
-    |> select([_o, c], extract_year(c.observ_date))
+    |> select([_o, c], c.cached_year)
     |> Repo.all()
     |> Enum.sort()
   end
@@ -92,7 +91,7 @@ defmodule Kjogvi.Birding.Lifelist do
   def months(scope, filter \\ []) do
     Lifelist.Query.observations_filtered(scope, filter)
     |> distinct(true)
-    |> select([_o, c], extract_month(c.observ_date))
+    |> select([_o, c], c.cached_month)
     |> Repo.all()
     |> Enum.sort()
   end
