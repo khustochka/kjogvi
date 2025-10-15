@@ -15,10 +15,17 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @impl true
   def mount(_params, _session, %{assigns: assigns} = socket) do
+    lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
+    all_years = Birding.Lifelist.years(lifelist_scope)
+    all_countries = Kjogvi.Geo.get_countries()
+
     {
       :ok,
       socket
-      |> assign(:lifelist_scope, Lifelist.Scope.from_scope(assigns.current_scope))
+      |> assign(:lifelist_scope, lifelist_scope)
+      |> assign(:all_years, all_years)
+      |> assign(:all_countries, all_countries),
+      temporary_assigns: [lifelist: []]
     }
   end
 
@@ -30,21 +37,18 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     lifelist = Birding.Lifelist.generate(lifelist_scope, filter)
 
-    all_years = Birding.Lifelist.years(lifelist_scope)
-
     years =
       Birding.Lifelist.years(lifelist_scope, Map.put(filter, :year, nil))
-      |> then(&Util.Enum.zip_inclusion(all_years, &1))
+      |> then(&Util.Enum.zip_inclusion(assigns.all_years, &1))
 
     months =
       Birding.Lifelist.months(lifelist_scope, Map.put(filter, :month, nil))
       |> then(&Util.Enum.zip_inclusion(@all_months, &1))
 
-    all_countries = Kjogvi.Geo.get_countries()
     country_ids = Birding.Lifelist.country_ids(lifelist_scope, Map.put(filter, :location, nil))
 
     locations =
-      all_countries
+      assigns.all_countries
       |> Enum.map(fn el -> {el, el.id in country_ids} end)
 
     {
