@@ -20,7 +20,6 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
       add :public_index, :smallint
       add :is_private, :boolean, default: false, null: false
       add :cached_public_location_id, references("locations", on_delete: :nilify_all)
-      # TODO: null: false
       add :cached_country_id, references("locations", on_delete: :restrict)
       add :cached_parent_id, references("locations", on_delete: :nilify_all)
       add :cached_city_id, references("locations", on_delete: :nilify_all)
