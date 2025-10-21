@@ -1,4 +1,4 @@
-defmodule Kjogvi.Logger do
+defmodule Kjogvi.Telemetry.Logger do
   @moduledoc """
   Instrumenter to handle logging of application-specific events.
   """
