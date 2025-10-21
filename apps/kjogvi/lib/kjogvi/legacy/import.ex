@@ -2,9 +2,9 @@ defmodule Kjogvi.Legacy.Import do
   @moduledoc false
 
   def run(user, opts \\ []) do
-    :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(), fn ->
-      new_opts = Keyword.put(opts, :user, user)
+    new_opts = Keyword.put(opts, :user, user)
 
+    :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(new_opts), fn ->
       prepare_import(new_opts)
 
       perform_import(:locations, new_opts)
@@ -13,52 +13,26 @@ defmodule Kjogvi.Legacy.Import do
 
       perform_import(:observations, new_opts)
 
-      broadcast_progress(opts[:import_id], "Legacy import done.")
-
-      {:ok, telemetry_metadata()}
+      {:ok, telemetry_metadata(new_opts)}
     end)
   end
 
   def prepare_import(opts \\ []) do
-    broadcast_progress(opts[:import_id], "Preparing legacy import...")
-
-    :telemetry.span([:kjogvi, :legacy, :import, :prepare], telemetry_metadata(), fn ->
+    :telemetry.span([:kjogvi, :legacy, :import, :prepare], telemetry_metadata(opts), fn ->
       Kjogvi.Legacy.Import.Observations.truncate()
       Kjogvi.Legacy.Import.Cards.truncate()
       Kjogvi.Legacy.Import.Locations.truncate()
 
-      {:ok, telemetry_metadata()}
+      {:ok, telemetry_metadata(opts)}
     end)
   end
 
   def perform_import(object_type, opts \\ []) do
-    broadcast_progress(opts[:import_id], "Importing #{Atom.to_string(object_type)}...")
-
-    :telemetry.span([:kjogvi, :legacy, :import, object_type], telemetry_metadata(), fn ->
+    :telemetry.span([:kjogvi, :legacy, :import, object_type], telemetry_metadata(opts), fn ->
       result = load(object_type, adapter().init(), {1, 0}, opts)
 
-      {result, telemetry_metadata()}
+      {result, telemetry_metadata(opts)}
     end)
-  end
-
-  def subscribe_progress(import_id) do
-    Phoenix.PubSub.subscribe(Kjogvi.PubSub, progress_key(import_id))
-  end
-
-  defp broadcast_progress(nil, _message) do
-    :ok
-  end
-
-  defp broadcast_progress(import_id, message) do
-    Phoenix.PubSub.broadcast(
-      Kjogvi.PubSub,
-      progress_key(import_id),
-      {:legacy_import_progress, %{message: message}}
-    )
-  end
-
-  defp progress_key(import_id) do
-    "legacy_import:progress:#{import_id}"
   end
 
   defp load(object_type, fetcher, {page, loaded}, opts) do
@@ -70,7 +44,13 @@ defmodule Kjogvi.Legacy.Import do
     else
       put_loaded(object_type, results.columns, results.rows, opts)
       count = loaded + length(results.rows)
-      broadcast_progress(opts[:import_id], "Importing #{Atom.to_string(object_type)}... #{count}")
+
+      :telemetry.execute(
+        [:kjogvi, :legacy, :import, object_type, :progress],
+        %{count: count},
+        telemetry_metadata(opts)
+      )
+
       load(object_type, fetcher, {page + 1, count}, opts)
     end
   end
@@ -88,8 +68,15 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   defp after_import(:locations, opts) do
-    broadcast_progress(opts[:import_id], "Caching public locations...")
-    Kjogvi.Legacy.Import.Locations.after_import()
+    :telemetry.span(
+      [:kjogvi, :legacy, :import, :locations, :after_import],
+      telemetry_metadata(opts),
+      fn ->
+        Kjogvi.Legacy.Import.Locations.after_import()
+
+        {:ok, telemetry_metadata(opts)}
+      end
+    )
   end
 
   defp after_import(:cards, _opts) do
@@ -97,8 +84,15 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   defp after_import(:observations, opts) do
-    broadcast_progress(opts[:import_id], "Promoting observation species...")
-    Kjogvi.Legacy.Import.Observations.after_import()
+    :telemetry.span(
+      [:kjogvi, :legacy, :import, :observations, :after_import],
+      telemetry_metadata(opts),
+      fn ->
+        Kjogvi.Legacy.Import.Observations.after_import()
+
+        {:ok, telemetry_metadata(opts)}
+      end
+    )
   end
 
   def config do
@@ -109,7 +103,7 @@ defmodule Kjogvi.Legacy.Import do
     config()[:adapter]
   end
 
-  defp telemetry_metadata() do
-    %{adapter: adapter()}
+  defp telemetry_metadata(opts) do
+    %{adapter: adapter(), user_id: opts[:user].id, import_id: opts[:import_id]}
   end
 end

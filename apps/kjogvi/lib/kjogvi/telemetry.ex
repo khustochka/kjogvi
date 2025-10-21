@@ -4,5 +4,7 @@ defmodule Kjogvi.Telemetry do
     Kjogvi.Telemetry.Logger.dev_setup()
 
     Kjogvi.Telemetry.Opentelemetry.setup()
+
+    Kjogvi.Telemetry.LegacyBroadcast.setup()
   end
 end

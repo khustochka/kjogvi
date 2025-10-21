@@ -54,7 +54,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
 
   defp start_import(%{assigns: %{user: user}} = socket) do
     import_id = Ecto.UUID.generate()
-    Kjogvi.Legacy.Import.subscribe_progress(import_id)
+    Kjogvi.Legacy.Import.PubSub.subscribe(import_id)
 
     %{ref: ref} =
       Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn ->
