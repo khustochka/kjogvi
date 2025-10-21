@@ -1,7 +1,7 @@
 defmodule KjogviWeb.My.ImportsController do
   use KjogviWeb, :controller
 
-  def legacyt(%{assigns: assigns} = conn, _params) do
+  def legacy(%{assigns: assigns} = conn, _params) do
     Kjogvi.Legacy.Import.run(assigns.current_scope.user)
 
     conn
