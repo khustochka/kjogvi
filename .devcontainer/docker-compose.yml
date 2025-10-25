@@ -33,7 +33,7 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:17.6-bookworm
+    image: postgres:17.6-trixie
     restart: unless-stopped
     volumes:
       - postgres-data-16:/var/lib/postgresql/data

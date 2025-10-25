@@ -17,7 +17,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           env: dev
-          elixir: v1.19.0
+          elixir: v1.19.1
           otp: '28.1'
       - name: Run lint
         env:
@@ -30,13 +30,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - elixir: 'v1.19.0'
+          - elixir: 'v1.19.1'
             otp: '28.1'
           - elixir: 'v1.17.3'
             otp: '27.3.4.2'
     services:
       postgres:
-        image: postgres:17.6-bookworm
+        image: postgres:17.6-trixie
         ports:
           - "5432:5432"
         options: >-

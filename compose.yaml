@@ -1,6 +1,6 @@
 services:
   database:
-    image: postgres:17.6-bookworm
+    image: postgres:17.6-trixie
     environment:
       POSTGRES_USER: kjogvi
       POSTGRES_PASSWORD: kjogvi
