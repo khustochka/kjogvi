@@ -96,7 +96,7 @@ ENV GIT_REPOSITORY_URL=${GIT_REPOSITORY_URL}
 ENV DD_TAGS="git.repository_url:github.com/khustochka/kjogvi git.commit.sha:${GIT_REVISION}"
 
 RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates \
+  apt-get install -y libstdc++6 openssl libncurses6 locales ca-certificates \
   postgresql-client file curl gzip bzip2 net-tools netcat-openbsd bind9-dnsutils procps \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
