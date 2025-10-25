@@ -13,7 +13,7 @@ services:
       - source: create_ornitho_db
         target: /docker-entrypoint-initdb.d/create-ornitho-db.sql  
     healthcheck:
-      test: pg_isready -U kjogvi -h 127.0.0.1 kjogvi_dev
+      test: pg_isready -U kjogvi -h 127.0.0.1 -d kjogvi_dev
       interval: 3s
 
 # Declare the volumes that our application uses.
