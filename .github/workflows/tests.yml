@@ -36,7 +36,7 @@ jobs:
             otp: '27.3.4.2'
     services:
       postgres:
-        image: postgres:17.6-trixie
+        image: postgres:17.6-bookworm
         ports:
           - "5432:5432"
         options: >-

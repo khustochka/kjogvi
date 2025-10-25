@@ -23,7 +23,7 @@ services:
         condition: service_healthy  
 
   database:
-    image: postgres:17.6-trixie
+    image: postgres:17.6-bookworm
     environment:
       POSTGRES_USER: kjogvi
       POSTGRES_PASSWORD: kjogvi
