@@ -9,9 +9,9 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 FROM ${BUILDER_IMAGE}
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential ssh git \
+RUN apt-get update -y && apt-get install -y build-essential git \
     # for development
-    inotify-tools \
+    inotify-tools direnv \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 RUN mix local.hex --force
