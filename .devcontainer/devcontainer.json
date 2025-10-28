@@ -34,10 +34,14 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"JakeBecker.elixir-ls", 
-				"ms-azuretools.vscode-docker", 
+				"JakeBecker.elixir-ls",
+				"ms-azuretools.vscode-docker",
 				"eamodio.gitlens",
-				"bradlc.vscode-tailwindcss"
+				"bradlc.vscode-tailwindcss",
+				"pgourlain.erlang",
+				"github.vscode-github-actions",
+				"phoenixframework.phoenix",
+				"redhat.vscode-yaml"
 			]
 		  }
 	}
