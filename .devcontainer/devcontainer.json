@@ -24,13 +24,6 @@
 		4000,
 		5482
 	],
-	"mounts": [
-		{
-			"source": "build-data",
-			"target": "/_build",
-			"type": "volume"
-		}
-	],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "./.devcontainer/start.sh",
 	// workaround for bug
