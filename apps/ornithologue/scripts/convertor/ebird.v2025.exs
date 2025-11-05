@@ -16,8 +16,8 @@ defmodule Convertor.Ebird.V2025 do
   @extras_conversion %{
     "TAXON_ORDER" => {:integer, :ebird_order},
     "SPECIES_GROUP" => {:string, :species_group},
-    "Clements v2025b change" => {:string, :change_type},
-    "text for website v2025b" => {:string, :change_text},
+    "Clements v2025 change" => {:string, :change_type},
+    "text for website v2025" => {:string, :change_text},
     "range" => {:string, :range},
     "extinct" => {:boolean, :extinct},
     "extinct year" => {:string, :extinct_year}
