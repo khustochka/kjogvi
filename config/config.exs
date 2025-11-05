@@ -108,7 +108,7 @@ config :kjogvi, :cache, enabled: false
 
 config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@kjogvi.local"}
 
-config :kjogvi, :legacy,
+config :kjogvi, Kjogvi.Legacy.Import,
   adapter: Kjogvi.Legacy.Adapters.Local,
   database: System.get_env("LEGACY_DATABASE"),
   port: String.to_integer(System.get_env("LEGACY_PORT") || "5432"),

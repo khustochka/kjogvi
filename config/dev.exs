@@ -128,7 +128,7 @@ config :phoenix, :stacktrace_depth, 20
 
 # KJOGVI
 
-# config :kjogvi, :legacy,
+# config :kjogvi, Kjogvi.Legacy.Import,
 #   adapter: Kjogvi.Legacy.Adapters.Download,
 #   url: System.get_env("LEGACY_URL"),
 #   api_key: System.get_env("LEGACY_API_KEY")

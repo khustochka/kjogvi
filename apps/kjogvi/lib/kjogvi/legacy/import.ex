@@ -96,7 +96,7 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   def config do
-    Application.get_env(:kjogvi, :legacy)
+    Application.get_env(:kjogvi, __MODULE__)
   end
 
   defp adapter do
