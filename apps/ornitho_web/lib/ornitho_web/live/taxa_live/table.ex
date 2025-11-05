@@ -55,9 +55,6 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                       <.category_tag :if={taxon.category} category={taxon.category} />
                       <.extinct_tag taxon={taxon} />
                     </div>
-                    <div :if={taxon.authority} class="text-zinc-500 text-xs">
-                      {Ornitho.Schema.Taxon.formatted_authority(taxon)}
-                    </div>
                   </div>
                 </div>
                 <div>
@@ -100,6 +97,9 @@ defmodule OrnithoWeb.Live.Taxa.Table do
               <td></td>
               <td class="p-0 py-4 pr-6" colspan={if @skip_parent_species, do: 4, else: 5}>
                 <.list>
+                  <:item :if={taxon.authority} title="authority">
+                    {Ornitho.Schema.Taxon.formatted_authority(taxon)}
+                  </:item>
                   <:item :for={{key, value} <- taxon.extras || %{}} title={key}>
                     {value}
                   </:item>
