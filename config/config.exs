@@ -114,8 +114,7 @@ config :kjogvi, Kjogvi.Legacy.Import,
   port: String.to_integer(System.get_env("LEGACY_PORT") || "5432"),
   hostname: System.get_env("LEGACY_HOSTNAME") || "localhost",
   username: System.get_env("LEGACY_USERNAME"),
-  password: System.get_env("LEGACY_PASSWORD"),
-  taxonomy_slug: System.get_env("LEGACY_TAXONOMY_SLUG")
+  password: System.get_env("LEGACY_PASSWORD")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

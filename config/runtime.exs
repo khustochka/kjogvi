@@ -62,6 +62,8 @@ end
 #     otlp_headers: [{"x-honeycomb-team", "your-api-key"}]
 # end
 
+config :kjogvi, Kjogvi.Legacy.Import, taxonomy_slug: System.get_env("LEGACY_TAXONOMY_SLUG")
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
