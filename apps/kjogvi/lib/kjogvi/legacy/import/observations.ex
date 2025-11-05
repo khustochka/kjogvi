@@ -40,7 +40,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
        ) do
     obs
     |> Map.drop([:created_at, :post_id, :taxon_id, :ebird_code])
-    |> Map.put(:taxon_key, "/ebird/v2024/#{ebird_code}")
+    |> Map.put(:taxon_key, "#{taxonomy_slug()}/#{ebird_code}")
     |> Map.put(:inserted_at, convert_timestamp(created_at))
     |> Map.put(:updated_at, convert_timestamp(updated_at))
   end
@@ -58,5 +58,10 @@ defmodule Kjogvi.Legacy.Import.Observations do
     {:ok, dt, _} = DateTime.from_iso8601(time)
     {usec, _} = dt.microsecond
     %{dt | microsecond: {usec, 6}}
+  end
+
+  defp taxonomy_slug do
+    Kjogvi.Legacy.Import.config()
+    |> Keyword.fetch!(:taxonomy_slug)
   end
 end

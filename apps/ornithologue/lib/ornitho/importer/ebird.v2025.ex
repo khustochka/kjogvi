@@ -7,8 +7,7 @@ defmodule Ornitho.Importer.Ebird.V2025 do
     slug: "ebird",
     version: "v2025",
     name: "eBird/Clements Checklist v2025",
-    description:
-    """
+    description: """
     Clements, J. F., P. C. Rasmussen, T. S. Schulenberg, M. J. Iliff, J. A. Gerbracht,
     D. Lepage, A. Spencer, S. M. Billerman, B. L. Sullivan, M. Smith, and C. L. Wood. 2025.
     The eBird/Clements checklist of Birds of the World: v2025.

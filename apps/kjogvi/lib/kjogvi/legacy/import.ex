@@ -100,7 +100,8 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   defp adapter do
-    config()[:adapter]
+    config()
+    |> Keyword.fetch!(:adapter)
   end
 
   defp telemetry_metadata(opts) do
