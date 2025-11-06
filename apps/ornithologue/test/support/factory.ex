@@ -7,6 +7,7 @@ defmodule Ornitho.Factory do
     %Ornitho.Schema.Book{
       slug: "ebird",
       version: sequence(:book_version, &"v#{&1}", start_at: 2020),
+      importer: sequence(:book_version, &"Importer.Ebird.V#{&1}", start_at: 2020),
       name: "eBird/Clements",
       publication_date: ~D[2019-08-15],
       extras: %{

@@ -24,6 +24,7 @@ defmodule Ornitho.Schema.Book do
   schema "books" do
     field(:slug, :string)
     field(:version, :string)
+    field(:importer, :string)
     field(:name, :string)
     field(:description, :string)
     field(:publication_date, :date)

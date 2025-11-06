@@ -115,7 +115,8 @@ defmodule Ornitho.Importer do
           name: name(),
           description: description(),
           publication_date: publication_date(),
-          extras: extras()
+          extras: extras(),
+          importer: Atom.to_string(__MODULE__)
         }
       end
 
@@ -139,12 +140,11 @@ defmodule Ornitho.Importer do
   end
 
   def unimported() do
-    imported = Ornitho.Finder.Book.all_signatures()
+    imported =
+      Ornitho.Finder.Book.all_importers()
+      |> Enum.map(&String.to_existing_atom(&1))
 
-    legit_importers()
-    |> Enum.reject(fn importer ->
-      [importer.slug(), importer.version()] in imported
-    end)
+    (legit_importers() -- imported)
     |> Enum.sort_by(& &1.publication_date(), {:desc, Date})
   end
 

@@ -10,6 +10,9 @@ defmodule OrnithoWeb.BooksControllerTest do
 
     test "Book with no taxa", %{conn: conn} do
       book = insert(:book)
+      # Need to seed the atom
+      # credo:disable-for-next-line Credo.Check.Warning.UnsafeToAtom
+      _ = String.to_atom(book.importer)
       conn = get(conn, "/taxonomy")
       resp = html_response(conn, 200)
       assert resp =~ book.slug

@@ -39,18 +39,13 @@ defmodule OrnithoWeb.Router do
         end
       end
 
-    # TODO: Remove check once we require Phoenix v1.7
-    if Code.ensure_loaded?(Phoenix.VerifiedRoutes) do
-      quote do
-        unquote(scope)
+    quote do
+      unquote(scope)
 
-        unless Module.get_attribute(__MODULE__, :ornitho_web_prefix) do
-          @ornitho_web_prefix Phoenix.Router.scoped_path(__MODULE__, path)
-          def __ornitho_web_prefix__, do: @ornitho_web_prefix
-        end
+      unless Module.get_attribute(__MODULE__, :ornitho_web_prefix) do
+        @ornitho_web_prefix Phoenix.Router.scoped_path(__MODULE__, path)
+        def __ornitho_web_prefix__, do: @ornitho_web_prefix
       end
-    else
-      scope
     end
   end
 

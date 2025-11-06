@@ -12,6 +12,7 @@ defmodule Ornitho.Migrations.V01 do
     create table(:books) do
       add :slug, :string, null: false, size: 16
       add :version, :string, null: false, size: 16
+      add :importer, :string, null: false
       add :name, :string, null: false, size: 256
       add :description, :text
       add :publication_date, :date, null: false
