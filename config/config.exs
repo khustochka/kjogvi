@@ -89,10 +89,10 @@ config :ornithologue, repo: Kjogvi.OrnithoRepo
 
 config :ornithologue, Ornitho.Importer,
   legit_importers: [
-    Ornitho.Importer.Ebird.V2022,
     Ornitho.Importer.Ebird.V2023,
     Ornitho.Importer.Ebird.V2024,
-    Ornitho.Importer.Ebird.V2025
+    Ornitho.Importer.Ebird.V2025,
+    Ornitho.Importer.AviList.V2025
   ]
 
 config :ornithologue, Ornitho.StreamImporter,

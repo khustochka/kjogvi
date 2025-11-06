@@ -16,7 +16,7 @@ defmodule Ornitho.Importer do
   @callback validate_config() :: {:ok, any()} | {:error, any()}
 
   @required_keys [:slug, :version, :name]
-  @default_import_timeout 30_000
+  @default_import_timeout 120_000
 
   defmacro __using__(opts) do
     missing_keys =

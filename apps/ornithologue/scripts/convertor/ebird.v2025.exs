@@ -4,8 +4,6 @@ defmodule Convertor.Ebird.V2025 do
 
   This one is for Clements/eBird v2025.
 
-  Authority will be added in future update.
-
   Run:
 
   ```bash
@@ -145,8 +143,6 @@ defmodule Convertor.Ebird.V2025 do
       _ -> %{}
     end
   end
-
-  # NOTE: Authority will be added in future list update
 
   # {authority_string, has_brackets?}
   defp extract_authority("" = _authority), do: {nil, nil}
