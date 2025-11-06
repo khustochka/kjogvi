@@ -29,10 +29,15 @@ defmodule OrnithoWeb.Live.Taxa.Index do
         [search_term: search_term]
       end
 
+    new_search = is_nil(socket.assigns.search_state.term)
+
     path =
       OrnithoWeb.LinkHelper.book_path(socket, socket.assigns.book, 1, search_params)
 
-    {:noreply, socket |> push_patch(to: path)}
+    # Make search path replace the previous search path in history, so that when
+    # clicking Back, the user won't go back one letter. But the initial, non-search, state
+    # should not be replaced.
+    {:noreply, socket |> push_patch(to: path, replace: not new_search)}
   end
 
   attr :book, Ornitho.Schema.Book, required: true

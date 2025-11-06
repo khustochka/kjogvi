@@ -18,7 +18,7 @@ defmodule OrnithoWeb.Live.Taxa.Table do
   def render(assigns) do
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="mt-6 w-[40rem] sm:w-full">
+      <table class="mt-6 w-160 sm:w-full">
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
             <th class="p-0 pb-4 pr-6 font-normal">no</th>
