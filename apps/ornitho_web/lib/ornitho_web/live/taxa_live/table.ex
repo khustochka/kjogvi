@@ -38,9 +38,14 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                 {taxon.sort_order}
               </td>
               <td class="p-0 py-4 pr-6">
-                <span class="font-mono">
+                <div class="font-mono">
                   <.highlighted content={taxon.code} search_state={@search_state} />
-                </span>
+                </div>
+                <div :if={taxon.taxon_concept_id} class="font-mono">
+                  <span class="text-xs text-slate-400">
+                    {taxon.taxon_concept_id}
+                  </span>
+                </div>
               </td>
               <td class="p-0 py-4 pr-6">
                 <div class="text-zinc-900">
