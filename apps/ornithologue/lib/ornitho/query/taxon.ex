@@ -68,7 +68,10 @@ defmodule Ornitho.Query.Taxon do
     query
     |> where(
       [t],
-      ilike(t.name_sci, ^like_term) or ilike(t.name_en, ^like_term) or ilike(t.code, ^start_term)
+      ilike(t.name_sci, ^like_term) or
+        ilike(t.name_en, ^like_term) or
+        ilike(t.code, ^start_term) or
+        t.taxon_concept_id == ^sanitized_term
     )
   end
 end

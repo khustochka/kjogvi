@@ -43,7 +43,11 @@ defmodule OrnithoWeb.Live.Taxa.Table do
                 </div>
                 <div :if={taxon.taxon_concept_id} class="font-mono">
                   <span class="text-xs text-slate-400">
-                    {taxon.taxon_concept_id}
+                    <.highlighted
+                      content={taxon.taxon_concept_id}
+                      search_state={@search_state}
+                      full_match={true}
+                    />
                   </span>
                 </div>
               </td>

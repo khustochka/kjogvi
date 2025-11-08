@@ -127,6 +127,7 @@ defmodule OrnithoWeb.TaxaComponents do
 
   attr :content, :string, required: true
   attr :search_state, :any, default: struct(SearchState)
+  attr :full_match, :boolean, default: false
 
   def highlighted(%{content: nil} = assigns) do
     ~H"""
@@ -142,6 +143,15 @@ defmodule OrnithoWeb.TaxaComponents do
   def highlighted(assigns) do
     ~H"""
     {@content}
+    """
+  end
+
+  defp highlighted_content(%{full_match: true} = assigns) do
+    ~H"""
+    {maybe_highlighted(%{
+      type: (@content == @search_state.term && :highlight) || :plain,
+      text: @content
+    })}
     """
   end
 
