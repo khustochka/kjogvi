@@ -32,6 +32,7 @@ defmodule OrnithoWeb.Router do
             get "/", OrnithoWeb.BooksController, :index, route_opts
             post "/import", OrnithoWeb.BooksController, :import, route_opts
 
+            live "/concepts/:id", OrnithoWeb.Live.Concept.Show, nil, route_opts
             live "/:slug/:version", OrnithoWeb.Live.Book.Show, nil, route_opts
             live "/:slug/:version/page/:page", OrnithoWeb.Live.Book.Show, nil, route_opts
             live "/:slug/:version/:code", OrnithoWeb.Live.Taxa.Show, nil, route_opts

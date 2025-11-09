@@ -22,9 +22,20 @@ defmodule OrnithoWeb.Live.Taxa.Show do
       |> Ornitho.Finder.Taxon.with_parent_species()
       |> Ornitho.Finder.Taxon.with_child_taxa()
 
+    same_concept_taxa =
+      if taxon.taxon_concept_id do
+        Ornitho.Finder.Taxon.by_concept_id(taxon.taxon_concept_id)
+        |> Ornitho.Finder.Taxon.with_book()
+        |> Ornitho.Finder.Taxon.with_parent_species()
+        |> Enum.reject(&(&1.id == taxon.id))
+      else
+        []
+      end
+
     {:noreply,
      socket
      |> assign(:taxon, taxon)
+     |> assign(:same_concept_taxa, same_concept_taxa)
      |> assign(:page_title, "#{taxon.name_sci} · #{socket.assigns.book.name}")}
   end
 
@@ -81,6 +92,15 @@ defmodule OrnithoWeb.Live.Taxa.Show do
         book={@book}
         taxa={@taxon.child_taxa}
         skip_parent_species={true}
+        link_builder={&OrnithoWeb.LinkHelper.path(@socket, &1)}
+      />
+    </div>
+    <div :if={@same_concept_taxa != []} class="mt-6">
+      <h2>Same concept taxa</h2>
+      <OrnithoWeb.Live.Taxa.Table.render
+        taxa={@same_concept_taxa}
+        mixed_book_view={true}
+        skip_parent_species={false}
         link_builder={&OrnithoWeb.LinkHelper.path(@socket, &1)}
       />
     </div>
