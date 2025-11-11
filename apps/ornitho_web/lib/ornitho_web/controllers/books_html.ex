@@ -55,35 +55,37 @@ defmodule OrnithoWeb.BooksHTML do
       </:col>
     </.simpler_table>
 
-    <h2 :if={@importers != []} class="text-xl font-semibold ">Available for import</h2>
+    <%= if @importers != [] do %>
+      <h2 class="text-xl font-semibold ">Available for import</h2>
 
-    <.simpler_table id="importers" rows={@importers}>
-      <:col :let={importer} label="slug" class="w-2/10">
-        <span class="font-mono text-xl font-semibold text-zinc-600">{importer.slug()}</span>
-        <span class="font-mono text-lg text-zinc-500">{importer.version()}</span>
-      </:col>
-      <:col :let={importer} label="name" class="w-7/10">
-        <h3 class="text-2xl font-bold text-zinc-600 opacity-90 mb-4">
-          {importer.name()}
-        </h3>
-        <p>
-          <span class="font-bold">Published:</span>
-          {Calendar.strftime(importer.publication_date(), "%-d %b %Y")}
-        </p>
-      </:col>
-      <:col :let={importer} label="import" class="w-1/10">
-        <.simple_form
-          for={nil}
-          phx-submit="import"
-          action={OrnithoWeb.LinkHelper.import_path(@conn)}
-        >
-          <input type="hidden" name="importer" value={importer} />
-          <:actions>
-            <.button phx-disable-with="processing...">Import</.button>
-          </:actions>
-        </.simple_form>
-      </:col>
-    </.simpler_table>
+      <.simpler_table id="importers" rows={@importers}>
+        <:col :let={importer} label="slug" class="w-2/10">
+          <span class="font-mono text-xl font-semibold text-zinc-600">{importer.slug()}</span>
+          <span class="font-mono text-lg text-zinc-500">{importer.version()}</span>
+        </:col>
+        <:col :let={importer} label="name" class="w-7/10">
+          <h3 class="text-2xl font-bold text-zinc-600 opacity-90 mb-4">
+            {importer.name()}
+          </h3>
+          <p>
+            <span class="font-bold">Published:</span>
+            {Calendar.strftime(importer.publication_date(), "%-d %b %Y")}
+          </p>
+        </:col>
+        <:col :let={importer} label="import" class="w-1/10">
+          <.simple_form
+            for={nil}
+            phx-submit="import"
+            action={OrnithoWeb.LinkHelper.import_path(@conn)}
+          >
+            <input type="hidden" name="importer" value={importer} />
+            <:actions>
+              <.button phx-disable-with="processing...">Import</.button>
+            </:actions>
+          </.simple_form>
+        </:col>
+      </.simpler_table>
+    <% end %>
     """
   end
 end
