@@ -80,7 +80,11 @@ defmodule Kjogvi.MixProject do
       {:opentelemetry_exporter, "~> 1.6"},
       {:opentelemetry_req, "~> 1.0"},
       {:opentelemetry_telemetry, "~> 1.1.1"},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      # For Livebook
+      {:vega_lite, "~> 0.1.6", only: [:dev]},
+      {:kino_vega_lite, "~> 0.1.11", only: [:dev]},
+      {:random_colour, "~> 0.1.0", only: [:dev]}
     ]
   end
 
