@@ -83,6 +83,9 @@ config :scrivener_phoenix,
   window: 2,
   template: KjogviWeb.Scrivener.Phoenix.Template
 
+config :ex_aws,
+  http_client: ExAws.Request.Req
+
 # ORNITHOLOGUE
 
 config :ornithologue, repo: Kjogvi.OrnithoRepo
