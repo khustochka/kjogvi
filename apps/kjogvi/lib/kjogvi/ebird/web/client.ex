@@ -72,8 +72,7 @@ defmodule Kjogvi.Ebird.Web.Client do
           Floki.find(row, "div.ResultsStats-title > h3 > a > span:nth-child(1)")
           |> Floki.text()
           |> String.trim()
-          |> Timex.parse!("{D} {Mshort} {YYYY}")
-          |> NaiveDateTime.to_date()
+          |> Datix.Date.parse!("%d %b %Y")
 
         time =
           Floki.find(row, "div.ResultsStats-title > h3 > a > span:nth-child(2)")
@@ -81,7 +80,7 @@ defmodule Kjogvi.Ebird.Web.Client do
           |> String.trim()
           |> case do
             "" -> nil
-            value -> value |> Timex.parse!("{h12}:{m} {AM}") |> NaiveDateTime.to_time()
+            value -> value |> Datix.Time.parse!("%H:%M %p")
           end
 
         location =

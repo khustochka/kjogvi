@@ -4,6 +4,7 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
   """
 
   alias Kjogvi.Birding.Lifelist
+  alias KjogviWeb.DateHelper
 
   @doc """
   Generates Lifelist title based on filter
@@ -19,7 +20,7 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
   end
 
   def title(%{year: nil, location: nil, month: month}) do
-    "#{Timex.month_name(month)} Lifelist"
+    "#{DateHelper.month_name(month)} Lifelist"
   end
 
   def title(%{year: year, location: nil, month: nil}) do
@@ -27,7 +28,7 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
   end
 
   def title(%{year: year, location: nil, month: month}) do
-    "#{Timex.month_name(month)} #{year} List"
+    "#{DateHelper.month_name(month)} #{year} List"
   end
 
   def title(%{year: nil, location: location, month: nil}) do
@@ -35,7 +36,7 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
   end
 
   def title(%{year: nil, location: location, month: month}) do
-    "#{location.name_en} #{Timex.month_name(month)} List"
+    "#{location.name_en} #{DateHelper.month_name(month)} List"
   end
 
   def title(%{year: year, location: location, month: nil}) do
@@ -43,7 +44,7 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
   end
 
   def title(%{year: year, location: location, month: month}) do
-    "#{Timex.month_name(month)} #{year} #{location.name_en} List"
+    "#{DateHelper.month_name(month)} #{year} #{location.name_en} List"
   end
 
   @doc """
