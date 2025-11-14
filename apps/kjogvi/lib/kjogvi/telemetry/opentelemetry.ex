@@ -1,4 +1,4 @@
-defmodule Kjogvi.Opentelemetry do
+defmodule Kjogvi.Telemetry.Opentelemetry do
   @moduledoc """
   Opentelemetry setup with customizations specific to the Kjogvi project.
   """

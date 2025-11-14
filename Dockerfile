@@ -11,9 +11,9 @@
 #   - https://pkgs.org/ - resource for finding needed packages
 #   - Ex: hexpm/elixir:1.16.0-erlang-27.0-debian-bullseye-20231009-slim
 #
-ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=27.3.4.2
-ARG DEBIAN_VERSION=bookworm-20250721-slim
+ARG ELIXIR_VERSION=1.19.2
+ARG OTP_VERSION=28.1.1
+ARG DEBIAN_VERSION=trixie-20251020-slim
 ARG DISTRO_VERSION=debian-${DEBIAN_VERSION}
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-${DISTRO_VERSION}"
@@ -82,8 +82,22 @@ RUN mix release
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
+# Labels 
+ARG GIT_REVISION=unspecified
+ARG GIT_REPOSITORY_URL=unspecified
+LABEL org.opencontainers.image.title="kjogvi"
+LABEL org.opencontainers.image.revision=$GIT_REVISION
+LABEL org.opencontainers.image.source=$GIT_REPOSITORY_URL
+
+ENV GIT_REVISION=${GIT_REVISION}
+ENV GIT_REPOSITORY_URL=${GIT_REPOSITORY_URL}
+# ENV DD_CONTAINER_LABELS_AS_TAGS='{"org.opencontainers.image.source":"git.repository_url","org.opencontainers.image.revision":"git.commit.sha"}'
+# Datadog expects repo URL without protocol.
+ENV DD_TAGS="git.repository_url:github.com/khustochka/kjogvi git.commit.sha:${GIT_REVISION}"
+
 RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates \
+  apt-get install -y libstdc++6 openssl libncurses6 locales ca-certificates \
+  postgresql-client file curl gzip bzip2 net-tools netcat-openbsd bind9-dnsutils procps \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set the locale

@@ -7,7 +7,7 @@ defmodule KjogviWeb.FormatComponents do
   use Gettext, backend: KjogviWeb.Gettext
 
   def format_date(date) do
-    Timex.format!(date, "{D} {Mshort} {YYYY}")
+    Calendar.strftime(date, "%-d %b %Y")
   end
 
   def format_time(nil) do
@@ -15,6 +15,6 @@ defmodule KjogviWeb.FormatComponents do
   end
 
   def format_time(time) do
-    Timex.format!(time, "{h24}:{m}")
+    Calendar.strftime(time, "%H:%M")
   end
 end

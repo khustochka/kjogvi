@@ -4,28 +4,31 @@ defmodule Kjogvi.Birding.Card.Query do
   """
 
   import Ecto.Query
-  import Kjogvi.Query.API
 
   alias Kjogvi.Geo
 
+  def as_card(query) do
+    from c in query, as: :card
+  end
+
   def by_year(query, year) when is_integer(year) do
     query
-    |> where([..., c], extract_year(c.observ_date) == ^year)
+    |> where([..., card: c], c.cached_year == ^year)
   end
 
   def by_month(query, month) when is_integer(month) do
     query
-    |> where([..., c], extract_month(c.observ_date) == ^month)
+    |> where([..., card: c], c.cached_month == ^month)
   end
 
   def by_user(query, user) do
     query
-    |> where([..., c], c.user_id == ^user.id)
+    |> where([..., card: c], c.user_id == ^user.id)
   end
 
   def motorless(query) do
     query
-    |> where([..., c], c.motorless == true)
+    |> where([..., card: c], c.motorless == true)
   end
 
   def by_location_with_descendants(query, %{location_type: "special", id: id}) do
@@ -41,7 +44,7 @@ defmodule Kjogvi.Birding.Card.Query do
       )
       |> select([l], l.id)
 
-    from [..., c] in query,
+    from [..., card: c] in query,
       where: c.location_id in subquery(child_ids)
   end
 
@@ -51,7 +54,7 @@ defmodule Kjogvi.Birding.Card.Query do
       from(Geo.Location.Query.child_locations(location))
       |> select([l], l.id)
 
-    from [..., c] in query,
+    from [..., card: c] in query,
       where: c.location_id in subquery(child_ids)
   end
 

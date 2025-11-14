@@ -69,16 +69,20 @@ defmodule Convertor.Ebird.V2023 do
       taxon = taxa_cache[name_sci]
 
       if not is_nil(taxon) do
-
-
-      {:ok, old_extras} = taxon[:extras] |> Jason.decode
+        {:ok, old_extras} = taxon[:extras] |> Jason.decode()
         new_extras = old_extras |> Map.merge(extract_extras(row))
         {authority, authority_brackets} = extract_authority(row["authority"])
-        {:ok, encoded_extras} = new_extras |> Jason.encode
+        {:ok, encoded_extras} = new_extras |> Jason.encode()
+
         taxon_updated =
           taxon
-          |> Keyword.merge([extras: encoded_extras, authority: authority, authority_brackets: authority_brackets])
-          taxa_cache
+          |> Keyword.merge(
+            extras: encoded_extras,
+            authority: authority,
+            authority_brackets: authority_brackets
+          )
+
+        taxa_cache
         |> Map.put(name_sci, taxon_updated)
       else
         taxa_cache
@@ -92,8 +96,10 @@ defmodule Convertor.Ebird.V2023 do
     values =
       taxa
       |> Map.values()
-      |> Enum.sort_by(&(Keyword.get(&1, :sort_order)))
-    headers = values |> List.first |> Keyword.keys
+      |> Enum.sort_by(&Keyword.get(&1, :sort_order))
+
+    headers = values |> List.first() |> Keyword.keys()
+
     values
     |> Enum.map(&Map.new/1)
     |> CSV.encode(headers: headers)

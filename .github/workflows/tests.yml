@@ -4,9 +4,6 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: read
-
 jobs:
   lint:
     name: Lint
@@ -17,29 +14,26 @@ jobs:
         uses: ./.github/actions/setup
         with:
           env: dev
-          elixir: v1.18.4
-          otp: '27.3.4.2'
+          elixir: v1.19.2
+          otp: "28.1"
       - name: Run lint
         env:
           MIX_ENV: dev
         run: mix lint.github
-  test:    
+  test:
     name: Test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - elixir: 'v1.18.4'
-            otp: '27.3.4.2'
-          - elixir: 'v1.17.3'
-            otp: '27.3.4.2'
-          - elixir: 'v1.16.3'
-            otp: '26.0'
+          - elixir: "v1.19.2"
+            otp: "28.1"
+          - elixir: "v1.17.3"
+            otp: "27.3.4.2"
     services:
       postgres:
-        # Latest on fly.io is 16.4
-        image: postgres:16-alpine
+        image: postgres:17.6-bookworm
         ports:
           - "5432:5432"
         options: >-
@@ -64,7 +58,7 @@ jobs:
           MIX_ENV: test
           DATABASE_URL: "postgres://kjogvi:kjogvi@localhost:5432/kjogvi_test"
           DATABASE_ORNITHO_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
-        run: mix do ecto.setup, coveralls.html --umbrella
+        run: mix do ecto.setup + coveralls.html --umbrella
       - name: Code coverage results
         uses: actions/upload-artifact@v4
         with:
@@ -74,8 +68,6 @@ jobs:
   build_image:
     name: "Docker image"
     uses: ./.github/workflows/build.yml
-    with: 
-      platforms: linux/amd64
     secrets:
       DOCKER_AWS_ACCESS_KEY_ID: ${{ secrets.DOCKER_AWS_ACCESS_KEY_ID }}
       DOCKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.DOCKER_AWS_SECRET_ACCESS_KEY }}

@@ -66,7 +66,7 @@ defmodule Kjogvi.MixProject do
       {:req, "~> 0.5"},
       {:http_cookie, "~> 0.9"},
       {:floki, ">= 0.30.0"},
-      {:timex, github: "bitwalker/timex", ref: "cc649c7a586f1266b17d57aff3c6eb1a56116ca2"},
+      {:datix, "~> 0.3"},
       {:scrivener_ecto, "~> 3.0"},
       {:nimble_options, "~> 1.1"},
       {:ornithologue, in_umbrella: true},
@@ -74,13 +74,17 @@ defmodule Kjogvi.MixProject do
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:ex_machina, "~> 2.8", only: :test},
       {:ecto_dev_logger, "~> 0.10", only: [:dev]},
-      {:opentelemetry, "~> 1.5"},
+      {:opentelemetry, "~> 1.6"},
       {:opentelemetry_api, "~> 1.4"},
       {:opentelemetry_ecto, "~> 1.2"},
       {:opentelemetry_exporter, "~> 1.6"},
       {:opentelemetry_req, "~> 1.0"},
       {:opentelemetry_telemetry, "~> 1.1.1"},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      # For Livebook
+      {:vega_lite, "~> 0.1.6", only: [:dev]},
+      {:kino_vega_lite, "~> 0.1.11", only: [:dev]},
+      {:random_colour, "~> 0.1.0", only: [:dev]}
     ]
   end
 

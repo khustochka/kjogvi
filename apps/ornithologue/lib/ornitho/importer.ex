@@ -16,7 +16,7 @@ defmodule Ornitho.Importer do
   @callback validate_config() :: {:ok, any()} | {:error, any()}
 
   @required_keys [:slug, :version, :name]
-  @default_import_timeout 30_000
+  @default_import_timeout 60_000
 
   defmacro __using__(opts) do
     missing_keys =
@@ -115,7 +115,8 @@ defmodule Ornitho.Importer do
           name: name(),
           description: description(),
           publication_date: publication_date(),
-          extras: extras()
+          extras: extras(),
+          importer: Atom.to_string(__MODULE__)
         }
       end
 
@@ -139,12 +140,11 @@ defmodule Ornitho.Importer do
   end
 
   def unimported() do
-    imported = Ornitho.Finder.Book.all_signatures()
+    imported =
+      Ornitho.Finder.Book.all_importers()
+      |> Enum.map(&String.to_existing_atom(&1))
 
-    legit_importers()
-    |> Enum.reject(fn importer ->
-      [importer.slug(), importer.version()] in imported
-    end)
+    (legit_importers() -- imported)
     |> Enum.sort_by(& &1.publication_date(), {:desc, Date})
   end
 

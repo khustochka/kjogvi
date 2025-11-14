@@ -33,10 +33,10 @@ services:
         condition: service_healthy
 
   db:
-    image: bitnami/postgresql:16-debian-12
+    image: postgres:17.6-bookworm
     restart: unless-stopped
     volumes:
-      - postgres-data-16:/var/lib/postgresql/data
+      - postgres-data-17:/var/lib/postgresql/data
       - ./create-db-user.sql:/docker-entrypoint-initdb.d/create-db-user.sql
     environment:
       POSTGRES_USER: kjogvi
@@ -65,6 +65,6 @@ services:
       interval: 5s
 
 volumes:
-  postgres-data-16:
+  postgres-data-17:
   build:
   deps:

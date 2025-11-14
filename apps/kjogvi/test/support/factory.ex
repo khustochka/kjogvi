@@ -28,9 +28,35 @@ defmodule Kjogvi.Factory do
 
   def observation_factory do
     %Kjogvi.Birding.Observation{
-      card: build(:card),
-      # For spuhs and subspecies this needs to be explicitly set.
-      cached_species_key: fn obs -> obs.taxon_key end
+      card: build(:card)
     }
+  end
+
+  def create_species_taxon_with_page(attrs \\ []) do
+    taxon_attrs =
+      Map.new(attrs)
+      |> Map.put_new(:category, "species")
+
+    taxon = Ornitho.Factory.insert(:taxon, taxon_attrs)
+    species_page = Kjogvi.Pages.Promotion.promote_taxon(taxon)
+
+    {taxon, species_page}
+  end
+
+  def create_subspecies_taxon_with_page(attrs \\ []) do
+    book = attrs[:book] || Ornitho.Factory.insert(:book)
+
+    species = Ornitho.Factory.insert(:taxon, book: book)
+
+    taxon_attrs =
+      Map.new(attrs)
+      |> Map.put_new(:category, "issf")
+      |> Map.put_new(:book, book)
+      |> Map.put_new(:parent_species, species)
+
+    taxon = Ornitho.Factory.insert(:taxon, taxon_attrs)
+    species_page = Kjogvi.Pages.Promotion.promote_taxon(taxon)
+
+    {taxon, species_page}
   end
 end

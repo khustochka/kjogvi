@@ -4,7 +4,6 @@ defmodule Kjogvi.Birding.Lifelist do
   """
 
   import Ecto.Query
-  import Kjogvi.Query.API
 
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
@@ -22,10 +21,13 @@ defmodule Kjogvi.Birding.Lifelist do
 
   @spec generate(scope()) :: Result.t()
   @spec generate(scope(), filter()) :: Result.t()
+
   @doc """
   Generate lifelist based on provided filter options.
   """
-  def generate(scope, filter \\ []) do
+  def generate(scope, filter \\ [])
+
+  def generate(scope, %Filter{} = filter) do
     generate_with_species(scope, filter)
     |> Location.Query.preload_all_locations()
     |> then(fn list ->
@@ -40,26 +42,32 @@ defmodule Kjogvi.Birding.Lifelist do
     |> then(&maybe_add_extras(scope, &1))
   end
 
+  def generate(scope, filter) do
+    filter |> Filter.discombo!() |> then(&generate(scope, &1))
+  end
+
   @spec top(scope(), integer()) :: Result.t()
   @spec top(scope(), integer(), filter()) :: Result.t()
   @doc """
   Get N newest species on the list based on provided filter options.
   """
-  def top(scope, n, filter \\ []) when is_integer(n) and n > 0 do
-    total_species =
-      Lifelist.Query.lifelist_query(scope, filter)
-      |> Repo.aggregate(:count)
+  def top(scope, n, filter \\ [])
 
-    generate_with_species(scope, filter, limit: n)
-    |> then(fn list ->
-      %Result{
-        user: scope.user,
-        include_private: scope.include_private,
-        filter: filter,
-        list: Enum.take(list, n),
-        total: total_species
-      }
-    end)
+  def top(scope, n, %Filter{} = filter) when is_integer(n) and n > 0 do
+    list = generate_with_species(scope, filter)
+    total_species = length(list)
+
+    %Result{
+      user: scope.user,
+      include_private: scope.include_private,
+      filter: filter,
+      list: Enum.take(list, n),
+      total: total_species
+    }
+  end
+
+  def top(scope, n, filter) do
+    filter |> Filter.discombo!() |> then(&top(scope, n, &1))
   end
 
   @spec years(scope()) :: list(integer())
@@ -70,7 +78,7 @@ defmodule Kjogvi.Birding.Lifelist do
   def years(scope, filter \\ []) do
     Lifelist.Query.observations_filtered(scope, filter)
     |> distinct(true)
-    |> select([..., c], extract_year(c.observ_date))
+    |> select([_o, c], c.cached_year)
     |> Repo.all()
     |> Enum.sort()
   end
@@ -83,7 +91,7 @@ defmodule Kjogvi.Birding.Lifelist do
   def months(scope, filter \\ []) do
     Lifelist.Query.observations_filtered(scope, filter)
     |> distinct(true)
-    |> select([..., c], extract_month(c.observ_date))
+    |> select([_o, c], c.cached_month)
     |> Repo.all()
     |> Enum.sort()
   end
@@ -115,14 +123,11 @@ defmodule Kjogvi.Birding.Lifelist do
     Lifelist.Query.lifelist_query(scope, filter, opts)
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Kjogvi.Birding.preload_species()
-    |> Enum.reject(&is_nil(&1.species))
+    |> Kjogvi.Repo.preload(:species_page)
   end
 
   defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do
-    sp_codes =
-      result.list
-      |> Enum.map(& &1.species.code)
+    species_pages = Enum.map(result.list, & &1.species_page_id)
 
     new_filter = %{filter | exclude_heard_only: false}
 
@@ -132,7 +137,7 @@ defmodule Kjogvi.Birding.Lifelist do
     heard_only_list =
       full_list
       |> Enum.reject(fn life_obs ->
-        life_obs.species.code in sp_codes
+        life_obs.species_page_id in species_pages
       end)
       |> Location.Query.preload_all_locations()
       |> then(fn list ->

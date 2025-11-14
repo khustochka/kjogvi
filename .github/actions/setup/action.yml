@@ -45,5 +45,6 @@ runs:
     - name: Compile
       env:
         MIX_ENV: ${{ inputs.env }}
+        MIX_OS_DEPS_COMPILE_PARTITION_COUNT: 2
       shell: bash
       run: mix compile  

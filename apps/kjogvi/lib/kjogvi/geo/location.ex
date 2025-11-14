@@ -45,6 +45,7 @@ defmodule Kjogvi.Geo.Location do
     belongs_to(:cached_subdivision, Location)
 
     has_many(:cards, Kjogvi.Birding.Card)
+    has_many(:observations, through: [:cards, :observations])
 
     many_to_many :special_child_locations, Location,
       join_through: "special_locations",

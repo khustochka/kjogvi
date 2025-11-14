@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.3
--- Dumped by pg_dump version 17.4
+\restrict hhg2TLciiGQvCurrZxVvurlp5yG6zueG2lXxL2wMR8qbLgv52aJ2JDFFs9VXIJa
+
+-- Dumped from database version 17.6 (Debian 17.6-2.pgdg12+1)
+-- Dumped by pg_dump version 18.0
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -263,5 +265,7 @@ ALTER TABLE ONLY public.taxa
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict hhg2TLciiGQvCurrZxVvurlp5yG6zueG2lXxL2wMR8qbLgv52aJ2JDFFs9VXIJa
 
 INSERT INTO public."schema_migrations" (version) VALUES (20240116020356);

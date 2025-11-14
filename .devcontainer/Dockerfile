@@ -1,6 +1,6 @@
-ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=27.3.4.2
-ARG DEBIAN_VERSION=bookworm-20250721-slim
+ARG ELIXIR_VERSION=1.19.2
+ARG OTP_VERSION=28.1.1
+ARG DEBIAN_VERSION=trixie-20251020-slim
 ARG DISTRO_VERSION=debian-${DEBIAN_VERSION}
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-${DISTRO_VERSION}"
@@ -9,9 +9,9 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 FROM ${BUILDER_IMAGE}
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential ssh git \
+RUN apt-get update -y && apt-get install -y build-essential git \
     # for development
-    inotify-tools \
+    inotify-tools direnv \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 RUN mix local.hex --force

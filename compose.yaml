@@ -1,6 +1,6 @@
 services:
   database:
-    image: bitnami/postgresql:16-debian-12
+    image: postgres:17.6-bookworm
     environment:
       POSTGRES_USER: kjogvi
       POSTGRES_PASSWORD: kjogvi
@@ -8,17 +8,17 @@ services:
     ports:
       - "5498:5432"
     volumes:
-      - pg_data16:/bitnami/postgresql
+      - pg_data17:/var/lib/postgresql/data
     configs:
       - source: create_ornitho_db
         target: /docker-entrypoint-initdb.d/create-ornitho-db.sql  
     healthcheck:
-      test: pg_isready -U kjogvi -h 127.0.0.1
+      test: pg_isready -U kjogvi -h 127.0.0.1 -d kjogvi_dev
       interval: 3s
 
 # Declare the volumes that our application uses.
 volumes:
-  pg_data16:
+  pg_data17:
 
 configs:
   create_ornitho_db:    

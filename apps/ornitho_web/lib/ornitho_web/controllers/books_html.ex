@@ -13,7 +13,7 @@ defmodule OrnithoWeb.BooksHTML do
     <.header class="text-xl">
       {assigns[:page_title]}
     </.header>
-    <.simpler_table id="books" rows={@books} class="mb-10">
+    <.simpler_table id="taxonomy-index-books" rows={@books} class="mb-10">
       <:col :let={book} label="slug and version" class="w-2/10">
         <span class="font-mono text-xl font-semibold text-zinc-600">{book.slug}</span>
         <span class="font-mono text-lg text-zinc-500">{book.version}</span>
@@ -32,13 +32,34 @@ defmodule OrnithoWeb.BooksHTML do
       <:col :let={book} label="taxa" class="w-1/10">{book.taxa_count}</:col>
       <:col :let={book} label="imported" class="w-1/10">
         <.datetime time={book.imported_at} />
+        <.simple_form
+          for={nil}
+          phx-submit="import"
+          action={OrnithoWeb.LinkHelper.import_path(@conn)}
+        >
+          <input type="hidden" name="importer" value={book.importer} />
+          <input type="hidden" name="force" value="true" />
+          <:actions>
+            <button
+              class={[
+                "import-btn",
+                "py-0.5 px-3 bg-red-600 disabled:bg-red-300",
+                "phx-submit-loading:opacity-75 rounded-lg",
+                "text-xs font-semibold leading-6 text-white active:text-white/80"
+              ]}
+              oweb-disable-with="processing..."
+            >
+              Reimport
+            </button>
+          </:actions>
+        </.simple_form>
       </:col>
     </.simpler_table>
 
     <%= if @importers != [] do %>
       <h2 class="text-xl font-semibold ">Available for import</h2>
 
-      <.simpler_table id="importers" rows={@importers}>
+      <.simpler_table id="taxonomy-index-importers" rows={@importers}>
         <:col :let={importer} label="slug" class="w-2/10">
           <span class="font-mono text-xl font-semibold text-zinc-600">{importer.slug()}</span>
           <span class="font-mono text-lg text-zinc-500">{importer.version()}</span>
@@ -60,7 +81,9 @@ defmodule OrnithoWeb.BooksHTML do
           >
             <input type="hidden" name="importer" value={importer} />
             <:actions>
-              <.button phx-disable-with="processing...">Import</.button>
+              <.button class="disabled:bg-zinc-500 import-btn" oweb-disable-with="processing...">
+                Import
+              </.button>
             </:actions>
           </.simple_form>
         </:col>

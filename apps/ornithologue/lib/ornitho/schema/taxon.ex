@@ -49,17 +49,20 @@ defmodule Ornitho.Schema.Taxon do
     "/#{slug}/#{version}/#{code}"
   end
 
-  # TODO: try to get rid of this
-  def species(nil = _taxon) do
-    nil
-  end
+  def species(taxon) do
+    cond do
+      is_nil(taxon) ->
+        nil
 
-  def species(%{category: "species"} = taxon) do
-    taxon
-  end
+      taxon.category == "species" ->
+        taxon
 
-  def species(%{parent_species: parent_species}) do
-    parent_species
+      taxon.parent_species ->
+        taxon.parent_species
+
+      :otherwise ->
+        nil
+    end
   end
 
   def default_order do

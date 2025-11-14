@@ -3,7 +3,7 @@ defmodule Kjogvi.Opentelemetry.Ecto do
   Enables Ecto opentelemetry with customizations specific to the Kjogvi project.
   """
 
-  @default_opts [db_statement: :enable]
+  @default_opts [db_statement: :enabled]
 
   def setup() do
     Application.fetch_env!(:kjogvi, :ecto_repos)

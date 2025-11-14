@@ -14,34 +14,35 @@
 			"installOhMyZsh": true,
 			"configureZshAsDefaultShell": true,
 			"upgradePackages": true
-		  }
+		}
 	},
-
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
-
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// This can be used to network with other containers or the host.
-	"forwardPorts": [4000, 5482],
-
+	"forwardPorts": [
+		4000,
+		5482
+	],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "./.devcontainer/start.sh",
-
 	// workaround for bug
 	"initializeCommand": "echo 'Hello'",
-
 	// Configure tool-specific properties.
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"JakeBecker.elixir-ls", 
-				"ms-azuretools.vscode-docker", 
+				"JakeBecker.elixir-ls",
+				"ms-azuretools.vscode-docker",
 				"eamodio.gitlens",
-				"bradlc.vscode-tailwindcss"
+				"bradlc.vscode-tailwindcss",
+				"pgourlain.erlang",
+				"github.vscode-github-actions",
+				"phoenixframework.phoenix",
+				"redhat.vscode-yaml"
 			]
-		  }
+		}
 	}
-
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
 }

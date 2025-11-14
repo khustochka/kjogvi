@@ -20,6 +20,12 @@ defmodule Ornitho.Finder.Book do
     |> Ornithologue.repo().all()
   end
 
+  def all_importers() do
+    Query.Book.base_book()
+    |> select([b], b.importer)
+    |> Ornithologue.repo().all()
+  end
+
   @spec by_signature(String.t(), String.t()) :: Book.t() | nil
   def by_signature(slug, version) do
     Query.Book.base_book()

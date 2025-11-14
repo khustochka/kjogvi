@@ -35,6 +35,13 @@ defmodule Ornitho.Finder.Taxon do
     |> Ornithologue.repo().one!()
   end
 
+  @doc "Find a taxon in a book by code, raise if not found"
+  def by_concept_id(concept_id) do
+    Taxon
+    |> where(taxon_concept_id: ^concept_id)
+    |> Ornithologue.repo().all()
+  end
+
   @doc "Find taxa in a book by a list of codes"
   def by_codes(book, codes) do
     Query.Taxon.by_book(book)
@@ -70,6 +77,11 @@ defmodule Ornitho.Finder.Taxon do
   def with_parent_species(taxon_or_taxa) do
     taxon_or_taxa
     |> Ornithologue.repo().preload(:parent_species)
+  end
+
+  def with_book(taxon_or_taxa) do
+    taxon_or_taxa
+    |> Ornithologue.repo().preload(:book)
   end
 
   def with_child_taxa(taxon_or_taxa) do

@@ -32,6 +32,7 @@ defmodule OrnithoWeb.Router do
             get "/", OrnithoWeb.BooksController, :index, route_opts
             post "/import", OrnithoWeb.BooksController, :import, route_opts
 
+            live "/concepts/:id", OrnithoWeb.Live.Concept.Show, nil, route_opts
             live "/:slug/:version", OrnithoWeb.Live.Book.Show, nil, route_opts
             live "/:slug/:version/page/:page", OrnithoWeb.Live.Book.Show, nil, route_opts
             live "/:slug/:version/:code", OrnithoWeb.Live.Taxa.Show, nil, route_opts
@@ -39,18 +40,13 @@ defmodule OrnithoWeb.Router do
         end
       end
 
-    # TODO: Remove check once we require Phoenix v1.7
-    if Code.ensure_loaded?(Phoenix.VerifiedRoutes) do
-      quote do
-        unquote(scope)
+    quote do
+      unquote(scope)
 
-        unless Module.get_attribute(__MODULE__, :ornitho_web_prefix) do
-          @ornitho_web_prefix Phoenix.Router.scoped_path(__MODULE__, path)
-          def __ornitho_web_prefix__, do: @ornitho_web_prefix
-        end
+      unless Module.get_attribute(__MODULE__, :ornitho_web_prefix) do
+        @ornitho_web_prefix Phoenix.Router.scoped_path(__MODULE__, path)
+        def __ornitho_web_prefix__, do: @ornitho_web_prefix
       end
-    else
-      scope
     end
   end
 

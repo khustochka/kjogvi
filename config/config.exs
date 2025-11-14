@@ -45,7 +45,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.25.5",
+  version: "0.25.10",
   kjogvi_web: [
     args: ~w(
         js/app.js
@@ -62,7 +62,7 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "4.1.8",
+  version: "4.1.14",
   kjogvi_web: [
     args: ~w(
       --input=assets/css/app.css
@@ -83,15 +83,19 @@ config :scrivener_phoenix,
   window: 2,
   template: KjogviWeb.Scrivener.Phoenix.Template
 
+config :ex_aws,
+  http_client: ExAws.Request.Req
+
 # ORNITHOLOGUE
 
 config :ornithologue, repo: Kjogvi.OrnithoRepo
 
 config :ornithologue, Ornitho.Importer,
   legit_importers: [
-    Ornitho.Importer.Ebird.V2022,
     Ornitho.Importer.Ebird.V2023,
-    Ornitho.Importer.Ebird.V2024
+    Ornitho.Importer.Ebird.V2024,
+    Ornitho.Importer.Ebird.V2025,
+    Ornitho.Importer.AviList.V2025
   ]
 
 config :ornithologue, Ornitho.StreamImporter,
@@ -107,9 +111,13 @@ config :kjogvi, :cache, enabled: false
 
 config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@kjogvi.local"}
 
-config :kjogvi, :legacy,
+config :kjogvi, Kjogvi.Legacy.Import,
   adapter: Kjogvi.Legacy.Adapters.Local,
-  database: System.get_env("LEGACY_DATABASE")
+  database: System.get_env("LEGACY_DATABASE"),
+  port: String.to_integer(System.get_env("LEGACY_PORT") || "5432"),
+  hostname: System.get_env("LEGACY_HOSTNAME") || "localhost",
+  username: System.get_env("LEGACY_USERNAME"),
+  password: System.get_env("LEGACY_PASSWORD")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -32,7 +32,7 @@ defmodule OrnithoWeb.TaxaComponents do
   def simpler_table(assigns) do
     ~H"""
     <div id={@id} class={["overflow-y-auto px-4 sm:overflow-visible sm:px-0", @class]}>
-      <table class="mt-6 w-[40rem] sm:w-full">
+      <table class="mt-6 w-160 sm:w-full">
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
             <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
@@ -127,10 +127,31 @@ defmodule OrnithoWeb.TaxaComponents do
 
   attr :content, :string, required: true
   attr :search_state, :any, default: struct(SearchState)
+  attr :full_match, :boolean, default: false
+
+  def highlighted(%{content: nil} = assigns) do
+    ~H"""
+    """
+  end
+
+  def highlighted(%{search_state: %{enabled: true}} = assigns) do
+    ~H"""
+    {highlighted_content(assigns)}
+    """
+  end
 
   def highlighted(assigns) do
     ~H"""
-    {if @search_state.enabled, do: highlighted_content(assigns), else: @content}
+    {@content}
+    """
+  end
+
+  defp highlighted_content(%{full_match: true} = assigns) do
+    ~H"""
+    {maybe_highlighted(%{
+      type: (@content == @search_state.term && :highlight) || :plain,
+      text: @content
+    })}
     """
   end
 
@@ -166,6 +187,7 @@ defmodule OrnithoWeb.TaxaComponents do
   defp category_to_color(cat) do
     case cat do
       "species" -> "bg-green-500"
+      "subspecies" -> "bg-blue-500"
       "issf" -> "bg-blue-500"
       c when c in ["slash", "spuh", "form"] -> "bg-rose-400"
       c when c in ["domestic", "intergrade", "hybrid"] -> "bg-zinc-400"

@@ -5,17 +5,50 @@ defmodule Kjogvi.Pages.Species do
 
   use Kjogvi.Schema
 
-  alias Kjogvi.Pages.Species
+  import Ecto.Query
+  import Ecto.Changeset
 
-  @primary_key false
-  embedded_schema do
-    field :name_sci, :string
-    field :code, :string
-    field :name_en, :string
+  alias Ornitho.Schema.Taxon
+  alias Kjogvi.Pages.Species
+  alias Kjogvi.Pages.SpeciesTaxaMapping
+  alias Kjogvi.Repo
+
+  schema "species_pages" do
+    field(:name_en, :string)
+    field(:common_name, :string)
+    field(:name_sci, :string)
+    field(:order, :string)
+    field(:family, :string)
+    field(:extras, :map)
+    field(:sort_order, :integer)
+
+    has_many :species_taxa_mappings, SpeciesTaxaMapping, foreign_key: :species_page_id
+
+    timestamps()
+  end
+
+  def changeset(card, attrs) do
+    card
+    |> cast(attrs, [
+      :name_en,
+      :common_name,
+      :name_sci,
+      :order,
+      :family,
+      :extras,
+      :sort_order
+    ])
+    |> validate_required([
+      :name_sci,
+      :sort_order
+    ])
   end
 
   def from_slug(slug) do
-    %Species{name_sci: String.replace(slug, "_", " ", global: false)}
+    name_sci = String.replace(slug, "_", " ", global: false)
+
+    from(species in Species, where: species.name_sci == ^name_sci)
+    |> Repo.one()
   end
 
   def from_taxon(nil) do
@@ -23,6 +56,18 @@ defmodule Kjogvi.Pages.Species do
   end
 
   def from_taxon(taxon) do
-    %Species{name_sci: taxon.name_sci, code: taxon.code, name_en: taxon.name_en}
+    taxon
+    |> Taxon.key()
+    |> from_taxon_key()
+  end
+
+  def from_taxon_key(taxon_key) do
+    query =
+      from species in Species,
+        join: species_taxa_mapping in assoc(species, :species_taxa_mappings),
+        where: species_taxa_mapping.taxon_key == ^taxon_key
+
+    query
+    |> Repo.one()
   end
 end

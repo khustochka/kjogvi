@@ -25,10 +25,10 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   end
 
   defp lifers_query(scope, filter) do
-    from [o, c] in observations_filtered(scope, filter),
-      distinct: o.cached_species_key,
+    from [o, c, stm] in observations_filtered(scope, filter),
+      distinct: stm.species_page_id,
       order_by: [
-        asc: o.cached_species_key,
+        asc: stm.species_page_id,
         asc: c.observ_date,
         asc_nulls_last: c.start_time,
         asc: o.id
@@ -36,7 +36,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
       select: %{
         id: o.id,
         card_id: c.id,
-        cached_species_key: o.cached_species_key,
+        species_page_id: stm.species_page_id,
         observ_date: c.observ_date,
         start_time: c.start_time,
         location_id: c.location_id
@@ -89,8 +89,8 @@ defmodule Kjogvi.Birding.Lifelist.Query do
         as: :observation,
         join: c in assoc(o, :card),
         as: :card,
-        where:
-          not is_nil(o.cached_species_key) and o.unreported == false and c.user_id == ^user_id
+        join: stm in assoc(o, :species_taxa_mapping),
+        where: o.unreported == false and c.user_id == ^user_id
 
     if include_private do
       query

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 mix deps.get
-mix ecto.create
-mix ecto.migrate
+mix ecto.setup
+MIX_ENV=test mix ecto.setup
 
-MIX_ENV=test mix ecto.create
-MIX_ENV=test mix ecto.migrate
+# Need to run 
+# > eval "$(direnv hook bash)"

@@ -30,9 +30,19 @@ defmodule Ornitho.Query.Taxon do
     |> where([t], t.code in ^codes)
   end
 
-  def select_minimal(query) do
+  def by_being_countable(query) do
+    query
+    |> where([t], t.category == "species" or not is_nil(t.parent_species))
+  end
+
+  def select_by_format(query, format) do
     from(query)
-    |> select(^@select_minimal)
+    |> then(fn query ->
+      case format do
+        :full -> query
+        _else -> select(query, ^@select_minimal)
+      end
+    end)
   end
 
   def ordered(query) do
@@ -58,7 +68,10 @@ defmodule Ornitho.Query.Taxon do
     query
     |> where(
       [t],
-      ilike(t.name_sci, ^like_term) or ilike(t.name_en, ^like_term) or ilike(t.code, ^start_term)
+      ilike(t.name_sci, ^like_term) or
+        ilike(t.name_en, ^like_term) or
+        ilike(t.code, ^start_term) or
+        t.taxon_concept_id == ^sanitized_term
     )
   end
 end

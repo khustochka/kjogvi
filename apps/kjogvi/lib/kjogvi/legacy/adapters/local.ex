@@ -4,9 +4,14 @@ defmodule Kjogvi.Legacy.Adapters.Local do
   @per_page 1000
 
   def init() do
-    hostname = Kjogvi.Legacy.Import.config()[:hostname] || "localhost"
-    database = Kjogvi.Legacy.Import.config()[:database]
-    {:ok, pid} = Postgrex.start_link(hostname: hostname, database: database)
+    {:ok, pid} =
+      Postgrex.start_link(
+        hostname: Kjogvi.Legacy.Import.config()[:hostname],
+        database: Kjogvi.Legacy.Import.config()[:database],
+        port: Kjogvi.Legacy.Import.config()[:port],
+        username: Kjogvi.Legacy.Import.config()[:username],
+        password: Kjogvi.Legacy.Import.config()[:password]
+      )
 
     pid
   end

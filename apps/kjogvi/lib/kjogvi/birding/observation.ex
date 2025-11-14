@@ -4,12 +4,14 @@ defmodule Kjogvi.Birding.Observation do
   """
 
   use Kjogvi.Schema
+
   import Ecto.Changeset
+
+  alias Kjogvi.Pages.SpeciesTaxaMapping
 
   schema "observations" do
     belongs_to(:card, Kjogvi.Birding.Card)
     field :taxon_key, :string
-    field :cached_species_key, :string
     field :quantity, :string
     field :voice, :boolean, default: false
     field :notes, :string
@@ -19,6 +21,11 @@ defmodule Kjogvi.Birding.Observation do
     # Not included in lifelist even for the owner
     field :unreported, :boolean, default: false
     field :ebird_obs_id, :string
+
+    belongs_to :species_taxa_mapping, SpeciesTaxaMapping,
+      foreign_key: :taxon_key,
+      references: :taxon_key,
+      define_field: false
 
     timestamps()
 
@@ -36,10 +43,5 @@ defmodule Kjogvi.Birding.Observation do
       :voice,
       :unreported
     ])
-  end
-
-  def cache_species_changeset(observation, attrs) do
-    observation
-    |> cast(attrs, [:cached_species_key])
   end
 end

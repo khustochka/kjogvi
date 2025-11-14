@@ -103,7 +103,15 @@ defmodule KjogviWeb.Router do
 
     live_dashboard "/dashboard",
       metrics: KjogviWeb.Telemetry,
-      env_keys: ["ECTO_IPV6", "PHX_HOST", "PHX_PORT", "DNS_CLUSTER_QUERY", "GIT_REVISION"],
+      env_keys: [
+        "ECTO_IPV6",
+        "PHX_HOST",
+        "PHX_PORT",
+        "DNS_CLUSTER_QUERY",
+        "GIT_REVISION",
+        "RELEASE_ENV",
+        "RELEASE_VERSION"
+      ],
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
         {KjogviWeb.UserAuth, :mount_private_view}
