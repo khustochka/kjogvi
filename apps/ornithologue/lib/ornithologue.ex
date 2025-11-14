@@ -41,8 +41,7 @@ defmodule Ornithologue do
           add_book_to_taxon_and_species(taxon, book)
         end)
         |> Enum.group_by(&Taxon.key/1)
-        |> Enum.map(fn {key, [val | _]} -> {key, val} end)
-        |> Map.new()
+        |> Map.new(fn {key, [val | _]} -> {key, val} end)
 
       acc
       |> Map.merge(grouped)
