@@ -124,7 +124,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               >
               </path>
             </svg>
-            <span>{length(@top_locations || [])} top-level locations</span>
+            <span>{length(@top_locations)} top-level locations</span>
           </div>
           <div class="flex items-center">
             <svg
@@ -141,7 +141,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               >
               </path>
             </svg>
-            <span>{length(@specials || [])} special locations</span>
+            <span>{length(@specials)} special locations</span>
           </div>
           <div class="flex items-center">
             <svg
@@ -339,7 +339,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   def render_location(assigns) do
     ~H"""
-    <div class="border border-gray-100 rounded-lg mb-2 hover:border-gray-200 transition-colors">
+    <div class="border border-gray-100 rounded-l-lg mb-2 hover:border-gray-200 transition-colors">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-4">
         <div class="flex items-center space-x-3 flex-1 min-w-0">
           <%!-- Expand/collapse button only for locations with children --%>
@@ -383,7 +383,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
       <%!-- Children locations --%>
       <%= if MapSet.member?(@expanded_locations, @location.id) && @open_locations[@location.id] do %>
-        <div class="ml-4 sm:ml-6 pb-2 pr-4 border-t border-gray-50">
+        <div class="ml-4 sm:ml-6 pb-2 pr-0 border-t border-gray-50">
           <div class="pt-2">
             <%= for child <- @open_locations[@location.id] do %>
               <.render_location

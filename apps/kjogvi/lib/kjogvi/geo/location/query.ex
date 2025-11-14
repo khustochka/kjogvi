@@ -107,6 +107,7 @@ defmodule Kjogvi.Geo.Location.Query do
     end)
   end
 
+  # Unused function. Use it to build proper ancestor preloading.
   def preload_location_ancestors(things) do
     # Only preload ancestors for private locations
     ancestor_loc_ids =
