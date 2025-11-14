@@ -83,4 +83,10 @@ defmodule Kjogvi.Geo do
     |> Location.Query.by_slug(slug)
     |> Repo.one()
   end
+
+  def search_locations(term, opts \\ []) do
+    Location
+    |> Location.Query.search(term, opts)
+    |> Repo.all()
+  end
 end

@@ -7,35 +7,34 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    {all_locations, grouped_locations} = Geo.get_all_locations_grouped()
+
     # Start with only top-level locations (no parents)
-    locations = Geo.get_upper_level_locations()
+    top_locations = grouped_locations[nil] || []
 
-    top_locations =
-      locations
-      |> Enum.filter(fn loc -> loc.ancestry == [] end)
-
-    # Auto-expand continents to show countries by default
+    # Auto-expand top-level locations to show countries by default
     continent_ids = top_locations |> Enum.map(& &1.id) |> MapSet.new()
 
     # Load children for all continents
-    child_locations =
+    open_locations =
       top_locations
       |> Enum.reduce(%{}, fn continent, acc ->
-        Map.put(acc, continent.id, direct_children(continent.id))
+        Map.put(acc, continent.id, grouped_locations[continent.id] || [])
       end)
 
     {
       :ok,
       socket
       |> assign(:page_title, "Locations")
+      |> assign(:grouped_locations, grouped_locations)
+      |> assign(:all_locations, all_locations |> Map.new(fn loc -> {loc.id, loc} end))
       |> assign(:top_locations, top_locations)
-      |> assign(:all_locations, [])
+      |> assign(:total_locations, length(all_locations))
+      |> assign(:search_term, "")
       |> assign(:search_results, [])
       |> assign(:specials, Geo.get_specials())
-      |> assign(:search_term, "")
       |> assign(:expanded_locations, continent_ids)
-      |> assign(:child_locations, child_locations)
-      |> assign(:ancestor_cache, %{})
+      |> assign(:open_locations, open_locations)
     }
   end
 
@@ -48,32 +47,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   def handle_event("search", %{"search" => search_term}, socket) do
     search_term = String.trim(search_term)
 
-    {search_results, all_locations} =
-      if search_term != "" and String.length(search_term) >= 2 do
-        # Load all locations if not already loaded
-        all_locations =
-          if socket.assigns.all_locations == [] do
-            Geo.get_locations()
-          else
-            socket.assigns.all_locations
-          end
-
-        search_results =
-          all_locations
-          |> Enum.filter(fn location ->
-            search_term_lower = String.downcase(search_term)
-
-            String.contains?(String.downcase(location.name_en), search_term_lower) or
-              String.contains?(String.downcase(location.slug), search_term_lower) or
-              (location.iso_code &&
-                 String.contains?(String.downcase(location.iso_code), search_term_lower))
-          end)
-          # Limit results to 50 for performance
-          |> Enum.take(50)
-
-        {search_results, all_locations}
+    search_results =
+      if String.length(search_term) >= 2 do
+        Geo.search_locations(search_term)
       else
-        {[], socket.assigns.all_locations}
+        []
       end
 
     # Preload ancestor names for search results that have ancestry
@@ -82,7 +60,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         search_results
         |> Enum.flat_map(& &1.ancestry)
         |> Enum.uniq()
-        |> load_ancestor_names(socket.assigns.all_locations)
+        |> Enum.map(&{&1, socket.assigns.all_locations[&1].name_en})
+        |> Map.new()
       else
         %{}
       end
@@ -91,29 +70,32 @@ defmodule KjogviWeb.Live.My.Locations.Index do
      socket
      |> assign(:search_term, search_term)
      |> assign(:search_results, search_results)
-     |> assign(:all_locations, all_locations)
      |> assign(:ancestor_cache, ancestor_cache)}
   end
 
   @impl true
   def handle_event("toggle_location", %{"location_id" => location_id_str}, socket) do
     location_id = String.to_integer(location_id_str)
-    expanded_locations = socket.assigns.expanded_locations
-    child_locations = socket.assigns.child_locations
 
-    {new_expanded, new_child_locations} =
+    %{
+      expanded_locations: expanded_locations,
+      open_locations: open_locations,
+      grouped_locations: grouped_locations
+    } = socket.assigns
+
+    {new_expanded, new_open_locations} =
       if MapSet.member?(expanded_locations, location_id) do
         # Collapse - remove from expanded and clear children
-        {MapSet.delete(expanded_locations, location_id), Map.delete(child_locations, location_id)}
+        {MapSet.delete(expanded_locations, location_id), Map.delete(open_locations, location_id)}
       else
         {MapSet.put(expanded_locations, location_id),
-         Map.put(child_locations, location_id, direct_children(location_id))}
+         Map.put(open_locations, location_id, grouped_locations[location_id])}
       end
 
     {:noreply,
      socket
      |> assign(:expanded_locations, new_expanded)
-     |> assign(:child_locations, new_child_locations)}
+     |> assign(:open_locations, new_open_locations)}
   end
 
   @impl true
@@ -177,7 +159,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </path>
             </svg>
             <span>
-              {if @all_locations == [], do: 862, else: length(@all_locations)} total locations
+              {@total_locations} total locations
             </span>
           </div>
         </div>
@@ -190,8 +172,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             Type at least 2 characters to search...
           <% else %>
             {length(@search_results)} location(s) found
-            <%= if length(@search_results) == 50 do %>
-              (showing first 50 results)
+            <%= if length(@search_results) == 20 do %>
+              (showing first 20 results)
             <% end %>
           <% end %>
         </div>
@@ -287,9 +269,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <div :if={@top_locations && length(@top_locations) > 0} class="space-y-2">
           <%= for location <- @top_locations do %>
             <.render_location
+              grouped_locations={@grouped_locations}
+              children={Map.get(@grouped_locations, location.id, [])}
               location={location}
               expanded_locations={@expanded_locations}
-              child_locations={@child_locations}
+              open_locations={@open_locations}
               level={0}
             />
           <% end %>
@@ -359,7 +343,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-4">
         <div class="flex items-center space-x-3 flex-1 min-w-0">
           <%!-- Expand/collapse button only for locations with children --%>
-          <%= if has_children?(@location.id) do %>
+          <%= if Enum.any?(@children) do %>
             <button
               phx-click="toggle_location"
               phx-value-location_id={@location.id}
@@ -398,14 +382,16 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       </div>
 
       <%!-- Children locations --%>
-      <%= if MapSet.member?(@expanded_locations, @location.id) && @child_locations[@location.id] do %>
+      <%= if MapSet.member?(@expanded_locations, @location.id) && @open_locations[@location.id] do %>
         <div class="ml-4 sm:ml-6 pb-2 pr-4 border-t border-gray-50">
           <div class="pt-2">
-            <%= for child <- @child_locations[@location.id] do %>
+            <%= for child <- @open_locations[@location.id] do %>
               <.render_location
                 location={child}
+                grouped_locations={@grouped_locations}
+                children={Map.get(@grouped_locations, child.id, [])}
                 expanded_locations={@expanded_locations}
-                child_locations={@child_locations}
+                open_locations={@open_locations}
                 level={@level + 1}
               />
             <% end %>
@@ -488,40 +474,5 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <% end %>
     </span>
     """
-  end
-
-  # Check if a location has potential children by querying the database
-  defp has_children?(location_id) do
-    Geo.get_child_locations(location_id)
-    |> Enum.any?(fn child ->
-      case child.ancestry do
-        [] -> false
-        ancestry -> List.last(ancestry) == location_id
-      end
-    end)
-  end
-
-  defp load_ancestor_names(ancestor_ids, all_locations) when is_list(ancestor_ids) do
-    if ancestor_ids == [] do
-      %{}
-    else
-      all_locations
-      |> Enum.filter(fn loc -> loc.id in ancestor_ids end)
-      |> Enum.reduce(%{}, fn loc, acc ->
-        Map.put(acc, loc.id, loc.name_en)
-      end)
-    end
-  end
-
-  defp direct_children(parent_id) do
-    children = Geo.get_child_locations(parent_id)
-
-    children
-    |> Enum.filter(fn child ->
-      case child.ancestry do
-        [] -> false
-        ancestry -> List.last(ancestry) == parent_id
-      end
-    end)
   end
 end
