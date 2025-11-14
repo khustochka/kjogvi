@@ -129,7 +129,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
           <div class="flex items-center">
             <svg
-              class="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"
+              class="w-4 h-4 mr-2 text-blue-500 shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -146,7 +146,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </div>
           <div class="flex items-center">
             <svg
-              class="w-4 h-4 mr-2 text-green-500 flex-shrink-0"
+              class="w-4 h-4 mr-2 text-green-500 shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -163,7 +163,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </div>
           <div class="flex items-center">
             <svg
-              class="w-4 h-4 mr-2 text-purple-500 flex-shrink-0"
+              class="w-4 h-4 mr-2 text-purple-500 shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -198,7 +198,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
         <form phx-change="search" class="w-full">
           <input
-            type="text"
+            id="location-search"
+            type="search"
             name="search"
             value={@search_term}
             placeholder="Search locations by name, slug, or country code..."
@@ -215,7 +216,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       >
         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <svg
-            class="w-5 h-5 mr-2 text-blue-500 flex-shrink-0"
+            class="w-5 h-5 mr-2 text-blue-500 shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -239,7 +240,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                   <.location_card location={location} show_type={false} />
                 </div>
 
-                <div class="flex items-center space-x-4 text-sm text-gray-500 flex-shrink-0">
+                <div class="flex items-center space-x-4 text-sm text-gray-500 shrink-0">
                   <.link
                     href={~p"/my/lifelist/#{location.slug}"}
                     class="text-blue-600 hover:text-blue-700 text-sm lg:text-base hover:underline transition-colors"
@@ -324,7 +325,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       >
         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <svg
-            class="w-5 h-5 mr-2 text-yellow-500 flex-shrink-0"
+            class="w-5 h-5 mr-2 text-yellow-500 shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -362,7 +363,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             <button
               phx-click="toggle_location"
               phx-value-location_id={@location.id}
-              class="flex-shrink-0 p-1 hover:bg-gray-50 rounded transition-colors"
+              class="shrink-0 p-1 hover:bg-gray-50 rounded transition-colors"
             >
               <svg
                 class={[
@@ -378,7 +379,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               </svg>
             </button>
           <% else %>
-            <div class="flex-shrink-0 p-1 w-6 h-6"></div>
+            <div class="shrink-0 p-1 w-6 h-6"></div>
           <% end %>
 
           <div class="flex-1 min-w-0">
@@ -386,7 +387,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </div>
         </div>
 
-        <div class="flex items-center space-x-4 text-sm text-gray-500 flex-shrink-0 sm:ml-4">
+        <div class="flex items-center space-x-4 text-sm text-gray-500 shrink-0 sm:ml-4">
           <.link
             href={~p"/my/lifelist/#{@location.slug}"}
             class="text-blue-600 hover:text-blue-700 text-sm lg:text-base hover:underline transition-colors"
@@ -418,7 +419,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   def location_card(assigns) do
     ~H"""
     <div class="flex items-center space-x-3 min-w-0">
-      <div class="flex-shrink-0">
+      <div class="shrink-0">
         <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
           <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -439,7 +440,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             <%= if @location.is_private do %>
               <span title="Private">
                 <svg
-                  class="w-4 h-4 text-gray-400 flex-shrink-0"
+                  class="w-4 h-4 text-gray-400 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -456,7 +457,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             <% end %>
             <span
               :if={@location.iso_code && @location.iso_code != ""}
-              class="text-gray-600 font-mono text-sm flex-shrink-0"
+              class="text-gray-600 font-mono text-sm shrink-0"
             >
               {String.upcase(@location.iso_code)}
             </span>
@@ -466,7 +467,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           <p class="text-xs text-gray-500 truncate">{@location.slug}</p>
           <span
             :if={@location.location_type}
-            class="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full flex-shrink-0"
+            class="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full shrink-0"
           >
             {@location.location_type}
           </span>
