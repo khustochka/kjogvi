@@ -1,4 +1,4 @@
-/*! tailwindcss v4.1.14 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.1.17 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -7,6 +7,8 @@
     'Noto Color Emoji';
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
     monospace;
+    --color-red-300: oklch(80.8% 0.114 19.571);
+    --color-red-600: oklch(57.7% 0.245 27.325);
     --color-yellow-200: oklch(94.5% 0.129 101.54);
     --color-green-500: oklch(72.3% 0.219 149.579);
     --color-emerald-50: oklch(97.9% 0.021 166.113);
@@ -19,6 +21,7 @@
     --color-rose-500: oklch(64.5% 0.246 16.439);
     --color-rose-600: oklch(58.6% 0.253 17.585);
     --color-rose-900: oklch(41% 0.159 10.272);
+    --color-slate-400: oklch(70.4% 0.04 256.788);
     --color-gray-300: oklch(87.2% 0.01 258.338);
     --color-zinc-50: oklch(98.5% 0 0);
     --color-zinc-100: oklch(96.7% 0.001 286.375);
@@ -331,9 +334,6 @@
   .mt-8 {
     margin-top: calc(var(--spacing) * 8);
   }
-  .mt-10 {
-    margin-top: calc(var(--spacing) * 10);
-  }
   .mt-11 {
     margin-top: calc(var(--spacing) * 11);
   }
@@ -465,8 +465,8 @@
   .h-full {
     height: 100%;
   }
-  .min-h-\[6rem\] {
-    min-height: 6rem;
+  .min-h-24 {
+    min-height: calc(var(--spacing) * 24);
   }
   .min-h-full {
     min-height: 100%;
@@ -504,8 +504,8 @@
   .w-80 {
     width: calc(var(--spacing) * 80);
   }
-  .w-\[40rem\] {
-    width: 40rem;
+  .w-160 {
+    width: calc(var(--spacing) * 160);
   }
   .w-full {
     width: 100%;
@@ -648,6 +648,9 @@
   .bg-green-500 {
     background-color: var(--color-green-500);
   }
+  .bg-red-600 {
+    background-color: var(--color-red-600);
+  }
   .bg-rose-50 {
     background-color: var(--color-rose-50);
   }
@@ -710,6 +713,9 @@
   }
   .px-4 {
     padding-inline: calc(var(--spacing) * 4);
+  }
+  .py-0\.5 {
+    padding-block: calc(var(--spacing) * 0.5);
   }
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
@@ -818,6 +824,9 @@
   }
   .text-rose-900 {
     color: var(--color-rose-900);
+  }
+  .text-slate-400 {
+    color: var(--color-slate-400);
   }
   .text-white {
     color: var(--color-white);
@@ -1039,6 +1048,16 @@
       @supports (color: color-mix(in lab, red, red)) {
         color: color-mix(in oklab, var(--color-zinc-900) 70%, transparent);
       }
+    }
+  }
+  .disabled\:bg-red-300 {
+    &:disabled {
+      background-color: var(--color-red-300);
+    }
+  }
+  .disabled\:bg-zinc-500 {
+    &:disabled {
+      background-color: var(--color-zinc-500);
     }
   }
   .sm\:flex {
