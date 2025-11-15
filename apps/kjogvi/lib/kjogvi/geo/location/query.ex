@@ -5,6 +5,7 @@ defmodule Kjogvi.Geo.Location.Query do
 
   @country_location_type "country"
   @special_location_type "special"
+  @default_search_limit 20
 
   import Ecto.Query
 
@@ -47,6 +48,17 @@ defmodule Kjogvi.Geo.Location.Query do
   def specials(query) do
     from [..., l] in query,
       where: l.location_type == @special_location_type
+  end
+
+  def search(query, term, opts \\ []) do
+    ilike_term = "%#{term}%"
+
+    from l in query,
+      where:
+        ilike(l.name_en, ^ilike_term) or
+          ilike(l.slug, ^ilike_term) or
+          ilike(l.iso_code, ^ilike_term),
+      limit: ^Keyword.get(opts, :limit, @default_search_limit)
   end
 
   def load_cards_count(query) do
@@ -95,6 +107,7 @@ defmodule Kjogvi.Geo.Location.Query do
     end)
   end
 
+  # Unused function. Use it to build proper ancestor preloading.
   def preload_location_ancestors(things) do
     # Only preload ancestors for private locations
     ancestor_loc_ids =

@@ -6,7 +6,6 @@ defmodule Kjogvi.Geo do
   import Ecto.Query
 
   alias Kjogvi.Repo
-
   alias __MODULE__.Location
 
   def get_countries do
@@ -31,6 +30,29 @@ defmodule Kjogvi.Geo do
         l.id in subquery(good_children_ids) and
           (l.location_type != "special" or is_nil(l.location_type))
     )
+    |> Repo.all()
+  end
+
+  def get_all_locations_grouped do
+    locations =
+      Location
+      |> Location.Query.load_cards_count()
+      |> where([l], l.location_type != "special" or is_nil(l.location_type))
+      |> Repo.all()
+
+    # Group locations by their parent ID (last element of ancestry)
+    grouped_locations =
+      locations
+      |> Enum.group_by(&List.last(&1.ancestry))
+
+    {locations, grouped_locations}
+  end
+
+  def get_child_locations(parent_id) do
+    Location
+    |> Location.Query.load_cards_count()
+    |> where([l], fragment("? @> ?::bigint[]", l.ancestry, [^parent_id]))
+    |> where([l], l.location_type != "special" or is_nil(l.location_type))
     |> Repo.all()
   end
 
@@ -60,5 +82,11 @@ defmodule Kjogvi.Geo do
     end
     |> Location.Query.by_slug(slug)
     |> Repo.one()
+  end
+
+  def search_locations(term, opts \\ []) do
+    Location
+    |> Location.Query.search(term, opts)
+    |> Repo.all()
   end
 end

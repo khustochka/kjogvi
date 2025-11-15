@@ -24,6 +24,8 @@ defmodule Kjogvi.Geo.Location do
   import Ecto.Query
 
   alias Kjogvi.Geo.Location
+  alias Kjogvi.Geo.Location.Query
+  alias Kjogvi.Repo
 
   schema "locations" do
     field :slug, :string
@@ -154,6 +156,28 @@ defmodule Kjogvi.Geo.Location do
       |> Enum.map(fn id ->
         map[id] |> hd()
       end)
+    end)
+  end
+
+  def preload_ancestors(locations) do
+    ancestor_ids =
+      locations
+      |> Enum.flat_map(& &1.ancestry)
+      |> Enum.uniq()
+
+    all_ancestors =
+      from(l in Location, where: l.id in ^ancestor_ids)
+      |> Query.minimal_select()
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    locations
+    |> Enum.map(fn location ->
+      ancestors =
+        location.ancestry
+        |> Enum.map(fn id -> Enum.find(all_ancestors, &(&1.id == id)) end)
+
+      %{location | ancestors: ancestors}
     end)
   end
 
