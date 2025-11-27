@@ -1,0 +1,293 @@
+<!-- livebook:{"app_settings":{"access_type":"public","slug":"kjogvi-barcharts"}} -->
+
+# Yard species bar charts v4
+
+## Preload
+
+```elixir
+import Ecto.Query
+alias Kjogvi.Geo.Location
+alias Kjogvi.Birding.Observation
+alias Kjogvi.Pages.Species
+
+yard = from(l in Location, where: [slug: ^System.fetch_env!("LB_YARD_LOCATION_SLUG")]) 
+  # |> preload(observations: [:card, [species_taxa_mapping: :species_page]])
+  |> Kjogvi.Repo.one
+
+species = 
+  from(sp in Species) 
+  |> Kjogvi.Repo.all()
+  |> Enum.map(& {&1.id, &1})
+  |> Map.new()
+
+observs_query =
+  from(obs in Observation)
+  |> join(:inner, [obs], card in assoc(obs, :card))
+  |> join(:inner, [obs], sptm in assoc(obs, :species_taxa_mapping))
+  |> where([_, card, _], card.location_id == ^yard.id)  
+  |> where([_, card, _], card.observ_date > ^Date.shift(Date.utc_today, year: -4))
+
+observs = 
+  observs_query
+  |> select([obs, card, sptm], %{
+    "species_id" => sptm.species_page_id,
+    "date" => card.observ_date,
+    "quantity" => obs.quantity
+  })
+  |> Kjogvi.Repo.all()
+
+counts = 
+  observs
+  |> Enum.group_by(& &1["species_id"])
+  |> Enum.map(fn {species_id, els} -> {species_id, length(els)} end)
+  |> Enum.sort_by(fn {_, cnt} -> cnt end)
+  |> Enum.reverse()
+```
+
+```elixir
+{first_sp_id, total} = 
+  counts
+  |> Enum.at(0)
+
+species1 = species[first_sp_id]
+data = observs
+
+alias VegaLite, as: Vl
+```
+
+## Module
+
+```elixir
+defmodule ObsBarChart do
+  # aggregation: by_obs, by_days, by_qty
+  # time_unit: month, week, dayofyear
+  def new(species, data, aggregation, time_unit) do
+    Vl.new(width: 750, height: 300, title: "#{species.name_en} (#{aggreg_title(aggregation)})")
+    |> Vl.data_from_values(data)
+    |> Vl.mark(:bar)
+    |> Vl.transform(filter: "datum.species_id == #{species.id}")
+    |> transform_and_encode_x_axis(time_unit)
+    |> transform_and_encode_y_axis(aggregation, time_unit)
+    |> add_impute(time_unit)
+    |> Vl.encode(:color, [value: RandomColour.generate(
+      luminosity: "light", seed: species.id
+    )])
+  end
+
+  defp aggreg_title(aggregation) do 
+    case aggregation do 
+      :by_obs -> "by observation records"
+      :by_days -> "by observation days"
+      :by_qty -> "by max daily individuals count"
+    end
+  end
+
+  defp transform_and_encode_x_axis(plot, time_unit) do 
+    plot
+    |> Vl.encode(
+      :x, 
+      field: time_unit, 
+      type: :ordinal,
+      title: axis_x_name(time_unit),
+      axis: [
+        label_angle: 0,
+        label_align: "center",
+        label_padding: 7,
+        label_offset: 20,
+        label_font_size: 14,
+        label_expr: label_expr(time_unit),
+        tick_band: "extent",
+        tick_count: 12,
+        tick_size: 10,
+        grid: true,
+        grid_dash: [
+          condition: [test: "datum.value % 4 == 0", value: []],
+          value: [2,5]
+        ],
+        tick_dash: [
+          condition: [test: "datum.value % 4 == 0", value: []],
+          value: [2,5]
+        ]
+      ]
+    )
+  end
+
+  defp axis_x_name(time_unit) do 
+    case time_unit do 
+      :month -> "Month"
+      :week -> "Week"
+      :dayofyear -> "Day"
+    end
+  end
+
+  defp transform_and_encode_y_axis(plot, :by_days, time_unit) do
+    plot
+    |> transform_calculate(time_unit)
+    |> Vl.transform(
+      aggregate: [[op: :distinct, field: "date", as: "result_value"]],
+      groupby: [time_unit]
+    )
+    |> Vl.encode(
+      :y, 
+      field: "result_value", 
+      type: :quantitative,
+      title: "Observation days",
+      axis: [tick_min_step: 1]
+    )
+  end
+
+  defp transform_and_encode_y_axis(plot, :by_qty, time_unit) do
+    plot
+    |> Vl.transform(
+      aggregate: [[op: :max, field: "quantity", as: "max_qty_in_a_day"]],
+      groupby: ["date"]
+    )
+    |> transform_calculate(time_unit)
+    |> Vl.transform(
+      aggregate: [[op: :sum, field: "max_qty_in_a_day", as: "result_value"]],
+      groupby: [time_unit]
+    )
+    |> Vl.encode(
+      :y, 
+      field: "result_value", 
+      type: :quantitative,
+      title: "Individuals count",
+      axis: [tick_min_step: 1]
+    )
+  end
+
+  defp transform_and_encode_y_axis(plot, :by_obs, time_unit) do
+    plot
+    |> transform_calculate(time_unit)
+    |> Vl.transform(
+      aggregate: [[op: :count, as: "result_value"]],
+      groupby: [time_unit]
+    )
+    |> Vl.encode(
+      :y, 
+      field: "result_value", 
+      type: :quantitative,
+      title: "Observation records",
+      axis: [tick_min_step: 1]
+    )
+  end
+
+  defp transform_calculate(plot, time_unit) do 
+    plot
+    |> Vl.transform(
+      calculate: time_unit_calculation(time_unit),
+      as: time_unit
+    )
+  end
+  
+  defp time_unit_calculation(time_unit) do 
+    case time_unit do 
+      :month -> "month(toDate(datum.date))"
+      :week -> "floor((dayofyear(toDate(datum.date)) - 1) / 7.625) + 1"
+      :dayofyear -> "dayofyear(toDate(datum.date))"
+    end
+  end
+
+  defp add_impute(plot, time_unit) do 
+    plot
+    |> Vl.transform(
+      impute: "result_value",
+      key: time_unit,
+      keyvals:  keyvals(time_unit),
+      value: 0
+    )
+  end
+
+  defp keyvals(time_unit) do 
+    case time_unit do 
+      :month -> [start: 0, stop: 11]
+      :week -> [start: 1, stop: 49]
+      :dayofyear -> [start: 0, stop: 366]
+    end
+  end
+
+  defp label_expr(time_unit) do 
+    case time_unit do 
+      :month -> "monthAbbrevFormat(datum.value)"
+      :week -> "round(datum.value) % 4 == 1 ? monthAbbrevFormat(floor(datum.value / 4)) : ''"
+      :dayofyear -> "round(datum.value) % 30 == 0 ? datum.label : ''"
+    end
+  end
+end
+```
+
+## Form
+
+```elixir
+# 1. A form for users to enter a GitHub repository name
+form =
+  Kino.Control.form(
+    [
+      aggregation: Kino.Input.select("Aggregation", [
+        {:by_days, "By observation days"}, 
+        {:by_qty, "By max daily individuals count"},
+        {:by_obs, "By observation records"}
+      ]),
+      
+      time_frame: Kino.Input.select("Time frame", [
+        {:month, "Month"}, 
+        {:week, "Week"},
+        {:dayofyear, "Day of year"}
+      ]),
+      
+      num_species: Kino.Input.select("Number of species", [
+        {3, "Top 3"}, 
+        {6, "Top 6"}, 
+        {12, "Top 12"}, 
+        {25, "Top 25"}, 
+        {50, "Top 50"}, 
+        {100, "Top 100"}
+      ])
+    ],
+    submit: "Submit"
+  )
+
+clear_button = Kino.Control.button("Clear")
+
+# 2. A Kino frame to display the results
+output_frame = Kino.Frame.new()
+
+# 3. A grid layout containing the form and the output frame
+layout_frame = Kino.Layout.grid([form, clear_button, output_frame], boxed: true)
+```
+
+```elixir
+# 1. Listen for form submissions
+Kino.listen(form, fn form_submission ->
+
+  # 3. Read data from form submission
+  %{data: 
+    %{aggregation: aggregation, 
+      time_frame: time_frame, 
+      num_species: num_species}} = form_submission
+
+  Kino.Frame.clear(output_frame)
+  
+  counts
+  |> Enum.take(num_species)
+  |> Enum.each(fn {sp_id, _} -> 
+    chart = ObsBarChart.new(
+      species[sp_id], 
+      data, 
+      aggregation, 
+      time_frame)
+    Kino.Frame.append(output_frame, chart)
+  end)
+  
+  # Kino.Layout.grid([output_frame], boxed: true)
+
+end)
+
+Kino.listen(clear_button, fn _ev ->
+  Kino.Frame.clear(output_frame)
+end)
+
+Kino.Frame.clear(output_frame)
+```
+
+<!-- livebook:{"offset":7142,"stamp":{"token":"XCP.RLrG3ju6GIoTvqpHxL21yZImmMwkD80clkIwXeDgn2l33TRAODzCRVrRGT1vCkVzmgPSescLV3-fsukmu5IJ1Xuf1ccYL161l67LOyXuAtWnWM6q9Z9ELpRSnCg3","version":2}} -->
