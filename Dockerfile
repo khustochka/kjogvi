@@ -66,13 +66,16 @@ COPY apps/ornithologue/lib apps/ornithologue/lib
 COPY apps/ornitho_web/lib apps/ornitho_web/lib
 
 # Compile the release
+
+# This is needed for compilation
+COPY apps/ornitho_web/dist apps/ornitho_web/dist
+
 RUN mix compile
 
 COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
 COPY apps/ornitho_web/assets apps/ornitho_web/assets
-COPY apps/ornitho_web/dist apps/ornitho_web/dist
 
-# compile assets
+# Compile assets
 RUN mix assets.deploy
 
 # Changes to config/runtime.exs don't require recompiling the code
