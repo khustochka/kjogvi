@@ -47,7 +47,7 @@ defmodule Kjogvi.Umbrella.MixProject do
   defp deps do
     [
       # Required to run "mix format" on ~H/.heex files from the umbrella root
-      {:phoenix_live_view, "~> 1.1.8"},
+      {:phoenix_live_view, "~> 1.1.18"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:lazy_html, ">= 0.1.0", only: :test}

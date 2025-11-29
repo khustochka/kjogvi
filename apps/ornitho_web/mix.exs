@@ -53,8 +53,8 @@ defmodule OrnithoWeb.MixProject do
   defp deps do
     [
       # Deps
-      {:phoenix_live_view, "~> 1.1.8"},
-      {:phoenix, "~> 1.8.1"},
+      {:phoenix_live_view, "~> 1.1.18"},
+      {:phoenix, "~> 1.8.2"},
       {:phoenix_html, "~> 4.1"},
       {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
       {:ornithologue, in_umbrella: true},

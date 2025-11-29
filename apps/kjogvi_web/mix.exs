@@ -57,11 +57,11 @@ defmodule KjogviWeb.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.8.1"},
+      {:phoenix, "~> 1.8.2"},
       {:phoenix_ecto, "~> 4.5"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 1.1.8"},
+      {:phoenix_live_view, "~> 1.1.18"},
       {:phoenix_live_dashboard, "~> 0.8.4"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
