@@ -29,7 +29,7 @@ jobs:
         include:
           - elixir: "v1.19.3"
             otp: "28.1"
-          - elixir: "v1.17.3"
+          - elixir: "v1.18.4"
             otp: "27.3.4.2"
     services:
       postgres:
