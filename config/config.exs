@@ -18,7 +18,7 @@ config :kjogvi, Kjogvi.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 config :kjogvi, Kjogvi.OrnithoRepo, migration_timestamps: [type: :utc_datetime_usec]
 
-# Configures the mailer
+# Configure the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
 # locally. You can see the emails in your browser, at "/dev/mailbox".
@@ -32,7 +32,7 @@ config :kjogvi_web,
   ecto_repos: [Kjogvi.Repo, Kjogvi.OrnithoRepo],
   generators: [timestamp_type: :utc_datetime_usec, context_app: :kjogvi]
 
-# Configures the endpoint
+# Configure the endpoint
 config :kjogvi_web, KjogviWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
@@ -71,7 +71,7 @@ config :tailwind,
     cd: Path.expand("../apps/kjogvi_web", __DIR__)
   ]
 
-# Configures Elixir's Logger
+# Configure Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]

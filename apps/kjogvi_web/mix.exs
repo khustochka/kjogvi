@@ -82,7 +82,7 @@ defmodule KjogviWeb.MixProject do
       # {:earmark, "~> 1.4", only: [:dev, :test]},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.20"},
+      {:gettext, "~> 1.0", override: true},
       {:kjogvi, in_umbrella: true},
       {:ornitho_web, in_umbrella: true},
       {:jason, "~> 1.2"},

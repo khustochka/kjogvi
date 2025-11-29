@@ -16,8 +16,11 @@ config :kjogvi, Kjogvi.OrnithoRepo,
   # pool_count: 4,
   socket_options: maybe_ipv6
 
+config :kjogvi_web, KjogviWeb.Endpoint,
+  http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+
 if config_env() == :dev && System.get_env("BIND_PUBLIC") in ~w(true 1) do
-  config :kjogvi_web, KjogviWeb.Endpoint, http: [ip: {0, 0, 0, 0}, port: "4000"]
+  config :kjogvi_web, KjogviWeb.Endpoint, http: [ip: {0, 0, 0, 0}]
 end
 
 # Opentelemetry
@@ -92,8 +95,7 @@ if config_env() == :prod do
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
-      port: String.to_integer(System.get_env("PORT") || "4000")
+      ip: {0, 0, 0, 0, 0, 0, 0, 0}
     ],
     server: System.get_env("PHX_SERVER") in ~w(true 1),
     secret_key_base: secret_key_base

@@ -32,7 +32,7 @@ for repo <- [DemoWeb.OrnithoRepo] do
   {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
 end
 
-# Configures the endpoint
+# Configure the endpoint
 Application.put_env(:ornitho_web, DemoWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,

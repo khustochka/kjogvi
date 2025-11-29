@@ -59,7 +59,7 @@ defmodule OrnithoWeb.MixProject do
       {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
       {:ornithologue, in_umbrella: true},
       {:jason, "~> 1.2"},
-      {:gettext, "~> 0.20"},
+      {:gettext, "~> 1.0", override: true},
 
       # Assets
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},

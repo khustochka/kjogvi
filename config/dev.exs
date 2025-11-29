@@ -39,7 +39,7 @@ end
 config :kjogvi_web, KjogviWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || "4000")],
+  http: [ip: {127, 0, 0, 1}],
   check_origin: false,
   code_reloader: true,
   debug_errors: System.get_env("SHOW_ERROR_PAGES") not in ~w{true 1},
@@ -74,15 +74,18 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
-# Watch static and templates for browser reloading.
-config :kjogvi_web, KjogviWeb.Endpoint,
+# Reload browser tabs when matching files change.
+config :kjogvi_web, SampleAppWeb.Endpoint,
   live_reload: [
     web_console_logger: true,
     patterns: [
-      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/kjogvi_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$",
-      ~r"lib/ornitho_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$"
+      # Static assets, except user uploads
+      ~r"priv/static/(?!uploads/).*\.(js|css|png|jpeg|jpg|gif|svg)$"E,
+      # Gettext translations
+      ~r"priv/gettext/.*\.po$"E,
+      # Router, Controllers, LiveViews and LiveComponents
+      ~r"lib/kjogvi_web/router\.ex$"E,
+      ~r"lib/kjogvi_web/(controllers|live|components)/.*\.(ex|heex)$"E
     ]
   ]
 

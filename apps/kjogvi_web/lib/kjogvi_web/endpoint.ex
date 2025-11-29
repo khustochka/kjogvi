@@ -24,7 +24,8 @@ defmodule KjogviWeb.Endpoint do
     at: "/",
     from: :kjogvi_web,
     gzip: not code_reloading?,
-    only: KjogviWeb.static_paths()
+    only: KjogviWeb.static_paths(),
+    raise_on_missing_only: code_reloading?
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
