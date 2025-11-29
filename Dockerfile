@@ -1,36 +1,37 @@
 # Find eligible builder and runner images on Docker Hub. We use Ubuntu/Debian
 # instead of Alpine to avoid DNS resolution issues in production.
 #
-# https://hub.docker.com/r/hexpm/elixir/tags?page=1&name=ubuntu
-# https://hub.docker.com/_/ubuntu?tab=tags
+# https://hub.docker.com/r/hexpm/elixir/tags?name=ubuntu
+# https://hub.docker.com/_/ubuntu/tags
 #
 # This file is based on these images:
 #
 #   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
-#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20231009-slim - for the release image
+#   - https://hub.docker.com/_/debian/tags?name=trixie-20251117-slim - for the release image
 #   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: hexpm/elixir:1.16.0-erlang-27.0-debian-bullseye-20231009-slim
+#   - Ex: docker.io/hexpm/elixir:1.18.4-erlang-27.3.4.2-debian-trixie-20251117-slim
 #
 ARG ELIXIR_VERSION=1.19.4
 ARG OTP_VERSION=28.2
 ARG DEBIAN_VERSION=trixie-20251117
 ARG DISTRO_VERSION=debian-${DEBIAN_VERSION}
 
-ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-${DISTRO_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-${DISTRO_VERSION}"
+ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git \
-    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends build-essential git \
+  && rm -rf /var/lib/apt/lists/*
 
 # prepare build dir
 WORKDIR /app
 
 # install hex + rebar
-RUN mix local.hex --force && \
-    mix local.rebar --force
+RUN mix local.hex --force \
+  && mix local.rebar --force
 
 # set build ENV
 ENV MIX_ENV="prod"
@@ -52,22 +53,24 @@ RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
-COPY apps/kjogvi/lib apps/kjogvi/lib
-COPY apps/kjogvi_web/lib apps/kjogvi_web/lib
-COPY apps/ornithologue/lib apps/ornithologue/lib
-COPY apps/ornitho_web/lib apps/ornitho_web/lib
+RUN mix assets.setup
 
 COPY apps/kjogvi/priv apps/kjogvi/priv
 COPY apps/kjogvi_web/priv apps/kjogvi_web/priv
 COPY apps/ornithologue/priv apps/ornithologue/priv
 COPY apps/ornitho_web/priv apps/ornitho_web/priv
 
-COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
-COPY apps/ornitho_web/assets apps/ornitho_web/assets
-COPY apps/ornitho_web/dist apps/ornitho_web/dist
+COPY apps/kjogvi/lib apps/kjogvi/lib
+COPY apps/kjogvi_web/lib apps/kjogvi_web/lib
+COPY apps/ornithologue/lib apps/ornithologue/lib
+COPY apps/ornitho_web/lib apps/ornitho_web/lib
 
 # Compile the release
 RUN mix compile
+
+COPY apps/kjogvi_web/assets apps/kjogvi_web/assets
+COPY apps/ornitho_web/assets apps/ornitho_web/assets
+COPY apps/ornitho_web/dist apps/ornitho_web/dist
 
 # compile assets
 RUN mix assets.deploy
@@ -80,28 +83,16 @@ RUN mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
-FROM ${RUNNER_IMAGE}
+FROM ${RUNNER_IMAGE} AS final
 
-# Labels 
-ARG GIT_REVISION=unspecified
-ARG GIT_REPOSITORY_URL=unspecified
-LABEL org.opencontainers.image.title="kjogvi"
-LABEL org.opencontainers.image.revision=$GIT_REVISION
-LABEL org.opencontainers.image.source=$GIT_REPOSITORY_URL
-
-ENV GIT_REVISION=${GIT_REVISION}
-ENV GIT_REPOSITORY_URL=${GIT_REPOSITORY_URL}
-# ENV DD_CONTAINER_LABELS_AS_TAGS='{"org.opencontainers.image.source":"git.repository_url","org.opencontainers.image.revision":"git.commit.sha"}'
-# Datadog expects repo URL without protocol.
-ENV DD_TAGS="git.repository_url:github.com/khustochka/kjogvi git.commit.sha:${GIT_REVISION}"
-
-RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses6 locales ca-certificates \
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates \
   postgresql-client file curl gzip bzip2 net-tools netcat-openbsd bind9-dnsutils procps \
-  && apt-get clean && rm -f /var/lib/apt/lists/*_*
+  && rm -rf /var/lib/apt/lists/*
 
 # Set the locale
-RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
+  && locale-gen
 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
@@ -114,7 +105,7 @@ RUN chown nobody /app
 ENV MIX_ENV="prod"
 
 # Only copy the final release from the build stage
-COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/kjogvi ./
+COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/test182_web ./
 
 USER nobody
 
