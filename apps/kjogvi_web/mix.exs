@@ -95,6 +95,7 @@ defmodule KjogviWeb.MixProject do
       {:opentelemetry_phoenix, "~> 2.0.0", opentelemetry_phoenix_opts()},
       {:opentelemetry_bandit, "~> 0.3"},
       {:opentelemetry_exporter, "~> 1.6"},
+      {:live_debugger, "~> 0.5.0", only: :dev},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:lazy_html, ">= 0.1.0", only: :test}
     ]

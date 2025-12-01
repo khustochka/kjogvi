@@ -73,6 +73,7 @@ defmodule OrnithoWeb.MixProject do
        depth: 1},
 
       # Dev/test
+      {:live_debugger, "~> 0.5.0", only: :dev},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:telemetry_metrics, "~> 1.0", only: [:dev, :test]},
       {:telemetry_poller, "~> 1.0", only: [:dev, :test]},
