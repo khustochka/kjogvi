@@ -80,7 +80,7 @@ defmodule Ornitho.ImporterTest do
       @importer.process_import()
       book = Ornitho.Finder.Book.by_signature(@importer.slug(), @importer.version())
       taxa = Ecto.assoc(book, :taxa) |> Kjogvi.OrnithoRepo.all()
-      assert length(taxa) > 0
+      assert not Enum.empty?(taxa)
     end
 
     @importer Importer.Demo.V1

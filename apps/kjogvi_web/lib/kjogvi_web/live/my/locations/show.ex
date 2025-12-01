@@ -444,7 +444,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
   end
 
   defp get_ancestors(location) do
-    if length(location.ancestry) > 0 do
+    if Enum.empty?(location.ancestry) do
       import Ecto.Query
 
       from(l in Kjogvi.Geo.Location, where: l.id in ^location.ancestry, order_by: l.id)

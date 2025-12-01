@@ -107,7 +107,9 @@ defmodule KjogviWeb.UserAuth do
     else
       conn = fetch_cookies(conn, signed: [@remember_me_cookie])
 
-      if token = conn.cookies[@remember_me_cookie] do
+      token = conn.cookies[@remember_me_cookie]
+
+      if token do
         {token, put_token_in_session(conn, token)}
       else
         {nil, conn}
