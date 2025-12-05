@@ -290,4 +290,4 @@ end)
 Kino.Frame.clear(output_frame)
 ```
 
-<!-- livebook:{"offset":7142,"stamp":{"token":"XCP.RLrG3ju6GIoTvqpHxL21yZImmMwkD80clkIwXeDgn2l33TRAODzCRVrRGT1vCkVzmgPSescLV3-fsukmu5IJ1Xuf1ccYL161l67LOyXuAtWnWM6q9Z9ELpRSnCg3","version":2}} -->
+<!-- livebook:{"offset":7142,"stamp":{"token":"XCP.9ANkigbPleHepMfET-Eu-QKJu0ocEqV6GZDNdjuU7o0AySFr_ehQ7F6xA2QJEDIjzdQ0SNlwJ1QIxgTozb1tXgzDxkyB1eDahDZKTmuaGjXvNwh___SOM_LmekOx","version":2}} -->
