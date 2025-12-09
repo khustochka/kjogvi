@@ -9,7 +9,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup test environment
         uses: ./.github/actions/setup
         with:
@@ -46,7 +46,7 @@ jobs:
           POSTGRES_DB: kjogvi_test
           POSTGRES_PASSWORD: "kjogvi"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup test environment
         uses: ./.github/actions/setup
         with:
