@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict hhg2TLciiGQvCurrZxVvurlp5yG6zueG2lXxL2wMR8qbLgv52aJ2JDFFs9VXIJa
+\restrict ZkdpMmm9AqaRYQQPpV3myGw5mUCtr6KeZqe91V9apwIXTgfH5Co4YJNX7qSIWpa
 
 -- Dumped from database version 17.6 (Debian 17.6-2.pgdg12+1)
--- Dumped by pg_dump version 18.0
+-- Dumped by pg_dump version 18.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -31,6 +31,7 @@ CREATE TABLE public.books (
     id bigint NOT NULL,
     slug character varying(16) NOT NULL,
     version character varying(16) NOT NULL,
+    importer character varying(255) NOT NULL,
     name character varying(256) NOT NULL,
     description text,
     publication_date date NOT NULL,
@@ -266,6 +267,6 @@ ALTER TABLE ONLY public.taxa
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hhg2TLciiGQvCurrZxVvurlp5yG6zueG2lXxL2wMR8qbLgv52aJ2JDFFs9VXIJa
+\unrestrict ZkdpMmm9AqaRYQQPpV3myGw5mUCtr6KeZqe91V9apwIXTgfH5Co4YJNX7qSIWpa
 
 INSERT INTO public."schema_migrations" (version) VALUES (20240116020356);

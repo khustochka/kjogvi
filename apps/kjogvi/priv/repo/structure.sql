@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict zzZhpYkdQHDjJPlJYKuv4TqoeSTb9oNrUGJO0wIViKyVid2FPTpvY0AtTMqktqi
+\restrict xdqXjhiCEKHBOr2e5ECMRMgdM6RmP6verUdhpK1gdhW6zozaXOzfgmBw5slAjc3
 
 -- Dumped from database version 17.6 (Debian 17.6-2.pgdg12+1)
--- Dumped by pg_dump version 18.0
+-- Dumped by pg_dump version 18.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -571,14 +571,14 @@ CREATE INDEX special_locations_parent_location_id_index ON public.special_locati
 -- Name: species_pages_name_sci_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX species_pages_name_sci_index ON public.species_pages USING btree (name_sci);
+CREATE UNIQUE INDEX species_pages_name_sci_index ON public.species_pages USING btree (name_sci);
 
 
 --
 -- Name: species_pages_sort_order_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX species_pages_sort_order_index ON public.species_pages USING btree (sort_order);
+CREATE UNIQUE INDEX species_pages_sort_order_index ON public.species_pages USING btree (sort_order);
 
 
 --
@@ -716,7 +716,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict zzZhpYkdQHDjJPlJYKuv4TqoeSTb9oNrUGJO0wIViKyVid2FPTpvY0AtTMqktqi
+\unrestrict xdqXjhiCEKHBOr2e5ECMRMgdM6RmP6verUdhpK1gdhW6zozaXOzfgmBw5slAjc3
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
