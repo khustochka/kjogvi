@@ -60,7 +60,7 @@ jobs:
           DATABASE_ORNITHO_URL: "postgres://kjogvi:kjogvi@localhost:5432/ornithologue_test"
         run: mix do ecto.setup + coveralls.html --umbrella
       - name: Code coverage results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Coverage-Elixir-${{ matrix.elixir }}-otp-${{ matrix.otp }}
           path: cover/
