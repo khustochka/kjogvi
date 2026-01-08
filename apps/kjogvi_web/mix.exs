@@ -74,7 +74,7 @@ defmodule KjogviWeb.MixProject do
        depth: 1},
       {:fontawesome,
        github: "FortAwesome/Font-Awesome",
-       tag: "6.7.2",
+       tag: "7.1.0",
        sparse: "svgs",
        app: false,
        compile: false,
