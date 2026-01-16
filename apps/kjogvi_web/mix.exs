@@ -97,7 +97,8 @@ defmodule KjogviWeb.MixProject do
       {:opentelemetry_exporter, "~> 1.6"},
       {:live_debugger, "~> 0.5.0", only: :dev},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:lazy_html, ">= 0.1.0", only: :test}
+      {:lazy_html, ">= 0.1.0", only: :test},
+      {:tidewave, "~> 0.5", only: :dev}
     ]
   end
 
