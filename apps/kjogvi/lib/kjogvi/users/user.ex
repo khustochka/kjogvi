@@ -17,6 +17,7 @@ defmodule Kjogvi.Users.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime_usec
     field :roles, {:array, :string}
+    field :default_book_signature, :string
     embeds_one :extras, Extras, on_replace: :update, defaults_to_struct: true
 
     timestamps(type: :utc_datetime_usec)
@@ -68,7 +69,7 @@ defmodule Kjogvi.Users.User do
   """
   def settings_changeset(user, attrs, _opts \\ []) do
     user
-    |> cast(attrs, [])
+    |> cast(attrs, [:default_book_signature])
     |> cast_embed(:extras)
   end
 

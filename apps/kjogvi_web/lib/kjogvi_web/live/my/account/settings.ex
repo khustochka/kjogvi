@@ -80,9 +80,6 @@ defmodule KjogviWeb.Live.My.Account.Settings do
         <.h2>
           User settings
         </.h2>
-        <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
-          eBird settings
-        </h3>
 
         <div>
           <CoreComponents.simple_form
@@ -91,8 +88,19 @@ defmodule KjogviWeb.Live.My.Account.Settings do
             action={~p"/my/account/settings"}
             method="post"
           >
-            <.inputs_for :let={settings_form} field={@settings_form[:extras]}>
-              <.inputs_for :let={ebird_form} field={settings_form[:ebird]}>
+            <CoreComponents.input
+              field={@settings_form[:default_book_signature]}
+              type="select"
+              label="Default taxonomy"
+              options={@book_options}
+              prompt="Select default taxonomy..."
+            />
+
+            <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
+              eBird settings
+            </h3>
+            <.inputs_for :let={settings_form_extras} field={@settings_form[:extras]}>
+              <.inputs_for :let={ebird_form} field={settings_form_extras[:ebird]}>
                 <CoreComponents.input
                   field={ebird_form[:username]}
                   label="Username"
@@ -141,6 +149,11 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     password_changeset = Users.change_user_password(user)
     settings_changeset = Kjogvi.Users.User.settings_changeset(user, %{})
 
+    books = Ornitho.Finder.Book.all()
+
+    book_options =
+      Enum.map(books, fn b -> {"#{b.name} (#{b.slug}/#{b.version})", "#{b.slug}/#{b.version}"} end)
+
     socket =
       socket
       |> assign(:current_password, nil)
@@ -151,6 +164,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       |> assign(:trigger_submit, false)
       |> assign(:settings_form, to_form(settings_changeset))
       |> assign(:ebird_password_show, false)
+      |> assign(:book_options, book_options)
 
     {:ok, socket}
   end
