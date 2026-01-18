@@ -75,7 +75,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 # different ports.
 
 # Reload browser tabs when matching files change.
-config :kjogvi_web, SampleAppWeb.Endpoint,
+config :kjogvi_web, KjogviWeb.Endpoint,
   live_reload: [
     web_console_logger: true,
     patterns: [
@@ -85,7 +85,9 @@ config :kjogvi_web, SampleAppWeb.Endpoint,
       ~r"priv/gettext/.*\.po$",
       # Router, Controllers, LiveViews and LiveComponents
       ~r"lib/kjogvi_web/router\.ex$",
-      ~r"lib/kjogvi_web/(controllers|live|components)/.*\.(ex|heex)$"
+      ~r"lib/ornitho_web/router\.ex$",
+      ~r"lib/kjogvi_web/(controllers|live|components)/.*\.(ex|heex)$",
+      ~r"lib/ornitho_web/(controllers|live|components)/.*\.(ex|heex)$"
     ]
   ]
 
