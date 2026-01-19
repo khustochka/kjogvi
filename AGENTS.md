@@ -1,7 +1,145 @@
-This file is WORK IN PROGRESS.
-------------------------------
+# Kjógvi Codebase Instructions for AI Agents
 
-This is a web application written using the Phoenix web framework.
+## Project Overview
+
+**Kjógvi** is a Phoenix v1.8 umbrella project for bird observation tracking with ornithological taxonomy management. It combines birding/observation records with a comprehensive taxonomy system via the [Ornithologue](./apps/ornithologue/) library.
+
+### Architecture
+- **Umbrella structure** with 4 apps in `/apps`:
+  - `kjogvi`: Core business logic, data models, and contexts (Ecto repos: `Kjogvi.Repo`, `Kjogvi.OrnithoRepo`)
+  - `kjogvi_web`: Phoenix 1.8 LiveView web interface (main app)
+  - `ornithologue`: Ornithological taxonomy library (reusable package)
+  - `ornitho_web`: Taxonomy dashboard UI (composable into `kjogvi_web`)
+- **Dual repositories**: Main app repo + separate OrnithoRepo for taxonomy data
+- **Single-user mode** by default (configurable via `Kjogvi.Config.with_single_user/1` macro)
+
+## Critical Development Workflows
+
+```bash
+# Setup
+mix setup                           # Install deps in all apps
+docker compose up -d                # Start PostgreSQL (port 5498)
+
+# Development
+iex -S mix phx.server              # Start with IEx shell
+
+# Testing & Quality
+mix precommit                      # Run before committing (format, tests, lint)
+mix lint                           # Full linting: credo, dialyzer, xref cycles
+mix lint.fix                       # Auto-fix formatting + run lint
+MIX_ENV=test mix ecto.setup       # Create test database
+mix test                           # Run tests with coverage
+
+# Database
+mix ecto.create                    # Create databases
+mix ecto.migrate                   # Run migrations on main repo
+mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
+```
+
+## Project-Specific Patterns
+
+### 1. **Router & Authentication** ([kjogvi_web/lib/router.ex](./apps/kjogvi_web/lib/kjogvi_web/router.ex))
+- All authenticated routes use `:require_authenticated_user` pipeline
+- **Never** hardcode routes—always place in proper `live_session` to get `@current_scope` assign
+- Single-user mode conditionally includes routes via `Kjogvi.Config.with_single_user/1` macro
+- Import `OrnithoWeb.Router` and use `ornitho_web "/taxonomy"` macro to mount taxonomy dashboard
+
+### 2. **Layout & Components** 
+- `Layouts.app` wraps content and manages flash messages—**never** call `<.flash_group>` outside layouts
+- **Always** use `<.icon name="hero-x-mark">` component (Heroicons v2.2.0) for icons—never raw Heroicons modules
+- **Always** use `<.input field={@form[:field]}>` from `core_components.ex` for form inputs
+- Reference: [layouts.ex](./apps/kjogvi_web/lib/kjogvi_web/components/layouts.ex), [core_components.ex](./apps/ornitho_web/lib/ornitho_web/components/core_components.ex)
+
+### 3. **Forms & Validation**
+- Always use `Phoenix.Component.to_form/2` in LiveView: `assign(socket, form: to_form(changeset))`
+- In templates, access form via `<.form for={@form}>` and `@form[:field]`—**never** use changesets directly in templates
+- **Never** use deprecated `live_redirect`, `live_patch`—use `<.link navigate={href}>` or `push_navigate/push_patch` in LiveView
+
+### 4. **Birding & Observation Data** ([kjogvi/lib/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex))
+- Core context: `Kjogvi.Birding` manages observation cards and checklists
+- Card model: Contains birding observations, has associated Location data
+- Location model: Hierarchical geographic data with privacy settings (`is_private`, `is_patch`)
+- Key functions: `get_cards/2`, `fetch_card_with_observations/2`, `create_card/2`
+
+### 5. **Taxonomy & Ornithologue** 
+- Managed by `Ornithologue` app (in `/apps/ornithologue`)
+- Configured in [config.exs](./config/config.exs): `config :ornithologue, repo: Kjogvi.OrnithoRepo`
+- Importers: eBird (v2023-2025), AviList (v2025)—configured in app config
+- **OrnithoWeb** provides pre-built dashboard at `/taxonomy` path when mounted with `ornitho_web` macro
+
+### 6. **LiveView Streams** (not regular lists for collections)
+- **Always** use streams for collections to prevent memory bloat: `stream(socket, :messages, [item])`
+- Template structure: `<div id="messages" phx-update="stream">` + `:for={{id, item} <- @streams.messages}`
+- **Never** use deprecated `phx-update="append"` or `phx-update="prepend"`
+- Streams are not enumerable—to filter, refetch and `stream(..., reset: true)`
+- Track count/empty state separately: empty divs work with `only:block` Tailwind class
+
+### 7. **CSS & Assets** 
+- **Tailwind v4** (no config file needed)—uses new import syntax in [app.css](./apps/kjogvi_web/assets/css/app.css):
+  ```css
+  @import "tailwindcss" source(none);
+  @source "../css";
+  @source "../../lib/kjogvi_web";
+  @source "../../../../apps/ornitho_web/css";
+  ```
+- **Never** use `@apply` in custom CSS—write Tailwind classes directly
+- **Never** use `<script>` tags in templates—import JS modules into `assets/js/app.js`
+- Heroicons & Font Awesome bundled as Tailwind plugins
+
+### 8. **Testing** 
+- Use `Phoenix.LiveViewTest` module + `LazyHTML` (included in mix.exs)
+- **Always** use `element/2`, `has_element/2` and element IDs—**never** assert raw HTML
+- Form tests: `render_submit/2` and `render_change/2` functions
+- Focus on outcomes, not implementation; debug HTML with `LazyHTML.filter/2` when needed
+
+### 9. **Code Quality & Checks**
+- **Credo**: Code style checks (`.credo.exs` configured)
+- **Dialyzer**: Type checking (uses ignore file `.dialyzer_ignore.exs`)
+- **Xref cycles**: Detects circular module dependencies (fails on any cycle)
+- All errors must pass before merge—use `mix precommit` to validate locally
+
+## Key File References
+
+| File | Purpose |
+|------|---------|
+| [mix.exs](./mix.exs) | Umbrella project config, aliases, dialyzer settings |
+| [config/config.exs](./config/config.exs) | Shared config for all apps; Ornithologue & Tailwind setup |
+| [apps/kjogvi_web/router.ex](./apps/kjogvi_web/lib/kjogvi_web/router.ex) | Main router, auth pipelines, OrnithoWeb mount |
+| [apps/kjogvi/lib/kjogvi/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex) | Birding context (observations, cards, checklists) |
+| [apps/kjogvi/lib/kjogvi/geo/location.ex](./apps/kjogvi/lib/kjogvi/geo/location.ex) | Location model with hierarchy, privacy, public_location |
+| [apps/kjogvi_web/lib/kjogvi_web/components/layouts.ex](./apps/kjogvi_web/lib/kjogvi_web/components/layouts.ex) | Layout templates (root, app) |
+| [apps/ornitho_web/lib/ornitho_web/router.ex](./apps/ornitho_web/lib/ornitho_web/router.ex) | Macro `ornitho_web/2` for mounting taxonomy dashboard |
+
+## Essential Libraries
+
+- **Req**: HTTP client (preferred over httpoison, tesla)
+- **Phoenix LiveView**: Real-time UI with LiveView streams (not regular lists)
+- **Ecto**: Data layer with dual repos
+- **Phoenix PubSub**: Real-time messaging
+- **Tailwind v4**: Styling (no config, new import syntax)
+- **ExAws**: AWS S3 integration
+- **ExCoveralls**: Test coverage reporting
+- **OpenTelemetry**: Observability & tracing
+
+## Common Pitfalls to Avoid
+
+1. **Missing `current_scope`**: Always ensure routes are in correct `live_session` with `:require_authenticated_user` pipeline
+2. **Template errors**: Never pass `@changeset` to template—use `@form` from `to_form/2`
+3. **Using lists for collections**: Use LiveView streams; regular lists cause memory issues with large datasets
+4. **Incorrect icon usage**: Use `<.icon>` component, not raw Heroicons imports
+5. **Invalid HEEx syntax**: Use `{...}` in attributes, `<%= ... %>` for block constructs in bodies
+6. **Mixing two repos**: Remember `Kjogvi.Repo` vs `Kjogvi.OrnithoRepo`—migrations run separately
+
+## Notes for AI Agents
+
+- Run `mix precommit` before any commit to catch issues early
+- Examine existing LiveViews in `apps/kjogvi_web/lib/kjogvi_web/live/` for patterns
+- When adding features touching observations or taxonomy, coordinate between `kjogvi` and `ornithologue` apps
+- Single-user mode is the default—wrap multi-user routes in `Kjogvi.Config.with_multiuser/1` macro if needed
+
+---
+
+All the data below is copied from default AGENTS.md and may not always match the specific setup of this project. Use with caution and check if it contradicts the existing project practices.
 
 ## Project guidelines
 
@@ -10,13 +148,9 @@ This is a web application written using the Phoenix web framework.
 
 ### Phoenix v1.8 guidelines
 
-- **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content
 - The `MyAppWeb.Layouts` module is aliased in the `my_app_web.ex` file, so you can use it without needing to alias it again
-- Anytime you run into errors with no `current_scope` assign:
-  - You failed to follow the Authenticated Routes guidelines, or you failed to pass `current_scope` to `<Layouts.app>`
-  - **Always** fix the `current_scope` error by moving your routes to the proper `live_session` and ensure you pass `current_scope` as needed
 - Phoenix v1.8 moved the `<.flash_group>` component to the `Layouts` module. You are **forbidden** from calling `<.flash_group>` outside of the `layouts.ex` module
-- Out of the box, `core_components.ex` imports an `<.icon name="hero-x-mark" class="w-5 h-5"/>` component for for hero icons. **Always** use the `<.icon>` component for icons, **never** use `Heroicons` modules or similar
+- In KjogviWeb use `icon_components.ex` to import an `<.icon name="hero-x-mark" class="w-5 h-5"/>` component for hero icons and FontAwesome icons. In OrnithoWeb use `core_components.ex`. **Always** use the `<.icon>` component for icons, **never** use `Heroicons` modules or similar
 - **Always** use the imported `<.input>` component for form inputs from `core_components.ex` when available. `<.input>` is imported and using it will will save steps and prevent errors
 - If you override the default input classes (`<.input class="myclass px-2 py-1 rounded-lg">)`) class with your own values, no default classes are inherited, so your
 custom classes must fully style the input
