@@ -21,7 +21,6 @@ defmodule KjogviWeb.Live.My.Cards.Index do
 
   @impl true
   def handle_params(params, _url, %{assigns: assigns} = socket) do
-    # TODO: validate page number; redirect to default if number is 1
     page =
       Map.get(params, "page", "1")
       |> String.to_integer()
@@ -43,6 +42,15 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       Cards
     </.h1>
 
+    <div class="mb-4 flex justify-end">
+      <.link
+        navigate={~p"/my/cards/new"}
+        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+      >
+        <.icon name="hero-plus" class="w-4 h-4" /> New Card
+      </.link>
+    </div>
+
     <CoreComponents.table id="cards" rows={@cards}>
       <:col :let={card} label="id">
         <.link navigate={~p"/my/cards/#{card.id}"}>{card.id}</.link>
@@ -62,6 +70,14 @@ defmodule KjogviWeb.Live.My.Cards.Index do
         <span class="tabular-nums">
           {card.observation_count}
         </span>
+      </:col>
+      <:col :let={card} label="Actions">
+        <.link
+          navigate={~p"/my/cards/#{card.id}/edit"}
+          class="text-blue-600 hover:text-blue-700"
+        >
+          <.icon name="hero-pencil-square" class="w-4 h-4" />
+        </.link>
       </:col>
     </CoreComponents.table>
 

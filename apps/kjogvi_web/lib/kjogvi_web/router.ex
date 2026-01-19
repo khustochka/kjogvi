@@ -64,6 +64,8 @@ defmodule KjogviWeb.Router do
 
       live "/cards", Live.My.Cards.Index, :index
       live "/cards/page/:page", Live.My.Cards.Index, :index
+      live "/cards/new", Live.My.Cards.Form, :new
+      live "/cards/:id/edit", Live.My.Cards.Form, :edit
       live "/cards/:id", Live.My.Cards.Show, :show
 
       live "/account/settings", Live.My.Account.Settings, :edit

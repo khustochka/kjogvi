@@ -40,6 +40,15 @@ defmodule KjogviWeb.Live.My.Cards.Show do
       </:subtitle>
     </CoreComponents.header>
 
+    <div class="mb-4 flex justify-end">
+      <.link
+        navigate={~p"/my/cards/#{@card.id}/edit"}
+        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+      >
+        <.icon name="hero-pencil-square" class="w-4 h-4" /> Edit Card
+      </.link>
+    </div>
+
     <CoreComponents.list>
       <:item title="Effort">{@card.effort_type}</:item>
       <:item title="Start time">{format_time(@card.start_time)}</:item>

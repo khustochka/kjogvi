@@ -31,17 +31,24 @@ defmodule Kjogvi.Birding.Observation do
 
     field :taxon, :map, virtual: true
     field :species, :map, virtual: true
+    field :taxon_display, :string, virtual: true
   end
 
   @doc false
   def changeset(observation, attrs) do
     observation
-    |> cast(attrs, [])
-    |> validate_required([
-      :card_id,
+    |> cast(attrs, [
       :taxon_key,
+      :quantity,
       :voice,
-      :unreported
+      :notes,
+      :private_notes,
+      :hidden,
+      :unreported,
+      :ebird_obs_id
+    ])
+    |> validate_required([
+      :taxon_key
     ])
   end
 end
