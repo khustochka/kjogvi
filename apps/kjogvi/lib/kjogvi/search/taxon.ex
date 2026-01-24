@@ -22,13 +22,16 @@ defmodule Kjogvi.Search.Taxon do
   - Word-start matching in either name
   - Contains anywhere in either name
 
+  Returns taxa with an additional `:key` field containing the full taxon signature
+  (e.g., "/ebird/v2024/houspa") suitable for use as `taxon_key` in observations.
+
   ## Examples
 
       iex> search_taxa("grey shrike", user)
-      [%{code: "...", name_en: "Grey Shrike-tit", name_sci: "..."}, ...]
+      [%{code: "...", key: "/ebird/v2024/grytit1", name_en: "Grey Shrike-tit", name_sci: "..."}, ...]
 
       iex> search_taxa("tit", user)
-      [%{code: "...", name_en: "Great Tit", name_sci: "..."}, ...]
+      [%{code: "...", key: "/ebird/v2024/gretit1", name_en: "Great Tit", name_sci: "..."}, ...]
   """
   def search_taxa(query_text, user) when is_binary(query_text) and byte_size(query_text) > 0 do
     query_text = String.downcase(String.trim(query_text))
@@ -40,6 +43,7 @@ defmodule Kjogvi.Search.Taxon do
         |> Enum.filter(&matches_query?(&1, query_text))
         |> Enum.sort_by(&sort_priority(&1, query_text))
         |> Enum.take(@limit)
+        |> Enum.map(&add_taxon_key(&1, book))
 
       :error ->
         []
@@ -127,5 +131,9 @@ defmodule Kjogvi.Search.Taxon do
   defp starts_with_word?(text, query) do
     words = String.split(text, ~r/[\s\-]+/)
     Enum.any?(words, &String.starts_with?(&1, query))
+  end
+
+  defp add_taxon_key(taxon, book) do
+    Map.put(taxon, :key, "/#{book.slug}/#{book.version}/#{taxon.code}")
   end
 end

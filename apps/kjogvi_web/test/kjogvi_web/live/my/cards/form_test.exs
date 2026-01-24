@@ -30,8 +30,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
     test "renders effort type as dropdown", %{conn: conn, user: _user} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "select"
-      assert html =~ "Stationary"
-      assert html =~ "Traveling"
+      assert html =~ "STATIONARY"
+      assert html =~ "TRAVEL"
     end
 
     test "renders location field with type=search", %{conn: conn, user: _user} do
@@ -162,27 +162,30 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       _prefix = GeoFixtures.location_fixture(name_en: "Park Lane")
 
       results = Search.Location.search_locations("Park")
-      assert length(results) > 0
+      assert results != []
       assert Enum.at(results, 0).name =~ "Park"
     end
   end
 
   describe "effort types enum" do
-    test "can retrieve effort types as names and values" do
-      types = Kjogvi.Birding.Card.effort_types
-      assert Enum.any?(types, fn {name, _value} -> name == "Stationary" end)
-      assert Enum.any?(types, fn {name, _value} -> name == "Traveling" end)
-    end
-
-    test "can retrieve effort type values" do
-      values = Kjogvi.Birding.Card.effort_types(:values)
-      assert Enum.member?(values, "STATIONARY")
-      assert Enum.member?(values, "TRAVEL")
-    end
-
-    test "all effort types have consistent structure" do
+    test "can retrieve effort types as list" do
       types = Kjogvi.Birding.Card.effort_types()
-      assert Enum.all?(types, fn {_atom, _value, _name} -> true end)
+      assert Enum.member?(types, "STATIONARY")
+      assert Enum.member?(types, "TRAVEL")
+    end
+
+    test "effort types includes all expected values" do
+      types = Kjogvi.Birding.Card.effort_types()
+      assert Enum.member?(types, "STATIONARY")
+      assert Enum.member?(types, "TRAVEL")
+      assert Enum.member?(types, "AREA")
+      assert Enum.member?(types, "INCIDENTAL")
+      assert Enum.member?(types, "HISTORICAL")
+    end
+
+    test "all effort types are strings" do
+      types = Kjogvi.Birding.Card.effort_types()
+      assert Enum.all?(types, &is_binary/1)
     end
   end
 
@@ -201,7 +204,10 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       {:ok, conn: conn, user: user, location: location}
     end
 
-    test "selecting location updates both text field and hidden field", %{conn: conn, location: location} do
+    test "selecting location updates both text field and hidden field", %{
+      conn: conn,
+      location: location
+    } do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Search for location
@@ -253,7 +259,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       # Verify card was created
       cards = Birding.get_cards(user, %{page: 1, page_size: 50})
-      assert length(cards.entries) > 0
+      assert cards.entries != []
 
       # Verify the most recent card has the selected location
       card = List.first(cards.entries)
@@ -310,7 +316,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       # Verify card and observation were created
       cards = Birding.get_cards(user, %{page: 1, page_size: 50})
-      assert length(cards.entries) > 0
+      assert cards.entries != []
 
       card = List.first(cards.entries)
       assert card.location_id == location.id
@@ -326,7 +332,11 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert observation.quantity == "1"
     end
 
-    test "multiple observations with different taxa", %{conn: conn, user: user, location: location} do
+    test "multiple observations with different taxa", %{
+      conn: conn,
+      user: user,
+      location: location
+    } do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Select location
@@ -381,6 +391,233 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       # Verify quantities
       assert Enum.find(observations, &(&1.taxon_key == "comred")).quantity == "1"
       assert Enum.find(observations, &(&1.taxon_key == "eurwie")).quantity == "2"
+    end
+
+    test "select_taxon event updates form and shows display name", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      # Add observation
+      lv |> element("button", "Add Observation") |> render_click()
+
+      # Simulate selecting a taxon (bypasses actual search)
+      lv
+      |> render_click("select_taxon:0", %{
+        "code" => "comred",
+        "name" => "Common Redstart Phoenicurus phoenicurus"
+      })
+
+      html = render(lv)
+
+      # Verify the taxon display name appears in the search input
+      assert html =~ "Common Redstart Phoenicurus phoenicurus"
+
+      # Verify the hidden field has the taxon code
+      assert html =~ "comred"
+    end
+
+    test "multiple observations can have different taxa selected via UI", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      # Add two observations
+      lv |> element("button", "Add Observation") |> render_click()
+      lv |> element("button", "Add Observation") |> render_click()
+
+      # Select taxon for first observation
+      lv
+      |> render_click("select_taxon:0", %{
+        "code" => "comred",
+        "name" => "Common Redstart"
+      })
+
+      # Select taxon for second observation
+      lv
+      |> render_click("select_taxon:1", %{
+        "code" => "eurwie",
+        "name" => "Eurasian Wigeon"
+      })
+
+      html = render(lv)
+
+      # Verify both taxa display names appear
+      assert html =~ "Common Redstart"
+      assert html =~ "Eurasian Wigeon"
+
+      # Verify both taxon codes are in hidden fields
+      assert html =~ "comred"
+      assert html =~ "eurwie"
+    end
+
+    test "removing observation re-indexes taxon display values", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      # Add three observations
+      lv |> element("button", "Add Observation") |> render_click()
+      lv |> element("button", "Add Observation") |> render_click()
+      lv |> element("button", "Add Observation") |> render_click()
+
+      # Select taxa for all observations
+      lv |> render_click("select_taxon:0", %{"code" => "taxon0", "name" => "First Taxon"})
+      lv |> render_click("select_taxon:1", %{"code" => "taxon1", "name" => "Second Taxon"})
+      lv |> render_click("select_taxon:2", %{"code" => "taxon2", "name" => "Third Taxon"})
+
+      html = render(lv)
+      assert html =~ "First Taxon"
+      assert html =~ "Second Taxon"
+      assert html =~ "Third Taxon"
+
+      # Remove the middle observation (index 1)
+      lv |> render_click("remove_observation", %{"index" => "1"})
+
+      html = render(lv)
+
+      # First and third (now second) should still show
+      assert html =~ "First Taxon"
+      assert html =~ "Third Taxon"
+
+      # Second taxon should be gone
+      refute html =~ "Second Taxon"
+    end
+  end
+
+  describe "editing existing card" do
+    setup do
+      user = UsersFixtures.user_fixture()
+      token = Kjogvi.Users.generate_user_session_token(user)
+
+      conn =
+        build_conn()
+        |> Phoenix.ConnTest.init_test_session(%{})
+        |> Plug.Conn.put_session(:user_token, token)
+
+      location1 = GeoFixtures.location_fixture(name_en: "Original Park")
+      location2 = GeoFixtures.location_fixture(name_en: "New Park")
+
+      card =
+        Kjogvi.BirdingFixtures.card_fixture(%{
+          user: user,
+          location_id: location1.id,
+          observ_date: ~D[2026-01-15],
+          effort_type: "STATIONARY"
+        })
+
+      {:ok, conn: conn, user: user, card: card, location1: location1, location2: location2}
+    end
+
+    test "can edit card and change location", %{
+      conn: conn,
+      card: card,
+      location1: location1,
+      location2: location2
+    } do
+      {:ok, lv, html} = live(conn, "/my/cards/#{card.id}/edit")
+
+      # Verify we're on the edit page with original location
+      assert html =~ "Edit Card"
+      assert html =~ "Original Park"
+
+      # Search for and select new location
+      lv |> render_change("search_locations", %{"value" => "New"})
+
+      lv
+      |> render_click("select_location", %{
+        "id" => to_string(location2.id),
+        "name" => "New Park"
+      })
+
+      # Submit the form
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-15",
+          "effort_type" => "STATIONARY",
+          "location_id" => to_string(location2.id)
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      # Verify card was updated
+      updated_card = Kjogvi.Repo.get!(Birding.Card, card.id)
+      assert updated_card.location_id == location2.id
+      refute updated_card.location_id == location1.id
+    end
+
+    test "can edit card and add new observations", %{
+      conn: conn,
+      card: card,
+      location1: location1
+    } do
+      {:ok, lv, _html} = live(conn, "/my/cards/#{card.id}/edit")
+
+      # Add two observations
+      lv |> element("button", "Add Observation") |> render_click()
+      lv |> element("button", "Add Observation") |> render_click()
+
+      # Submit with new observations
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-15",
+          "effort_type" => "STATIONARY",
+          "location_id" => to_string(location1.id),
+          "observations" => %{
+            "0" => %{
+              "taxon_key" => "/ebird/v2024/houspa",
+              "quantity" => "2"
+            },
+            "1" => %{
+              "taxon_key" => "/ebird/v2024/comred",
+              "quantity" => "3"
+            }
+          }
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      # Verify observations were saved
+      updated_card = Kjogvi.Repo.get!(Birding.Card, card.id)
+      updated_card = Kjogvi.Repo.preload(updated_card, :observations)
+
+      assert length(updated_card.observations) == 2
+      assert Enum.any?(updated_card.observations, &(&1.taxon_key == "/ebird/v2024/houspa"))
+      assert Enum.any?(updated_card.observations, &(&1.taxon_key == "/ebird/v2024/comred"))
+    end
+
+    test "can edit existing observation", %{
+      conn: conn,
+      card: card,
+      location1: location1
+    } do
+      # Add an observation to the existing card
+      {:ok, obs} =
+        Kjogvi.Repo.insert(%Kjogvi.Birding.Observation{
+          card_id: card.id,
+          taxon_key: "/ebird/v2024/houspa",
+          quantity: "1"
+        })
+
+      {:ok, lv, _html} = live(conn, "/my/cards/#{card.id}/edit")
+
+      # Submit with updated observation (including the ID)
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-15",
+          "effort_type" => "STATIONARY",
+          "location_id" => to_string(location1.id),
+          "observations" => %{
+            "0" => %{
+              "id" => to_string(obs.id),
+              "taxon_key" => "/ebird/v2024/houspa",
+              "quantity" => "5"
+            }
+          }
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      # Verify observation was updated
+      updated_obs = Kjogvi.Repo.get!(Kjogvi.Birding.Observation, obs.id)
+      assert updated_obs.quantity == "5"
     end
   end
 end

@@ -16,12 +16,15 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       |> assign(:location_search_results, [])
       |> assign(:editing_observation_index, nil)
       |> assign(:location_input_value, "")
+      |> assign(:taxon_display_values, %{})
     }
   end
 
   @impl true
   def handle_params(%{"id" => id}, _url, %{assigns: assigns} = socket) do
     card = Birding.fetch_card_for_edit(assigns.current_scope.user, id)
+    observations_with_taxa = Birding.preload_taxa_and_species(card.observations)
+    taxon_display_values = build_taxon_display_values(observations_with_taxa)
 
     {
       :noreply,
@@ -31,6 +34,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       |> assign(:card, card)
       |> assign(:location_input_value, Geo.Location.long_name(card.location))
       |> assign(:form, to_form(Birding.change_card(card)))
+      |> assign(:taxon_display_values, taxon_display_values)
     }
   end
 
@@ -86,10 +90,20 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
     card = %{form.data | observations: new_observations}
 
+    # Re-index taxon_display_values after removing an observation
+    new_taxon_display_values =
+      socket.assigns.taxon_display_values
+      |> Enum.reject(fn {idx, _} -> idx == index end)
+      |> Enum.map(fn {idx, val} ->
+        if idx > index, do: {idx - 1, val}, else: {idx, val}
+      end)
+      |> Map.new()
+
     {
       :noreply,
       socket
       |> assign(:form, to_form(Birding.change_card(card)))
+      |> assign(:taxon_display_values, new_taxon_display_values)
     }
   end
 
@@ -149,7 +163,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   def handle_event(
         "select_taxon:" <> index_str,
-        %{"code" => taxon_code, "name" => _name},
+        %{"code" => taxon_code, "name" => name},
         %{assigns: assigns} = socket
       ) do
     index = String.to_integer(index_str)
@@ -176,6 +190,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       |> assign(:taxon_search_results, [])
       |> assign(:form, to_form(changeset))
       |> assign(:editing_observation_index, nil)
+      |> assign(:taxon_display_values, Map.put(assigns.taxon_display_values, index, name))
     }
   end
 
@@ -200,7 +215,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   @impl true
   def render(assigns) do
-    effort_types = Kjogvi.Birding.Card.effort_types
+    effort_types = Kjogvi.Birding.Card.effort_types()
     assigns = assign(assigns, :effort_types, effort_types)
 
     ~H"""
@@ -354,11 +369,21 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                       phx-keyup={"search_taxa:#{obs_form.index}"}
                       phx-focus={"focus_taxon_field:#{obs_form.index}"}
                       autocomplete="off"
-                      value={get_taxon_display_for_obs(obs_form[:taxon_key].value)}
+                      value={
+                        Map.get(
+                          @taxon_display_values,
+                          obs_form.index,
+                          obs_form[:taxon_key].value || ""
+                        )
+                      }
                       class="mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 border-zinc-300 focus:border-zinc-400"
                     />
 
-                    <input type="hidden" name={"card[observations][#{obs_form.index}][taxon_key]"} value={obs_form[:taxon_key].value || ""} />
+                    <input
+                      type="hidden"
+                      name={"card[observations][#{obs_form.index}][taxon_key]"}
+                      value={obs_form[:taxon_key].value || ""}
+                    />
 
                     <%= if !Enum.empty?(@taxon_search_results) and @editing_observation_index == obs_form.index do %>
                       <div class="absolute top-full left-0 right-0 z-10 mt-1 border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto bg-white">
@@ -366,7 +391,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                           <div
                             class="px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm hover:bg-blue-50"
                             phx-click={"select_taxon:#{obs_form.index}"}
-                            phx-value-code={result.code}
+                            phx-value-code={result.key}
                             phx-value-name={"#{result.name_en} #{result.name_sci}"}
                           >
                             <div class="font-medium">{result.name_en}</div>
@@ -447,7 +472,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
           </.inputs_for>
         </div>
 
-        <p :if={is_empty_observations(@form.data.observations)} class="text-gray-500 italic py-4">
+        <p :if={empty_observations?(@form.data.observations)} class="text-gray-500 italic py-4">
           No observations yet. Click "Add Observation" to start recording.
         </p>
       </div>
@@ -471,8 +496,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     """
   end
 
-  defp get_taxon_display_for_obs(_taxon_code), do: ""
-
   defp do_save_card(:create, _card, card_params, user) do
     Birding.create_card(user, card_params)
   end
@@ -481,10 +504,23 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     Birding.update_card(card, card_params)
   end
 
-  defp is_empty_observations(%Ecto.Association.NotLoaded{}), do: true
+  defp empty_observations?(%Ecto.Association.NotLoaded{}), do: true
 
-  defp is_empty_observations(observations) when is_list(observations),
+  defp empty_observations?(observations) when is_list(observations),
     do: Enum.empty?(observations)
 
-  defp is_empty_observations(_), do: true
+  defp empty_observations?(_), do: true
+
+  defp build_taxon_display_values(observations_with_taxa) do
+    observations_with_taxa
+    |> Enum.with_index()
+    |> Enum.reduce(%{}, fn {obs, index}, acc ->
+      if obs.taxon do
+        display_name = "#{obs.taxon.name_en} #{obs.taxon.name_sci}"
+        Map.put(acc, index, display_name)
+      else
+        acc
+      end
+    end)
+  end
 end
