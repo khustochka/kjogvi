@@ -1,6 +1,7 @@
 defmodule Kjogvi.Search.Taxon do
   @moduledoc """
   Taxon search functionality with support for scientific and English names.
+  Searches are scoped by user's default book.
   Searches by word components with priority on word beginnings.
   """
 
@@ -13,11 +14,13 @@ defmodule Kjogvi.Search.Taxon do
   @doc """
   Search for taxa by name (scientific or English).
 
-  Searches taxa by:
-  - English name (with word component matching)
-  - Scientific name (with word component matching)
-
-  Results starting with search term are prioritized.
+  Searches are scoped to user's default book and search taxa by:
+  - Scientific name exact match (highest priority)
+  - English name exact match
+  - Scientific name starts with query
+  - English name starts with query
+  - Word-start matching in either name
+  - Contains anywhere in either name
 
   ## Examples
 
@@ -87,28 +90,42 @@ defmodule Kjogvi.Search.Taxon do
     name_sci_lower = String.downcase(taxon.name_sci || "")
 
     cond do
-      name_en_lower == query_text || name_sci_lower == query_text ->
+      # Exact match on scientific name has highest priority
+      name_sci_lower == query_text ->
         {0, ""}
 
-      String.starts_with?(name_en_lower, query_text) ->
-        {1, name_en_lower}
+      # Exact match on English name
+      name_en_lower == query_text ->
+        {1, ""}
 
+      # Starts with query on scientific name
       String.starts_with?(name_sci_lower, query_text) ->
         {2, name_sci_lower}
 
-      starts_with_word?(name_en_lower, query_text) ->
+      # Starts with query on English name
+      String.starts_with?(name_en_lower, query_text) ->
         {3, name_en_lower}
 
+      # Word-start matches on scientific name
       starts_with_word?(name_sci_lower, query_text) ->
         {4, name_sci_lower}
 
-      true ->
+      # Word-start matches on English name
+      starts_with_word?(name_en_lower, query_text) ->
         {5, name_en_lower}
+
+      # Contains anywhere in scientific name
+      String.contains?(name_sci_lower, query_text) ->
+        {6, name_sci_lower}
+
+      # Contains anywhere in English name
+      true ->
+        {7, name_en_lower}
     end
   end
 
   defp starts_with_word?(text, query) do
-    words = String.split(text)
+    words = String.split(text, ~r/[\s\-]+/)
     Enum.any?(words, &String.starts_with?(&1, query))
   end
 end

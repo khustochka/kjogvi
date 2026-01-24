@@ -80,7 +80,7 @@ defmodule Kjogvi.Search.LocationTest do
       assert List.first(results).id == start_match.id
     end
 
-    test "excludes private locations" do
+    test "includes private locations" do
       _public =
         GeoFixtures.location_fixture(%{
           slug: "public-park",
@@ -98,7 +98,7 @@ defmodule Kjogvi.Search.LocationTest do
         })
 
       results = Location.search_locations("Park")
-      refute Enum.any?(results, fn r -> r.name == "Private Park" end)
+      assert Enum.any?(results, fn r -> r.name == "Private Park" end)
     end
 
     test "returns long_name in results" do

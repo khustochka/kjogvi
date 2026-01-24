@@ -6,6 +6,16 @@ defmodule Kjogvi.Birding.Card do
   use Kjogvi.Schema
   import Ecto.Changeset
 
+  @effort_types [
+    "STATIONARY",
+    "TRAVEL",
+    "AREA",
+    "INCIDENTAL",
+    "HISTORICAL"
+  ]
+
+  def effort_types, do: @effort_types
+
   schema "cards" do
     field :observ_date, :date
     belongs_to(:location, Kjogvi.Geo.Location)

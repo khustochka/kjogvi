@@ -13,14 +13,9 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       :ok,
       socket
       |> assign(:taxon_search_results, [])
-      |> assign(:taxon_search_loading, false)
       |> assign(:location_search_results, [])
-      |> assign(:location_search_loading, false)
-      |> assign(:selected_location_name, "")
-      |> assign(:selected_taxon_name, "")
       |> assign(:editing_observation_index, nil)
-      |> assign(:location_highlight_index, nil)
-      |> assign(:taxon_highlight_index, nil)
+      |> assign(:location_input_value, "")
     }
   end
 
@@ -34,7 +29,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       |> assign(:page_title, "Edit Card ##{card.id}")
       |> assign(:action, :edit)
       |> assign(:card, card)
-      |> assign(:selected_location_name, Geo.Location.long_name(card.location))
+      |> assign(:location_input_value, Geo.Location.long_name(card.location))
       |> assign(:form, to_form(Birding.change_card(card)))
     }
   end
@@ -68,9 +63,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       unreported: false
     }
 
-    # ensure taxon_display virtual field initialized
-    new_observation = Map.put(new_observation, :taxon_display, nil)
-
     new_observations = form.data.observations ++ [new_observation]
     card = %{form.data | observations: new_observations}
     changeset = Birding.change_card(card)
@@ -101,17 +93,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     }
   end
 
-  def handle_event("search_taxa", %{"value" => query}, %{assigns: assigns} = socket) do
-    results = Search.Taxon.search_taxa(query, assigns.current_scope.user)
-
-    {
-      :noreply,
-      socket
-      |> assign(:taxon_search_results, results)
-      |> assign(:taxon_search_loading, false)
-    }
-  end
-
   def handle_event("search_taxa:" <> index_str, %{"value" => query}, %{assigns: assigns} = socket) do
     index = String.to_integer(index_str)
     results = Search.Taxon.search_taxa(query, assigns.current_scope.user)
@@ -120,7 +101,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       :noreply,
       socket
       |> assign(:taxon_search_results, results)
-      |> assign(:taxon_search_loading, false)
       |> assign(:editing_observation_index, index)
     }
   end
@@ -135,122 +115,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     }
   end
 
-  def handle_event("location_keydown", %{"key" => key}, %{assigns: assigns} = socket)
-      when key in ["ArrowUp", "ArrowDown"] do
-    results_count = Enum.count(assigns.location_search_results)
-
-    case key do
-      "ArrowDown" ->
-        new_index =
-          case assigns.location_highlight_index do
-            nil -> 0
-            idx when idx < results_count - 1 -> idx + 1
-            idx -> idx
-          end
-
-        {
-          :noreply,
-          socket
-          |> assign(:location_highlight_index, new_index)
-        }
-
-      "ArrowUp" ->
-        new_index =
-          case assigns.location_highlight_index do
-            nil -> results_count - 1
-            0 -> nil
-            idx -> idx - 1
-          end
-
-        {
-          :noreply,
-          socket
-          |> assign(:location_highlight_index, new_index)
-        }
-
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("location_keydown", %{"key" => "Enter"}, %{assigns: assigns} = socket) do
-    case assigns.location_highlight_index do
-      nil ->
-        {:noreply, socket}
-
-      index ->
-        result = Enum.at(assigns.location_search_results, index)
-
-        handle_event(
-          "select_location",
-          %{"id" => to_string(result.id), "name" => result.name},
-          socket
-        )
-    end
-  end
-
-  def handle_event("location_keydown", _params, socket) do
-    {:noreply, socket}
-  end
-
-  def handle_event("taxon_keydown:" <> index_str, %{"key" => key}, %{assigns: assigns} = socket)
-      when key in ["ArrowUp", "ArrowDown"] do
-    index = String.to_integer(index_str)
-    results_count = Enum.count(assigns.taxon_search_results)
-
-    case key do
-      "ArrowDown" ->
-        new_idx =
-          case assigns.taxon_highlight_index do
-            nil -> 0
-            idx when idx < results_count - 1 -> idx + 1
-            idx -> idx
-          end
-
-        {
-          :noreply,
-          socket
-          |> assign(:taxon_highlight_index, new_idx)
-        }
-
-      "ArrowUp" ->
-        new_idx =
-          case assigns.taxon_highlight_index do
-            nil -> results_count - 1
-            0 -> nil
-            idx -> idx - 1
-          end
-
-        {
-          :noreply,
-          socket
-          |> assign(:taxon_highlight_index, new_idx)
-        }
-
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event(
-        "taxon_keydown:" <> _index_str,
-        %{"key" => "Enter"},
-        %{assigns: assigns} = socket
-      ) do
-    case assigns.taxon_highlight_index do
-      nil ->
-        {:noreply, socket}
-
-      idx ->
-        result = Enum.at(assigns.taxon_search_results, idx)
-        handle_event("select_taxon", %{"code" => result.code, "name" => result.name_en}, socket)
-    end
-  end
-
-  def handle_event("taxon_keydown:" <> _index_str, _params, socket) do
-    {:noreply, socket}
-  end
-
   def handle_event("search_locations", %{"value" => query}, socket) do
     results = Search.Location.search_locations(query)
 
@@ -258,7 +122,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       :noreply,
       socket
       |> assign(:location_search_results, results)
-      |> assign(:location_search_loading, false)
+      |> assign(:location_input_value, query)
     }
   end
 
@@ -278,59 +142,40 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       :noreply,
       socket
       |> assign(:location_search_results, [])
-      |> assign(:selected_location_name, name)
+      |> assign(:location_input_value, name)
       |> assign(:form, to_form(changeset))
     }
   end
 
   def handle_event(
-        "select_taxon",
-        %{"code" => taxon_code, "name" => name},
+        "select_taxon:" <> index_str,
+        %{"code" => taxon_code, "name" => _name},
         %{assigns: assigns} = socket
       ) do
+    index = String.to_integer(index_str)
     form = assigns.form
     observations = form.data.observations || []
 
-    case assigns.editing_observation_index do
-      nil ->
-        {
-          :noreply,
-          socket
-          |> assign(:taxon_search_results, [])
-        }
+    updated_observations =
+      observations
+      |> Enum.with_index()
+      |> Enum.map(fn {obs, idx} ->
+        if idx == index do
+          %{obs | taxon_key: taxon_code}
+        else
+          obs
+        end
+      end)
 
-      index when is_integer(index) ->
-        updated_observations =
-          observations
-          |> Enum.with_index()
-          |> Enum.map(fn {obs, idx} ->
-            if idx == index do
-              %{obs | taxon_key: taxon_code, taxon_display: name}
-            else
-              obs
-            end
-          end)
+    card = %{form.data | observations: updated_observations}
+    changeset = Birding.change_card(card)
 
-        card = %{form.data | observations: updated_observations}
-        changeset = Birding.change_card(card)
-
-        {
-          :noreply,
-          socket
-          |> assign(:taxon_search_results, [])
-          |> assign(:selected_taxon_name, name)
-          |> assign(:form, to_form(changeset))
-          |> assign(:editing_observation_index, nil)
-        }
-    end
-  end
-
-  def handle_event("close_taxon_search", _params, socket) do
     {
       :noreply,
       socket
       |> assign(:taxon_search_results, [])
-      |> assign(:taxon_highlight_index, nil)
+      |> assign(:form, to_form(changeset))
+      |> assign(:editing_observation_index, nil)
     }
   end
 
@@ -355,14 +200,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   @impl true
   def render(assigns) do
-    effort_types = [
-      {"Stationary", "STATIONARY"},
-      {"Traveling", "TRAVEL"},
-      {"Area", "AREA"},
-      {"Incidental", "INCIDENTAL"},
-      {"Historical", "HISTORICAL"}
-    ]
-
+    effort_types = Kjogvi.Birding.Card.effort_types
     assigns = assign(assigns, :effort_types, effort_types)
 
     ~H"""
@@ -398,13 +236,11 @@ defmodule KjogviWeb.Live.My.Cards.Form do
           <div class="relative mt-2">
             <input
               type="search"
-              name="card[location_search]"
               id="card_location_search"
               placeholder="Search and select location..."
               phx-keyup="search_locations"
-              phx-keydown="location_keydown"
               autocomplete="off"
-              value={@selected_location_name}
+              value={@location_input_value}
               class="mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 border-zinc-300 focus:border-zinc-400"
             />
             <input
@@ -416,9 +252,9 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
             <%= if !Enum.empty?(@location_search_results) do %>
               <div class="absolute top-full left-0 right-0 z-10 mt-1 border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto bg-white">
-                <%= for {result, idx} <- Enum.with_index(@location_search_results) do %>
+                <%= for result <- @location_search_results do %>
                   <div
-                    class={"px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm #{if @location_highlight_index == idx, do: "bg-blue-100", else: "hover:bg-blue-50"}"}
+                    class="px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm hover:bg-blue-50"
                     phx-click="select_location"
                     phx-value-id={result.id}
                     phx-value-name={result.name}
@@ -509,36 +345,29 @@ defmodule KjogviWeb.Live.My.Cards.Form do
             <div class="p-4 border border-gray-200 rounded-lg bg-white">
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-5">
                 <div>
-                  <label class="block text-sm font-semibold leading-6 text-zinc-800">Taxon Key</label>
+                  <label class="block text-sm font-semibold leading-6 text-zinc-800">Taxon</label>
                   <div class="relative mt-2">
                     <input
                       type="search"
-                      name={"card[observations][#{obs_form.index}][taxon_display]"}
-                      id={"card_observations_#{obs_form.index}_taxon_display"}
+                      id={"card_observations_#{obs_form.index}_taxon_search"}
                       placeholder="Search and select taxon..."
                       phx-keyup={"search_taxa:#{obs_form.index}"}
-                      phx-keydown={"taxon_keydown:#{obs_form.index}"}
-                      phx-blur="close_taxon_search"
                       phx-focus={"focus_taxon_field:#{obs_form.index}"}
                       autocomplete="off"
-                      value={obs_form.data.taxon_display || obs_form[:taxon_key].value || ""}
+                      value={get_taxon_display_for_obs(obs_form[:taxon_key].value)}
                       class="mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 border-zinc-300 focus:border-zinc-400"
                     />
 
-                    <input
-                      type="hidden"
-                      name={"card[observations][#{obs_form.index}][taxon_key]"}
-                      value={obs_form[:taxon_key].value || ""}
-                    />
+                    <input type="hidden" name={"card[observations][#{obs_form.index}][taxon_key]"} value={obs_form[:taxon_key].value || ""} />
 
                     <%= if !Enum.empty?(@taxon_search_results) and @editing_observation_index == obs_form.index do %>
                       <div class="absolute top-full left-0 right-0 z-10 mt-1 border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto bg-white">
-                        <%= for {result, idx} <- Enum.with_index(@taxon_search_results) do %>
+                        <%= for result <- @taxon_search_results do %>
                           <div
-                            class={"px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm #{if @taxon_highlight_index == idx, do: "bg-blue-100", else: "hover:bg-blue-50"}"}
-                            phx-click="select_taxon"
+                            class="px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm hover:bg-blue-50"
+                            phx-click={"select_taxon:#{obs_form.index}"}
                             phx-value-code={result.code}
-                            phx-value-name={result.name_en}
+                            phx-value-name={"#{result.name_en} #{result.name_sci}"}
                           >
                             <div class="font-medium">{result.name_en}</div>
                             <div class="text-xs text-gray-500 italic">{result.name_sci}</div>
@@ -641,6 +470,8 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     </form>
     """
   end
+
+  defp get_taxon_display_for_obs(_taxon_code), do: ""
 
   defp do_save_card(:create, _card, card_params, user) do
     Birding.create_card(user, card_params)

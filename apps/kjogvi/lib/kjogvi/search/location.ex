@@ -2,6 +2,7 @@ defmodule Kjogvi.Search.Location do
   @moduledoc """
   Location search functionality with full name matching.
   Searches by word components with priority on word beginnings.
+  Searches all locations including hidden ones by English name.
   """
 
   import Ecto.Query
@@ -14,8 +15,12 @@ defmodule Kjogvi.Search.Location do
   @doc """
   Search for locations by name.
 
-  Searches locations by their full name (hierarchical).
-  Results starting with search term are prioritized.
+  Searches all locations (including hidden) by their full English name (hierarchical).
+  Results are prioritized by:
+  1. Full match of English name
+  2. Name starts with query
+  3. Name starts with a word in the name
+  4. Name contains query (words separated by space, dash, brackets, commas, quotes)
 
   ## Examples
 
@@ -70,7 +75,7 @@ defmodule Kjogvi.Search.Location do
   end
 
   defp starts_with_word?(text, query) do
-    words = String.split(text, ~r/\s+|-|\s\(|\)\s/)
+    words = String.split(text, ~r/[\s\-\[\]\(\),'"]+/)
     Enum.any?(words, &String.starts_with?(&1, query))
   end
 end
