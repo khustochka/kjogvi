@@ -62,7 +62,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Quantity"
     end
 
-    test "can remove observations", %{conn: conn, user: _user} do
+    test "can remove new observations immediately", %{conn: conn, user: _user} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       lv |> element("button", "Add Observation") |> render_click()
@@ -70,6 +70,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       html = render(lv)
       assert html =~ "Remove"
 
+      # New observations (without ID) get removed immediately
       lv |> element("button", "Remove") |> render_click()
 
       html = render(lv)
@@ -447,7 +448,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "eurwie"
     end
 
-    test "removing observation re-indexes taxon display values", %{conn: conn} do
+    test "removing new observation re-indexes taxon display values", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Add three observations
@@ -465,7 +466,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Second Taxon"
       assert html =~ "Third Taxon"
 
-      # Remove the middle observation (index 1)
+      # Remove the middle observation (index 1) - new observations are removed immediately
       lv |> render_click("remove_observation", %{"index" => "1"})
 
       html = render(lv)
@@ -618,6 +619,40 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       # Verify observation was updated
       updated_obs = Kjogvi.Repo.get!(Kjogvi.Birding.Observation, obs.id)
       assert updated_obs.quantity == "5"
+    end
+
+    test "can mark existing observation for deletion and restore it", %{
+      conn: conn,
+      card: card
+    } do
+      # Add an observation to the existing card
+      {:ok, _obs} =
+        Kjogvi.Repo.insert(%Kjogvi.Birding.Observation{
+          card_id: card.id,
+          taxon_key: "/ebird/v2024/houspa",
+          quantity: "1"
+        })
+
+      {:ok, lv, html} = live(conn, "/my/cards/#{card.id}/edit")
+
+      # Existing observation should have Remove button
+      assert html =~ "Remove"
+
+      # Mark for deletion
+      lv |> element("button", "Remove") |> render_click()
+
+      html = render(lv)
+      # Should show as grayed out with Restore button
+      assert html =~ "Restore"
+      assert html =~ "line-through"
+
+      # Restore the observation
+      lv |> element("button", "Restore") |> render_click()
+
+      html = render(lv)
+      # Should be back to normal with Remove button
+      assert html =~ "Remove"
+      refute html =~ "line-through"
     end
   end
 end

@@ -39,7 +39,7 @@ defmodule Kjogvi.Birding.Card do
 
     field :ebird_id, :string
 
-    has_many(:observations, Kjogvi.Birding.Observation)
+    has_many(:observations, Kjogvi.Birding.Observation, on_replace: :delete)
     belongs_to(:user, Kjogvi.Users.User)
 
     # Generated
@@ -77,6 +77,10 @@ defmodule Kjogvi.Birding.Card do
       :location_id,
       :effort_type
     ])
-    |> cast_assoc(:observations, with: &Kjogvi.Birding.Observation.changeset/2)
+    |> cast_assoc(:observations,
+      with: &Kjogvi.Birding.Observation.changeset/2,
+      sort_param: :observations_order,
+      drop_param: :observations_drop
+    )
   end
 end
