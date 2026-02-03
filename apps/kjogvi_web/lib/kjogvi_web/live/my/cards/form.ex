@@ -160,15 +160,12 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   def handle_event(
         "select_taxon:" <> index_str,
-        %{"code" => taxon_key} = params,
+        %{"code" => taxon_key},
         socket
       ) do
     index = String.to_integer(index_str)
 
-    # Find the full taxon struct from search results, or build from params (for tests)
-    taxon =
-      Enum.find(socket.assigns.taxon_search_results, &(&1.key == taxon_key)) ||
-        build_taxon_from_params(taxon_key, params)
+    taxon = Enum.find(socket.assigns.taxon_search_results, &(&1.key == taxon_key))
 
     card = socket.assigns.card
 
@@ -532,37 +529,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     db_card = Birding.fetch_card_for_edit(user, card.id)
     Birding.update_card(db_card, card_params)
   end
-
-  # Build a minimal taxon map from params when not found in search results (for tests)
-  defp build_taxon_from_params(taxon_key, %{"name" => name}) do
-    # Parse "Name En Name Sci" format
-    {name_en, name_sci} = parse_taxon_display_name(name)
-    %{key: taxon_key, name_en: name_en, name_sci: name_sci}
-  end
-
-  defp build_taxon_from_params(taxon_key, _params) do
-    %{key: taxon_key, name_en: nil, name_sci: nil}
-  end
-
-  defp parse_taxon_display_name(name) do
-    # Simple heuristic: last two words are scientific name (italicized)
-    # This handles "House Sparrow Passer domesticus" -> {"House Sparrow", "Passer domesticus"}
-    parts = String.split(name, " ")
-    do_parse_taxon_display_name(parts, name)
-  end
-
-  defp do_parse_taxon_display_name([_a, _b | _rest] = parts, _name) do
-    # At least 2 words - assume last 2 are scientific name
-    len = length(parts)
-    {en_parts, sci_parts} = Enum.split(parts, len - 2)
-
-    case en_parts do
-      [] -> {Enum.join(sci_parts, " "), ""}
-      _ -> {Enum.join(en_parts, " "), Enum.join(sci_parts, " ")}
-    end
-  end
-
-  defp do_parse_taxon_display_name(_parts, name), do: {name, ""}
 
   defp show_field_error?(form, field_name) do
     # Show errors after form submission (when changeset has an action)

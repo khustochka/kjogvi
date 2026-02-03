@@ -7,52 +7,74 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
   alias Kjogvi.Birding
   alias Kjogvi.Search
 
+  defp create_user_with_book do
+    book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+    user = UsersFixtures.user_fixture()
+
+    {:ok, user} =
+      Kjogvi.Users.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
+
+    {user, book}
+  end
+
+  defp create_taxon(book, attrs) do
+    Ornitho.Factory.insert(:taxon, Keyword.merge([book: book], attrs))
+  end
+
+  defp conn_for_user(user) do
+    token = Kjogvi.Users.generate_user_session_token(user)
+
+    build_conn()
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:user_token, token)
+  end
+
+  defp search_and_select_taxon(lv, index, taxon_name, taxon_key) do
+    lv |> render_change("search_taxa:#{index}", %{"value" => taxon_name})
+    lv |> render_click("select_taxon:#{index}", %{"code" => taxon_key})
+  end
+
   describe "card form" do
     setup do
       user = UsersFixtures.user_fixture()
-      token = Kjogvi.Users.generate_user_session_token(user)
-
-      conn =
-        build_conn()
-        |> Phoenix.ConnTest.init_test_session(%{})
-        |> Plug.Conn.put_session(:user_token, token)
-
+      conn = conn_for_user(user)
       {:ok, conn: conn, user: user}
     end
 
-    test "renders new card form", %{conn: conn, user: _user} do
+    test "renders new card form", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "New Card"
       assert html =~ "Observation Date"
       assert html =~ "Effort Type"
     end
 
-    test "renders effort type as dropdown", %{conn: conn, user: _user} do
+    test "renders effort type as dropdown", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "select"
       assert html =~ "STATIONARY"
       assert html =~ "TRAVEL"
     end
 
-    test "renders location field with type=search", %{conn: conn, user: _user} do
+    test "renders location field with type=search", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "Location"
       assert html =~ "type=\"search\""
     end
 
-    test "renders location search as hidden input for ID storage", %{conn: conn, user: _user} do
+    test "renders location search as hidden input for ID storage", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "card_location_id"
       assert html =~ "type=\"hidden\""
     end
 
-    test "renders observation section with add button", %{conn: conn, user: _user} do
+    test "renders observation section with add button", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "Observations"
       assert html =~ "Add Observation"
     end
 
-    test "can add observations", %{conn: conn, user: _user} do
+    test "can add observations", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       lv |> element("button", "Add Observation") |> render_click()
@@ -62,7 +84,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Quantity"
     end
 
-    test "can remove new observations immediately", %{conn: conn, user: _user} do
+    test "can remove new observations immediately", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       lv |> element("button", "Add Observation") |> render_click()
@@ -77,12 +99,12 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "No observations yet"
     end
 
-    test "renders form fields in 3-column layout", %{conn: conn, user: _user} do
+    test "renders form fields in 3-column layout", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "sm:grid-cols-3"
     end
 
-    test "taxon input has type=search", %{conn: conn, user: _user} do
+    test "taxon input has type=search", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       lv |> element("button", "Add Observation") |> render_click()
@@ -92,7 +114,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Taxon"
     end
 
-    test "observation has hidden field for taxon_key", %{conn: conn, user: _user} do
+    test "observation has hidden field for taxon_key", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       lv |> element("button", "Add Observation") |> render_click()
@@ -102,7 +124,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "taxon_key"
     end
 
-    test "can add multiple observations", %{conn: conn, user: _user} do
+    test "can add multiple observations", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       lv |> element("button", "Add Observation") |> render_click()
@@ -112,7 +134,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Remove"
     end
 
-    test "location search results display with dropdown styling", %{conn: conn, user: _user} do
+    test "location search results display with dropdown styling", %{conn: conn} do
       _location = GeoFixtures.location_fixture(name_en: "Central Park")
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
@@ -122,7 +144,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Central Park"
     end
 
-    test "can select location from search results", %{conn: conn, user: _user} do
+    test "can select location from search results", %{conn: conn} do
       location = GeoFixtures.location_fixture(name_en: "Central Park")
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
@@ -193,15 +215,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
   describe "location selection and form submission" do
     setup do
       user = UsersFixtures.user_fixture()
-      token = Kjogvi.Users.generate_user_session_token(user)
-
-      conn =
-        build_conn()
-        |> Phoenix.ConnTest.init_test_session(%{})
-        |> Plug.Conn.put_session(:user_token, token)
-
+      conn = conn_for_user(user)
       location = GeoFixtures.location_fixture(name_en: "Test Park")
-
       {:ok, conn: conn, user: user, location: location}
     end
 
@@ -270,17 +285,39 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
   describe "observation with taxon selection" do
     setup do
-      user = UsersFixtures.user_fixture()
-      token = Kjogvi.Users.generate_user_session_token(user)
-
-      conn =
-        build_conn()
-        |> Phoenix.ConnTest.init_test_session(%{})
-        |> Plug.Conn.put_session(:user_token, token)
-
+      {user, book} = create_user_with_book()
+      conn = conn_for_user(user)
       location = GeoFixtures.location_fixture(name_en: "Test Park")
 
-      {:ok, conn: conn, user: user, location: location}
+      houspa =
+        create_taxon(book,
+          code: "houspa",
+          name_en: "House Sparrow",
+          name_sci: "Passer domesticus"
+        )
+
+      comred =
+        create_taxon(book,
+          code: "comred",
+          name_en: "Common Redstart",
+          name_sci: "Phoenicurus phoenicurus"
+        )
+
+      eurwie =
+        create_taxon(book,
+          code: "eurwie",
+          name_en: "Eurasian Wigeon",
+          name_sci: "Mareca penelope"
+        )
+
+      {:ok,
+       conn: conn,
+       user: user,
+       book: book,
+       location: location,
+       houspa: houspa,
+       comred: comred,
+       eurwie: eurwie}
     end
 
     test "can save card with observations", %{conn: conn, user: user, location: location} do
@@ -295,8 +332,9 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         "name" => "Test Park"
       })
 
-      # Add observation
+      # Add observation and select taxon via search
       lv |> element("button", "Add Observation") |> render_click()
+      search_and_select_taxon(lv, 0, "Common Redstart", "/ebird/v2024/comred")
 
       # Fill form data
       form_data = %{
@@ -306,7 +344,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
           "location_id" => to_string(location.id),
           "observations" => %{
             "0" => %{
-              "taxon_key" => "comred",
+              "taxon_key" => "/ebird/v2024/comred",
               "quantity" => "1"
             }
           }
@@ -322,14 +360,13 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       card = List.first(cards.entries)
       assert card.location_id == location.id
 
-      # Load card with observations (without preloading taxa which requires them to exist)
       loaded_card = Kjogvi.Repo.get!(Birding.Card, card.id)
       loaded_card = Kjogvi.Repo.preload(loaded_card, :observations)
 
       assert length(loaded_card.observations) == 1
 
       observation = List.first(loaded_card.observations)
-      assert observation.taxon_key == "comred"
+      assert observation.taxon_key == "/ebird/v2024/comred"
       assert observation.quantity == "1"
     end
 
@@ -349,11 +386,12 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         "name" => "Test Park"
       })
 
-      # Add first observation
+      # Add observations and select taxa via search
+      lv |> element("button", "Add Observation") |> render_click()
       lv |> element("button", "Add Observation") |> render_click()
 
-      # Add second observation
-      lv |> element("button", "Add Observation") |> render_click()
+      search_and_select_taxon(lv, 0, "Common Redstart", "/ebird/v2024/comred")
+      search_and_select_taxon(lv, 1, "Eurasian Wigeon", "/ebird/v2024/eurwie")
 
       # Fill form data with multiple observations
       form_data = %{
@@ -363,11 +401,11 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
           "location_id" => to_string(location.id),
           "observations" => %{
             "0" => %{
-              "taxon_key" => "comred",
+              "taxon_key" => "/ebird/v2024/comred",
               "quantity" => "1"
             },
             "1" => %{
-              "taxon_key" => "eurwie",
+              "taxon_key" => "/ebird/v2024/eurwie",
               "quantity" => "2"
             }
           }
@@ -386,12 +424,11 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert length(loaded_card.observations) == 2
 
       observations = loaded_card.observations
-      assert Enum.any?(observations, &(&1.taxon_key == "comred"))
-      assert Enum.any?(observations, &(&1.taxon_key == "eurwie"))
+      assert Enum.any?(observations, &(&1.taxon_key == "/ebird/v2024/comred"))
+      assert Enum.any?(observations, &(&1.taxon_key == "/ebird/v2024/eurwie"))
 
-      # Verify quantities
-      assert Enum.find(observations, &(&1.taxon_key == "comred")).quantity == "1"
-      assert Enum.find(observations, &(&1.taxon_key == "eurwie")).quantity == "2"
+      assert Enum.find(observations, &(&1.taxon_key == "/ebird/v2024/comred")).quantity == "1"
+      assert Enum.find(observations, &(&1.taxon_key == "/ebird/v2024/eurwie")).quantity == "2"
     end
 
     test "select_taxon event updates form and shows display name", %{conn: conn} do
@@ -400,20 +437,17 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       # Add observation
       lv |> element("button", "Add Observation") |> render_click()
 
-      # Simulate selecting a taxon (bypasses actual search)
-      lv
-      |> render_click("select_taxon:0", %{
-        "code" => "comred",
-        "name" => "Common Redstart Phoenicurus phoenicurus"
-      })
+      # Search and select taxon
+      search_and_select_taxon(lv, 0, "Common Redstart", "/ebird/v2024/comred")
 
       html = render(lv)
 
       # Verify the taxon display name appears in the search input
-      assert html =~ "Common Redstart Phoenicurus phoenicurus"
+      assert html =~ "Common Redstart"
+      assert html =~ "Phoenicurus phoenicurus"
 
       # Verify the hidden field has the taxon code
-      assert html =~ "comred"
+      assert html =~ "/ebird/v2024/comred"
     end
 
     test "multiple observations can have different taxa selected via UI", %{conn: conn} do
@@ -423,19 +457,9 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       lv |> element("button", "Add Observation") |> render_click()
       lv |> element("button", "Add Observation") |> render_click()
 
-      # Select taxon for first observation
-      lv
-      |> render_click("select_taxon:0", %{
-        "code" => "comred",
-        "name" => "Common Redstart"
-      })
-
-      # Select taxon for second observation
-      lv
-      |> render_click("select_taxon:1", %{
-        "code" => "eurwie",
-        "name" => "Eurasian Wigeon"
-      })
+      # Search and select taxa
+      search_and_select_taxon(lv, 0, "Common Redstart", "/ebird/v2024/comred")
+      search_and_select_taxon(lv, 1, "Eurasian Wigeon", "/ebird/v2024/eurwie")
 
       html = render(lv)
 
@@ -444,11 +468,11 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Eurasian Wigeon"
 
       # Verify both taxon codes are in hidden fields
-      assert html =~ "comred"
-      assert html =~ "eurwie"
+      assert html =~ "/ebird/v2024/comred"
+      assert html =~ "/ebird/v2024/eurwie"
     end
 
-    test "removing new observation re-indexes taxon display values", %{conn: conn} do
+    test "removing new observation preserves remaining taxa", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Add three observations
@@ -457,14 +481,14 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       lv |> element("button", "Add Observation") |> render_click()
 
       # Select taxa for all observations
-      lv |> render_click("select_taxon:0", %{"code" => "taxon0", "name" => "First Taxon"})
-      lv |> render_click("select_taxon:1", %{"code" => "taxon1", "name" => "Second Taxon"})
-      lv |> render_click("select_taxon:2", %{"code" => "taxon2", "name" => "Third Taxon"})
+      search_and_select_taxon(lv, 0, "House Sparrow", "/ebird/v2024/houspa")
+      search_and_select_taxon(lv, 1, "Common Redstart", "/ebird/v2024/comred")
+      search_and_select_taxon(lv, 2, "Eurasian Wigeon", "/ebird/v2024/eurwie")
 
       html = render(lv)
-      assert html =~ "First Taxon"
-      assert html =~ "Second Taxon"
-      assert html =~ "Third Taxon"
+      assert html =~ "House Sparrow"
+      assert html =~ "Common Redstart"
+      assert html =~ "Eurasian Wigeon"
 
       # Remove the middle observation (index 1) - new observations are removed immediately
       lv |> render_click("remove_observation", %{"index" => "1"})
@@ -472,23 +496,18 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       html = render(lv)
 
       # First and third (now second) should still show
-      assert html =~ "First Taxon"
-      assert html =~ "Third Taxon"
+      assert html =~ "House Sparrow"
+      assert html =~ "Eurasian Wigeon"
 
       # Second taxon should be gone
-      refute html =~ "Second Taxon"
+      refute html =~ "Common Redstart"
     end
   end
 
   describe "editing existing card" do
     setup do
       user = UsersFixtures.user_fixture()
-      token = Kjogvi.Users.generate_user_session_token(user)
-
-      conn =
-        build_conn()
-        |> Phoenix.ConnTest.init_test_session(%{})
-        |> Plug.Conn.put_session(:user_token, token)
+      conn = conn_for_user(user)
 
       location1 = GeoFixtures.location_fixture(name_en: "Original Park")
       location2 = GeoFixtures.location_fixture(name_en: "New Park")
@@ -658,13 +677,22 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
   describe "form validation errors" do
     setup do
-      user = UsersFixtures.user_fixture()
-      token = Kjogvi.Users.generate_user_session_token(user)
+      {user, book} = create_user_with_book()
+      conn = conn_for_user(user)
 
-      conn =
-        build_conn()
-        |> Phoenix.ConnTest.init_test_session(%{})
-        |> Plug.Conn.put_session(:user_token, token)
+      _houspa =
+        create_taxon(book,
+          code: "houspa",
+          name_en: "House Sparrow",
+          name_sci: "Passer domesticus"
+        )
+
+      _comred =
+        create_taxon(book,
+          code: "comred",
+          name_en: "Common Redstart",
+          name_sci: "Phoenicurus phoenicurus"
+        )
 
       {:ok, conn: conn, user: user}
     end
@@ -689,25 +717,13 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
     test "can add observations after validation failure", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
-      # Add first observation
+      # Add first observation and select taxon
       lv |> element("button", "Add Observation") |> render_click()
+      search_and_select_taxon(lv, 0, "House Sparrow", "/ebird/v2024/houspa")
 
-      # Select taxon for first observation
-      lv
-      |> render_click("select_taxon:0", %{
-        "code" => "/ebird/v2024/houspa",
-        "name" => "House Sparrow"
-      })
-
-      # Add second observation
+      # Add second observation and select taxon
       lv |> element("button", "Add Observation") |> render_click()
-
-      # Select taxon for second observation
-      lv
-      |> render_click("select_taxon:1", %{
-        "code" => "/ebird/v2024/comred",
-        "name" => "Common Redstart"
-      })
+      search_and_select_taxon(lv, 1, "Common Redstart", "/ebird/v2024/comred")
 
       # Submit form without location (this will fail validation)
       form_data = %{
@@ -747,18 +763,9 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       lv |> element("button", "Add Observation") |> render_click()
       lv |> element("button", "Add Observation") |> render_click()
 
-      # Select taxa
-      lv
-      |> render_click("select_taxon:0", %{
-        "code" => "/ebird/v2024/houspa",
-        "name" => "House Sparrow"
-      })
-
-      lv
-      |> render_click("select_taxon:1", %{
-        "code" => "/ebird/v2024/comred",
-        "name" => "Common Redstart"
-      })
+      # Select taxa via search
+      search_and_select_taxon(lv, 0, "House Sparrow", "/ebird/v2024/houspa")
+      search_and_select_taxon(lv, 1, "Common Redstart", "/ebird/v2024/comred")
 
       # Submit form without location (this will fail validation)
       form_data = %{
