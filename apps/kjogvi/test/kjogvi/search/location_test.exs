@@ -98,7 +98,7 @@ defmodule Kjogvi.Search.LocationTest do
         })
 
       results = Location.search_locations("Park")
-      assert Enum.any?(results, fn r -> r.name == "Private Park" end)
+      assert Enum.any?(results, fn r -> r.long_name == "Private Park" end)
     end
 
     test "returns long_name in results" do
@@ -114,7 +114,7 @@ defmodule Kjogvi.Search.LocationTest do
       assert results != []
       result = List.first(results)
       assert result.id == location.id
-      assert result.name != nil
+      assert result.long_name != nil
     end
   end
 end

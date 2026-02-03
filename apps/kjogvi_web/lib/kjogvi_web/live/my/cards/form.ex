@@ -144,7 +144,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     # Build a minimal location struct for display
     location_struct = %Geo.Location{
       id: location.id,
-      name_en: location.name
+      name_en: location.long_name
     }
 
     card = socket.assigns.card
@@ -275,7 +275,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                     phx-click="select_location"
                     phx-value-id={result.id}
                   >
-                    {result.name}
+                    {result.long_name}
                   </div>
                 <% end %>
               </div>
@@ -508,8 +508,19 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   end
 
   # Display helpers - get names from nested structs
-  defp location_display(%{location: %{name_en: name}}) when not is_nil(name), do: name
-  defp location_display(%{location: %Geo.Location{} = loc}), do: Geo.Location.long_name(loc)
+
+  # On edit load, the location is a full struct with preloaded associations,
+  # so we compute long_name from them. After select_location, it's a minimal
+  # struct where name_en already holds the long name from search results.
+  defp location_display(%{location: %Geo.Location{} = loc}) do
+    if Ecto.assoc_loaded?(loc.cached_city) do
+      Geo.Location.long_name(loc)
+    else
+      # Name_en here is actually the long name from search results
+      loc.name_en || ""
+    end
+  end
+
   defp location_display(_), do: ""
 
   defp taxon_display(%{taxon: %{name_en: name_en, name_sci: name_sci}})

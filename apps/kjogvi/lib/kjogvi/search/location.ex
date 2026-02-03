@@ -40,7 +40,7 @@ defmodule Kjogvi.Search.Location do
     |> Enum.sort_by(&sort_priority(&1, query_text))
     |> Enum.take(@limit)
     |> Enum.map(fn loc ->
-      %{id: loc.id, name: Location.long_name(loc)}
+      %{id: loc.id, long_name: Location.long_name(loc)}
     end)
   end
 
