@@ -45,7 +45,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
     <div class="mb-4 flex justify-end">
       <.link
         navigate={~p"/my/cards/new"}
-        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 no-underline"
       >
         <.icon name="hero-plus" class="w-4 h-4" /> New Card
       </.link>

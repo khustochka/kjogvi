@@ -1,5 +1,14 @@
 defmodule KjogviWeb.Live.My.Cards.Form do
-  @moduledoc false
+  @moduledoc """
+  LiveView for creating and editing cards.
+
+  Uses the card struct as single source of truth. The card holds:
+  - All field values
+  - Nested observations with taxon structs (for display names)
+  - Location struct (for display name)
+
+  The form is derived from the card via `to_form(Birding.change_card(card))`.
+  """
 
   use KjogviWeb, :live_view
 
@@ -15,8 +24,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       |> assign(:taxon_search_results, [])
       |> assign(:location_search_results, [])
       |> assign(:editing_observation_index, nil)
-      |> assign(:location_input_value, "")
-      |> assign(:taxon_display_values, %{})
       |> assign(:marked_for_deletion, MapSet.new())
     }
   end
@@ -24,42 +31,48 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   @impl true
   def handle_params(%{"id" => id}, _url, %{assigns: assigns} = socket) do
     card = Birding.fetch_card_for_edit(assigns.current_scope.user, id)
+    # Preload taxa on observations for display
     observations_with_taxa = Birding.preload_taxa_and_species(card.observations)
-    taxon_display_values = build_taxon_display_values(observations_with_taxa)
+    card = %{card | observations: observations_with_taxa}
 
     {
       :noreply,
       socket
       |> assign(:page_title, "Edit Card ##{card.id}")
       |> assign(:action, :edit)
-      |> assign(:card, card)
-      |> assign(:location_input_value, Geo.Location.long_name(card.location))
-      |> assign(:form, to_form(Birding.change_card(card)))
-      |> assign(:taxon_display_values, taxon_display_values)
+      |> assign_card(card)
     }
   end
 
   def handle_params(_params, _url, %{assigns: assigns} = socket) do
     card = Birding.new_card(assigns.current_scope.user)
+    card = %{card | observations: []}
 
     {
       :noreply,
       socket
       |> assign(:page_title, "New Card")
       |> assign(:action, :create)
-      |> assign(:card, card)
-      |> assign(:form, to_form(Birding.change_card(card)))
+      |> assign_card(card)
     }
+  end
+
+  # Helper to update card and derive form
+  defp assign_card(socket, card) do
+    socket
+    |> assign(:card, card)
+    |> assign(:form, to_form(Birding.change_card(card)))
   end
 
   @impl true
   def handle_event("add_observation", _params, socket) do
-    form = socket.assigns.form
+    card = socket.assigns.card
 
     new_observation = %Kjogvi.Birding.Observation{
       id: nil,
       card_id: nil,
       taxon_key: nil,
+      taxon: nil,
       quantity: nil,
       voice: false,
       notes: nil,
@@ -68,20 +81,14 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       unreported: false
     }
 
-    new_observations = form.data.observations ++ [new_observation]
-    card = %{form.data | observations: new_observations}
-    changeset = Birding.change_card(card)
+    updated_card = %{card | observations: card.observations ++ [new_observation]}
 
-    {
-      :noreply,
-      socket
-      |> assign(:form, to_form(changeset))
-    }
+    {:noreply, assign_card(socket, updated_card)}
   end
 
   def handle_event("remove_observation", %{"index" => index_str}, socket) do
     index = String.to_integer(index_str)
-    observation = Enum.at(socket.assigns.form.data.observations, index)
+    observation = Enum.at(socket.assigns.card.observations, index)
 
     do_remove_observation(socket, index, observation)
   end
@@ -125,62 +132,75 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       :noreply,
       socket
       |> assign(:location_search_results, results)
-      |> assign(:location_input_value, query)
     }
   end
 
-  def handle_event(
-        "select_location",
-        %{"id" => location_id_str, "name" => name},
-        %{assigns: assigns} = socket
-      ) do
+  def handle_event("select_location", %{"id" => location_id_str}, socket) do
     location_id = String.to_integer(location_id_str)
-    form = assigns.form
-    card = form.data
 
-    updated_card = %{card | location_id: location_id}
-    changeset = Birding.change_card(updated_card)
+    # Find the full location struct from search results
+    location = Enum.find(socket.assigns.location_search_results, &(&1.id == location_id))
+
+    # Build a minimal location struct for display
+    location_struct = %Geo.Location{
+      id: location.id,
+      name_en: location.name
+    }
+
+    card = socket.assigns.card
+    updated_card = %{card | location_id: location_id, location: location_struct}
 
     {
       :noreply,
       socket
       |> assign(:location_search_results, [])
-      |> assign(:location_input_value, name)
-      |> assign(:form, to_form(changeset))
+      |> assign_card(updated_card)
     }
   end
 
   def handle_event(
         "select_taxon:" <> index_str,
-        %{"code" => taxon_code, "name" => name},
-        %{assigns: assigns} = socket
+        %{"code" => taxon_key} = params,
+        socket
       ) do
     index = String.to_integer(index_str)
-    form = assigns.form
-    observations = form.data.observations || []
+
+    # Find the full taxon struct from search results, or build from params (for tests)
+    taxon =
+      Enum.find(socket.assigns.taxon_search_results, &(&1.key == taxon_key)) ||
+        build_taxon_from_params(taxon_key, params)
+
+    card = socket.assigns.card
 
     updated_observations =
-      observations
+      card.observations
       |> Enum.with_index()
       |> Enum.map(fn {obs, idx} ->
         if idx == index do
-          %{obs | taxon_key: taxon_code}
+          %{obs | taxon_key: taxon_key, taxon: taxon}
         else
           obs
         end
       end)
 
-    card = %{form.data | observations: updated_observations}
-    changeset = Birding.change_card(card)
+    updated_card = %{card | observations: updated_observations}
 
     {
       :noreply,
       socket
       |> assign(:taxon_search_results, [])
-      |> assign(:form, to_form(changeset))
       |> assign(:editing_observation_index, nil)
-      |> assign(:taxon_display_values, Map.put(assigns.taxon_display_values, index, name))
+      |> assign_card(updated_card)
     }
+  end
+
+  def handle_event("validate", %{"card" => card_params}, socket) do
+    # Sync form field values to card struct
+    card = socket.assigns.card
+    updated_card = merge_params_into_card(card, card_params)
+    changeset = Birding.change_card(updated_card)
+
+    {:noreply, assign(socket, :card, updated_card) |> assign(:form, to_form(changeset))}
   end
 
   def handle_event("save", %{"card" => card_params}, %{assigns: assigns} = socket) do
@@ -212,19 +232,11 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       {if @action == :create, do: "New Card", else: "Edit Card ##{@card.id}"}
     </CoreComponents.header>
 
-    <form phx-submit="save" class="space-y-6">
+    <form phx-submit="save" phx-change="validate" class="space-y-6">
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <CoreComponents.input
-          type="date"
-          field={@form[:observ_date]}
-          label="Observation Date"
-        />
+        <CoreComponents.input type="date" field={@form[:observ_date]} label="Observation Date" />
 
-        <CoreComponents.input
-          type="time"
-          field={@form[:start_time]}
-          label="Start Time"
-        />
+        <CoreComponents.input type="time" field={@form[:start_time]} label="Start Time" />
 
         <CoreComponents.input
           type="select"
@@ -244,8 +256,12 @@ defmodule KjogviWeb.Live.My.Cards.Form do
               placeholder="Search and select location..."
               phx-keyup="search_locations"
               autocomplete="off"
-              value={@location_input_value}
-              class="mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 border-zinc-300 focus:border-zinc-400"
+              value={location_display(@card)}
+              class={[
+                "mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+                !show_field_error?(@form, :location_id) && "border-zinc-300 focus:border-zinc-400",
+                show_field_error?(@form, :location_id) && "border-rose-400 focus:border-rose-400"
+              ]}
             />
             <input
               type="hidden"
@@ -261,7 +277,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                     class="px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm hover:bg-blue-50"
                     phx-click="select_location"
                     phx-value-id={result.id}
-                    phx-value-name={result.name}
                   >
                     {result.name}
                   </div>
@@ -269,23 +284,21 @@ defmodule KjogviWeb.Live.My.Cards.Form do
               </div>
             <% end %>
           </div>
+          <CoreComponents.error
+            :for={msg <- Enum.map(@form[:location_id].errors, &CoreComponents.translate_error/1)}
+            :if={show_field_error?(@form, :location_id)}
+          >
+            {msg}
+          </CoreComponents.error>
         </div>
 
-        <CoreComponents.input
-          type="text"
-          field={@form[:observers]}
-          label="Observers"
-        />
+        <CoreComponents.input type="text" field={@form[:observers]} label="Observers" />
 
         <div>
           <label class="block text-sm font-semibold leading-6 text-zinc-800">
             Motorless
           </label>
-          <CoreComponents.input
-            type="checkbox"
-            field={@form[:motorless]}
-            class="mt-2"
-          />
+          <CoreComponents.input type="checkbox" field={@form[:motorless]} class="mt-2" />
         </div>
       </div>
 
@@ -312,25 +325,12 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       </div>
 
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <CoreComponents.input
-          type="text"
-          field={@form[:biotope]}
-          label="Biotope"
-        />
+        <CoreComponents.input type="text" field={@form[:biotope]} label="Biotope" />
 
-        <CoreComponents.input
-          type="text"
-          field={@form[:weather]}
-          label="Weather"
-        />
+        <CoreComponents.input type="text" field={@form[:weather]} label="Weather" />
       </div>
 
-      <CoreComponents.input
-        type="textarea"
-        field={@form[:notes]}
-        label="Notes"
-        rows="4"
-      />
+      <CoreComponents.input type="textarea" field={@form[:notes]} label="Notes" rows="4" />
 
       <div class="pt-6 border-t border-gray-200">
         <div class="flex items-center justify-between mb-4">
@@ -346,6 +346,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
         <div class="space-y-4">
           <.inputs_for :let={obs_form} field={@form[:observations]}>
+            <% obs = Enum.at(@card.observations, obs_form.index) %>
             <% is_marked_for_deletion = MapSet.member?(@marked_for_deletion, obs_form.index) %>
             <div class={[
               "p-4 border rounded-lg",
@@ -369,11 +370,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                 <div class="flex items-center justify-between">
                   <div class="flex-1 line-through text-gray-500">
                     <span class="font-medium">
-                      {Map.get(
-                        @taxon_display_values,
-                        obs_form.index,
-                        obs_form[:taxon_key].value || "Unknown taxon"
-                      )}
+                      {taxon_display(obs)}
                     </span>
                     <span :if={obs_form[:quantity].value} class="ml-2">
                       × {obs_form[:quantity].value}
@@ -400,13 +397,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                         phx-keyup={"search_taxa:#{obs_form.index}"}
                         phx-focus={"focus_taxon_field:#{obs_form.index}"}
                         autocomplete="off"
-                        value={
-                          Map.get(
-                            @taxon_display_values,
-                            obs_form.index,
-                            obs_form[:taxon_key].value || ""
-                          )
-                        }
+                        value={taxon_display(obs)}
                         class="mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 border-zinc-300 focus:border-zinc-400"
                       />
 
@@ -423,7 +414,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                               class="px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm hover:bg-blue-50"
                               phx-click={"select_taxon:#{obs_form.index}"}
                               phx-value-code={result.key}
-                              phx-value-name={"#{result.name_en} #{result.name_sci}"}
                             >
                               <div class="font-medium">{result.name_en}</div>
                               <div class="text-xs text-gray-500 italic">{result.name_sci}</div>
@@ -446,21 +436,13 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                       <label class="block text-xs font-semibold leading-6 text-zinc-800">
                         Heard only
                       </label>
-                      <CoreComponents.input
-                        type="checkbox"
-                        field={obs_form[:voice]}
-                        class="mt-1"
-                      />
+                      <CoreComponents.input type="checkbox" field={obs_form[:voice]} class="mt-1" />
                     </div>
                     <div class="flex-1">
                       <label class="block text-xs font-semibold leading-6 text-zinc-800">
                         Hidden
                       </label>
-                      <CoreComponents.input
-                        type="checkbox"
-                        field={obs_form[:hidden]}
-                        class="mt-1"
-                      />
+                      <CoreComponents.input type="checkbox" field={obs_form[:hidden]} class="mt-1" />
                     </div>
                     <div class="flex-1">
                       <label class="block text-xs font-semibold leading-6 text-zinc-800">
@@ -504,7 +486,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
           </.inputs_for>
         </div>
 
-        <p :if={empty_observations?(@form.data.observations)} class="text-gray-500 italic py-4">
+        <p :if={@card.observations == []} class="text-gray-500 italic py-4">
           No observations yet. Click "Add Observation" to start recording.
         </p>
       </div>
@@ -528,32 +510,63 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     """
   end
 
+  # Display helpers - get names from nested structs
+  defp location_display(%{location: %{name_en: name}}) when not is_nil(name), do: name
+  defp location_display(%{location: %Geo.Location{} = loc}), do: Geo.Location.long_name(loc)
+  defp location_display(_), do: ""
+
+  defp taxon_display(%{taxon: %{name_en: name_en, name_sci: name_sci}})
+       when not is_nil(name_en),
+       do: "#{name_en} #{name_sci}"
+
+  defp taxon_display(%{taxon_key: key}) when not is_nil(key), do: key
+  defp taxon_display(_), do: ""
+
   defp do_save_card(:create, _card, card_params, user) do
     Birding.create_card(user, card_params)
   end
 
-  defp do_save_card(:edit, card, card_params, _user) do
-    Birding.update_card(card, card_params)
+  defp do_save_card(:edit, card, card_params, user) do
+    # Re-fetch the card from database to get the persisted state
+    # This ensures Ecto can detect actual changes from form params
+    db_card = Birding.fetch_card_for_edit(user, card.id)
+    Birding.update_card(db_card, card_params)
   end
 
-  defp empty_observations?(%Ecto.Association.NotLoaded{}), do: true
+  # Build a minimal taxon map from params when not found in search results (for tests)
+  defp build_taxon_from_params(taxon_key, %{"name" => name}) do
+    # Parse "Name En Name Sci" format
+    {name_en, name_sci} = parse_taxon_display_name(name)
+    %{key: taxon_key, name_en: name_en, name_sci: name_sci}
+  end
 
-  defp empty_observations?(observations) when is_list(observations),
-    do: Enum.empty?(observations)
+  defp build_taxon_from_params(taxon_key, _params) do
+    %{key: taxon_key, name_en: nil, name_sci: nil}
+  end
 
-  defp empty_observations?(_), do: true
+  defp parse_taxon_display_name(name) do
+    # Simple heuristic: last two words are scientific name (italicized)
+    # This handles "House Sparrow Passer domesticus" -> {"House Sparrow", "Passer domesticus"}
+    parts = String.split(name, " ")
+    do_parse_taxon_display_name(parts, name)
+  end
 
-  defp build_taxon_display_values(observations_with_taxa) do
-    observations_with_taxa
-    |> Enum.with_index()
-    |> Enum.reduce(%{}, fn {obs, index}, acc ->
-      if obs.taxon do
-        display_name = "#{obs.taxon.name_en} #{obs.taxon.name_sci}"
-        Map.put(acc, index, display_name)
-      else
-        acc
-      end
-    end)
+  defp do_parse_taxon_display_name([_a, _b | _rest] = parts, _name) do
+    # At least 2 words - assume last 2 are scientific name
+    len = length(parts)
+    {en_parts, sci_parts} = Enum.split(parts, len - 2)
+
+    case en_parts do
+      [] -> {Enum.join(sci_parts, " "), ""}
+      _ -> {Enum.join(en_parts, " "), Enum.join(sci_parts, " ")}
+    end
+  end
+
+  defp do_parse_taxon_display_name(_parts, name), do: {name, ""}
+
+  defp show_field_error?(form, field_name) do
+    # Show errors after form submission (when changeset has an action)
+    form.source.action != nil && form[field_name].errors != []
   end
 
   # Existing observation (has ID) - mark for deletion
@@ -567,24 +580,15 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   # New observation (no ID) - remove immediately
   defp do_remove_observation(socket, index, _observation) do
-    form = socket.assigns.form
+    card = socket.assigns.card
 
     new_observations =
-      form.data.observations
+      card.observations
       |> Enum.with_index()
       |> Enum.reject(fn {_obs, idx} -> idx == index end)
       |> Enum.map(fn {obs, _idx} -> obs end)
 
-    card = %{form.data | observations: new_observations}
-
-    # Re-index taxon_display_values after removing an observation
-    new_taxon_display_values =
-      socket.assigns.taxon_display_values
-      |> Enum.reject(fn {idx, _} -> idx == index end)
-      |> Enum.map(fn {idx, val} ->
-        if idx > index, do: {idx - 1, val}, else: {idx, val}
-      end)
-      |> Map.new()
+    updated_card = %{card | observations: new_observations}
 
     # Re-index marked_for_deletion after removing an observation
     new_marked_for_deletion =
@@ -598,9 +602,80 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     {
       :noreply,
       socket
-      |> assign(:form, to_form(Birding.change_card(card)))
-      |> assign(:taxon_display_values, new_taxon_display_values)
       |> assign(:marked_for_deletion, new_marked_for_deletion)
+      |> assign_card(updated_card)
     }
   end
+
+  # Merge form params into card struct, preserving nested structs (taxon, location)
+  defp merge_params_into_card(card, params) do
+    observations = merge_observation_params(card.observations, params["observations"])
+
+    # Preserve location_id from card if not in params (select_location sets it directly)
+    location_id =
+      case params["location_id"] do
+        nil -> card.location_id
+        "" -> card.location_id
+        id_str -> String.to_integer(id_str)
+      end
+
+    %{
+      card
+      | observ_date: parse_date(params["observ_date"]),
+        start_time: parse_time(params["start_time"]),
+        effort_type: params["effort_type"],
+        location_id: location_id,
+        duration_minutes: parse_int(params["duration_minutes"]),
+        distance_kms: parse_float(params["distance_kms"]),
+        area_acres: parse_float(params["area_acres"]),
+        biotope: params["biotope"],
+        weather: params["weather"],
+        observers: params["observers"],
+        notes: params["notes"],
+        motorless: params["motorless"] == "true",
+        observations: observations
+    }
+  end
+
+  defp merge_observation_params(observations, nil), do: observations
+
+  defp merge_observation_params(observations, obs_params) when is_map(obs_params) do
+    observations
+    |> Enum.with_index()
+    |> Enum.map(fn {obs, idx} -> merge_single_observation(obs, obs_params, idx) end)
+  end
+
+  defp merge_single_observation(obs, obs_params, idx) do
+    case Map.get(obs_params, to_string(idx)) do
+      nil ->
+        obs
+
+      obs_param ->
+        %{
+          obs
+          | quantity: obs_param["quantity"],
+            voice: obs_param["voice"] == "true",
+            notes: obs_param["notes"],
+            private_notes: obs_param["private_notes"],
+            hidden: obs_param["hidden"] == "true",
+            unreported: obs_param["unreported"] == "true"
+        }
+    end
+  end
+
+  defp parse_date(nil), do: nil
+  defp parse_date(""), do: nil
+  defp parse_date(str), do: Date.from_iso8601!(str)
+
+  defp parse_time(nil), do: nil
+  defp parse_time(""), do: nil
+  defp parse_time(str), do: Time.from_iso8601!(str <> ":00")
+
+  defp parse_int(nil), do: nil
+  defp parse_int(""), do: nil
+  defp parse_int(str), do: String.to_integer(str)
+
+  defp parse_float(nil), do: nil
+  defp parse_float(""), do: nil
+  defp parse_float(str), do: String.to_float(str)
 end

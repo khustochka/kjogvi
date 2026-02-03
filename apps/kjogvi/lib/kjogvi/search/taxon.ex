@@ -90,41 +90,45 @@ defmodule Kjogvi.Search.Taxon do
   end
 
   defp sort_priority(taxon, query_text) do
-    name_en_lower = String.downcase(taxon.name_en || "")
-    name_sci_lower = String.downcase(taxon.name_sci || "")
+    name_en = String.downcase(taxon.name_en || "")
+    name_sci = String.downcase(taxon.name_sci || "")
 
+    check_exact_match(name_sci, name_en, query_text) ||
+      check_starts_with(name_sci, name_en, query_text) ||
+      check_word_start(name_sci, name_en, query_text) ||
+      check_contains(name_sci, name_en, query_text) ||
+      {7, name_en}
+  end
+
+  defp check_exact_match(name_sci, name_en, query) do
     cond do
-      # Exact match on scientific name has highest priority
-      name_sci_lower == query_text ->
-        {0, ""}
+      name_sci == query -> {0, ""}
+      name_en == query -> {1, ""}
+      true -> nil
+    end
+  end
 
-      # Exact match on English name
-      name_en_lower == query_text ->
-        {1, ""}
+  defp check_starts_with(name_sci, name_en, query) do
+    cond do
+      String.starts_with?(name_sci, query) -> {2, name_sci}
+      String.starts_with?(name_en, query) -> {3, name_en}
+      true -> nil
+    end
+  end
 
-      # Starts with query on scientific name
-      String.starts_with?(name_sci_lower, query_text) ->
-        {2, name_sci_lower}
+  defp check_word_start(name_sci, name_en, query) do
+    cond do
+      starts_with_word?(name_sci, query) -> {4, name_sci}
+      starts_with_word?(name_en, query) -> {5, name_en}
+      true -> nil
+    end
+  end
 
-      # Starts with query on English name
-      String.starts_with?(name_en_lower, query_text) ->
-        {3, name_en_lower}
-
-      # Word-start matches on scientific name
-      starts_with_word?(name_sci_lower, query_text) ->
-        {4, name_sci_lower}
-
-      # Word-start matches on English name
-      starts_with_word?(name_en_lower, query_text) ->
-        {5, name_en_lower}
-
-      # Contains anywhere in scientific name
-      String.contains?(name_sci_lower, query_text) ->
-        {6, name_sci_lower}
-
-      # Contains anywhere in English name
-      true ->
-        {7, name_en_lower}
+  defp check_contains(name_sci, name_en, query) do
+    cond do
+      String.contains?(name_sci, query) -> {6, name_sci}
+      String.contains?(name_en, query) -> {6, name_en}
+      true -> nil
     end
   end
 

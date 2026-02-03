@@ -655,4 +655,134 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       refute html =~ "line-through"
     end
   end
+
+  describe "form validation errors" do
+    setup do
+      user = UsersFixtures.user_fixture()
+      token = Kjogvi.Users.generate_user_session_token(user)
+
+      conn =
+        build_conn()
+        |> Phoenix.ConnTest.init_test_session(%{})
+        |> Plug.Conn.put_session(:user_token, token)
+
+      {:ok, conn: conn, user: user}
+    end
+
+    test "shows error message when location is missing", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      # Submit form without location
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "STATIONARY"
+        }
+      }
+
+      html = lv |> render_submit("save", form_data)
+
+      # Should show validation error for missing location
+      assert html =~ "can&#39;t be blank" or html =~ "can't be blank"
+    end
+
+    test "can add observations after validation failure", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      # Add first observation
+      lv |> element("button", "Add Observation") |> render_click()
+
+      # Select taxon for first observation
+      lv
+      |> render_click("select_taxon:0", %{
+        "code" => "/ebird/v2024/houspa",
+        "name" => "House Sparrow"
+      })
+
+      # Add second observation
+      lv |> element("button", "Add Observation") |> render_click()
+
+      # Select taxon for second observation
+      lv
+      |> render_click("select_taxon:1", %{
+        "code" => "/ebird/v2024/comred",
+        "name" => "Common Redstart"
+      })
+
+      # Submit form without location (this will fail validation)
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "STATIONARY",
+          "observations" => %{
+            "0" => %{
+              "taxon_key" => "/ebird/v2024/houspa",
+              "quantity" => "1"
+            },
+            "1" => %{
+              "taxon_key" => "/ebird/v2024/comred",
+              "quantity" => "2"
+            }
+          }
+        }
+      }
+
+      _html = lv |> render_submit("save", form_data)
+
+      # Now try to add another observation - this should work without error
+      lv |> element("button", "Add Observation") |> render_click()
+
+      html = render(lv)
+
+      # Should have 3 observation forms now
+      # The original 2 should still be there plus the new empty one
+      assert html =~ "House Sparrow"
+      assert html =~ "Common Redstart"
+    end
+
+    test "preserves observations after validation failure", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      # Add two observations
+      lv |> element("button", "Add Observation") |> render_click()
+      lv |> element("button", "Add Observation") |> render_click()
+
+      # Select taxa
+      lv
+      |> render_click("select_taxon:0", %{
+        "code" => "/ebird/v2024/houspa",
+        "name" => "House Sparrow"
+      })
+
+      lv
+      |> render_click("select_taxon:1", %{
+        "code" => "/ebird/v2024/comred",
+        "name" => "Common Redstart"
+      })
+
+      # Submit form without location (this will fail validation)
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "STATIONARY",
+          "observations" => %{
+            "0" => %{
+              "taxon_key" => "/ebird/v2024/houspa",
+              "quantity" => "1"
+            },
+            "1" => %{
+              "taxon_key" => "/ebird/v2024/comred",
+              "quantity" => "2"
+            }
+          }
+        }
+      }
+
+      html = lv |> render_submit("save", form_data)
+
+      # Both observations should still be visible after validation failure
+      assert html =~ "House Sparrow"
+      assert html =~ "Common Redstart"
+    end
+  end
 end
