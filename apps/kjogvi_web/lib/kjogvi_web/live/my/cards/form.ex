@@ -245,50 +245,31 @@ defmodule KjogviWeb.Live.My.Cards.Form do
         />
       </div>
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div>
-          <label class="block text-sm font-semibold leading-6 text-zinc-800">Location</label>
-          <div class="relative mt-2">
-            <input
-              type="search"
-              id="card_location_search"
-              placeholder="Search and select location..."
-              phx-keyup="search_locations"
-              autocomplete="off"
-              value={location_display(@card)}
-              class={[
-                "mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-                !show_field_error?(@form, :location_id) && "border-zinc-300 focus:border-zinc-400",
-                show_field_error?(@form, :location_id) && "border-rose-400 focus:border-rose-400"
-              ]}
-            />
-            <input
-              type="hidden"
-              name="card[location_id]"
-              id="card_location_id"
-              value={@form[:location_id].value || ""}
-            />
-
-            <%= if !Enum.empty?(@location_search_results) do %>
-              <div class="absolute top-full left-0 right-0 z-10 mt-1 border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto bg-white">
-                <%= for result <- @location_search_results do %>
-                  <div
-                    class="px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm hover:bg-blue-50"
-                    phx-click="select_location"
-                    phx-value-id={result.id}
-                  >
-                    {result.long_name}
-                  </div>
-                <% end %>
-              </div>
-            <% end %>
-          </div>
-          <CoreComponents.error
-            :for={msg <- Enum.map(@form[:location_id].errors, &CoreComponents.translate_error/1)}
-            :if={show_field_error?(@form, :location_id)}
-          >
-            {msg}
-          </CoreComponents.error>
-        </div>
+        <.autocomplete_input
+          label="Location"
+          id="card_location_search"
+          placeholder="Search and select location..."
+          value={location_display(@card)}
+          search_event="search_locations"
+          hidden_name="card[location_id]"
+          hidden_value={@form[:location_id].value || ""}
+          errors={
+            if show_field_error?(@form, :location_id),
+              do: Enum.map(@form[:location_id].errors, &CoreComponents.translate_error/1),
+              else: []
+          }
+          show_results={@location_search_results != []}
+        >
+          <:results>
+            <.autocomplete_option
+              :for={result <- @location_search_results}
+              phx-click="select_location"
+              phx-value-id={result.id}
+            >
+              {result.long_name}
+            </.autocomplete_option>
+          </:results>
+        </.autocomplete_input>
 
         <CoreComponents.input type="text" field={@form[:observers]} label="Observers" />
 

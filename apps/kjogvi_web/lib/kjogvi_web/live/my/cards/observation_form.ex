@@ -54,60 +54,35 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
         </div>
       <% else %>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-5">
-          <div>
-            <label class="block text-sm font-semibold leading-6 text-zinc-800">Taxon</label>
-            <div class="relative mt-2">
-              <input
-                type="search"
-                id={"card_observations_#{@obs_form.index}_taxon_search"}
-                placeholder="Search and select taxon..."
-                phx-keyup={"search_taxa:#{@obs_form.index}"}
-                phx-focus={"focus_taxon_field:#{@obs_form.index}"}
-                autocomplete="off"
-                value={taxon_display(@obs)}
-                class={[
-                  "mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-                  !show_field_error?(@obs_form, :taxon_key) &&
-                    "border-zinc-300 focus:border-zinc-400",
-                  show_field_error?(@obs_form, :taxon_key) &&
-                    "border-rose-400 focus:border-rose-400"
-                ]}
-              />
-
-              <input
-                type="hidden"
-                name={"card[observations][#{@obs_form.index}][taxon_key]"}
-                value={@obs_form[:taxon_key].value || ""}
-              />
-
-              <%= if !Enum.empty?(@taxon_search_results) and @editing_observation_index == @obs_form.index do %>
-                <div class="absolute top-full left-0 right-0 z-10 mt-1 border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto bg-white">
-                  <%= for result <- @taxon_search_results do %>
-                    <div
-                      class="px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm hover:bg-blue-50"
-                      phx-click={"select_taxon:#{@obs_form.index}"}
-                      phx-value-code={result.key}
-                    >
-                      <div class="font-medium">{result.name_en}</div>
-                      <div class="text-xs text-gray-500 italic">{result.name_sci}</div>
-                    </div>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
-            <CoreComponents.error
-              :for={
-                msg <-
-                  Enum.map(
-                    @obs_form[:taxon_key].errors,
-                    &CoreComponents.translate_error/1
-                  )
-              }
-              :if={show_field_error?(@obs_form, :taxon_key)}
-            >
-              {msg}
-            </CoreComponents.error>
-          </div>
+          <.autocomplete_input
+            label="Taxon"
+            id={"card_observations_#{@obs_form.index}_taxon_search"}
+            placeholder="Search and select taxon..."
+            value={taxon_display(@obs)}
+            search_event={"search_taxa:#{@obs_form.index}"}
+            focus_event={"focus_taxon_field:#{@obs_form.index}"}
+            hidden_name={"card[observations][#{@obs_form.index}][taxon_key]"}
+            hidden_value={@obs_form[:taxon_key].value || ""}
+            errors={
+              if show_field_error?(@obs_form, :taxon_key),
+                do: Enum.map(@obs_form[:taxon_key].errors, &CoreComponents.translate_error/1),
+                else: []
+            }
+            show_results={
+              !Enum.empty?(@taxon_search_results) and @editing_observation_index == @obs_form.index
+            }
+          >
+            <:results>
+              <.autocomplete_option
+                :for={result <- @taxon_search_results}
+                phx-click={"select_taxon:#{@obs_form.index}"}
+                phx-value-code={result.key}
+              >
+                <div class="font-medium">{result.name_en}</div>
+                <div class="text-xs text-gray-500 italic">{result.name_sci}</div>
+              </.autocomplete_option>
+            </:results>
+          </.autocomplete_input>
 
           <CoreComponents.input
             type="text"

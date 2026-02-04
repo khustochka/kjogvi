@@ -64,7 +64,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
     test "renders location search as hidden input for ID storage", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
-      assert html =~ "card_location_id"
+      assert html =~ "card[location_id]"
       assert html =~ "type=\"hidden\""
     end
 
@@ -246,7 +246,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html2 =~ "Test Park"
 
       # Verify the hidden field has location ID
-      assert html2 =~ "card_location_id"
+      assert html2 =~ "card[location_id]"
       assert html2 =~ to_string(location.id)
     end
 
