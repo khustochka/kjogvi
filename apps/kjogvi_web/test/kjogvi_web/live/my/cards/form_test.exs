@@ -791,5 +791,105 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "House Sparrow"
       assert html =~ "Common Redstart"
     end
+
+    test "empty observation rows are ignored on save", %{conn: conn, user: user} do
+      location = GeoFixtures.location_fixture(name_en: "Test Park")
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      # Select location
+      lv |> render_change("search_locations", %{"value" => "Test"})
+
+      lv
+      |> render_click("select_location", %{
+        "id" => to_string(location.id),
+        "name" => "Test Park"
+      })
+
+      # Add an observation with taxon and an empty one
+      lv |> element("button", "Add Observation") |> render_click()
+      lv |> element("button", "Add Observation") |> render_click()
+      search_and_select_taxon(lv, 0, "House Sparrow", "/ebird/v2024/houspa")
+
+      # Submit - second observation is empty, should be ignored
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "STATIONARY",
+          "location_id" => to_string(location.id),
+          "observations" => %{
+            "0" => %{"taxon_key" => "/ebird/v2024/houspa", "quantity" => "3"},
+            "1" => %{"taxon_key" => "", "quantity" => "", "notes" => "", "private_notes" => ""}
+          }
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      # Card saved with only the filled observation
+      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
+      card = List.first(cards.entries)
+      loaded_card = Kjogvi.Repo.preload(Kjogvi.Repo.get!(Birding.Card, card.id), :observations)
+      assert length(loaded_card.observations) == 1
+      assert List.first(loaded_card.observations).taxon_key == "/ebird/v2024/houspa"
+    end
+
+    test "partially filled observation shows taxon_key error", %{conn: conn} do
+      location = GeoFixtures.location_fixture(name_en: "Test Park")
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      # Select location
+      lv |> render_change("search_locations", %{"value" => "Test"})
+
+      lv
+      |> render_click("select_location", %{
+        "id" => to_string(location.id),
+        "name" => "Test Park"
+      })
+
+      # Add an observation with quantity but no taxon
+      lv |> element("button", "Add Observation") |> render_click()
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "STATIONARY",
+          "location_id" => to_string(location.id),
+          "observations" => %{
+            "0" => %{"taxon_key" => "", "quantity" => "5"}
+          }
+        }
+      }
+
+      html = lv |> render_submit("save", form_data)
+
+      # Should show validation error for missing taxon
+      assert html =~ "can&#39;t be blank" or html =~ "can't be blank"
+    end
+
+    test "card with no observations saves successfully", %{conn: conn, user: user} do
+      location = GeoFixtures.location_fixture(name_en: "Test Park")
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      lv |> render_change("search_locations", %{"value" => "Test"})
+
+      lv
+      |> render_click("select_location", %{
+        "id" => to_string(location.id),
+        "name" => "Test Park"
+      })
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "STATIONARY",
+          "location_id" => to_string(location.id)
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
+      assert cards.entries != []
+    end
   end
 end

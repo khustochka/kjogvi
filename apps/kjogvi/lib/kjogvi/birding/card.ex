@@ -54,7 +54,7 @@ defmodule Kjogvi.Birding.Card do
   @doc false
   def changeset(card, attrs) do
     card
-    |> cast(attrs, [
+    |> cast(attrs |> filter_blank_observations(), [
       :observ_date,
       :location_id,
       :effort_type,
@@ -83,4 +83,37 @@ defmodule Kjogvi.Birding.Card do
       drop_param: :observations_drop
     )
   end
+
+  # Remove observation entries where no meaningful fields are filled in,
+  # so that empty rows added via "Add Observation" don't cause validation errors.
+  defp filter_blank_observations(%{"observations" => obs} = attrs) when is_map(obs) do
+    blank_indices =
+      for {idx, params} <- obs, blank_observation?(params), do: idx
+
+    filtered_obs = Map.drop(obs, blank_indices)
+
+    attrs = %{attrs | "observations" => filtered_obs}
+
+    case Map.get(attrs, "observations_order") do
+      list when is_list(list) ->
+        blank_set = MapSet.new(blank_indices)
+        %{attrs | "observations_order" => Enum.reject(list, &MapSet.member?(blank_set, &1))}
+
+      _ ->
+        attrs
+    end
+  end
+
+  defp filter_blank_observations(attrs), do: attrs
+
+  defp blank_observation?(params) do
+    blank?(params["taxon_key"]) &&
+      blank?(params["quantity"]) &&
+      blank?(params["notes"]) &&
+      blank?(params["private_notes"])
+  end
+
+  defp blank?(nil), do: true
+  defp blank?(""), do: true
+  defp blank?(_), do: false
 end

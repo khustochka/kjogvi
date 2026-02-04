@@ -395,7 +395,13 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                         phx-focus={"focus_taxon_field:#{obs_form.index}"}
                         autocomplete="off"
                         value={taxon_display(obs)}
-                        class="mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 border-zinc-300 focus:border-zinc-400"
+                        class={[
+                          "mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+                          !show_field_error?(obs_form, :taxon_key) &&
+                            "border-zinc-300 focus:border-zinc-400",
+                          show_field_error?(obs_form, :taxon_key) &&
+                            "border-rose-400 focus:border-rose-400"
+                        ]}
                       />
 
                       <input
@@ -419,6 +425,18 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                         </div>
                       <% end %>
                     </div>
+                    <CoreComponents.error
+                      :for={
+                        msg <-
+                          Enum.map(
+                            obs_form[:taxon_key].errors,
+                            &CoreComponents.translate_error/1
+                          )
+                      }
+                      :if={show_field_error?(obs_form, :taxon_key)}
+                    >
+                      {msg}
+                    </CoreComponents.error>
                   </div>
 
                   <CoreComponents.input
