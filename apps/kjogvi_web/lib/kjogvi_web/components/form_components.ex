@@ -124,6 +124,7 @@ defmodule KjogviWeb.FormComponents do
   attr :hidden_value, :string, default: ""
   attr :errors, :list, default: []
   attr :show_results, :boolean, default: false
+  attr :debounce, :string, default: "300", doc: "milliseconds to debounce search input (default: 300ms)"
 
   slot :results
 
@@ -137,6 +138,7 @@ defmodule KjogviWeb.FormComponents do
           id={@id}
           placeholder={@placeholder}
           phx-keyup={@search_event}
+          phx-debounce={@debounce}
           phx-focus={@focus_event}
           autocomplete="off"
           value={@value}
