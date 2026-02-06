@@ -119,6 +119,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
           id={@id}
           placeholder={@placeholder}
           phx-target={@myself}
+          phx-hook=".AutocompleteInput"
           phx-keyup="search"
           phx-debounce={@debounce}
           phx-focus="focus"
@@ -149,6 +150,22 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
         </div>
       </div>
       <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".AutocompleteInput">
+      export default {
+        mounted() {
+          this.el.addEventListener("search", () => {
+            if (!this.el.value) {
+              this.pushEventTo(this.el, "clear", {})
+            }
+          })
+          this.el.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+              this.pushEventTo(this.el, "clear", {})
+            }
+          })
+        },
+      }
+    </script>
     </div>
     """
   end
