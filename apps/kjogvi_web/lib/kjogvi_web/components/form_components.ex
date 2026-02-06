@@ -124,7 +124,10 @@ defmodule KjogviWeb.FormComponents do
   attr :hidden_value, :string, default: ""
   attr :errors, :list, default: []
   attr :show_results, :boolean, default: false
-  attr :debounce, :string, default: "300", doc: "milliseconds to debounce search input (default: 300ms)"
+
+  attr :debounce, :string,
+    default: "300",
+    doc: "milliseconds to debounce search input (default: 300ms)"
 
   slot :results
 
