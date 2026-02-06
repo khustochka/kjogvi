@@ -24,9 +24,8 @@ docker compose up -d                # Start PostgreSQL (port 5498)
 iex -S mix phx.server              # Start with IEx shell
 
 # Testing & Quality
-mix precommit                      # Run before committing (format, tests, lint)
+mix lint.fix                       # Auto-fix formatting + run lint (run before committing)
 mix lint                           # Full linting: credo, dialyzer, xref cycles
-mix lint.fix                       # Auto-fix formatting + run lint
 MIX_ENV=test mix ecto.setup       # Create test database
 mix test                           # Run tests with coverage
 
@@ -132,7 +131,8 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 
 ## Notes for AI Agents
 
-- Run `mix precommit` before any commit to catch issues early
+- All code changes must be accompanied by corresponding test additions or updates
+- Before committing, run `mix lint.fix` and fix any linter errors (ignore TODO warnings — they won't cause a non-zero exit code)
 - Examine existing LiveViews in `apps/kjogvi_web/lib/kjogvi_web/live/` for patterns
 - When adding features touching observations or taxonomy, coordinate between `kjogvi` and `ornithologue` apps
 - Single-user mode is the default—wrap multi-user routes in `Kjogvi.Config.with_multiuser/1` macro if needed
