@@ -111,7 +111,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
+    <div phx-click-away={JS.push("clear", target: @myself)}>
       <label class="block text-sm font-semibold leading-6 text-zinc-800">{@label}</label>
       <div class="relative mt-2">
         <input
