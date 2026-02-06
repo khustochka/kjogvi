@@ -22,9 +22,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     {
       :ok,
       socket
-      |> assign(:taxon_search_results, [])
-      |> assign(:location_search_results, [])
-      |> assign(:editing_observation_index, nil)
       |> assign(:marked_for_deletion, MapSet.new())
     }
   end
@@ -104,94 +101,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     }
   end
 
-  def handle_event("search_taxa:" <> index_str, %{"value" => query}, %{assigns: assigns} = socket) do
-    index = String.to_integer(index_str)
-    results = Search.Taxon.search_taxa(query, assigns.current_scope.user)
-
-    {
-      :noreply,
-      socket
-      |> assign(:taxon_search_results, results)
-      |> assign(:editing_observation_index, index)
-    }
-  end
-
-  def handle_event("focus_taxon_field:" <> index_str, _params, socket) do
-    index = String.to_integer(index_str)
-
-    {
-      :noreply,
-      socket
-      |> assign(:editing_observation_index, index)
-    }
-  end
-
-  def handle_event("search_locations", %{"value" => query}, socket) do
-    results = Search.Location.search_locations(query)
-
-    {
-      :noreply,
-      socket
-      |> assign(:location_search_results, results)
-    }
-  end
-
-  def handle_event("select_location", %{"id" => location_id_str}, socket) do
-    location_id = String.to_integer(location_id_str)
-
-    # Find the full location struct from search results
-    location = Enum.find(socket.assigns.location_search_results, &(&1.id == location_id))
-
-    # Build a minimal location struct for display
-    location_struct = %Geo.Location{
-      id: location.id,
-      name_en: location.long_name
-    }
-
-    card = socket.assigns.card
-    updated_card = %{card | location_id: location_id, location: location_struct}
-
-    {
-      :noreply,
-      socket
-      |> assign(:location_search_results, [])
-      |> assign_card(updated_card)
-    }
-  end
-
-  def handle_event(
-        "select_taxon:" <> index_str,
-        %{"code" => taxon_key},
-        socket
-      ) do
-    index = String.to_integer(index_str)
-
-    taxon = Enum.find(socket.assigns.taxon_search_results, &(&1.key == taxon_key))
-
-    card = socket.assigns.card
-
-    updated_observations =
-      card.observations
-      |> Enum.with_index()
-      |> Enum.map(fn {obs, idx} ->
-        if idx == index do
-          %{obs | taxon_key: taxon_key, taxon: taxon}
-        else
-          obs
-        end
-      end)
-
-    updated_card = %{card | observations: updated_observations}
-
-    {
-      :noreply,
-      socket
-      |> assign(:taxon_search_results, [])
-      |> assign(:editing_observation_index, nil)
-      |> assign_card(updated_card)
-    }
-  end
-
   def handle_event("validate", %{"card" => card_params}, socket) do
     # Sync form field values to card struct
     card = socket.assigns.card
@@ -245,31 +154,22 @@ defmodule KjogviWeb.Live.My.Cards.Form do
         />
       </div>
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <.autocomplete_input
+        <.live_component
+          module={KjogviWeb.Live.Components.AutocompleteSearch}
+          id="location_search"
           label="Location"
-          id="card_location_search"
           placeholder="Search and select location..."
-          value={location_display(@card)}
-          search_event="search_locations"
+          current_value={location_display(@card)}
           hidden_name="card[location_id]"
           hidden_value={@form[:location_id].value || ""}
+          search_fn={&Search.Location.search_locations/1}
+          on_select_event="location_selected"
           errors={
             if show_field_error?(@form, :location_id),
               do: Enum.map(@form[:location_id].errors, &CoreComponents.translate_error/1),
               else: []
           }
-          show_results={@location_search_results != []}
-        >
-          <:results>
-            <.autocomplete_option
-              :for={result <- @location_search_results}
-              phx-click="select_location"
-              phx-value-id={result.id}
-            >
-              {result.long_name}
-            </.autocomplete_option>
-          </:results>
-        </.autocomplete_input>
+        />
 
         <CoreComponents.input type="text" field={@form[:observers]} label="Observers" />
 
@@ -329,8 +229,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
               obs_form={obs_form}
               obs={Enum.at(@card.observations, obs_form.index)}
               is_marked_for_deletion={MapSet.member?(@marked_for_deletion, obs_form.index)}
-              taxon_search_results={@taxon_search_results}
-              editing_observation_index={@editing_observation_index}
+              current_user={@current_scope.user}
             />
           </.inputs_for>
         </div>
@@ -374,6 +273,42 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   end
 
   defp location_display(_), do: ""
+
+  # Callbacks for AutocompleteSearch components
+
+  @impl true
+  def handle_info({:autocomplete_select, "location_selected", %{"result" => result}}, socket) do
+    location_struct = %Geo.Location{
+      id: result.id,
+      name_en: result.long_name
+    }
+
+    card = socket.assigns.card
+    updated_card = %{card | location_id: result.id, location: location_struct}
+
+    {:noreply, assign_card(socket, updated_card)}
+  end
+
+  def handle_info({:autocomplete_select, "taxon_selected", params}, socket) do
+    index = params["index"]
+    taxon = params["result"]
+    card = socket.assigns.card
+
+    updated_observations =
+      card.observations
+      |> Enum.with_index()
+      |> Enum.map(fn {obs, idx} ->
+        if idx == index do
+          %{obs | taxon_key: taxon.key, taxon: taxon}
+        else
+          obs
+        end
+      end)
+
+    updated_card = %{card | observations: updated_observations}
+
+    {:noreply, assign_card(socket, updated_card)}
+  end
 
   defp do_save_card(:create, _card, card_params, user) do
     Birding.create_card(user, card_params)

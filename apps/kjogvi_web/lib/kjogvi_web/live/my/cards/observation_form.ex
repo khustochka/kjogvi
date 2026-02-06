@@ -10,8 +10,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
   attr :obs_form, :map, required: true
   attr :obs, :map, required: true
   attr :is_marked_for_deletion, :boolean, required: true
-  attr :taxon_search_results, :list, required: true
-  attr :editing_observation_index, :integer, required: true
+  attr :current_user, :map, required: true
 
   def observation_row(assigns) do
     ~H"""
@@ -54,35 +53,23 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
         </div>
       <% else %>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-5">
-          <.autocomplete_input
+          <.live_component
+            module={KjogviWeb.Live.Components.AutocompleteSearch}
+            id={"taxon_search_#{@obs_form.index}"}
             label="Taxon"
-            id={"card_observations_#{@obs_form.index}_taxon_search"}
             placeholder="Search and select taxon..."
-            value={taxon_display(@obs)}
-            search_event={"search_taxa:#{@obs_form.index}"}
-            focus_event={"focus_taxon_field:#{@obs_form.index}"}
+            current_value={taxon_display(@obs)}
             hidden_name={"card[observations][#{@obs_form.index}][taxon_key]"}
             hidden_value={@obs_form[:taxon_key].value || ""}
+            search_fn={fn query -> Kjogvi.Search.Taxon.search_taxa(query, @current_user) end}
+            on_select_event="taxon_selected"
+            on_select_params={%{"index" => @obs_form.index}}
             errors={
               if show_field_error?(@obs_form, :taxon_key),
                 do: Enum.map(@obs_form[:taxon_key].errors, &CoreComponents.translate_error/1),
                 else: []
             }
-            show_results={
-              !Enum.empty?(@taxon_search_results) and @editing_observation_index == @obs_form.index
-            }
-          >
-            <:results>
-              <.autocomplete_option
-                :for={result <- @taxon_search_results}
-                phx-click={"select_taxon:#{@obs_form.index}"}
-                phx-value-code={result.key}
-              >
-                <div class="font-medium">{result.name_en}</div>
-                <div class="text-xs text-gray-500 italic">{result.name_sci}</div>
-              </.autocomplete_option>
-            </:results>
-          </.autocomplete_input>
+          />
 
           <CoreComponents.input
             type="text"

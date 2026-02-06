@@ -30,9 +30,16 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
     |> Plug.Conn.put_session(:user_token, token)
   end
 
-  defp search_and_select_taxon(lv, index, taxon_name, taxon_key) do
-    lv |> render_change("search_taxa:#{index}", %{"value" => taxon_name})
-    lv |> render_click("select_taxon:#{index}", %{"code" => taxon_key})
+  defp search_and_select_taxon(lv, index, taxon_name) do
+    lv |> element("#taxon_search_#{index}") |> render_keyup(%{"value" => taxon_name})
+    lv |> element("#taxon_search_#{index}-result-0") |> render_click()
+    render(lv)
+  end
+
+  defp search_and_select_location(lv, search_term) do
+    lv |> element("#location_search") |> render_keyup(%{"value" => search_term})
+    lv |> element("#location_search-result-0") |> render_click()
+    render(lv)
   end
 
   describe "card form" do
@@ -138,23 +145,16 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       _location = GeoFixtures.location_fixture(name_en: "Central Park")
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
-      lv |> render_change("search_locations", %{"value" => "Central"})
-
-      html = render(lv)
+      html = lv |> element("#location_search") |> render_keyup(%{"value" => "Central"})
       assert html =~ "Central Park"
     end
 
     test "can select location from search results", %{conn: conn} do
-      location = GeoFixtures.location_fixture(name_en: "Central Park")
+      _location = GeoFixtures.location_fixture(name_en: "Central Park")
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
-      lv |> render_change("search_locations", %{"value" => "Central"})
-
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location.id),
-        "name" => "Central Park"
-      })
+      lv |> element("#location_search") |> render_keyup(%{"value" => "Central"})
+      lv |> element("#location_search-result-0") |> render_click()
 
       html = render(lv)
       assert html =~ "Central Park"
@@ -227,19 +227,13 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Search for location
-      lv |> render_change("search_locations", %{"value" => "Test"})
+      html1 = lv |> element("#location_search") |> render_keyup(%{"value" => "Test"})
 
       # Verify location appears in results
-      html1 = render(lv)
       assert html1 =~ "Test Park"
 
       # Click to select location
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location.id),
-        "name" => "Test Park"
-      })
-
+      lv |> element("#location_search-result-0") |> render_click()
       html2 = render(lv)
 
       # Verify text field shows selected location
@@ -253,14 +247,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
     test "can save card with selected location", %{conn: conn, user: user, location: location} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
-      # Fill in required fields
-      lv |> render_change("search_locations", %{"value" => "Test"})
-
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location.id),
-        "name" => "Test Park"
-      })
+      # Select location via autocomplete
+      search_and_select_location(lv, "Test")
 
       # Fill in date and effort type
       form_data = %{
@@ -324,17 +312,11 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Select location
-      lv |> render_change("search_locations", %{"value" => "Test"})
-
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location.id),
-        "name" => "Test Park"
-      })
+      search_and_select_location(lv, "Test")
 
       # Add observation and select taxon via search
       lv |> element("button", "Add Observation") |> render_click()
-      search_and_select_taxon(lv, 0, "Common Redstart", "/ebird/v2024/comred")
+      search_and_select_taxon(lv, 0, "Common Redstart")
 
       # Fill form data
       form_data = %{
@@ -378,20 +360,14 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Select location
-      lv |> render_change("search_locations", %{"value" => "Test"})
-
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location.id),
-        "name" => "Test Park"
-      })
+      search_and_select_location(lv, "Test")
 
       # Add observations and select taxa via search
       lv |> element("button", "Add Observation") |> render_click()
       lv |> element("button", "Add Observation") |> render_click()
 
-      search_and_select_taxon(lv, 0, "Common Redstart", "/ebird/v2024/comred")
-      search_and_select_taxon(lv, 1, "Eurasian Wigeon", "/ebird/v2024/eurwie")
+      search_and_select_taxon(lv, 0, "Common Redstart")
+      search_and_select_taxon(lv, 1, "Eurasian Wigeon")
 
       # Fill form data with multiple observations
       form_data = %{
@@ -438,7 +414,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       lv |> element("button", "Add Observation") |> render_click()
 
       # Search and select taxon
-      search_and_select_taxon(lv, 0, "Common Redstart", "/ebird/v2024/comred")
+      search_and_select_taxon(lv, 0, "Common Redstart")
 
       html = render(lv)
 
@@ -458,8 +434,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       lv |> element("button", "Add Observation") |> render_click()
 
       # Search and select taxa
-      search_and_select_taxon(lv, 0, "Common Redstart", "/ebird/v2024/comred")
-      search_and_select_taxon(lv, 1, "Eurasian Wigeon", "/ebird/v2024/eurwie")
+      search_and_select_taxon(lv, 0, "Common Redstart")
+      search_and_select_taxon(lv, 1, "Eurasian Wigeon")
 
       html = render(lv)
 
@@ -481,9 +457,9 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       lv |> element("button", "Add Observation") |> render_click()
 
       # Select taxa for all observations
-      search_and_select_taxon(lv, 0, "House Sparrow", "/ebird/v2024/houspa")
-      search_and_select_taxon(lv, 1, "Common Redstart", "/ebird/v2024/comred")
-      search_and_select_taxon(lv, 2, "Eurasian Wigeon", "/ebird/v2024/eurwie")
+      search_and_select_taxon(lv, 0, "House Sparrow")
+      search_and_select_taxon(lv, 1, "Common Redstart")
+      search_and_select_taxon(lv, 2, "Eurasian Wigeon")
 
       html = render(lv)
       assert html =~ "House Sparrow"
@@ -536,13 +512,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Original Park"
 
       # Search for and select new location
-      lv |> render_change("search_locations", %{"value" => "New"})
-
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location2.id),
-        "name" => "New Park"
-      })
+      search_and_select_location(lv, "New")
 
       # Submit the form
       form_data = %{
@@ -719,11 +689,11 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       # Add first observation and select taxon
       lv |> element("button", "Add Observation") |> render_click()
-      search_and_select_taxon(lv, 0, "House Sparrow", "/ebird/v2024/houspa")
+      search_and_select_taxon(lv, 0, "House Sparrow")
 
       # Add second observation and select taxon
       lv |> element("button", "Add Observation") |> render_click()
-      search_and_select_taxon(lv, 1, "Common Redstart", "/ebird/v2024/comred")
+      search_and_select_taxon(lv, 1, "Common Redstart")
 
       # Submit form without location (this will fail validation)
       form_data = %{
@@ -764,8 +734,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       lv |> element("button", "Add Observation") |> render_click()
 
       # Select taxa via search
-      search_and_select_taxon(lv, 0, "House Sparrow", "/ebird/v2024/houspa")
-      search_and_select_taxon(lv, 1, "Common Redstart", "/ebird/v2024/comred")
+      search_and_select_taxon(lv, 0, "House Sparrow")
+      search_and_select_taxon(lv, 1, "Common Redstart")
 
       # Submit form without location (this will fail validation)
       form_data = %{
@@ -797,18 +767,12 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Select location
-      lv |> render_change("search_locations", %{"value" => "Test"})
-
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location.id),
-        "name" => "Test Park"
-      })
+      search_and_select_location(lv, "Test")
 
       # Add an observation with taxon and an empty one
       lv |> element("button", "Add Observation") |> render_click()
       lv |> element("button", "Add Observation") |> render_click()
-      search_and_select_taxon(lv, 0, "House Sparrow", "/ebird/v2024/houspa")
+      search_and_select_taxon(lv, 0, "House Sparrow")
 
       # Submit - second observation is empty, should be ignored
       form_data = %{
@@ -838,13 +802,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       # Select location
-      lv |> render_change("search_locations", %{"value" => "Test"})
-
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location.id),
-        "name" => "Test Park"
-      })
+      search_and_select_location(lv, "Test")
 
       # Add an observation with quantity but no taxon
       lv |> element("button", "Add Observation") |> render_click()
@@ -870,13 +828,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       location = GeoFixtures.location_fixture(name_en: "Test Park")
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
-      lv |> render_change("search_locations", %{"value" => "Test"})
-
-      lv
-      |> render_click("select_location", %{
-        "id" => to_string(location.id),
-        "name" => "Test Park"
-      })
+      search_and_select_location(lv, "Test")
 
       form_data = %{
         "card" => %{
