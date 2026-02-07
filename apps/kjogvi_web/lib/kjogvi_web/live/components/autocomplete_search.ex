@@ -185,6 +185,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
                 "px-3 py-2 cursor-pointer text-sm",
                 if(index == @highlighted_index, do: "bg-blue-100", else: "hover:bg-blue-50")
               ]}
+              tabindex="-1"
               data-highlighted={index == @highlighted_index}
               phx-click="select_result"
               phx-value-index={index}
@@ -204,7 +205,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
                 this.pushEventTo(this.el, "clear", {})
               }
             })
-            const navKeys = new Set(["ArrowDown", "ArrowUp", "Enter", "Escape"])
+            const navKeys = new Set(["ArrowDown", "ArrowUp", "Enter", "Escape", "Tab"])
             this.el.addEventListener("keydown", (e) => {
               if (e.key === "Escape") {
                 this.pushEventTo(this.el, "clear", {})
@@ -217,6 +218,8 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
               } else if (e.key === "Enter") {
                 e.preventDefault()
                 this.el.blur()
+                this.pushEventTo(this.el, "nav_select", {})
+              } else if (e.key === "Tab") {
                 this.pushEventTo(this.el, "nav_select", {})
               }
             })
