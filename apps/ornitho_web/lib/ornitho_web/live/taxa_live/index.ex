@@ -46,6 +46,7 @@ defmodule OrnithoWeb.Live.Taxa.Index do
   attr :search_enabled, :boolean, default: false
   attr :search_term, :string, default: nil
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div>
