@@ -139,7 +139,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       {if @action == :create, do: "New Card", else: "Edit Card ##{@card.id}"}
     </CoreComponents.header>
 
-    <form phx-submit="save" phx-change="validate" class="space-y-6">
+    <form phx-submit="save" phx-change="validate" phx-debounce="200" class="space-y-6">
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <CoreComponents.input type="date" field={@form[:observ_date]} label="Observation Date" />
 
