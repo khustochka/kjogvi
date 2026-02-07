@@ -151,21 +151,21 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
       </div>
       <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".AutocompleteInput">
-      export default {
-        mounted() {
-          this.el.addEventListener("search", () => {
-            if (!this.el.value) {
-              this.pushEventTo(this.el, "clear", {})
-            }
-          })
-          this.el.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-              this.pushEventTo(this.el, "clear", {})
-            }
-          })
-        },
-      }
-    </script>
+        export default {
+          mounted() {
+            this.el.addEventListener("search", () => {
+              if (!this.el.value) {
+                this.pushEventTo(this.el, "clear", {})
+              }
+            })
+            this.el.addEventListener("keydown", (e) => {
+              if (e.key === "Escape") {
+                this.pushEventTo(this.el, "clear", {})
+              }
+            })
+          },
+        }
+      </script>
     </div>
     """
   end
