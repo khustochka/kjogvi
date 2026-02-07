@@ -412,6 +412,31 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
 
       refute has_element?(lv, "#test_search-result-0")
     end
+
+    test "mouseenter moves highlight to hovered result", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      assert has_element?(lv, "#test_search-result-0[data-highlighted]")
+
+      # JS.push targets the component — simulate via the hooked input element
+      lv |> element("#test_search") |> render_hook("highlight_result", %{"index" => 1})
+
+      refute has_element?(lv, "#test_search-result-0[data-highlighted]")
+      assert has_element?(lv, "#test_search-result-1[data-highlighted]")
+    end
+
+    test "keyboard works after mouse highlight", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      # Mouse moves to second result
+      lv |> element("#test_search") |> render_hook("highlight_result", %{"index" => 1})
+      # Keyboard moves back up
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "up"})
+
+      assert has_element?(lv, "#test_search-result-0[data-highlighted]")
+    end
   end
 
   describe "result_display" do

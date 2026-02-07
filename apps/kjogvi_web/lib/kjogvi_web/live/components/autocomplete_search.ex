@@ -134,6 +134,10 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
      |> push_event("autocomplete:#{socket.assigns.id}:highlight", %{index: new_index})}
   end
 
+  def handle_event("highlight_result", %{"index" => index}, socket) do
+    {:noreply, assign(socket, :highlighted_index, index)}
+  end
+
   def handle_event("nav_select", _params, socket) do
     selected_result = Enum.at(socket.assigns.search_results, socket.assigns.highlighted_index)
 
@@ -183,9 +187,10 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
               id={"#{@id}-result-#{index}"}
               class={[
                 "px-3 py-2 cursor-pointer text-sm",
-                if(index == @highlighted_index, do: "bg-blue-100", else: "hover:bg-blue-50")
+                index == @highlighted_index && "bg-blue-100"
               ]}
               tabindex="-1"
+              data-result-index={index}
               data-highlighted={index == @highlighted_index}
               phx-click="select_result"
               phx-value-index={index}
@@ -225,6 +230,13 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
             })
             this.el.addEventListener("keyup", (e) => {
               if (navKeys.has(e.key)) e.stopPropagation()
+            })
+            this.el.parentElement.addEventListener("mouseover", (e) => {
+              const resultEl = e.target.closest("[data-result-index]")
+              if (resultEl) {
+                const index = parseInt(resultEl.dataset.resultIndex)
+                this.pushEventTo(this.el, "highlight_result", {index})
+              }
             })
             this.handleEvent(`autocomplete:${this.el.id}:highlight`, ({index}) => {
               const el = document.getElementById(`${this.el.id}-result-${index}`)
