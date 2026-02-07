@@ -29,6 +29,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
           on_select_event={@on_select_event}
           on_select_params={@on_select_params}
           errors={@errors}
+          min_length={@min_length}
         />
         <div id="selected-event">{@last_event}</div>
         <div id="selected-value">{@last_value}</div>
@@ -47,6 +48,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
         on_select_event: session["on_select_event"] || "item_selected",
         on_select_params: session["on_select_params"] || %{},
         errors: session["errors"] || [],
+        min_length: session["min_length"] || 2,
         last_event: "",
         last_value: ""
       }
@@ -139,7 +141,8 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       "search_mode" => opts[:search_mode] || "parks",
       "on_select_event" => opts[:on_select_event] || "location_selected",
       "on_select_params" => opts[:on_select_params] || %{},
-      "errors" => opts[:errors] || []
+      "errors" => opts[:errors] || [],
+      "min_length" => opts[:min_length]
     }
 
     {:ok, lv, html} = live_isolated(conn, TestLive, session: session)
@@ -261,6 +264,46 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       # Search with empty value returns no results, closing dropdown
       lv |> element("#test_search") |> render_keyup(%{"value" => ""})
 
+      refute has_element?(lv, "#test_search-result-0")
+    end
+  end
+
+  describe "min_length" do
+    test "does not search when query is shorter than min_length", %{conn: conn} do
+      {lv, _html} = mount_component(conn, %{search_mode: "hello", min_length: 4})
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "hel"})
+
+      refute has_element?(lv, "#test_search-result-0")
+    end
+
+    test "searches when query meets min_length", %{conn: conn} do
+      {lv, _html} = mount_component(conn, %{search_mode: "hello", min_length: 4})
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "hello"})
+
+      assert has_element?(lv, "#test_search-result-0")
+    end
+
+    test "defaults to min_length of 2", %{conn: conn} do
+      {lv, _html} = mount_component(conn, %{search_mode: "hello"})
+
+      # "h" is 1 char, below default min_length of 2
+      lv |> element("#test_search") |> render_keyup(%{"value" => "h"})
+      refute has_element?(lv, "#test_search-result-0")
+
+      # "he" is 2 chars, meets default min_length
+      lv |> element("#test_search") |> render_keyup(%{"value" => "hello"})
+      assert has_element?(lv, "#test_search-result-0")
+    end
+
+    test "clears results when query drops below min_length", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      assert has_element?(lv, "#test_search-result-0")
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "p"})
       refute has_element?(lv, "#test_search-result-0")
     end
   end

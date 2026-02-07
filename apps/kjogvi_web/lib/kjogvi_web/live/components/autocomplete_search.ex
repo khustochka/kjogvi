@@ -6,23 +6,36 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
   and encapsulates the search logic. Communicates selected values to parent via
   `send(self(), msg)`.
 
+  Supports full keyboard navigation: ArrowUp/ArrowDown to move the highlight,
+  Enter to select, Tab to select and advance focus, Escape to close. Mouse
+  hover and keyboard share a single highlighted index.
+
   ## Attributes
 
   - `:label` - Display label for the input
   - `:id` - Unique component identifier
-  - `:placeholder` - Placeholder text for search input
+  - `:placeholder` - Placeholder text for search input (default: "Search...")
   - `:current_value` - Currently displayed value (from parent, shown when not searching)
   - `:hidden_name` - Form parameter name for the selected value
   - `:hidden_value` - The actual value to submit with form
-  - `:search_fn` - Function for executing searches
+  - `:search_fn` - Function for executing searches (see Search Functions below)
   - `:on_select_event` - Event name sent to parent when value is selected
   - `:on_select_params` - Additional params to include in the selection message
   - `:errors` - List of error messages
   - `:debounce` - Milliseconds to debounce search (default: 300)
+  - `:min_length` - Minimum query length to trigger search (default: 2)
+
+  ## Search Functions
+
+  The `:search_fn` attribute accepts:
+  - An anonymous function: `fn query -> [results] end`
+  - A `{Module, :function}` tuple
+  - A `{Module, :function, extra_args}` tuple (query is appended)
 
   ## Parent Communication
 
-  When a result is selected, the component sends a message to the parent process:
+  When a result is selected (via click, Enter, or Tab), the component sends
+  a message to the parent process:
 
       send(self(), {:autocomplete_select, "location_selected", %{"result" => result}})
 
@@ -49,6 +62,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
   attr :on_select_params, :map, default: %{}
   attr :errors, :list, default: []
   attr :debounce, :string, default: "300"
+  attr :min_length, :integer, default: 2
 
   @impl true
   def mount(socket) do
@@ -66,6 +80,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
      socket
      |> assign(assigns)
      |> assign_new(:debounce, fn -> "300" end)
+     |> assign_new(:min_length, fn -> 2 end)
      |> assign_new(:on_select_params, fn -> %{} end)
      |> assign_new(:errors, fn -> [] end)}
   end
@@ -75,7 +90,12 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
     if query == socket.assigns.search_term do
       {:noreply, socket}
     else
-      results = execute_search(socket.assigns.search_fn, query)
+      results =
+        if String.length(query) >= socket.assigns.min_length do
+          execute_search(socket.assigns.search_fn, query)
+        else
+          []
+        end
 
       {:noreply,
        socket
