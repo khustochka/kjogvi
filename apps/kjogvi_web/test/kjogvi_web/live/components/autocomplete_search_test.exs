@@ -193,19 +193,19 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     test "shows results when search matches", %{conn: conn} do
       {lv, _html} = mount_component(conn)
 
-      html = lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
 
-      assert html =~ "Central Park"
-      assert html =~ "Hyde Park"
+      assert has_element?(lv, "#test_search-result-0", "Central")
+      assert has_element?(lv, "#test_search-result-1", "Hyde")
     end
 
     test "shows no dropdown when search has no results", %{conn: conn} do
       {lv, _html} = mount_component(conn)
 
-      html = lv |> element("#test_search") |> render_keyup(%{"value" => "xyz"})
+      lv |> element("#test_search") |> render_keyup(%{"value" => "xyz"})
 
-      refute html =~ "Central Park"
-      refute html =~ "Hyde Park"
+      refute has_element?(lv, "#test_search-result-0")
+      refute has_element?(lv, "#test_search-result-1")
     end
 
     test "generates result elements with predictable IDs", %{conn: conn} do
@@ -327,22 +327,25 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     test "works with anonymous function", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "hello"})
 
-      html = lv |> element("#test_search") |> render_keyup(%{"value" => "hello"})
-      assert html =~ "Hello World"
+      lv |> element("#test_search") |> render_keyup(%{"value" => "hello"})
+
+      assert has_element?(lv, "#test_search-result-0", "World")
     end
 
     test "works with {module, function} tuple", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "mf_tuple"})
 
-      html = lv |> element("#test_search") |> render_keyup(%{"value" => "match"})
-      assert html =~ "Match Result"
+      lv |> element("#test_search") |> render_keyup(%{"value" => "match"})
+
+      assert has_element?(lv, "#test_search-result-0", "Result")
     end
 
     test "works with {module, function, args} tuple", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "mfa_tuple"})
 
-      html = lv |> element("#test_search") |> render_keyup(%{"value" => "ctx"})
-      assert html =~ "Context Result"
+      lv |> element("#test_search") |> render_keyup(%{"value" => "ctx"})
+
+      assert has_element?(lv, "#test_search-result-0", "Result")
     end
 
     test "returns empty results when search_fn raises", %{conn: conn} do
@@ -486,23 +489,36 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     test "displays long_name for location-like results", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "locations"})
 
-      html = lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
-      assert html =~ "Central Park, New York"
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+
+      assert has_element?(lv, "#test_search-result-0", "Central")
+      assert has_element?(lv, "#test_search-result-0", "New York")
     end
 
     test "displays name_en and name_sci for taxon-like results", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "taxa"})
 
-      html = lv |> element("#test_search") |> render_keyup(%{"value" => "sparrow"})
-      assert html =~ "House Sparrow"
-      assert html =~ "Passer domesticus"
+      lv |> element("#test_search") |> render_keyup(%{"value" => "sparrow"})
+
+      assert has_element?(lv, "#test_search-result-0", "House")
+      assert has_element?(lv, "#test_search-result-0", "Passer domesticus")
+    end
+
+    test "highlights matching term in results", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+
+      # The matched portion should be wrapped in <strong>
+      assert has_element?(lv, "#test_search-result-0 strong", "Park")
     end
 
     test "falls back to inspect for unknown result shapes", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "unknown_shape"})
 
-      html = lv |> element("#test_search") |> render_keyup(%{"value" => "any"})
-      assert html =~ "custom_field"
+      lv |> element("#test_search") |> render_keyup(%{"value" => "any"})
+
+      assert has_element?(lv, "#test_search-result-0", "custom_field")
     end
   end
 end

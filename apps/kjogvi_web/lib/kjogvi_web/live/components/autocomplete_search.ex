@@ -216,7 +216,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
               phx-value-index={index}
               phx-target={@myself}
             >
-              {result_display(result)}
+              <.highlighted_text text={result_display(result)} term={@search_term} />
             </div>
           </div>
         </div>
@@ -281,6 +281,37 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
   end
 
   defp result_display(result), do: inspect(result)
+
+  defp highlighted_text(assigns) do
+    assigns = assign(assigns, :segments, highlight_term(assigns.text, assigns.term))
+
+    ~H"""
+    <span phx-no-format><%= for segment <- @segments do %><.highlighted_segment segment={segment} /><% end %></span>
+    """
+  end
+
+  defp highlighted_segment(%{segment: {text, true}} = assigns) do
+    assigns = assign(assigns, :text, text)
+    ~H"<strong>{@text}</strong>"
+  end
+
+  defp highlighted_segment(%{segment: {text, false}} = assigns) do
+    assigns = assign(assigns, :text, text)
+    ~H"{@text}"
+  end
+
+  defp highlight_term(text, nil), do: [{text, false}]
+  defp highlight_term(text, ""), do: [{text, false}]
+
+  defp highlight_term(text, term) do
+    regex = Regex.compile!(Regex.escape(term), "i")
+    parts = Regex.split(regex, text, include_captures: true)
+    downcased = String.downcase(term)
+
+    Enum.map(parts, fn part ->
+      {part, String.downcase(part) == downcased}
+    end)
+  end
 
   defp execute_search(search_fn, query) when is_function(search_fn, 1) do
     search_fn.(query)
