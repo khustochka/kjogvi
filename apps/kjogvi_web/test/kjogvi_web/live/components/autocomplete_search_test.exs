@@ -314,6 +314,106 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     end
   end
 
+  describe "keyboard navigation" do
+    test "first result is highlighted by default", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+
+      assert has_element?(lv, "#test_search-result-0[data-highlighted]")
+      refute has_element?(lv, "#test_search-result-1[data-highlighted]")
+    end
+
+    test "ArrowDown moves highlight down", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
+
+      refute has_element?(lv, "#test_search-result-0[data-highlighted]")
+      assert has_element?(lv, "#test_search-result-1[data-highlighted]")
+    end
+
+    test "ArrowUp moves highlight up", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      # Move down first, then up
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "up"})
+
+      assert has_element?(lv, "#test_search-result-0[data-highlighted]")
+      refute has_element?(lv, "#test_search-result-1[data-highlighted]")
+    end
+
+    test "highlight does not go below 0", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      # Already at 0, try to go up
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "up"})
+
+      assert has_element?(lv, "#test_search-result-0[data-highlighted]")
+    end
+
+    test "highlight does not exceed last result index", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      # "parks" mode returns 2 results (indexes 0 and 1)
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
+
+      # Should still be at index 1 (last result)
+      assert has_element?(lv, "#test_search-result-1[data-highlighted]")
+    end
+
+    test "Enter selects the highlighted result", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      # Move to second result
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
+      lv |> element("#test_search") |> render_hook("nav_select", %{})
+
+      assert has_element?(lv, "#selected-event", "location_selected")
+      assert has_element?(lv, "#selected-value", "Hyde Park")
+    end
+
+    test "Enter selects first result by default", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search") |> render_hook("nav_select", %{})
+
+      assert has_element?(lv, "#selected-event", "location_selected")
+      assert has_element?(lv, "#selected-value", "Central Park")
+    end
+
+    test "highlight resets to 0 on new search", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      # Move highlight down
+      lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
+      assert has_element?(lv, "#test_search-result-1[data-highlighted]")
+
+      # New search resets highlight
+      lv |> element("#test_search") |> render_keyup(%{"value" => "parks"})
+
+      assert has_element?(lv, "#test_search-result-0[data-highlighted]")
+    end
+
+    test "nav_select clears results after selection", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search") |> render_hook("nav_select", %{})
+
+      refute has_element?(lv, "#test_search-result-0")
+    end
+  end
+
   describe "result_display" do
     test "displays long_name for location-like results", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "locations"})

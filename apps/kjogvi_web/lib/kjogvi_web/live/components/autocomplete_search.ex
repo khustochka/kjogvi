@@ -56,7 +56,8 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
      socket
      |> assign(:search_results, [])
      |> assign(:search_term, nil)
-     |> assign(:is_open, false)}
+     |> assign(:is_open, false)
+     |> assign(:highlighted_index, 0)}
   end
 
   @impl true
@@ -71,13 +72,18 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
 
   @impl true
   def handle_event("search", %{"value" => query}, socket) do
-    results = execute_search(socket.assigns.search_fn, query)
+    if query == socket.assigns.search_term do
+      {:noreply, socket}
+    else
+      results = execute_search(socket.assigns.search_fn, query)
 
-    {:noreply,
-     socket
-     |> assign(:search_term, query)
-     |> assign(:search_results, results)
-     |> assign(:is_open, results != [])}
+      {:noreply,
+       socket
+       |> assign(:search_term, query)
+       |> assign(:search_results, results)
+       |> assign(:is_open, results != [])
+       |> assign(:highlighted_index, 0)}
+    end
   end
 
   def handle_event("focus", _params, socket) do
@@ -105,7 +111,43 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
      socket
      |> assign(:search_term, nil)
      |> assign(:search_results, [])
-     |> assign(:is_open, false)}
+     |> assign(:is_open, false)
+     |> assign(:highlighted_index, 0)}
+  end
+
+  def handle_event("nav", %{"direction" => "down"}, socket) do
+    max_index = length(socket.assigns.search_results) - 1
+    new_index = min(socket.assigns.highlighted_index + 1, max_index)
+
+    {:noreply,
+     socket
+     |> assign(:highlighted_index, new_index)
+     |> push_event("autocomplete:#{socket.assigns.id}:highlight", %{index: new_index})}
+  end
+
+  def handle_event("nav", %{"direction" => "up"}, socket) do
+    new_index = max(socket.assigns.highlighted_index - 1, 0)
+
+    {:noreply,
+     socket
+     |> assign(:highlighted_index, new_index)
+     |> push_event("autocomplete:#{socket.assigns.id}:highlight", %{index: new_index})}
+  end
+
+  def handle_event("nav_select", _params, socket) do
+    selected_result = Enum.at(socket.assigns.search_results, socket.assigns.highlighted_index)
+
+    if selected_result do
+      event_params = Map.put(socket.assigns.on_select_params, "result", selected_result)
+      send(self(), {:autocomplete_select, socket.assigns.on_select_event, event_params})
+    end
+
+    {:noreply,
+     socket
+     |> assign(:search_term, nil)
+     |> assign(:search_results, [])
+     |> assign(:is_open, false)
+     |> assign(:highlighted_index, 0)}
   end
 
   @impl true
@@ -134,12 +176,16 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
         <input type="hidden" name={@hidden_name} value={@hidden_value} />
         <div
           :if={@is_open and @search_results != []}
-          class="absolute top-full left-0 right-0 z-10 mt-1 border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto bg-white"
+          class="absolute top-full left-0 right-0 z-10 mt-1 border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto bg-white divide-y divide-gray-200"
         >
           <div :for={{result, index} <- Enum.with_index(@search_results)}>
             <div
               id={"#{@id}-result-#{index}"}
-              class="px-3 py-2 cursor-pointer border-b last:border-b-0 text-sm hover:bg-blue-50"
+              class={[
+                "px-3 py-2 cursor-pointer text-sm",
+                if(index == @highlighted_index, do: "bg-blue-100", else: "hover:bg-blue-50")
+              ]}
+              data-highlighted={index == @highlighted_index}
               phx-click="select_result"
               phx-value-index={index}
               phx-target={@myself}
@@ -158,10 +204,28 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
                 this.pushEventTo(this.el, "clear", {})
               }
             })
+            const navKeys = new Set(["ArrowDown", "ArrowUp", "Enter", "Escape"])
             this.el.addEventListener("keydown", (e) => {
               if (e.key === "Escape") {
                 this.pushEventTo(this.el, "clear", {})
+              } else if (e.key === "ArrowDown") {
+                e.preventDefault()
+                this.pushEventTo(this.el, "nav", {direction: "down"})
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault()
+                this.pushEventTo(this.el, "nav", {direction: "up"})
+              } else if (e.key === "Enter") {
+                e.preventDefault()
+                this.el.blur()
+                this.pushEventTo(this.el, "nav_select", {})
               }
+            })
+            this.el.addEventListener("keyup", (e) => {
+              if (navKeys.has(e.key)) e.stopPropagation()
+            })
+            this.handleEvent(`autocomplete:${this.el.id}:highlight`, ({index}) => {
+              const el = document.getElementById(`${this.el.id}-result-${index}`)
+              if (el) el.scrollIntoView({block: "nearest"})
             })
           },
         }
