@@ -249,7 +249,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
         <.link
           navigate={~p"/my/cards"}
-          class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-6 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-300"
+          class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-6 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-300 no-underline"
         >
           Cancel
         </.link>
