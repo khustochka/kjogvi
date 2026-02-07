@@ -170,10 +170,12 @@ defmodule OrnithoWeb.TaxaComponents do
   end
 
   defp split_for_highlight(content, term) do
+    escaped = Regex.escape(term)
+
     content
-    |> String.split(~r{#{term}}i, include_captures: true)
+    |> String.split(~r{#{escaped}}i, include_captures: true)
     |> Enum.map(fn str ->
-      if str =~ ~r{\A#{term}\Z}i do
+      if str =~ ~r{\A#{escaped}\Z}i do
         :highlight
       else
         :plain
