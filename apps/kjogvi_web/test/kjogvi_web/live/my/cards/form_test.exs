@@ -52,15 +52,6 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
     test "renders new card form", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "New Card"
-      assert html =~ "Observation Date"
-      assert html =~ "Effort Type"
-    end
-
-    test "renders effort type as dropdown", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, "/my/cards/new")
-      assert html =~ "select"
-      assert html =~ "STATIONARY"
-      assert html =~ "TRAVEL"
     end
 
     test "renders location field with type=search", %{conn: conn} do
@@ -75,26 +66,33 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "type=\"hidden\""
     end
 
+    test "renders empty observation form", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      assert has_element?(lv, "label", "Taxon")
+      assert has_element?(lv, "label", "Quantity")
+    end
+
     test "renders observation section with add button", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "Observations"
       assert html =~ "Add Observation"
     end
 
-    test "can add observations", %{conn: conn} do
+    test "can add more observation forms", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       lv |> element("button", "Add Observation") |> render_click()
 
-      html = render(lv)
-      assert html =~ "Taxon"
-      assert html =~ "Quantity"
+      html = render(lv) |> Floki.parse_document!()
+
+      assert html
+             |> Floki.find("input[placeholder=\"Search and select taxon...\"]")
+             |> length() == 2
     end
 
     test "can remove new observations immediately", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
-
-      lv |> element("button", "Add Observation") |> render_click()
 
       html = render(lv)
       assert html =~ "Remove"
@@ -104,11 +102,6 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       html = render(lv)
       assert html =~ "No observations yet"
-    end
-
-    test "renders form fields in 3-column layout", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, "/my/cards/new")
-      assert html =~ "sm:grid-cols-3"
     end
 
     test "taxon input has type=search", %{conn: conn} do

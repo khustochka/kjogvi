@@ -94,6 +94,14 @@ defmodule Kjogvi.Birding do
     }
   end
 
+  def new_observation() do
+    %Observation{
+      voice: false,
+      hidden: false,
+      unreported: false
+    }
+  end
+
   def change_card(card, attrs \\ %{}) do
     Card.changeset(card, attrs)
   end

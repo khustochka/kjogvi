@@ -52,54 +52,56 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
           </button>
         </div>
       <% else %>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-5">
-          <.live_component
-            module={KjogviWeb.Live.Components.AutocompleteSearch}
-            id={"taxon_search_#{@obs_form.index}"}
-            label="Taxon"
-            placeholder="Search and select taxon..."
-            current_value={taxon_display(@obs)}
-            hidden_name={"card[observations][#{@obs_form.index}][taxon_key]"}
-            hidden_value={@obs_form[:taxon_key].value || ""}
-            search_fn={fn query -> Kjogvi.Search.Taxon.search_taxa(query, @current_user) end}
-            on_select_event="taxon_selected"
-            on_select_params={%{"index" => @obs_form.index}}
-            errors={
-              if show_field_error?(@obs_form, :taxon_key),
-                do: Enum.map(@obs_form[:taxon_key].errors, &CoreComponents.translate_error/1),
-                else: []
-            }
-          />
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-8">
+          <div class="sm:col-span-3">
+            <.live_component
+              module={KjogviWeb.Live.Components.AutocompleteSearch}
+              id={"taxon_search_#{@obs_form.index}"}
+              label="Taxon"
+              placeholder="Search and select taxon..."
+              current_value={taxon_display(@obs)}
+              hidden_name={"card[observations][#{@obs_form.index}][taxon_key]"}
+              hidden_value={@obs_form[:taxon_key].value || ""}
+              search_fn={fn query -> Kjogvi.Search.Taxon.search_taxa(query, @current_user) end}
+              on_select_event="taxon_selected"
+              on_select_params={%{"index" => @obs_form.index}}
+              errors={
+                if show_field_error?(@obs_form, :taxon_key),
+                  do: Enum.map(@obs_form[:taxon_key].errors, &CoreComponents.translate_error/1),
+                  else: []
+              }
+            />
+          </div>
 
-          <CoreComponents.input
-            type="text"
-            field={@obs_form[:quantity]}
-            label="Quantity"
-            placeholder="e.g., 1, 2-3, 10+"
-          />
+          <div class="sm:col-span-2">
+            <CoreComponents.input
+              type="text"
+              field={@obs_form[:quantity]}
+              label="Quantity"
+            />
+          </div>
 
-          <div class="flex items-end gap-1">
+          <div class="flex items-end gap-1 sm:col-span-2">
             <div class="flex-1">
               <label class="block text-xs font-semibold leading-6 text-zinc-800">
+                <CoreComponents.input type="checkbox" field={@obs_form[:voice]} class="mt-1" />
                 Heard only
               </label>
-              <CoreComponents.input type="checkbox" field={@obs_form[:voice]} class="mt-1" />
             </div>
             <div class="flex-1">
               <label class="block text-xs font-semibold leading-6 text-zinc-800">
+                <CoreComponents.input type="checkbox" field={@obs_form[:hidden]} class="mt-1" />
                 Hidden
               </label>
-              <CoreComponents.input type="checkbox" field={@obs_form[:hidden]} class="mt-1" />
             </div>
             <div class="flex-1">
               <label class="block text-xs font-semibold leading-6 text-zinc-800">
-                Unreported
+                <CoreComponents.input
+                  type="checkbox"
+                  field={@obs_form[:unreported]}
+                  class="mt-1"
+                /> Unreported
               </label>
-              <CoreComponents.input
-                type="checkbox"
-                field={@obs_form[:unreported]}
-                class="mt-1"
-              />
             </div>
           </div>
 
@@ -117,15 +119,13 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
           <CoreComponents.input
             type="text"
             field={@obs_form[:notes]}
-            label="Notes"
-            placeholder="Public notes"
+            label="Public notes"
           />
 
           <CoreComponents.input
             type="text"
             field={@obs_form[:private_notes]}
-            label="Private Notes"
-            placeholder="Private notes"
+            label="Private notes"
           />
         </div>
       <% end %>

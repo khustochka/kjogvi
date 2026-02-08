@@ -44,7 +44,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   def handle_params(_params, _url, %{assigns: assigns} = socket) do
     card = Birding.new_card(assigns.current_scope.user)
-    card = %{card | observations: []}
+    card = %{card | observations: [Birding.new_observation()]}
 
     {
       :noreply,
