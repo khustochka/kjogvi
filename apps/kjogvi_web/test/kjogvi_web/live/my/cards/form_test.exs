@@ -146,7 +146,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
       html = lv |> element("#location_search") |> render_keyup(%{"value" => "Central"})
-      assert html =~ "Central Park"
+      assert html =~ "<strong>Central</strong> Park"
     end
 
     test "can select location from search results", %{conn: conn} do
@@ -230,7 +230,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       html1 = lv |> element("#location_search") |> render_keyup(%{"value" => "Test"})
 
       # Verify location appears in results
-      assert html1 =~ "Test Park"
+      assert html1 =~ "<strong>Test</strong> Park"
 
       # Click to select location
       lv |> element("#location_search-result-0") |> render_click()
