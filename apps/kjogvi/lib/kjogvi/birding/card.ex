@@ -7,10 +7,10 @@ defmodule Kjogvi.Birding.Card do
   import Ecto.Changeset
 
   @effort_types [
+    "INCIDENTAL",
     "STATIONARY",
     "TRAVEL",
     "AREA",
-    "INCIDENTAL",
     "HISTORICAL"
   ]
 

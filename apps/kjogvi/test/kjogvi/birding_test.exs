@@ -169,6 +169,39 @@ defmodule Kjogvi.BirdingTest do
     end
   end
 
+  describe "card_days_in_month/3" do
+    test "returns empty list when no cards" do
+      user = user_fixture()
+      assert Birding.card_days_in_month(user, 2024, 6) == []
+    end
+
+    test "returns correct day integers for cards in month" do
+      user = user_fixture()
+      insert(:card, user: user, observ_date: ~D[2024-06-05])
+      insert(:card, user: user, observ_date: ~D[2024-06-15])
+      insert(:card, user: user, observ_date: ~D[2024-06-25])
+
+      days = Birding.card_days_in_month(user, 2024, 6)
+      assert Enum.sort(days) == [5, 15, 25]
+    end
+
+    test "ignores cards from other months" do
+      user = user_fixture()
+      insert(:card, user: user, observ_date: ~D[2024-06-10])
+      insert(:card, user: user, observ_date: ~D[2024-07-10])
+
+      assert Birding.card_days_in_month(user, 2024, 6) == [10]
+    end
+
+    test "ignores other users' cards" do
+      user = user_fixture()
+      other_user = user_fixture()
+      insert(:card, user: other_user, observ_date: ~D[2024-06-10])
+
+      assert Birding.card_days_in_month(user, 2024, 6) == []
+    end
+  end
+
   describe "new_observation/0" do
     test "returns a new observation with defaults" do
       obs = Birding.new_observation()

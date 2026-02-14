@@ -15,6 +15,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   alias Kjogvi.Birding
   alias Kjogvi.Geo
   alias Kjogvi.Search
+  alias KjogviWeb.Live.Components.MonthCalendar
   alias KjogviWeb.Live.My.Cards.ObservationForm
 
   @impl true
@@ -139,77 +140,90 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       {if @action == :create, do: "New Card", else: "Edit Card ##{@card.id}"}
     </CoreComponents.header>
 
-    <form phx-submit="save" phx-change="validate" phx-debounce="200" class="space-y-6">
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <CoreComponents.input type="date" field={@form[:observ_date]} label="Observation Date" />
+    <form phx-submit="save" phx-change="validate" phx-debounce="200" class="space-y-4">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="shrink-0">
+          <.live_component
+            module={MonthCalendar}
+            id="observ_date_calendar"
+            selected_date={@card.observ_date}
+            user={@current_scope.user}
+            hidden_name="card[observ_date]"
+            errors={
+              if show_field_error?(@form, :observ_date),
+                do: Enum.map(@form[:observ_date].errors, &CoreComponents.translate_error/1),
+                else: []
+            }
+          />
+        </div>
 
-        <CoreComponents.input type="time" field={@form[:start_time]} label="Start Time" />
+        <div class="flex-1 space-y-3">
+          <div class="flex flex-col sm:flex-row items-start gap-4">
+            <div class="w-full sm:flex-1">
+              <.live_component
+                module={KjogviWeb.Live.Components.AutocompleteSearch}
+                id="location_search"
+                label="Location"
+                placeholder="Search and select location..."
+                current_value={location_display(@card)}
+                hidden_name="card[location_id]"
+                hidden_value={@form[:location_id].value || ""}
+                search_fn={&Search.Location.search_locations/1}
+                on_select_event="location_selected"
+                errors={
+                  if show_field_error?(@form, :location_id),
+                    do: Enum.map(@form[:location_id].errors, &CoreComponents.translate_error/1),
+                    else: []
+                }
+              />
+            </div>
+            <div class="sm:pt-7">
+              <CoreComponents.input type="checkbox" field={@form[:motorless]} label="Motorless" />
+            </div>
+          </div>
 
-        <CoreComponents.input
-          type="select"
-          field={@form[:effort_type]}
-          label="Effort Type"
-          options={@effort_types}
-          prompt="Select effort type..."
-        />
-      </div>
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <.live_component
-          module={KjogviWeb.Live.Components.AutocompleteSearch}
-          id="location_search"
-          label="Location"
-          placeholder="Search and select location..."
-          current_value={location_display(@card)}
-          hidden_name="card[location_id]"
-          hidden_value={@form[:location_id].value || ""}
-          search_fn={&Search.Location.search_locations/1}
-          on_select_event="location_selected"
-          errors={
-            if show_field_error?(@form, :location_id),
-              do: Enum.map(@form[:location_id].errors, &CoreComponents.translate_error/1),
-              else: []
-          }
-        />
-
-        <CoreComponents.input type="text" field={@form[:observers]} label="Observers" />
-
-        <div>
-          <label class="block text-sm font-semibold leading-6 text-zinc-800">
-            Motorless
-          </label>
-          <CoreComponents.input type="checkbox" field={@form[:motorless]} class="mt-2" />
+          <div class="flex flex-col sm:flex-row flex-wrap gap-3 items-start">
+            <div class="w-full sm:w-fit">
+              <CoreComponents.input
+                type="select"
+                field={@form[:effort_type]}
+                label="Effort Type"
+                options={@effort_types}
+                size={length(@effort_types)}
+              />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+              <CoreComponents.input type="time" field={@form[:start_time]} label="Start Time" />
+              <CoreComponents.input
+                type="number"
+                field={@form[:duration_minutes]}
+                label="Duration (min)"
+                step="1"
+              />
+              <CoreComponents.input
+                type="number"
+                field={@form[:distance_kms]}
+                label="Distance (km)"
+                step="0.1"
+              />
+              <CoreComponents.input
+                type="number"
+                field={@form[:area_acres]}
+                label="Area (acres)"
+                step="0.1"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <CoreComponents.input
-          type="number"
-          field={@form[:duration_minutes]}
-          label="Duration (min)"
-          step="1"
-        />
-
-        <CoreComponents.input
-          type="number"
-          field={@form[:distance_kms]}
-          label="Distance (km)"
-          step="0.1"
-        />
-        <CoreComponents.input
-          type="number"
-          field={@form[:area_acres]}
-          label="Area (acres)"
-          step="0.1"
-        />
-      </div>
-
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <CoreComponents.input type="text" field={@form[:observers]} label="Observers" />
         <CoreComponents.input type="text" field={@form[:biotope]} label="Biotope" />
-
         <CoreComponents.input type="text" field={@form[:weather]} label="Weather" />
       </div>
 
-      <CoreComponents.input type="textarea" field={@form[:notes]} label="Notes" rows="4" />
+      <CoreComponents.input type="textarea" field={@form[:notes]} label="Notes" rows="3" />
 
       <div class="pt-6 border-t border-gray-200">
         <div class="flex items-center justify-between mb-4">
@@ -277,6 +291,13 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   # Callbacks for AutocompleteSearch components
 
   @impl true
+  def handle_info({:calendar_select, "date_selected", %{"date" => date}}, socket) do
+    card = socket.assigns.card
+    updated_card = %{card | observ_date: date}
+
+    {:noreply, assign_card(socket, updated_card)}
+  end
+
   def handle_info({:autocomplete_select, "location_selected", %{"result" => result}}, socket) do
     location_struct = %Geo.Location{
       id: result.id,
