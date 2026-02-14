@@ -14,41 +14,53 @@ runs:
   using: "composite"
   steps:
     - name: Set up Elixir from .tool-versions
+      id: setup-beam-file
       if: ${{ !inputs.elixir && !inputs.otp }}
       uses: erlef/setup-beam@v1
       with:
         version-file: .tool-versions
         version-type: strict
     - name: Set up Elixir with explicit versions
+      id: setup-beam-explicit
       if: ${{ inputs.elixir || inputs.otp }}
       uses: erlef/setup-beam@v1
       with:
         elixir-version: ${{ inputs.elixir }}
         otp-version: ${{ inputs.otp }}
         version-type: strict
+    - name: Resolve versions
+      id: versions
+      shell: bash
+      run: |
+        echo "elixir=${{ steps.setup-beam-file.outputs.elixir-version || steps.setup-beam-explicit.outputs.elixir-version }}" >> "$GITHUB_OUTPUT"
+        echo "otp=${{ steps.setup-beam-file.outputs.otp-version || steps.setup-beam-explicit.outputs.otp-version }}" >> "$GITHUB_OUTPUT"
     - name: Restore dependencies cache
       uses: actions/cache@v4
       with:
         path: '**/deps'
-        key: ${{ runner.os }}-deps-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}
-        restore-keys: ${{ runner.os }}--deps-
+        key: ${{ runner.os }}-deps-otp-${{ steps.versions.outputs.otp }}-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}
+        restore-keys: ${{ runner.os }}-deps-otp-${{ steps.versions.outputs.otp }}-
     - name: Restore build cache
       uses: actions/cache@v4
       with:
         path: '**/_build'
-        key: ${{ runner.os }}-build-ex-${{ inputs.elixir }}-otp-${{ inputs.otp }}-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
+        key: ${{ runner.os }}-build-ex-${{ steps.versions.outputs.elixir }}-otp-${{ steps.versions.outputs.otp }}-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
         restore-keys: |
-          ${{ runner.os }}-build-$ex-${{ inputs.elixir }}-otp-${{ inputs.otp }}-{{ hashFiles('**/mix.lock') }}-
+          ${{ runner.os }}-build-ex-${{ steps.versions.outputs.elixir }}-otp-${{ steps.versions.outputs.otp }}-${{ hashFiles('**/mix.lock') }}-${{ inputs.env }}-
+          ${{ runner.os }}-build-ex-${{ steps.versions.outputs.elixir }}-otp-${{ steps.versions.outputs.otp }}-
+    - name: Restore PLT cache
+      if: ${{ inputs.env == 'dev' }}
+      uses: actions/cache@v4
+      with:
+        path: _build/dev/*.plt*
+        key: ${{ runner.os }}-plt-ex-${{ steps.versions.outputs.elixir }}-otp-${{ steps.versions.outputs.otp }}-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-plt-ex-${{ steps.versions.outputs.elixir }}-otp-${{ steps.versions.outputs.otp }}-
     - name: Install dependencies
       env:
         MIX_ENV: ${{ inputs.env }}
       shell: bash
       run: mix deps.get
-    # See https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12
-    # - name: Compile deps
-    #   env:
-    #     MIX_ENV: test
-    #   run: mix deps.compile
     - name: Compile
       env:
         MIX_ENV: ${{ inputs.env }}
