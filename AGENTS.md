@@ -39,13 +39,13 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 
 - **Router**: Routes in `:require_authenticated_user` pipeline; use `:as` option for scopes. Single-user mode via `Kjogvi.Config.with_single_user/1`
 - **Forms**: Use `to_form(changeset)` in LiveView, access via `@form[:field]` in templates. Never pass `@changeset` to templates
-- **Components**: Use `<.icon>`, `<.input>`, `<.link>` components; never use raw Heroicons
+- **Components**: Use `<.icon>`, `<.input>`, `<.link>` components
+- **Icons**: there are both Heroicons and FontAwesome icons
 - **Birding Data** ([kjogvi/lib/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex)): `Kjogvi.Birding` context, `Card`/`Location` models with privacy settings (`is_private`, `is_patch`)
 - **Taxonomy** ([ornithologue](./apps/ornithologue/)): Use `Kjogvi.OrnithoRepo`. Mounted at `/taxonomy` with `ornitho_web` macro
 - **Streams**: Use `stream(socket, :items, list)` + `phx-update="stream"`. Not enumerable—refetch and reset to filter. Track counts separately
 - **CSS**: Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS into `app.js`, not inline `<script>` tags
 - **Testing**: `Phoenix.LiveViewTest` + `LazyHTML`. Assert elements by ID, not HTML. Test outcomes, not implementation
-- **Quality**: `mix precommit` (credo, dialyzer, xref). Fix all errors before merge
 
 ## Key File References
 
@@ -70,12 +70,13 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 1. Missing `@current_scope` in routes—use correct `:require_authenticated_user` pipeline
 2. Passing `@changeset` to templates—use `@form` from `to_form/2`
 3. Using lists instead of streams—causes memory bloat
-4. Raw Heroicons instead of `<.icon>` component  
-5. Mixing `Kjogvi.Repo` vs `Kjogvi.OrnithoRepo`—migrations run separately
+4. Raw Heroicons/FontAwesome icons instead of `<.icon>` component  
+5. Mixing `Kjogvi.Repo` vs `Kjogvi.OrnithoRepo` — migrations run separately
 
 ## Notes for AI Agents
 
-- Add tests for all code changes before committing
+- Add and update tests for all code changes before committing
+- Update module and function documentation when making changes
 - Run `mix lint.fix` to auto-fix formatting + linting before commits
 - Single-user mode is default (wrap multi-user routes in `Kjogvi.Config.with_multiuser/1`)
 - Coordinate changes across `kjogvi` and `ornithologue` apps when adding features
