@@ -110,54 +110,15 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
           <div class="flex items-center">
-            <svg
-              class="w-4 h-4 mr-2 text-blue-500 shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              >
-              </path>
-            </svg>
+            <.icon name="hero-map-pin" class="w-4 h-4 mr-2 text-blue-500 shrink-0" />
             <span>{length(@top_locations)} top-level locations</span>
           </div>
           <div class="flex items-center">
-            <svg
-              class="w-4 h-4 mr-2 text-green-500 shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-              >
-              </path>
-            </svg>
+            <.icon name="hero-sparkles" class="w-4 h-4 mr-2 text-green-500 shrink-0" />
             <span>{length(@specials)} special locations</span>
           </div>
           <div class="flex items-center">
-            <svg
-              class="w-4 h-4 mr-2 text-purple-500 shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              >
-              </path>
-            </svg>
+            <.icon name="hero-document-text" class="w-4 h-4 mr-2 text-purple-500 shrink-0" />
             <span>
               {@total_locations} total locations
             </span>
@@ -197,20 +158,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
       >
         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <svg
-            class="w-5 h-5 mr-2 text-blue-500 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            >
-            </path>
-          </svg>
+          <.icon name="hero-magnifying-glass" class="w-5 h-5 mr-2 text-blue-500 shrink-0" />
           Search Results
         </h2>
 
@@ -242,20 +190,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
 
         <div :if={length(@search_results) == 0} class="text-center py-8 text-gray-500">
-          <svg
-            class="w-12 h-12 mx-auto mb-4 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            >
-            </path>
-          </svg>
+          <.icon name="hero-magnifying-glass" class="w-12 h-12 mx-auto mb-4 text-gray-300" />
           <p class="text-lg font-medium">No locations found</p>
           <p class="text-sm">Try a different search term or check your spelling.</p>
         </div>
@@ -283,20 +218,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           :if={!@top_locations || length(@top_locations) == 0}
           class="text-center py-8 text-gray-500"
         >
-          <svg
-            class="w-12 h-12 mx-auto mb-4 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            >
-            </path>
-          </svg>
+          <.icon name="hero-map-pin" class="w-12 h-12 mx-auto mb-4 text-gray-300" />
           <p class="text-lg font-medium">No locations found</p>
           <p class="text-sm">Locations will appear here once they are added to the system.</p>
         </div>
@@ -308,20 +230,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
       >
         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <svg
-            class="w-5 h-5 mr-2 text-yellow-500 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-            >
-            </path>
-          </svg>
+          <.icon name="hero-sparkles" class="w-5 h-5 mr-2 text-yellow-500 shrink-0" />
           Special Locations
         </h2>
 
@@ -349,18 +258,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               phx-value-location_id={@location.id}
               class="shrink-0 p-1 hover:bg-gray-50 rounded transition-colors"
             >
-              <svg
-                class={[
-                  "w-4 h-4 text-gray-500 transition-transform duration-200",
-                  if(MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: "")
-                ]}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
-                </path>
-              </svg>
+              <.icon
+                name="hero-chevron-right"
+                class={"w-4 h-4 text-gray-500 transition-transform duration-200 #{if MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: ""}"}
+              />
             </button>
           <% else %>
             <div class="shrink-0 p-1 w-6 h-6"></div>
@@ -407,15 +308,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     <div class="flex items-center space-x-3 min-w-0">
       <div class="shrink-0">
         <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            >
-            </path>
-          </svg>
+          <.icon name="hero-map-pin" class="w-4 h-4 text-blue-600" />
         </div>
       </div>
 
@@ -429,20 +322,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             </p>
             <%= if @location.is_private do %>
               <span title="Private">
-                <svg
-                  class="w-4 h-4 text-gray-400 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  >
-                  </path>
-                </svg>
+                <.icon name="hero-lock-closed" class="w-4 h-4 text-gray-400 shrink-0" />
               </span>
             <% end %>
             <span
