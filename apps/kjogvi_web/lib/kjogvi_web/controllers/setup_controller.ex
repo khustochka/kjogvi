@@ -75,7 +75,8 @@ defmodule KjogviWeb.SetupController do
     code = params["setup_code"]
     expected_code = get_session(conn, :setup_code)
 
-    if !is_nil(expected_code) && code == expected_code do
+    if is_binary(code) && is_binary(expected_code) &&
+         Plug.Crypto.secure_compare(code, expected_code) do
       conn
     else
       conn
