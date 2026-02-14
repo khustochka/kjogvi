@@ -3,6 +3,7 @@ defmodule Kjogvi.Search.Taxon do
   Taxon search functionality with support for scientific and English names.
   Searches are scoped by user's default book.
   Searches by word components with priority on word beginnings.
+  Within each match-quality tier, results are weighted by the user's observation frequency.
   """
 
   import Ecto.Query
@@ -14,13 +15,15 @@ defmodule Kjogvi.Search.Taxon do
   @doc """
   Search for taxa by name (scientific or English).
 
-  Searches are scoped to user's default book and search taxa by:
+  Searches are scoped to user's default book and ranked by:
   - Scientific name exact match (highest priority)
   - English name exact match
   - Scientific name starts with query
   - English name starts with query
   - Word-start matching in either name
   - Contains anywhere in either name
+
+  Within each tier, taxa the user has observed more frequently are ranked higher.
 
   Returns taxa with an additional `:key` field containing the full taxon signature
   (e.g., "/ebird/v2024/houspa") suitable for use as `taxon_key` in observations.
@@ -38,10 +41,12 @@ defmodule Kjogvi.Search.Taxon do
 
     case get_user_book(user) do
       {:ok, book} ->
+        counts = observation_counts(user)
+
         book
         |> all_taxa()
         |> Enum.filter(&matches_query?(&1, query_text))
-        |> Enum.sort_by(&sort_priority(&1, query_text))
+        |> Enum.sort_by(&sort_priority(&1, query_text, counts, book))
         |> Enum.take(@limit)
         |> Enum.map(&add_taxon_key(&1, book))
 
@@ -89,45 +94,63 @@ defmodule Kjogvi.Search.Taxon do
     end)
   end
 
-  defp sort_priority(taxon, query_text) do
+  defp observation_counts(user) do
+    Kjogvi.Repo.all(
+      from(o in Kjogvi.Birding.Observation,
+        join: c in assoc(o, :card),
+        where: c.user_id == ^user.id,
+        group_by: o.taxon_key,
+        select: {o.taxon_key, count(o.id)}
+      )
+    )
+    |> Map.new()
+  end
+
+  defp sort_priority(taxon, query_text, counts, book) do
     name_en = String.downcase(taxon.name_en || "")
     name_sci = String.downcase(taxon.name_sci || "")
+    weight = taxon_weight(taxon, counts, book)
 
-    check_exact_match(name_sci, name_en, query_text) ||
-      check_starts_with(name_sci, name_en, query_text) ||
-      check_word_start(name_sci, name_en, query_text) ||
-      check_contains(name_sci, name_en, query_text) ||
-      {7, name_en}
+    check_exact_match(name_sci, name_en, weight, query_text) ||
+      check_starts_with(name_sci, name_en, weight, query_text) ||
+      check_word_start(name_sci, name_en, weight, query_text) ||
+      check_contains(name_sci, name_en, weight, query_text) ||
+      {7, 0, name_en}
   end
 
-  defp check_exact_match(name_sci, name_en, query) do
+  defp taxon_weight(taxon, counts, book) do
+    key = "/#{book.slug}/#{book.version}/#{taxon.code}"
+    -Map.get(counts, key, 0)
+  end
+
+  defp check_exact_match(name_sci, name_en, weight, query) do
     cond do
-      name_sci == query -> {0, ""}
-      name_en == query -> {1, ""}
+      name_sci == query -> {0, weight, ""}
+      name_en == query -> {1, weight, ""}
       true -> nil
     end
   end
 
-  defp check_starts_with(name_sci, name_en, query) do
+  defp check_starts_with(name_sci, name_en, weight, query) do
     cond do
-      String.starts_with?(name_sci, query) -> {2, name_sci}
-      String.starts_with?(name_en, query) -> {3, name_en}
+      String.starts_with?(name_sci, query) -> {2, weight, name_sci}
+      String.starts_with?(name_en, query) -> {3, weight, name_en}
       true -> nil
     end
   end
 
-  defp check_word_start(name_sci, name_en, query) do
+  defp check_word_start(name_sci, name_en, weight, query) do
     cond do
-      starts_with_word?(name_sci, query) -> {4, name_sci}
-      starts_with_word?(name_en, query) -> {5, name_en}
+      starts_with_word?(name_sci, query) -> {4, weight, name_sci}
+      starts_with_word?(name_en, query) -> {5, weight, name_en}
       true -> nil
     end
   end
 
-  defp check_contains(name_sci, name_en, query) do
+  defp check_contains(name_sci, name_en, weight, query) do
     cond do
-      String.contains?(name_sci, query) -> {6, name_sci}
-      String.contains?(name_en, query) -> {6, name_en}
+      String.contains?(name_sci, query) -> {6, weight, name_sci}
+      String.contains?(name_en, query) -> {6, weight, name_en}
       true -> nil
     end
   end
