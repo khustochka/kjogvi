@@ -1,0 +1,36 @@
+name: "Lint"
+on:
+  workflow_call:
+    inputs:
+      elixir:
+        required: false
+        type: string
+      otp:
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      elixir:
+        description: Elixir version
+        required: false
+        type: string
+      otp:
+        description: OTP version
+        required: false
+        type: string
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          env: dev
+          elixir: ${{ inputs.elixir }}
+          otp: ${{ inputs.otp }}
+      - name: Run lint
+        env:
+          MIX_ENV: dev
+        run: mix lint.github

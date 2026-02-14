@@ -1,36 +1,27 @@
-name: Tests
-
+name: "Tests"
 on:
-  push:
-  pull_request:
-
+  workflow_call:
+    inputs:
+      elixir:
+        required: false
+        type: string
+      otp:
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      elixir:
+        description: Elixir version
+        required: false
+        type: string
+      otp:
+        description: OTP version
+        required: false
+        type: string
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup test environment
-        uses: ./.github/actions/setup
-        with:
-          env: dev
-          elixir: v1.19.5
-          otp: "28.3.1"
-      - name: Run lint
-        env:
-          MIX_ENV: dev
-        run: mix lint.github
   test:
-    name: Test
+    name: Tests
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - elixir: "v1.19.5"
-            otp: "28.3.1"
-          - elixir: "v1.18.4"
-            otp: "27.3.4.2"
     services:
       postgres:
         image: postgres:17.6-bookworm
@@ -51,8 +42,8 @@ jobs:
         uses: ./.github/actions/setup
         with:
           env: test
-          elixir: ${{ matrix.elixir }}
-          otp: ${{ matrix.otp }}
+          elixir: ${{ inputs.elixir }}
+          otp: ${{ inputs.otp }}
       - name: Run tests with coverage
         env:
           MIX_ENV: test
@@ -62,15 +53,5 @@ jobs:
       - name: Code coverage results
         uses: actions/upload-artifact@v6
         with:
-          name: Coverage-Elixir-${{ matrix.elixir }}-otp-${{ matrix.otp }}
+          name: Coverage
           path: cover/
-
-  build_image:
-    name: "Docker image"
-    uses: ./.github/workflows/build.yml
-    secrets:
-      DOCKER_AWS_ACCESS_KEY_ID: ${{ secrets.DOCKER_AWS_ACCESS_KEY_ID }}
-      DOCKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.DOCKER_AWS_SECRET_ACCESS_KEY }}
-    needs:
-      - test
-    if: github.ref == 'refs/heads/main'

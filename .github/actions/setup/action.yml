@@ -5,15 +5,22 @@ inputs:
     required: true
     description: "Environment"
   elixir:
-    required: true
-    description: "Elixir version"
+    required: false
+    description: "Elixir version (reads .tool-versions if omitted)"
   otp:
-    required: true
-    description: "OTP version"
+    required: false
+    description: "OTP version (reads .tool-versions if omitted)"
 runs:
   using: "composite"
   steps:
-    - name: Set up Elixir
+    - name: Set up Elixir from .tool-versions
+      if: ${{ !inputs.elixir && !inputs.otp }}
+      uses: erlef/setup-beam@v1
+      with:
+        version-file: .tool-versions
+        version-type: strict
+    - name: Set up Elixir with explicit versions
+      if: ${{ inputs.elixir || inputs.otp }}
       uses: erlef/setup-beam@v1
       with:
         elixir-version: ${{ inputs.elixir }}
@@ -37,7 +44,7 @@ runs:
         MIX_ENV: ${{ inputs.env }}
       shell: bash
       run: mix deps.get
-    # See https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12  
+    # See https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12
     # - name: Compile deps
     #   env:
     #     MIX_ENV: test
@@ -47,4 +54,4 @@ runs:
         MIX_ENV: ${{ inputs.env }}
         MIX_OS_DEPS_COMPILE_PARTITION_COUNT: 2
       shell: bash
-      run: mix compile  
+      run: mix compile

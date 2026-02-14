@@ -1,0 +1,23 @@
+name: "CI Pipeline"
+on:
+  push:
+  pull_request:
+jobs:
+  tests:
+    name: "Tests"
+    uses: ./.github/workflows/tests.yml
+
+  lint:
+    name: "Lint"
+    uses: ./.github/workflows/lint.yml
+
+  build_image:
+    name: "Docker image"
+    uses: ./.github/workflows/build.yml
+    secrets:
+      DOCKER_AWS_ACCESS_KEY_ID: ${{ secrets.DOCKER_AWS_ACCESS_KEY_ID }}
+      DOCKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.DOCKER_AWS_SECRET_ACCESS_KEY }}
+    needs:
+      - tests
+      - lint
+    if: github.ref == 'refs/heads/main'
