@@ -113,6 +113,60 @@ defmodule Kjogvi.BirdingTest do
       assert card.resolved == false
       assert card.observations == []
     end
+
+    test "prefills observ_date with the day after the latest card" do
+      user = user_fixture()
+      insert(:card, user: user, observ_date: ~D[2024-01-15])
+      insert(:card, user: user, observ_date: ~D[2024-01-10])
+
+      card = Birding.new_card(user)
+      assert card.observ_date == ~D[2024-01-16]
+    end
+
+    test "does not prefill observ_date when next day is in the future" do
+      user = user_fixture()
+      insert(:card, user: user, observ_date: Date.utc_today())
+
+      card = Birding.new_card(user)
+      assert card.observ_date == nil
+    end
+
+    test "prefills today when the latest card is yesterday" do
+      user = user_fixture()
+      insert(:card, user: user, observ_date: Date.add(Date.utc_today(), -1))
+
+      card = Birding.new_card(user)
+      assert card.observ_date == Date.utc_today()
+    end
+  end
+
+  describe "next_empty_date/1" do
+    test "returns nil when the user has no cards" do
+      user = user_fixture()
+      assert Birding.next_empty_date(user) == nil
+    end
+
+    test "returns latest card date + 1 when in the past" do
+      user = user_fixture()
+      insert(:card, user: user, observ_date: ~D[2024-03-10])
+
+      assert Birding.next_empty_date(user) == ~D[2024-03-11]
+    end
+
+    test "returns nil when next day would be in the future" do
+      user = user_fixture()
+      insert(:card, user: user, observ_date: Date.utc_today())
+
+      assert Birding.next_empty_date(user) == nil
+    end
+
+    test "ignores cards from other users" do
+      user = user_fixture()
+      other_user = user_fixture()
+      insert(:card, user: other_user, observ_date: ~D[2024-06-01])
+
+      assert Birding.next_empty_date(user) == nil
+    end
   end
 
   describe "new_observation/0" do
