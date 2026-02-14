@@ -131,70 +131,56 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </li>
     </ul>
 
-    <div class="w-full md:flex md:gap-6">
-      <div class="my-6 md:w-1/3">
-        <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
-          Year:
-        </div>
-        <.bivalve_select
-          selected={@filter.year}
-          id="lifelist-year-selector"
-          widths="w-1/2 sm:w-1/4 md:w-1/4 lg:w-1/4 xl:w-1/4"
-          selector_widths="w-1/2 sm:w-1/4 md:w-1/2"
-        >
-          <:left href={lifelist_path(@current_scope, %{@filter | year: nil})}>
-            All years
-          </:left>
-          <:placeholder>
-            <%= if is_nil(@filter.year) do %>
-              Select
-            <% else %>
-              <span class="sr-only">Selected year:</span>
-              {@filter.year}
-            <% end %>
-          </:placeholder>
-          <:item
-            :for={{year, active} <- @years}
-            key={year}
-            active={active}
-            href={lifelist_path(@current_scope, %{@filter | year: year})}
-          >
-            {year}
-          </:item>
-        </.bivalve_select>
+    <div class="my-6">
+      <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
+        Year:
       </div>
+      <ul
+        id="lifelist-year-selector"
+        class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-1"
+      >
+        <.filter_pill
+          selected={is_nil(@filter.year)}
+          class="col-span-full lg:col-span-1 justify-self-start lg:justify-self-stretch"
+          href={lifelist_path(@current_scope, %{@filter | year: nil})}
+        >
+          All years
+        </.filter_pill>
+        <.filter_pill
+          :for={{year, active} <- @years}
+          selected={@filter.year == year}
+          active={active}
+          href={lifelist_path(@current_scope, %{@filter | year: year})}
+        >
+          {year}
+        </.filter_pill>
+      </ul>
+    </div>
 
-      <div class="my-6 md:w-1/3">
-        <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
-          Month:
-        </div>
-        <.bivalve_select
-          selected={@filter.month}
-          id="lifelist-month-selector"
-          widths="w-1/4 sm:w-1/4 lg:w-1/6"
-          selector_widths="w-1/2 sm:w-1/4 md:w-1/2"
-        >
-          <:left href={lifelist_path(@current_scope, %{@filter | month: nil})}>
-            All months
-          </:left>
-          <:placeholder>
-            <%= if is_nil(@filter.month) do %>
-              Select
-            <% else %>
-              <span class="sr-only">Selected month:</span>
-              {DateHelper.month_name(@filter.month)}
-            <% end %>
-          </:placeholder>
-          <:item
-            :for={{month, active} <- @months}
-            key={month}
-            active={active}
-            href={lifelist_path(@current_scope, %{@filter | month: month})}
-          >
-            {DateHelper.short_month_name(month)}
-          </:item>
-        </.bivalve_select>
+    <div class="my-6">
+      <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
+        Month:
       </div>
+      <ul
+        id="lifelist-month-selector"
+        class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[auto_repeat(12,minmax(0,1fr))] gap-1"
+      >
+        <.filter_pill
+          selected={is_nil(@filter.month)}
+          class="col-span-full lg:col-span-1 justify-self-start lg:justify-self-stretch"
+          href={lifelist_path(@current_scope, %{@filter | month: nil})}
+        >
+          All months
+        </.filter_pill>
+        <.filter_pill
+          :for={{month, active} <- @months}
+          selected={@filter.month == month}
+          active={active}
+          href={lifelist_path(@current_scope, %{@filter | month: month})}
+        >
+          {DateHelper.short_month_name(month)}
+        </.filter_pill>
+      </ul>
     </div>
 
     <ul class="flex flex-wrap gap-x-4 gap-y-2 my-8">
