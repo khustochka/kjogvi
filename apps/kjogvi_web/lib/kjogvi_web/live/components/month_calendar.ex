@@ -20,6 +20,7 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
 
   alias Kjogvi.Birding
   alias KjogviWeb.CoreComponents
+  alias KjogviWeb.DateHelper
 
   attr :id, :string, required: true
   attr :selected_date, :any, default: nil
@@ -99,7 +100,7 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
   @impl true
   def render(assigns) do
     weeks = calendar_weeks(assigns.displayed_year, assigns.displayed_month)
-    month_name = month_name(assigns.displayed_month)
+    month_name = DateHelper.month_name(assigns.displayed_month)
 
     assigns =
       assigns
@@ -250,17 +251,4 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
 
   defp next_month(year, 12), do: {year + 1, 1}
   defp next_month(year, month), do: {year, month + 1}
-
-  defp month_name(1), do: "January"
-  defp month_name(2), do: "February"
-  defp month_name(3), do: "March"
-  defp month_name(4), do: "April"
-  defp month_name(5), do: "May"
-  defp month_name(6), do: "June"
-  defp month_name(7), do: "July"
-  defp month_name(8), do: "August"
-  defp month_name(9), do: "September"
-  defp month_name(10), do: "October"
-  defp month_name(11), do: "November"
-  defp month_name(12), do: "December"
 end
