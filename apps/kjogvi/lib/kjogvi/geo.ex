@@ -89,4 +89,20 @@ defmodule Kjogvi.Geo do
     |> Location.Query.search(term, opts)
     |> Repo.all()
   end
+
+  def cards_count(location_id) do
+    from(c in Kjogvi.Birding.Card,
+      where: c.location_id == ^location_id,
+      select: count(c.id)
+    )
+    |> Repo.one()
+  end
+
+  def children_count(location_id) do
+    from(l in Location,
+      where: fragment("? @> ?::bigint[]", l.ancestry, [^location_id]),
+      select: count(l.id)
+    )
+    |> Repo.one()
+  end
 end
