@@ -77,11 +77,28 @@ defmodule Kjogvi.Birding.Card do
       :location_id,
       :effort_type
     ])
+    |> validate_effort_fields()
     |> cast_assoc(:observations,
       with: &Kjogvi.Birding.Observation.changeset/2,
       sort_param: :observations_order,
       drop_param: :observations_drop
     )
+  end
+
+  defp validate_effort_fields(changeset) do
+    case get_field(changeset, :effort_type) do
+      "STATIONARY" ->
+        validate_required(changeset, [:start_time, :duration_minutes])
+
+      "TRAVEL" ->
+        validate_required(changeset, [:start_time, :duration_minutes, :distance_kms])
+
+      "AREA" ->
+        validate_required(changeset, [:start_time, :duration_minutes, :area_acres])
+
+      _ ->
+        changeset
+    end
   end
 
   # Remove observation entries where no meaningful fields are filled in,

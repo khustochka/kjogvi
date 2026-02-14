@@ -12,6 +12,8 @@ defmodule Kjogvi.Birding.CardTest do
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 30,
           "user_id" => 1
         })
 
@@ -87,6 +89,8 @@ defmodule Kjogvi.Birding.CardTest do
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 30,
           "user_id" => 1,
           "observations" => %{
             "0" => %{"taxon_key" => "ebird/eBird_2023/bkcchi1"}
@@ -104,6 +108,8 @@ defmodule Kjogvi.Birding.CardTest do
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 30,
           "user_id" => 1,
           "observations" => %{
             "0" => %{"taxon_key" => "ebird/eBird_2023/bkcchi1"},
@@ -125,6 +131,8 @@ defmodule Kjogvi.Birding.CardTest do
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 30,
           "user_id" => 1,
           "observations" => %{
             "0" => %{"taxon_key" => "ebird/eBird_2023/bkcchi1"},
@@ -150,6 +158,8 @@ defmodule Kjogvi.Birding.CardTest do
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 30,
           "user_id" => 1,
           "observations" => %{
             "0" => %{"taxon_key" => "ebird/eBird_2023/bkcchi1"},
@@ -166,6 +176,125 @@ defmodule Kjogvi.Birding.CardTest do
 
       refute changeset.valid?
       assert %{observ_date: ["can't be blank"]} = errors_on(changeset)
+    end
+  end
+
+  describe "effort-type-dependent validations" do
+    setup do
+      location = insert(:location)
+      {:ok, location: location}
+    end
+
+    test "stationary requires start_time and duration_minutes", %{location: location} do
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "STATIONARY",
+          "user_id" => 1
+        })
+
+      errors = errors_on(changeset)
+      assert "can't be blank" in errors[:start_time]
+      assert "can't be blank" in errors[:duration_minutes]
+    end
+
+    test "stationary valid with start_time and duration_minutes", %{location: location} do
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "STATIONARY",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 30,
+          "user_id" => 1
+        })
+
+      assert changeset.valid?
+    end
+
+    test "travel requires start_time, duration_minutes, and distance_kms", %{location: location} do
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "TRAVEL",
+          "user_id" => 1
+        })
+
+      errors = errors_on(changeset)
+      assert "can't be blank" in errors[:start_time]
+      assert "can't be blank" in errors[:duration_minutes]
+      assert "can't be blank" in errors[:distance_kms]
+    end
+
+    test "travel valid with all required fields", %{location: location} do
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "TRAVEL",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 60,
+          "distance_kms" => 3.5,
+          "user_id" => 1
+        })
+
+      assert changeset.valid?
+    end
+
+    test "area requires start_time, duration_minutes, and area_acres", %{location: location} do
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "AREA",
+          "user_id" => 1
+        })
+
+      errors = errors_on(changeset)
+      assert "can't be blank" in errors[:start_time]
+      assert "can't be blank" in errors[:duration_minutes]
+      assert "can't be blank" in errors[:area_acres]
+    end
+
+    test "area valid with all required fields", %{location: location} do
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "AREA",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 45,
+          "area_acres" => 10.0,
+          "user_id" => 1
+        })
+
+      assert changeset.valid?
+    end
+
+    test "incidental does not require effort fields", %{location: location} do
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "INCIDENTAL",
+          "user_id" => 1
+        })
+
+      assert changeset.valid?
+    end
+
+    test "historical does not require effort fields", %{location: location} do
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "HISTORICAL",
+          "user_id" => 1
+        })
+
+      assert changeset.valid?
     end
   end
 

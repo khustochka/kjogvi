@@ -248,6 +248,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         "card" => %{
           "observ_date" => "2026-01-20",
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00",
+          "duration_minutes" => "30",
           "location_id" => to_string(location.id)
         }
       }
@@ -316,6 +318,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         "card" => %{
           "observ_date" => "2026-01-20",
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00",
+          "duration_minutes" => "30",
           "location_id" => to_string(location.id),
           "observations" => %{
             "0" => %{
@@ -367,6 +371,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         "card" => %{
           "observ_date" => "2026-01-20",
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00",
+          "duration_minutes" => "30",
           "location_id" => to_string(location.id),
           "observations" => %{
             "0" => %{
@@ -772,6 +778,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         "card" => %{
           "observ_date" => "2026-01-20",
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00",
+          "duration_minutes" => "30",
           "location_id" => to_string(location.id),
           "observations" => %{
             "0" => %{"taxon_key" => "/ebird/v2024/houspa", "quantity" => "3"},
@@ -804,6 +812,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         "card" => %{
           "observ_date" => "2026-01-20",
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00",
+          "duration_minutes" => "30",
           "location_id" => to_string(location.id),
           "observations" => %{
             "0" => %{"taxon_key" => "", "quantity" => "5"}
@@ -827,6 +837,8 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         "card" => %{
           "observ_date" => "2026-01-20",
           "effort_type" => "STATIONARY",
+          "start_time" => "08:00",
+          "duration_minutes" => "30",
           "location_id" => to_string(location.id)
         }
       }

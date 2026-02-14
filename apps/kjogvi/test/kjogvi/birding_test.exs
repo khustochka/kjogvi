@@ -27,7 +27,9 @@ defmodule Kjogvi.BirdingTest do
       attrs = %{
         "observ_date" => "2024-05-10",
         "location_id" => location.id,
-        "effort_type" => "STATIONARY"
+        "effort_type" => "STATIONARY",
+        "start_time" => "08:00:00",
+        "duration_minutes" => 30
       }
 
       assert {:ok, card} = Birding.create_card(user, attrs)
@@ -52,6 +54,8 @@ defmodule Kjogvi.BirdingTest do
         "observ_date" => "2024-05-10",
         "location_id" => location.id,
         "effort_type" => "STATIONARY",
+        "start_time" => "08:00:00",
+        "duration_minutes" => 30,
         "observations" => %{
           "0" => %{"taxon_key" => "ebird/eBird_2023/bkcchi1", "quantity" => "3"}
         }
@@ -70,7 +74,14 @@ defmodule Kjogvi.BirdingTest do
       user = user_fixture()
       card = insert(:card, user: user)
 
-      assert {:ok, updated} = Birding.update_card(card, %{"effort_type" => "TRAVEL"})
+      assert {:ok, updated} =
+               Birding.update_card(card, %{
+                 "effort_type" => "TRAVEL",
+                 "start_time" => "09:00:00",
+                 "duration_minutes" => 60,
+                 "distance_kms" => 5.0
+               })
+
       assert updated.effort_type == "TRAVEL"
     end
 
