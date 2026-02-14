@@ -175,7 +175,7 @@ defmodule Kjogvi.Geo.Location do
     |> Enum.map(fn location ->
       ancestors =
         location.ancestry
-        |> Enum.map(fn id -> Enum.find(all_ancestors, &(&1.id == id)) end)
+        |> Enum.map(fn id -> all_ancestors[id] end)
 
       %{location | ancestors: ancestors}
     end)
