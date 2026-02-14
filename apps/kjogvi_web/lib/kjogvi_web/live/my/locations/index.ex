@@ -422,7 +422,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div class="flex-1 min-w-0">
         <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
           <div class="flex items-center space-x-2 min-w-0">
-            <p class="text-sm font-medium text-gray-900 truncate">{@location.name_en}</p>
+            <p class="text-sm font-medium text-gray-900 truncate">
+              <.link href={~p"/my/locations/#{@location.slug}"} class="hover:underline">
+                {@location.name_en}
+              </.link>
+            </p>
             <%= if @location.is_private do %>
               <span title="Private">
                 <svg

@@ -10,7 +10,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
     location = Geo.location_by_slug_scope(socket.assigns.current_scope, slug)
 
     if location do
-      # Load ancestors for the breadcrumb trail
+      # Load ancestors for the ancestry table
       ancestors = get_ancestors(location)
 
       # Get card count for this location
@@ -197,7 +197,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
               d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
             />
           </svg>
-          Location Hierarchy
+          Location Ancestry
         </h2>
 
         <div class="overflow-x-auto">
@@ -215,9 +215,6 @@ defmodule KjogviWeb.Live.My.Locations.Show do
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ISO Code
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
                 </th>
               </tr>
             </thead>
@@ -254,7 +251,12 @@ defmodule KjogviWeb.Live.My.Locations.Show do
                       </div>
                       <div class="ml-4">
                         <div class="text-sm font-medium text-gray-900">
-                          {ancestor.name_en}
+                          <.link
+                            href={~p"/my/locations/#{ancestor.slug}"}
+                            class="underline"
+                          >
+                            {ancestor.name_en}
+                          </.link>
                         </div>
                         <div class="text-sm text-gray-500 font-mono">
                           {ancestor.slug}
@@ -272,14 +274,6 @@ defmodule KjogviWeb.Live.My.Locations.Show do
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                     {if ancestor.iso_code, do: String.upcase(ancestor.iso_code), else: "—"}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <.link
-                      href={~p"/my/locations/#{ancestor.slug}"}
-                      class="text-blue-600 hover:text-blue-700 hover:underline"
-                    >
-                      View
-                    </.link>
                   </td>
                 </tr>
               <% end %>
@@ -443,18 +437,18 @@ defmodule KjogviWeb.Live.My.Locations.Show do
     """
   end
 
-  defp get_ancestors(location) do
-    if Enum.empty?(location.ancestry) do
-      import Ecto.Query
+  defp get_ancestors(%{ancestry: []}) do
+    []
+  end
 
-      from(l in Kjogvi.Geo.Location, where: l.id in ^location.ancestry, order_by: l.id)
-      |> Kjogvi.Repo.all()
-      |> Enum.sort_by(fn ancestor ->
-        Enum.find_index(location.ancestry, &(&1 == ancestor.id))
-      end)
-    else
-      []
-    end
+  defp get_ancestors(location) do
+    import Ecto.Query
+
+    from(l in Kjogvi.Geo.Location, where: l.id in ^location.ancestry, order_by: l.id)
+    |> Kjogvi.Repo.all()
+    |> Enum.sort_by(fn ancestor ->
+      Enum.find_index(location.ancestry, &(&1 == ancestor.id))
+    end)
   end
 
   defp get_cards_count(location_id) do
