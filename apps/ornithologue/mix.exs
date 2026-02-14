@@ -48,7 +48,7 @@ defmodule Ornithologue.MixProject do
   defp deps do
     [
       {:ecto_sql, "~> 3.12"},
-      {:postgrex, ">= 0.0.0"},
+      {:postgrex, "~> 0.22"},
       # For jsonb columns
       {:jason, "~> 1.0"},
       {:scrivener_ecto, "~> 3.0"},
