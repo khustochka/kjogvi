@@ -473,4 +473,154 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert length(result.extras.heard_only.list) == 1
     end
   end
+
+  describe "top/3" do
+    test "returns the N newest species" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      {taxon1, _} = Factory.create_species_taxon_with_page()
+      card1 = insert(:card, observ_date: ~D[2022-03-10], user: user)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+
+      {taxon2, _} = Factory.create_species_taxon_with_page()
+      card2 = insert(:card, observ_date: ~D[2023-06-15], user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      {taxon3, _} = Factory.create_species_taxon_with_page()
+      card3 = insert(:card, observ_date: ~D[2024-01-20], user: user)
+      insert(:observation, card: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+
+      result = Lifelist.top(scope, 2)
+      assert result.total == 3
+      assert length(result.list) == 2
+      # Should be ordered by date descending — newest first
+      assert hd(result.list).observ_date == ~D[2024-01-20]
+    end
+
+    test "returns all species when n exceeds total" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, observ_date: ~D[2023-06-15], user: user)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      result = Lifelist.top(scope, 10)
+      assert result.total == 1
+      assert length(result.list) == 1
+    end
+
+    test "accepts keyword filter" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      {taxon1, _} = Factory.create_species_taxon_with_page()
+      card1 = insert(:card, observ_date: ~D[2022-03-10], user: user)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+
+      {taxon2, _} = Factory.create_species_taxon_with_page()
+      card2 = insert(:card, observ_date: ~D[2023-06-15], user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      result = Lifelist.top(scope, 5, year: 2022)
+      assert result.total == 1
+      assert length(result.list) == 1
+    end
+  end
+
+  describe "country_ids/2" do
+    test "returns country ids that have observations" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      canada = insert(:location, location_type: "country", name_en: "Canada")
+      winnipeg = insert(:location, ancestry: [canada.id], cached_country_id: canada.id)
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, user: user, location: winnipeg)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      ids = Lifelist.country_ids(scope)
+      assert canada.id in ids
+    end
+
+    test "returns empty list when no observations exist" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      assert Lifelist.country_ids(scope) == []
+    end
+
+    test "includes country when observation is at the country itself" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      canada = insert(:location, location_type: "country", name_en: "Canada")
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, user: user, location: canada)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      ids = Lifelist.country_ids(scope)
+      assert canada.id in ids
+    end
+  end
+
+  describe "generate/2 result structure" do
+    test "returns a Result struct with correct fields" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, user: user)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      result = Lifelist.generate(scope)
+      assert %Lifelist.Result{} = result
+      assert result.user == user
+      assert result.include_private == false
+      assert result.total == 1
+      assert %Lifelist.Filter{} = result.filter
+    end
+  end
+
+  describe "Lifelist.Scope.from_scope/1" do
+    test "returns lifelist scope for private view" do
+      user = user_fixture()
+      app_scope = %Kjogvi.Scope{user: user, main_user: user, private_view: true}
+
+      lifelist_scope = Lifelist.Scope.from_scope(app_scope)
+      assert lifelist_scope.user == user
+      assert lifelist_scope.include_private == true
+    end
+
+    test "returns lifelist scope for public view with main_user" do
+      import Kjogvi.UsersFixtures
+      main_user = user_fixture()
+      app_scope = %Kjogvi.Scope{user: nil, main_user: main_user, private_view: false}
+
+      lifelist_scope = Lifelist.Scope.from_scope(app_scope)
+      assert lifelist_scope.user == main_user
+      assert lifelist_scope.include_private == false
+    end
+  end
+
+  describe "Lifelist.Filter.discombo/1" do
+    test "returns {:ok, filter} for valid options" do
+      assert {:ok, %Lifelist.Filter{year: 2023}} = Lifelist.Filter.discombo(year: 2023)
+    end
+
+    test "returns {:ok, filter} with defaults" do
+      assert {:ok, filter} = Lifelist.Filter.discombo([])
+      assert filter.year == nil
+      assert filter.month == nil
+      assert filter.motorless == false
+      assert filter.exclude_heard_only == false
+    end
+
+    test "returns error for invalid options" do
+      assert {:error, _} = Lifelist.Filter.discombo(invalid_key: true)
+    end
+  end
 end
