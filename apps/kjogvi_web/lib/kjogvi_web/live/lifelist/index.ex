@@ -18,14 +18,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   def mount(_params, _session, %{assigns: assigns} = socket) do
     lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
     all_years = Birding.Lifelist.years(lifelist_scope)
-    all_locations = Kjogvi.Geo.get_lifelist_locations()
 
     {
       :ok,
       socket
       |> assign(:lifelist_scope, lifelist_scope)
-      |> assign(:all_years, all_years)
-      |> assign(:all_locations, all_locations),
+      |> assign(:all_years, all_years),
       temporary_assigns: [lifelist: []]
     }
   end
@@ -49,9 +47,23 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     active_location_ids =
       Birding.Lifelist.location_ids(lifelist_scope, Map.put(filter, :location, nil))
 
-    locations =
-      assigns.all_locations
-      |> Enum.map(fn el -> {el, el.id in active_location_ids} end)
+    location_context = Kjogvi.Geo.get_lifelist_location_context(filter.location)
+
+    location_siblings =
+      location_context.siblings
+      |> then(fn siblings ->
+        case filter.location do
+          nil -> siblings
+          loc -> (siblings ++ [loc]) |> Enum.sort_by(& &1.public_index)
+        end
+      end)
+      |> Enum.map(fn loc ->
+        {loc, loc.id in active_location_ids, loc.id == (filter.location && filter.location.id)}
+      end)
+
+    location_children =
+      location_context.children
+      |> Enum.map(fn loc -> {loc, loc.id in active_location_ids} end)
 
     {
       :noreply,
@@ -61,7 +73,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         filter: filter,
         years: years,
         months: months,
-        locations: locations
+        location_ancestors: location_context.ancestors,
+        location_siblings: location_siblings,
+        location_children: location_children
       )
       |> derive_location_field()
       |> derive_page_header()
@@ -133,29 +147,55 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     </ul>
 
     <div class="my-6">
-      <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
-        Location:
-      </div>
-      <ul
+      <div
         id="lifelist-location-selector"
-        class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-1"
+        class="border border-slate-200 rounded-lg overflow-hidden"
       >
-        <.filter_pill
-          selected={is_nil(@filter.location)}
-          class="col-span-full lg:col-span-1 justify-self-start lg:justify-self-stretch"
-          href={lifelist_path(@current_scope, %{@filter | location: nil})}
-        >
-          World
-        </.filter_pill>
-        <.filter_pill
-          :for={{location, active} <- @locations}
-          selected={@filter.location == location}
-          active={active}
-          href={lifelist_path(@current_scope, %{@filter | location: location})}
-        >
-          {location.name_en}
-        </.filter_pill>
-      </ul>
+        <div class="bg-slate-50 px-3 py-2 flex flex-wrap items-center gap-1 text-sm">
+          <.link
+            :if={@filter.location != nil}
+            patch={lifelist_path(@current_scope, %{@filter | location: nil})}
+            class="text-sky-600 hover:underline"
+          >
+            World
+          </.link>
+          <span :if={@filter.location == nil} class="font-bold text-zinc-900">World</span>
+          <span :for={ancestor <- @location_ancestors} class="flex items-center gap-1">
+            <span class="text-zinc-400">&rsaquo;</span>
+            <.link
+              patch={lifelist_path(@current_scope, %{@filter | location: ancestor})}
+              class="text-sky-600 hover:underline"
+            >
+              {ancestor.name_en}
+            </.link>
+          </span>
+        </div>
+        <div class="p-3">
+          <ul class="flex flex-wrap gap-1">
+            <.filter_pill
+              :for={{location, active, selected} <- @location_siblings}
+              selected={selected}
+              active={active}
+              href={lifelist_path(@current_scope, %{@filter | location: location})}
+            >
+              {location.name_en}
+            </.filter_pill>
+          </ul>
+          <div :if={@location_children != []} class="mt-3">
+            <hr class="border-slate-200 mb-3" />
+            <ul class="flex flex-wrap gap-1">
+              <.filter_pill
+                :for={{location, active} <- @location_children}
+                selected={false}
+                active={active}
+                href={lifelist_path(@current_scope, %{@filter | location: location})}
+              >
+                {location.name_en}
+              </.filter_pill>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="my-6">

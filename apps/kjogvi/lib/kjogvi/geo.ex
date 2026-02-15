@@ -26,6 +26,65 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
+  @doc """
+  Returns hierarchical context for the lifelist location filter.
+
+  Given a selected location (or nil for "World"), returns:
+  - `ancestors` — lifelist locations in the selected location's ancestry chain
+  - `siblings` — lifelist locations sharing the same ancestry as selected
+  - `children` — lifelist locations whose nearest lifelist ancestor is the selected location (or a sibling, for World)
+  """
+  def get_lifelist_location_context(selected_location) do
+    all = get_lifelist_locations()
+    lifelist_ids = MapSet.new(all, & &1.id)
+
+    case selected_location do
+      nil ->
+        my_parent = nil
+
+        siblings =
+          Enum.filter(all, &(effective_lifelist_parent(&1.ancestry, lifelist_ids) == my_parent))
+
+        sibling_ids = MapSet.new(siblings, & &1.id)
+
+        children =
+          Enum.filter(all, fn loc ->
+            effective_lifelist_parent(loc.ancestry, lifelist_ids) in sibling_ids
+          end)
+
+        %{ancestors: [], siblings: siblings, children: children}
+
+      loc ->
+        my_parent = effective_lifelist_parent(loc.ancestry, lifelist_ids)
+
+        ancestors =
+          all
+          |> Enum.filter(&(&1.id in loc.ancestry))
+          |> Enum.sort_by(fn a -> Enum.find_index(loc.ancestry, &(&1 == a.id)) end)
+
+        siblings =
+          Enum.filter(all, fn sib ->
+            sib.id != loc.id &&
+              effective_lifelist_parent(sib.ancestry, lifelist_ids) == my_parent
+          end)
+
+        children =
+          Enum.filter(all, fn child ->
+            effective_lifelist_parent(child.ancestry, lifelist_ids) == loc.id
+          end)
+
+        %{ancestors: ancestors, siblings: siblings, children: children}
+    end
+  end
+
+  # Returns the nearest lifelist ancestor id — the last id in the ancestry
+  # chain that is present in the lifelist set.
+  defp effective_lifelist_parent(ancestry, lifelist_ids) do
+    ancestry
+    |> Enum.reverse()
+    |> Enum.find(&MapSet.member?(lifelist_ids, &1))
+  end
+
   # We want to build a tree of locations, but it should stop on regions
   # Some countries do not have regions, so it should stop on countries
   # Also should include top level locations (ones without parents), but not special (???)

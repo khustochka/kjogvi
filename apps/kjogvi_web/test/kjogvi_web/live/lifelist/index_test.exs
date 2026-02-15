@@ -188,6 +188,47 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert get_number_of_species(resp) == 1
   end
 
+  test "location card shows breadcrumb with ancestors when filtered", %{conn: conn} do
+    europe =
+      insert(:location,
+        slug: "europe",
+        name_en: "Europe",
+        ancestry: [],
+        public_index: 1
+      )
+
+    ukraine =
+      insert(:location,
+        slug: "ukraine",
+        name_en: "Ukraine",
+        location_type: "country",
+        ancestry: [europe.id],
+        public_index: 2
+      )
+
+    brovary =
+      insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [europe.id, ukraine.id])
+
+    {taxon, _} = Factory.create_species_taxon_with_page()
+    card = insert(:main_user_card, location: brovary)
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, view, _html} = live(conn, ~p"/lifelist/ukraine")
+
+    assert has_element?(view, "#lifelist-location-selector")
+    # Breadcrumb shows World and Europe as links
+    assert has_element?(view, "#lifelist-location-selector a", "World")
+    assert has_element?(view, "#lifelist-location-selector a", "Europe")
+    # Ukraine is the selected pill in the siblings list
+    assert has_element?(view, "#lifelist-location-selector span.font-bold", "Ukraine")
+  end
+
+  test "location card shows World as bold when no location filter", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/lifelist")
+
+    assert has_element?(view, "#lifelist-location-selector span.font-bold", "World")
+  end
+
   test "lifelist with valid year and invalid location", %{conn: conn} do
     assert_error_sent :bad_request, fn ->
       get(conn, "/lifelist/2022/testtest")
