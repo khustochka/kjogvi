@@ -325,7 +325,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <span class="text-2xl font-bold">{@lifelist.total}</span> species seen
     </div>
     <div class="sm:w-1/2 p-4 my-2 bg-purple-100 text-purple-700 rounded">
-      No heard only species
+      <span class="text-2xl font-bold"></span> No heard only species
     </div>
     """
   end
