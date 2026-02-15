@@ -81,4 +81,5 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 - Single-user mode is default (wrap multi-user routes in `Kjogvi.Config.with_multiuser/1`)
 - Coordinate changes across `kjogvi` and `ornithologue` apps when adding features
 - Examine existing LiveViews in `apps/kjogvi_web/lib/kjogvi_web/live/` for patterns
+- When designing frontend, always make it responsive (check on smaller screen sizes)
 <!-- usage-rules-end -->
