@@ -105,7 +105,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   @tag skip: "False negative test (passing when it should fail)"
   test "noindex disappears when navigating from empty to non-empty year list", %{conn: conn} do
-    species = Ornitho.Factory.insert(:taxon, category: "species")
+    {species, _} = Factory.create_species_taxon_with_page()
     card = insert(:main_user_card, observ_date: ~D[2023-06-07])
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(species))
 
@@ -114,7 +114,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
     assert Floki.attribute(html, "meta[name=robots]", "content") == ["noindex"]
 
-    doc2 = index_live |> element("a", "2023") |> render_click()
+    doc2 = index_live |> element("#lifelist-year-selector a", "2023") |> render_click()
 
     {:ok, html2} = Floki.parse_document(doc2)
 
