@@ -529,19 +529,21 @@ defmodule Kjogvi.Birding.LifelistTest do
     end
   end
 
-  describe "country_ids/2" do
-    test "returns country ids that have observations" do
+  describe "location_ids/2" do
+    test "returns lifelist location ids that have observations" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
 
-      canada = insert(:location, location_type: "country", name_en: "Canada")
+      canada =
+        insert(:location, location_type: "country", name_en: "Canada", public_index: 1)
+
       winnipeg = insert(:location, ancestry: [canada.id], cached_country_id: canada.id)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, user: user, location: winnipeg)
       insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-      ids = Lifelist.country_ids(scope)
+      ids = Lifelist.location_ids(scope)
       assert canada.id in ids
     end
 
@@ -549,21 +551,37 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
 
-      assert Lifelist.country_ids(scope) == []
+      assert Lifelist.location_ids(scope) == []
     end
 
-    test "includes country when observation is at the country itself" do
+    test "includes location when observation is at the location itself" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
 
-      canada = insert(:location, location_type: "country", name_en: "Canada")
+      canada =
+        insert(:location, location_type: "country", name_en: "Canada", public_index: 1)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, user: user, location: canada)
       insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-      ids = Lifelist.country_ids(scope)
+      ids = Lifelist.location_ids(scope)
       assert canada.id in ids
+    end
+
+    test "excludes locations without public_index" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      canada =
+        insert(:location, location_type: "country", name_en: "Canada", public_index: nil)
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, user: user, location: canada)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      ids = Lifelist.location_ids(scope)
+      assert ids == []
     end
   end
 

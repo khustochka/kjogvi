@@ -14,6 +14,18 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
+  @doc """
+  Returns locations with `public_index` set, ordered by `public_index`.
+  These are locations shown as filter options on the lifelist.
+  """
+  def get_lifelist_locations do
+    from(l in Location,
+      where: not is_nil(l.public_index),
+      order_by: l.public_index
+    )
+    |> Repo.all()
+  end
+
   # We want to build a tree of locations, but it should stop on regions
   # Some countries do not have regions, so it should stop on countries
   # Also should include top level locations (ones without parents), but not special (???)

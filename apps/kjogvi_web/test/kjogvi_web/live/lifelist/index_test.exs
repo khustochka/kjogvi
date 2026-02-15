@@ -122,8 +122,22 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "lifelist filtered by location", %{conn: conn} do
-    ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
-    usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+    ukraine =
+      insert(:location,
+        slug: "ukraine",
+        name_en: "Ukraine",
+        location_type: "country",
+        public_index: 1
+      )
+
+    usa =
+      insert(:location,
+        slug: "usa",
+        name_en: "United States",
+        location_type: "country",
+        public_index: 2
+      )
+
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -140,8 +154,22 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "lifelist filtered by year and location", %{conn: conn} do
-    ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
-    usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+    ukraine =
+      insert(:location,
+        slug: "ukraine",
+        name_en: "Ukraine",
+        location_type: "country",
+        public_index: 1
+      )
+
+    usa =
+      insert(:location,
+        slug: "usa",
+        name_en: "United States",
+        location_type: "country",
+        public_index: 2
+      )
+
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -167,7 +195,14 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "correct links for guest user", %{conn: conn} do
-    ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
+    ukraine =
+      insert(:location,
+        slug: "ukraine",
+        name_en: "Ukraine",
+        location_type: "country",
+        public_index: 1
+      )
+
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     {taxon1, _} = Factory.create_species_taxon_with_page()

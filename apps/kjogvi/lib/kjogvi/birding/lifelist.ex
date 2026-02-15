@@ -9,7 +9,6 @@ defmodule Kjogvi.Birding.Lifelist do
   alias Kjogvi.Repo
 
   alias Kjogvi.Birding.LifeObservation
-  alias Kjogvi.Geo
   alias __MODULE__
   alias __MODULE__.Filter
   alias __MODULE__.Result
@@ -96,24 +95,30 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Enum.sort()
   end
 
-  @spec country_ids(scope()) :: list(integer())
-  @spec country_ids(scope(), filter()) :: list(integer())
+  @spec location_ids(scope()) :: list(integer())
+  @spec location_ids(scope(), filter()) :: list(integer())
   @doc """
-  Get all country ids in a list based on provided filter options.
+  Get IDs of lifelist locations (those with `public_index` set) that have
+  observations matching the given filter.
   """
-  def country_ids(scope, filter \\ []) do
-    location_ids =
+  def location_ids(scope, filter \\ []) do
+    card_location_ids =
       Lifelist.Query.observations_filtered(scope, filter)
       |> distinct(true)
-      |> select([_o, c], [c.location_id])
+      |> select([_o, c], c.location_id)
 
-    from(c in Kjogvi.Geo.Location)
-    |> Geo.Location.Query.countries()
-    |> join(:inner, [c], l in Kjogvi.Geo.Location,
-      on: c.id == l.cached_country_id or c.id == l.id
+    from(ll in Location,
+      where: not is_nil(ll.public_index),
+      where:
+        ll.id in subquery(card_location_ids) or
+          ll.id in subquery(
+            from(cl in Location,
+              where: cl.id in subquery(card_location_ids),
+              select: fragment("unnest(?)", cl.ancestry)
+            )
+          ),
+      select: ll.id
     )
-    |> where([_c, l], l.id in subquery(location_ids))
-    |> select([c], c.id)
     |> Repo.all()
   end
 

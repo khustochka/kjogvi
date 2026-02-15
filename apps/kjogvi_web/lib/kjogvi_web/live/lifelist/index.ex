@@ -18,14 +18,14 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   def mount(_params, _session, %{assigns: assigns} = socket) do
     lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
     all_years = Birding.Lifelist.years(lifelist_scope)
-    all_countries = Kjogvi.Geo.get_countries()
+    all_locations = Kjogvi.Geo.get_lifelist_locations()
 
     {
       :ok,
       socket
       |> assign(:lifelist_scope, lifelist_scope)
       |> assign(:all_years, all_years)
-      |> assign(:all_countries, all_countries),
+      |> assign(:all_locations, all_locations),
       temporary_assigns: [lifelist: []]
     }
   end
@@ -46,11 +46,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       Birding.Lifelist.months(lifelist_scope, Map.put(filter, :month, nil))
       |> then(&Util.Enum.zip_inclusion(@all_months, &1))
 
-    country_ids = Birding.Lifelist.country_ids(lifelist_scope, Map.put(filter, :location, nil))
+    active_location_ids =
+      Birding.Lifelist.location_ids(lifelist_scope, Map.put(filter, :location, nil))
 
     locations =
-      assigns.all_countries
-      |> Enum.map(fn el -> {el, el.id in country_ids} end)
+      assigns.all_locations
+      |> Enum.map(fn el -> {el, el.id in active_location_ids} end)
 
     {
       :noreply,
@@ -133,6 +134,32 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     <div class="my-6">
       <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
+        Location:
+      </div>
+      <ul
+        id="lifelist-location-selector"
+        class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-1"
+      >
+        <.filter_pill
+          selected={is_nil(@filter.location)}
+          class="col-span-full lg:col-span-1 justify-self-start lg:justify-self-stretch"
+          href={lifelist_path(@current_scope, %{@filter | location: nil})}
+        >
+          World
+        </.filter_pill>
+        <.filter_pill
+          :for={{location, active} <- @locations}
+          selected={@filter.location == location}
+          active={active}
+          href={lifelist_path(@current_scope, %{@filter | location: location})}
+        >
+          {location.name_en}
+        </.filter_pill>
+      </ul>
+    </div>
+
+    <div class="my-6">
+      <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
         Year:
       </div>
       <ul
@@ -182,33 +209,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         </.filter_pill>
       </ul>
     </div>
-
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 my-8">
-      <li class="whitespace-nowrap">
-        <em :if={is_nil(@filter.location)} class="font-semibold not-italic">All countries</em>
-        <.link
-          :if={not is_nil(@filter.location)}
-          patch={lifelist_path(@current_scope, %{@filter | location: nil})}
-        >
-          All countries
-        </.link>
-      </li>
-      <%= for {location, active} <- @locations do %>
-        <li>
-          <%= if @filter.location == location do %>
-            <em class="font-semibold not-italic">{location.name_en}</em>
-          <% else %>
-            <%= if active do %>
-              <.link patch={lifelist_path(@current_scope, %{@filter | location: location})}>
-                {location.name_en}
-              </.link>
-            <% else %>
-              <span class="text-gray-500">{location.name_en}</span>
-            <% end %>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
 
     <div class="sm:flex sm:gap-4 my-4">
       <.species_count_header lifelist={@lifelist} />

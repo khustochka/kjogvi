@@ -88,6 +88,10 @@ defmodule Kjogvi.Geo.Location do
     |> change([])
   end
 
+  def show_on_lifelist?(location) do
+    not is_nil(location.public_index)
+  end
+
   def full_name(%{is_patch: true, cached_parent: cached_parent} = location)
       when not is_nil(cached_parent) do
     [cached_parent.name_en, location.name_en]
