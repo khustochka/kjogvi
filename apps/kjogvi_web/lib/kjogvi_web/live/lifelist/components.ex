@@ -63,39 +63,50 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   attr :on_label, :string, required: true
 
   def toggle_switch(assigns) do
-    # Use the longer label to set a fixed min-width via a hidden sizer span
-    longer =
-      if String.length(assigns.on_label) >= String.length(assigns.off_label),
-        do: assigns.on_label,
-        else: assigns.off_label
+    # Fixed min-width in ch units to prevent layout jumps between on/off labels.
+    # Add 1ch buffer to account for semibold being wider than the ch unit reference.
+    longer_length =
+      max(String.length(assigns.on_label), String.length(assigns.off_label))
 
-    assigns = assign(assigns, :sizer_label, longer)
+    label = if assigns.enabled, do: assigns.on_label, else: assigns.off_label
+
+    assigns =
+      assigns
+      |> assign(:min_width_ch, longer_length + 1)
+      |> assign(:label, label)
 
     ~H"""
-    <.link patch={@href} class="inline-flex items-center gap-2 group no-underline">
-      <span class={[
-        "relative inline-block w-9 h-5 rounded-full transition-colors",
-        if(@enabled, do: "bg-sky-500", else: "bg-slate-300 group-hover:bg-slate-400")
-      ]}>
+    <.link
+      patch={@href}
+      class="inline-flex items-center gap-2 group no-underline"
+      role="switch"
+      aria-checked={to_string(@enabled)}
+      aria-label={@label}
+    >
+      <span
+        class={[
+          "relative inline-block w-9 h-5 rounded-full transition-colors",
+          if(@enabled, do: "bg-sky-500", else: "bg-slate-300 group-hover:bg-slate-400")
+        ]}
+        aria-hidden="true"
+      >
         <span class={[
           "absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform",
           if(@enabled, do: "translate-x-4")
         ]}>
         </span>
       </span>
-      <span class="inline-grid">
-        <span class="invisible col-start-1 row-start-1 text-base font-semibold whitespace-nowrap">
-          {@sizer_label}
-        </span>
-        <span class={[
-          "col-start-1 row-start-1 text-base font-semibold whitespace-nowrap",
+      <span
+        class={[
+          "text-base font-semibold whitespace-nowrap",
           if(@enabled,
             do: "text-zinc-700",
             else: "text-zinc-400 group-hover:text-zinc-500"
           )
-        ]}>
-          {if @enabled, do: @on_label, else: @off_label}
-        </span>
+        ]}
+        style={"min-width: #{@min_width_ch}ch"}
+      >
+        {@label}
       </span>
     </.link>
     """
