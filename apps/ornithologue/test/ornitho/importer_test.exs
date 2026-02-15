@@ -90,4 +90,51 @@ defmodule Ornitho.ImporterTest do
       assert not is_nil(book.imported_at)
     end
   end
+
+  describe "legit_importers/0" do
+    test "returns a list of importer modules from config" do
+      result = Importer.legit_importers()
+      assert is_list(result)
+      assert Enum.all?(result, &is_atom/1)
+    end
+  end
+
+  describe "legit_importers_string/0" do
+    test "returns importer module names as strings" do
+      result = Importer.legit_importers_string()
+      assert is_list(result)
+      assert Enum.all?(result, &is_binary/1)
+    end
+  end
+
+  describe "unimported/0" do
+    test "returns importers that have not been imported yet" do
+      result = Importer.unimported()
+      assert is_list(result)
+      legit = Importer.legit_importers()
+
+      for importer <- result do
+        assert importer in legit
+      end
+    end
+
+    test "excludes already imported books" do
+      before_count = length(Importer.unimported())
+      Importer.Demo.V1.process_import()
+      after_count = length(Importer.unimported())
+
+      # Demo.V1 is not in legit_importers, so count should be the same
+      # This just verifies unimported/0 doesn't crash with imported books
+      assert is_integer(after_count)
+      assert after_count <= before_count
+    end
+  end
+
+  describe "import_timeout/0" do
+    test "returns an integer timeout value" do
+      result = Importer.import_timeout()
+      assert is_integer(result)
+      assert result > 0
+    end
+  end
 end

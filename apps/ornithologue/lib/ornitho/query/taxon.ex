@@ -32,7 +32,7 @@ defmodule Ornitho.Query.Taxon do
 
   def by_being_countable(query) do
     query
-    |> where([t], t.category == "species" or not is_nil(t.parent_species))
+    |> where([t], t.category == "species" or not is_nil(t.parent_species_id))
   end
 
   def select_by_format(query, format) do

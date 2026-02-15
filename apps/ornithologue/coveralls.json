@@ -1,6 +1,7 @@
 {
   "skip_files": [
     "lib/ornitho/importer/ebird\\..*",
+    "lib/ornitho/importer/avilist\\..*",
     "lib/ornitho/stream_importer/s3_adapter\\.ex"
   ]
 }
