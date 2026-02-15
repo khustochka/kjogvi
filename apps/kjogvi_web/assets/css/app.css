@@ -45,6 +45,17 @@ only when LiveView classes are applied, for example:
 @theme {
   --color-brand: #FD4F00;
   --font-header: 'Rubik', 'sans-serif', 'ui-sans-serif', 'system-ui';
+
+  --color-forest-50: #f0f7f1;
+  --color-forest-100: #dceedd;
+  --color-forest-200: #b8ddb9;
+  --color-forest-300: #7fc483;
+  --color-forest-400: #4fa757;
+  --color-forest-500: #2d8a38;
+  --color-forest-600: #1f6e2a;
+  --color-forest-700: #1a5823;
+  --color-forest-800: #17461f;
+  --color-forest-900: #143a1b;
 }
 
 @layer base {

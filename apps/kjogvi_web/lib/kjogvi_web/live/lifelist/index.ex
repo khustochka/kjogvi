@@ -129,7 +129,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <.link
             :if={@filter.location != nil}
             patch={lifelist_path(@current_scope, %{@filter | location: nil})}
-            class="text-sky-600 hover:underline"
+            class="text-forest-600 hover:underline"
           >
             World
           </.link>
@@ -138,7 +138,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             <span class="text-zinc-400">&rsaquo;</span>
             <.link
               patch={lifelist_path(@current_scope, %{@filter | location: ancestor})}
-              class="text-sky-600 hover:underline"
+              class="text-forest-600 hover:underline"
             >
               {ancestor.name_en}
             </.link>
@@ -222,7 +222,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </ul>
     </div>
 
-    <div class="sm:flex sm:gap-4 my-4">
+    <div class="flex flex-col sm:flex-row gap-3 my-4">
       <.species_count_header lifelist={@lifelist} />
     </div>
 
@@ -235,21 +235,17 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       />
     </div>
 
-    <%= if @filter.exclude_heard_only do %>
-      <.h3 id="heard-only-list" class="md:mb-2!">
+    <%= if @filter.exclude_heard_only and length(@lifelist.extras.heard_only.list) > 0 do %>
+      <.h3 id="heard-only-list" class="md:mb-2! text-purple-400!">
         Heard only
       </.h3>
 
-      <%= if length(@lifelist.extras.heard_only.list) > 0 do %>
-        <.lifers_list
-          id="lifelist-heard-only-table"
-          show_private_details={@current_scope.private_view}
-          lifelist={@lifelist.extras.heard_only}
-          location_field={@location_field}
-        />
-      <% else %>
-        <p>No heard only species</p>
-      <% end %>
+      <.lifers_list
+        id="lifelist-heard-only-table"
+        show_private_details={@current_scope.private_view}
+        lifelist={@lifelist.extras.heard_only}
+        location_field={@location_field}
+      />
     <% end %>
 
     <.link_to_top />
@@ -313,34 +309,41 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: false}}} = assigns) do
     ~H"""
-    <div class="sm:w-full p-4 my-2 bg-emerald-100 text-emerald-700 rounded">
-      <span class="text-2xl font-bold">{@lifelist.total}</span> species recorded.
+    <div class="inline-flex items-baseline gap-3 bg-forest-600 text-white px-5 py-3 rounded-lg">
+      <span class="text-3xl font-header font-bold tracking-tight">{@lifelist.total}</span>
+      <span class="text-forest-100 text-sm font-medium">species recorded</span>
     </div>
     """
   end
 
   defp species_count_header(%{lifelist: %{extras: %{heard_only: %{list: []}}}} = assigns) do
     ~H"""
-    <div class="sm:w-1/2 p-4 my-2 bg-emerald-100 text-emerald-700 rounded">
-      <span class="text-2xl font-bold">{@lifelist.total}</span> species seen
+    <div class="inline-flex items-baseline gap-3 bg-forest-600 text-white px-5 py-3 rounded-lg">
+      <span class="text-3xl font-header font-bold tracking-tight">{@lifelist.total}</span>
+      <span class="text-forest-100 text-sm font-medium">species seen</span>
     </div>
-    <div class="sm:w-1/2 p-4 my-2 bg-purple-100 text-purple-700 rounded">
-      <span class="text-2xl font-bold"></span> No heard only species
+    <div class="inline-flex items-baseline gap-3 bg-purple-600/60 text-white px-5 py-3 rounded-lg">
+      <span class="text-3xl font-header font-bold tracking-tight">&nbsp;</span>
+      <span class="text-purple-100 text-sm font-medium">No heard only species</span>
     </div>
     """
   end
 
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: true}}} = assigns) do
     ~H"""
-    <div class="sm:w-1/2 p-4 my-2 bg-emerald-100 text-emerald-700 rounded">
-      <span class="text-2xl font-bold">{@lifelist.total}</span> species seen
+    <div class="inline-flex items-baseline gap-3 bg-forest-600 text-white px-5 py-3 rounded-lg">
+      <span class="text-3xl font-header font-bold tracking-tight">{@lifelist.total}</span>
+      <span class="text-forest-100 text-sm font-medium">species seen</span>
     </div>
-    <div class="sm:w-1/2 p-4 my-2 bg-purple-100 text-purple-800 rounded">
-      <a href="#heard-only-list">
-        <span class="text-2xl font-bold">{length(@lifelist.extras.heard_only.list)}</span>
-        species heard only
-      </a>
-    </div>
+    <a
+      href="#heard-only-list"
+      class="inline-flex items-baseline gap-3 bg-purple-600 text-white px-5 py-3 rounded-lg hover:bg-purple-700 no-underline group"
+    >
+      <span class="text-3xl font-header font-bold tracking-tight">
+        {length(@lifelist.extras.heard_only.list)}
+      </span>
+      <span class="text-purple-100 text-sm font-medium group-hover:underline">heard only ↓</span>
+    </a>
     """
   end
 end

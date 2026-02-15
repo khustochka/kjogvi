@@ -12,10 +12,6 @@ defmodule KjogviWeb.Live.Lifelist.Components do
 
   def lifers_list(assigns) do
     ~H"""
-    <div class="md:py-1 hidden md:grid md:grid-cols-[3.5ch_2fr_auto_3fr] md:gap-x-6 md:gap-y-1 md:items-center text-gray-400 text-sm">
-      <span class="col-start-3 col-end-4 justify-self-center">Date</span>
-      <span class="col-start-4 col-end-5 justify-self-center">Location</span>
-    </div>
     <ol
       id={@id}
       class="lifers-list border-t-1 border-gray-200"
@@ -87,7 +83,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       <span
         class={[
           "relative inline-block w-9 h-5 rounded-full transition-colors",
-          if(@enabled, do: "bg-sky-500", else: "bg-slate-300 group-hover:bg-slate-400")
+          if(@enabled, do: "bg-forest-500", else: "bg-slate-300 group-hover:bg-slate-400")
         ]}
         aria-hidden="true"
       >
@@ -122,7 +118,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   def filter_pill(%{selected: true} = assigns) do
     ~H"""
     <li class={@class}>
-      <span class="block text-center px-2 py-1.5 text-sm font-bold text-sky-900 bg-sky-100 border border-sky-300 rounded">
+      <span class="block text-center px-2 py-1.5 text-sm font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
         {render_slot(@inner_block)}
       </span>
     </li>
@@ -144,7 +140,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     <li class={@class}>
       <.link
         patch={@href}
-        class="block text-center px-2 py-1.5 text-sm text-sky-600 bg-white border border-slate-200 rounded hover:bg-sky-50"
+        class="block text-center px-2 py-1.5 text-sm text-forest-600 bg-white border border-slate-200 rounded hover:bg-forest-50"
       >
         {render_slot(@inner_block)}
       </.link>
