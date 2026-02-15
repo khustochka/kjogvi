@@ -57,6 +57,50 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     """
   end
 
+  attr :enabled, :boolean, required: true
+  attr :href, :string, required: true
+  attr :off_label, :string, required: true
+  attr :on_label, :string, required: true
+
+  def toggle_switch(assigns) do
+    # Use the longer label to set a fixed min-width via a hidden sizer span
+    longer =
+      if String.length(assigns.on_label) >= String.length(assigns.off_label),
+        do: assigns.on_label,
+        else: assigns.off_label
+
+    assigns = assign(assigns, :sizer_label, longer)
+
+    ~H"""
+    <.link patch={@href} class="inline-flex items-center gap-2 group no-underline">
+      <span class={[
+        "relative inline-block w-9 h-5 rounded-full transition-colors",
+        if(@enabled, do: "bg-sky-500", else: "bg-slate-300 group-hover:bg-slate-400")
+      ]}>
+        <span class={[
+          "absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform",
+          if(@enabled, do: "translate-x-4")
+        ]}>
+        </span>
+      </span>
+      <span class="inline-grid">
+        <span class="invisible col-start-1 row-start-1 text-base font-semibold whitespace-nowrap">
+          {@sizer_label}
+        </span>
+        <span class={[
+          "col-start-1 row-start-1 text-base font-semibold whitespace-nowrap",
+          if(@enabled,
+            do: "text-zinc-700",
+            else: "text-zinc-400 group-hover:text-zinc-500"
+          )
+        ]}>
+          {if @enabled, do: @on_label, else: @off_label}
+        </span>
+      </span>
+    </.link>
+    """
+  end
+
   attr :selected, :boolean, default: false
   attr :active, :boolean, default: true
   attr :href, :string, required: true

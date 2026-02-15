@@ -88,65 +88,31 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <.header_with_subheader class={header_style(assigns)}>
+    <.h1 class={header_style(assigns)}>
       {@page_header}
-      <:subheader>
-        <%= if @filter.motorless do %>
-          Motorless
-        <% else %>
-          &nbsp;
-        <% end %>
-        <%= if @filter.exclude_heard_only do %>
-          &bull; Heard only <a href="#heard-only-list">separated</a>
-        <% else %>
-          &nbsp;
-        <% end %>
-      </:subheader>
-    </.header_with_subheader>
+    </.h1>
 
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-2">
-      <li class="whitespace-nowrap">
-        <em :if={!@filter.exclude_heard_only} class="font-semibold not-italic">Include all</em>
-        <.link
-          :if={@filter.exclude_heard_only}
-          patch={lifelist_path(@current_scope, %{@filter | exclude_heard_only: false})}
-        >
-          Include all
-        </.link>
-      </li>
-      <li class="whitespace-nowrap">
-        <em :if={@filter.exclude_heard_only} class="font-semibold not-italic">Separate heard only</em>
-        <.link
-          :if={!@filter.exclude_heard_only}
-          patch={lifelist_path(@current_scope, %{@filter | exclude_heard_only: true})}
-        >
-          Separate heard only
-        </.link>
-      </li>
-    </ul>
+    <div class="flex flex-wrap gap-x-6 gap-y-2 -mt-4 mb-4">
+      <.toggle_switch
+        enabled={@filter.exclude_heard_only}
+        href={
+          lifelist_path(
+            @current_scope,
+            %{@filter | exclude_heard_only: !@filter.exclude_heard_only}
+          )
+        }
+        off_label="Exclude heard only"
+        on_label="Heard only excluded"
+      />
+      <.toggle_switch
+        enabled={@filter.motorless}
+        href={lifelist_path(@current_scope, %{@filter | motorless: !@filter.motorless})}
+        off_label="Motorless"
+        on_label="Motorless"
+      />
+    </div>
 
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-2">
-      <li class="whitespace-nowrap">
-        <em :if={!@filter.motorless} class="font-semibold not-italic">Include all</em>
-        <.link
-          :if={@filter.motorless}
-          patch={lifelist_path(@current_scope, %{@filter | motorless: false})}
-        >
-          Include all
-        </.link>
-      </li>
-      <li class="whitespace-nowrap">
-        <em :if={@filter.motorless} class="font-semibold not-italic">Motorless only</em>
-        <.link
-          :if={!@filter.motorless}
-          patch={lifelist_path(@current_scope, %{@filter | motorless: true})}
-        >
-          Motorless only
-        </.link>
-      </li>
-    </ul>
-
-    <div class="my-2">
+    <div class="my-4">
       <div
         id="lifelist-location-selector"
         class="border border-slate-200 rounded-lg overflow-hidden"
@@ -198,7 +164,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </div>
     </div>
 
-    <div class="my-2">
+    <div class="my-4">
       <ul
         id="lifelist-year-selector"
         class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-1"
@@ -221,7 +187,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </ul>
     </div>
 
-    <div class="my-2">
+    <div class="my-4">
       <ul
         id="lifelist-month-selector"
         class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[auto_repeat(12,minmax(0,1fr))] gap-1"
@@ -270,7 +236,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           location_field={@location_field}
         />
       <% else %>
-        <p>No heard only birds</p>
+        <p>No heard only species</p>
       <% end %>
     <% end %>
 
@@ -344,10 +310,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   defp species_count_header(%{lifelist: %{extras: %{heard_only: %{list: []}}}} = assigns) do
     ~H"""
     <div class="sm:w-1/2 p-4 my-2 bg-emerald-100 text-emerald-700 rounded">
-      <span class="text-2xl font-bold">{@lifelist.total}</span> species seen.
+      <span class="text-2xl font-bold">{@lifelist.total}</span> species seen
     </div>
     <div class="sm:w-1/2 p-4 my-2 bg-purple-100 text-purple-700 rounded">
-      No heard only species.
+      No heard only species
     </div>
     """
   end
@@ -355,10 +321,13 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: true}}} = assigns) do
     ~H"""
     <div class="sm:w-1/2 p-4 my-2 bg-emerald-100 text-emerald-700 rounded">
-      <span class="text-2xl font-bold">{@lifelist.total}</span> species seen.
+      <span class="text-2xl font-bold">{@lifelist.total}</span> species seen
     </div>
     <div class="sm:w-1/2 p-4 my-2 bg-purple-100 text-purple-800 rounded">
-      <a href="#heard-only-list"><span class="text-2xl font-bold">{length(@lifelist.extras.heard_only.list)}</span> species heard only</a>.
+      <a href="#heard-only-list">
+        <span class="text-2xl font-bold">{length(@lifelist.extras.heard_only.list)}</span>
+        species heard only
+      </a>
     </div>
     """
   end
