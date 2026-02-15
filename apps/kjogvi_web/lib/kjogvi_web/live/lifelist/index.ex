@@ -92,27 +92,35 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       {@page_header}
     </.h1>
 
-    <div class="flex flex-wrap gap-x-6 gap-y-2 -mt-4 mb-4">
-      <.toggle_switch
-        enabled={@filter.exclude_heard_only}
-        href={
-          lifelist_path(
-            @current_scope,
-            %{@filter | exclude_heard_only: !@filter.exclude_heard_only}
-          )
-        }
-        off_label="Exclude heard only"
-        on_label="Heard only excluded"
-      />
-      <.toggle_switch
-        enabled={@filter.motorless}
-        href={lifelist_path(@current_scope, %{@filter | motorless: !@filter.motorless})}
-        off_label="Motorless"
-        on_label="Motorless"
-      />
-    </div>
+    <span class="sr-only">Filters:</span>
+    <ul class="flex flex-wrap gap-x-6 gap-y-2 -mt-4 mb-4" aria-label="Filters">
+      <li>
+        <.toggle_switch
+          enabled={@filter.exclude_heard_only}
+          href={
+            lifelist_path(
+              @current_scope,
+              %{@filter | exclude_heard_only: !@filter.exclude_heard_only}
+            )
+          }
+          off_label="Exclude heard only"
+          on_label="Heard only excluded"
+          on_action="Include"
+        />
+      </li>
+      <li>
+        <.toggle_switch
+          enabled={@filter.motorless}
+          href={lifelist_path(@current_scope, %{@filter | motorless: !@filter.motorless})}
+          off_label="Motorless only"
+          on_label="Motorless only"
+          on_action="Include motorized"
+        />
+      </li>
+    </ul>
 
     <div class="my-4">
+      <span class="sr-only">Location:</span>
       <div
         id="lifelist-location-selector"
         class="border border-slate-200 rounded-lg overflow-hidden"
@@ -165,8 +173,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     </div>
 
     <div class="my-4">
+      <span class="sr-only">Year:</span>
       <ul
         id="lifelist-year-selector"
+        aria-label="Year"
         class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-1"
       >
         <.filter_pill
@@ -188,8 +198,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     </div>
 
     <div class="my-4">
+      <span class="sr-only">Month:</span>
       <ul
         id="lifelist-month-selector"
+        aria-label="Month"
         class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[auto_repeat(12,minmax(0,1fr))] gap-1"
       >
         <.filter_pill

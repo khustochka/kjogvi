@@ -59,8 +59,9 @@ defmodule KjogviWeb.Live.Lifelist.Components do
 
   attr :enabled, :boolean, required: true
   attr :href, :string, required: true
-  attr :off_label, :string, required: true
-  attr :on_label, :string, required: true
+  attr :off_label, :string, required: true, doc: "Shown when off (describes the action to enable)"
+  attr :on_label, :string, required: true, doc: "Shown when on (describes current state)"
+  attr :on_action, :string, required: true, doc: "SR-only action hint when on (e.g. 'Include')"
 
   def toggle_switch(assigns) do
     # Fixed min-width in ch units to prevent layout jumps between on/off labels.
@@ -68,12 +69,12 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     longer_length =
       max(String.length(assigns.on_label), String.length(assigns.off_label))
 
-    label = if assigns.enabled, do: assigns.on_label, else: assigns.off_label
+    visual_label = if assigns.enabled, do: assigns.on_label, else: assigns.off_label
 
     assigns =
       assigns
       |> assign(:min_width_ch, longer_length + 1)
-      |> assign(:label, label)
+      |> assign(:visual_label, visual_label)
 
     ~H"""
     <.link
@@ -81,7 +82,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       class="inline-flex items-center gap-2 group no-underline"
       role="switch"
       aria-checked={to_string(@enabled)}
-      aria-label={@label}
+      aria-label={if @enabled, do: "#{@on_label}. #{@on_action}", else: @off_label}
     >
       <span
         class={[
@@ -106,7 +107,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         ]}
         style={"min-width: #{@min_width_ch}ch"}
       >
-        {@label}
+        {@visual_label}<span :if={@enabled} class="sr-only">. {@on_action}</span>
       </span>
     </.link>
     """
