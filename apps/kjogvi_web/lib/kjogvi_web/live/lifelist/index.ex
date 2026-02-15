@@ -104,7 +104,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </:subheader>
     </.header_with_subheader>
 
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
+    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-2">
       <li class="whitespace-nowrap">
         <em :if={!@filter.exclude_heard_only} class="font-semibold not-italic">Include all</em>
         <.link
@@ -125,7 +125,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </li>
     </ul>
 
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-4">
+    <ul class="flex flex-wrap gap-x-4 gap-y-2 mt-2">
       <li class="whitespace-nowrap">
         <em :if={!@filter.motorless} class="font-semibold not-italic">Include all</em>
         <.link
@@ -146,7 +146,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </li>
     </ul>
 
-    <div class="my-6">
+    <div class="my-2">
       <div
         id="lifelist-location-selector"
         class="border border-slate-200 rounded-lg overflow-hidden"
@@ -198,10 +198,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </div>
     </div>
 
-    <div class="my-6">
-      <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
-        Year:
-      </div>
+    <div class="my-2">
       <ul
         id="lifelist-year-selector"
         class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-1"
@@ -224,10 +221,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </ul>
     </div>
 
-    <div class="my-6">
-      <div class="mb-1 text-sm font-semibold leading-6 text-zinc-600">
-        Month:
-      </div>
+    <div class="my-2">
       <ul
         id="lifelist-month-selector"
         class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[auto_repeat(12,minmax(0,1fr))] gap-1"
