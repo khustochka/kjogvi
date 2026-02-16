@@ -23,7 +23,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       :ok,
       socket
       |> assign(:lifelist_scope, lifelist_scope)
-      |> assign(:all_years, all_years),
+      |> assign(:all_years, all_years)
+      |> assign(:container_class, "max-w-7xl"),
       temporary_assigns: [lifelist: []]
     }
   end
@@ -88,167 +89,201 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <.h1 class={header_style(assigns)}>
-      {@page_header}
-    </.h1>
-
-    <span class="sr-only">Filters:</span>
-    <ul class="flex flex-wrap gap-x-6 gap-y-2 -mt-4 mb-4" aria-label="Filters">
-      <li>
-        <.toggle_switch
-          enabled={@filter.exclude_heard_only}
-          href={
-            lifelist_path(
-              @current_scope,
-              %{@filter | exclude_heard_only: !@filter.exclude_heard_only}
-            )
-          }
-          off_label="Exclude heard only"
-          on_label="Heard only excluded"
-          on_action="Include"
-        />
-      </li>
-      <li>
-        <.toggle_switch
-          enabled={@filter.motorless}
-          href={lifelist_path(@current_scope, %{@filter | motorless: !@filter.motorless})}
-          off_label="Motorless only"
-          on_label="Motorless only"
-          on_action="Include motorized"
-        />
-      </li>
-    </ul>
-
-    <div class="my-4">
-      <span class="sr-only">Location:</span>
-      <div
-        id="lifelist-location-selector"
-        class="border border-slate-200 rounded-lg overflow-hidden"
-      >
-        <div class="bg-slate-50 px-3 py-2 flex flex-wrap items-center gap-1 text-sm">
-          <.link
-            :if={@filter.location != nil}
-            patch={lifelist_path(@current_scope, %{@filter | location: nil})}
-            class="text-forest-600 hover:underline"
-          >
-            World
-          </.link>
-          <span :if={@filter.location == nil} class="font-bold text-zinc-900">World</span>
-          <span :for={ancestor <- @location_ancestors} class="flex items-center gap-1">
-            <span class="text-zinc-400">&rsaquo;</span>
-            <.link
-              patch={lifelist_path(@current_scope, %{@filter | location: ancestor})}
-              class="text-forest-600 hover:underline"
-            >
-              {ancestor.name_en}
-            </.link>
-          </span>
-        </div>
-        <div class="p-3">
-          <ul class="flex flex-wrap gap-1">
-            <.filter_pill
-              :for={{location, active, selected} <- @location_siblings}
-              selected={selected}
-              active={active}
-              href={lifelist_path(@current_scope, %{@filter | location: location})}
-            >
-              {location.name_en}
-            </.filter_pill>
-          </ul>
-          <div :if={@location_children != []} class="mt-3">
-            <hr class="border-slate-200 mb-3" />
-            <ul class="flex flex-wrap gap-1">
-              <.filter_pill
-                :for={{location, active} <- @location_children}
-                selected={false}
-                active={active}
-                href={lifelist_path(@current_scope, %{@filter | location: location})}
-              >
-                {location.name_en}
-              </.filter_pill>
-            </ul>
-          </div>
-        </div>
+    <%!-- Page title + stats --%>
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
+      <.h1 class={["!mb-0", header_style(assigns)]}>
+        {@page_header}
+      </.h1>
+      <div class="flex flex-wrap gap-2 mb-1">
+        <.species_count_header lifelist={@lifelist} />
       </div>
     </div>
 
-    <div class="my-4">
-      <span class="sr-only">Year:</span>
-      <ul
-        id="lifelist-year-selector"
-        aria-label="Year"
-        class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-1"
-      >
-        <.filter_pill
-          selected={is_nil(@filter.year)}
-          class="col-span-full lg:col-span-1 justify-self-start lg:justify-self-stretch"
-          href={lifelist_path(@current_scope, %{@filter | year: nil})}
-        >
-          All years
-        </.filter_pill>
-        <.filter_pill
-          :for={{year, active} <- @years}
-          selected={@filter.year == year}
-          active={active}
-          href={lifelist_path(@current_scope, %{@filter | year: year})}
-        >
-          {year}
-        </.filter_pill>
-      </ul>
+    <%!-- Two-column layout: sidebar + content --%>
+    <div class="lg:flex lg:gap-6">
+      <%!-- Sidebar: collapses on mobile, sticky on desktop --%>
+      <aside class="lg:w-56 xl:w-64 shrink-0 mb-4 lg:mb-0">
+        <div class="sidebar-sticky">
+          <%!-- Mobile: toggle button with filter summary --%>
+          <button
+            phx-click={JS.toggle_class("open", to: "#filter-body")}
+            class="lg:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-600 no-underline"
+          >
+            <span class="flex items-center gap-2 font-medium">
+              <.icon name="hero-funnel" class="w-4 h-4" /> Filters
+            </span>
+            <span class="flex-1 flex flex-wrap justify-end gap-x-1">
+              <.filter_summary filter={@filter} />
+            </span>
+            <.icon name="hero-chevron-down" class="w-4 h-4 text-stone-400 shrink-0" />
+          </button>
+
+          <%!-- Filter body: collapsed on mobile, always visible on desktop --%>
+          <div id="filter-body" class="filter-body lg:block">
+            <div class="mt-2 lg:mt-0 p-4 lg:p-0 bg-white border border-stone-200 lg:border-0 rounded-lg lg:rounded-none space-y-5">
+              <%!-- Toggles --%>
+              <ul class="space-y-2.5 list-none" aria-label="Filters">
+                <li>
+                  <.toggle_switch
+                    enabled={@filter.exclude_heard_only}
+                    href={
+                      lifelist_path(
+                        @current_scope,
+                        %{@filter | exclude_heard_only: !@filter.exclude_heard_only}
+                      )
+                    }
+                    off_label="Exclude heard only"
+                    on_label="Heard only excluded"
+                    on_action="Include"
+                  />
+                </li>
+                <li>
+                  <.toggle_switch
+                    enabled={@filter.motorless}
+                    href={lifelist_path(@current_scope, %{@filter | motorless: !@filter.motorless})}
+                    off_label="Motorless only"
+                    on_label="Motorless only"
+                    on_action="Include motorized"
+                  />
+                </li>
+              </ul>
+
+              <hr class="border-stone-100" />
+
+              <%!-- Location --%>
+              <div id="lifelist-location-selector">
+                <div class="filter-label">Location</div>
+                <div class="flex flex-wrap items-center gap-1 text-[0.8125rem] mb-2 pl-[5px]">
+                  <.link
+                    :if={@filter.location != nil}
+                    patch={lifelist_path(@current_scope, %{@filter | location: nil})}
+                    class="text-forest-600 hover:underline"
+                  >
+                    World
+                  </.link>
+                  <span :if={@filter.location == nil} class="font-bold text-stone-700">World</span>
+                  <span :for={ancestor <- @location_ancestors} class="flex items-center gap-1">
+                    <span class="text-stone-300">&rsaquo;</span>
+                    <.link
+                      patch={lifelist_path(@current_scope, %{@filter | location: ancestor})}
+                      class="text-forest-600 hover:underline"
+                    >
+                      {ancestor.name_en}
+                    </.link>
+                  </span>
+                </div>
+                <ul class="flex flex-wrap gap-1">
+                  <.sidebar_location_pill
+                    :for={{location, active, selected} <- @location_siblings}
+                    selected={selected}
+                    active={active}
+                    href={lifelist_path(@current_scope, %{@filter | location: location})}
+                  >
+                    {location.name_en}
+                  </.sidebar_location_pill>
+                </ul>
+                <div :if={@location_children != []}>
+                  <hr class="border-stone-100 my-2" />
+                  <ul class="flex flex-wrap gap-1">
+                    <.sidebar_location_pill
+                      :for={{location, active} <- @location_children}
+                      selected={false}
+                      active={active}
+                      href={lifelist_path(@current_scope, %{@filter | location: location})}
+                    >
+                      {location.name_en}
+                    </.sidebar_location_pill>
+                  </ul>
+                </div>
+              </div>
+
+              <hr class="border-stone-100" />
+
+              <%!-- Year --%>
+              <div>
+                <div class="filter-label">Year</div>
+                <ul
+                  id="lifelist-year-selector"
+                  aria-label="Year"
+                  class="sidebar-pill-grid years"
+                >
+                  <.sidebar_filter_pill
+                    selected={is_nil(@filter.year)}
+                    class="col-span-full"
+                    href={lifelist_path(@current_scope, %{@filter | year: nil})}
+                  >
+                    All years
+                  </.sidebar_filter_pill>
+                  <.sidebar_filter_pill
+                    :for={{year, active} <- @years}
+                    selected={@filter.year == year}
+                    active={active}
+                    href={lifelist_path(@current_scope, %{@filter | year: year})}
+                  >
+                    {year}
+                  </.sidebar_filter_pill>
+                </ul>
+              </div>
+
+              <hr class="border-stone-100" />
+
+              <%!-- Month --%>
+              <div>
+                <div class="filter-label">Month</div>
+                <ul
+                  id="lifelist-month-selector"
+                  aria-label="Month"
+                  class="sidebar-pill-grid months"
+                >
+                  <.sidebar_filter_pill
+                    selected={is_nil(@filter.month)}
+                    class="col-span-full"
+                    href={lifelist_path(@current_scope, %{@filter | month: nil})}
+                  >
+                    All months
+                  </.sidebar_filter_pill>
+                  <.sidebar_filter_pill
+                    :for={{month, active} <- @months}
+                    selected={@filter.month == month}
+                    active={active}
+                    href={lifelist_path(@current_scope, %{@filter | month: month})}
+                  >
+                    {DateHelper.short_month_name(month)}
+                  </.sidebar_filter_pill>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <%!-- Main content --%>
+      <div class="flex-1 min-w-0">
+        <div class="mb-8">
+          <.lifers_list
+            id="lifelist-table"
+            show_private_details={@current_scope.private_view}
+            lifelist={@lifelist}
+            location_field={@location_field}
+          />
+        </div>
+
+        <%= if @filter.exclude_heard_only and length(@lifelist.extras.heard_only.list) > 0 do %>
+          <.h3 id="heard-only-list" class="md:mb-2! text-purple-400!">
+            Heard only
+          </.h3>
+
+          <.lifers_list
+            id="lifelist-heard-only-table"
+            show_private_details={@current_scope.private_view}
+            lifelist={@lifelist.extras.heard_only}
+            location_field={@location_field}
+          />
+        <% end %>
+
+        <.link_to_top />
+      </div>
     </div>
-
-    <div class="my-4">
-      <span class="sr-only">Month:</span>
-      <ul
-        id="lifelist-month-selector"
-        aria-label="Month"
-        class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[auto_repeat(12,minmax(0,1fr))] gap-1"
-      >
-        <.filter_pill
-          selected={is_nil(@filter.month)}
-          class="col-span-full lg:col-span-1 justify-self-start lg:justify-self-stretch"
-          href={lifelist_path(@current_scope, %{@filter | month: nil})}
-        >
-          All months
-        </.filter_pill>
-        <.filter_pill
-          :for={{month, active} <- @months}
-          selected={@filter.month == month}
-          active={active}
-          href={lifelist_path(@current_scope, %{@filter | month: month})}
-        >
-          {DateHelper.short_month_name(month)}
-        </.filter_pill>
-      </ul>
-    </div>
-
-    <div class="flex flex-col sm:flex-row gap-3 my-4">
-      <.species_count_header lifelist={@lifelist} />
-    </div>
-
-    <div class="mb-8">
-      <.lifers_list
-        id="lifelist-table"
-        show_private_details={@current_scope.private_view}
-        lifelist={@lifelist}
-        location_field={@location_field}
-      />
-    </div>
-
-    <%= if @filter.exclude_heard_only and length(@lifelist.extras.heard_only.list) > 0 do %>
-      <.h3 id="heard-only-list" class="md:mb-2! text-purple-400!">
-        Heard only
-      </.h3>
-
-      <.lifers_list
-        id="lifelist-heard-only-table"
-        show_private_details={@current_scope.private_view}
-        lifelist={@lifelist.extras.heard_only}
-        location_field={@location_field}
-      />
-    <% end %>
-
-    <.link_to_top />
     """
   end
 
@@ -299,7 +334,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     |> assign(:robots, Presenter.robots(assigns.filter))
   end
 
-  defp header_style(%{year: nil, location: nil}) do
+  defp header_style(%{filter: %{year: nil, location: nil}}) do
     ""
   end
 
@@ -307,10 +342,54 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     "!font-medium"
   end
 
+  defp filter_summary(assigns) do
+    parts =
+      []
+      |> then(fn parts ->
+        if assigns.filter.location,
+          do: parts ++ [assigns.filter.location.name_en],
+          else: parts
+      end)
+      |> then(fn parts ->
+        case {assigns.filter.month, assigns.filter.year} do
+          {month, year} when not is_nil(month) and not is_nil(year) ->
+            parts ++ ["#{DateHelper.short_month_name(month)} #{year}"]
+
+          {nil, year} when not is_nil(year) ->
+            parts ++ [to_string(year)]
+
+          {month, nil} when not is_nil(month) ->
+            parts ++ [DateHelper.short_month_name(month)]
+
+          _ ->
+            parts
+        end
+      end)
+      |> then(fn parts ->
+        if assigns.filter.exclude_heard_only,
+          do: parts ++ ["Heard only excluded"],
+          else: parts
+      end)
+      |> then(fn parts ->
+        if assigns.filter.motorless,
+          do: parts ++ ["Motorless only"],
+          else: parts
+      end)
+
+    assigns = assign(assigns, :parts, parts)
+
+    ~H"""
+    <span :for={part <- @parts} class="whitespace-nowrap">
+      <span class="font-semibold text-stone-700">{part}</span>
+      <span :if={part != List.last(@parts)} class="text-stone-400 mx-0.5">&middot;</span>
+    </span>
+    """
+  end
+
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: false}}} = assigns) do
     ~H"""
-    <div class="inline-flex items-baseline gap-3 bg-forest-600 text-white px-5 py-3 rounded-lg">
-      <span class="text-3xl font-header font-bold tracking-tight">{@lifelist.total}</span>
+    <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
+      <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
       <span class="text-forest-100 text-sm font-medium">species recorded</span>
     </div>
     """
@@ -318,12 +397,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp species_count_header(%{lifelist: %{extras: %{heard_only: %{list: []}}}} = assigns) do
     ~H"""
-    <div class="inline-flex items-baseline gap-3 bg-forest-600 text-white px-5 py-3 rounded-lg">
-      <span class="text-3xl font-header font-bold tracking-tight">{@lifelist.total}</span>
+    <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
+      <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
       <span class="text-forest-100 text-sm font-medium">species seen</span>
     </div>
-    <div class="inline-flex items-baseline gap-3 bg-purple-600/60 text-white px-5 py-3 rounded-lg">
-      <span class="text-3xl font-header font-bold tracking-tight">&nbsp;</span>
+    <div class="inline-flex items-baseline gap-2.5 bg-purple-600/60 text-white px-4 py-2.5 rounded-lg">
+      <span class="text-2xl font-header font-bold tracking-tight">&nbsp;</span>
       <span class="text-purple-100 text-sm font-medium">No heard only species</span>
     </div>
     """
@@ -331,15 +410,15 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: true}}} = assigns) do
     ~H"""
-    <div class="inline-flex items-baseline gap-3 bg-forest-600 text-white px-5 py-3 rounded-lg">
-      <span class="text-3xl font-header font-bold tracking-tight">{@lifelist.total}</span>
+    <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
+      <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
       <span class="text-forest-100 text-sm font-medium">species seen</span>
     </div>
     <a
       href="#heard-only-list"
-      class="inline-flex items-baseline gap-3 bg-purple-600 text-white px-5 py-3 rounded-lg hover:bg-purple-700 no-underline group"
+      class="inline-flex items-baseline gap-2.5 bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 no-underline group"
     >
-      <span class="text-3xl font-header font-bold tracking-tight">
+      <span class="text-2xl font-header font-bold tracking-tight">
         {length(@lifelist.extras.heard_only.list)}
       </span>
       <span class="text-purple-100 text-sm font-medium group-hover:underline">heard only ↓</span>

@@ -6,3 +6,47 @@
   content: counter(lifers) ".";
   counter-increment: lifers -1;
 }
+
+/* Sidebar filter styles */
+
+.filter-label {
+  font-family: var(--font-header);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a8a29e;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-pill-grid {
+  display: grid;
+  gap: 3px;
+}
+.sidebar-pill-grid.years { grid-template-columns: repeat(4, 1fr); }
+.sidebar-pill-grid.months { grid-template-columns: repeat(4, 1fr); }
+
+/* Mobile: collapsible filter body */
+@media (max-width: 1023px) {
+  .filter-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+  .filter-body.open {
+    max-height: 1000px;
+  }
+}
+
+/* Desktop: always visible, sticky */
+@media (min-width: 1024px) {
+  .filter-body { max-height: none !important; }
+  .sidebar-sticky {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    scrollbar-width: none;          /* Firefox */
+    &::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+  }
+}

@@ -42,7 +42,7 @@
   <div :if={@current_scope.private_view} class="bg-orange-400 text-white p-2 text-center">
     Private view
   </div>
-  <div class="mx-auto mt-4 max-w-5xl">
+  <div class={["mx-auto mt-4", assigns[:container_class] || "max-w-5xl"]}>
     <.main_flash flash={@flash} />
     {@inner_content}
     <hr class="hidden" />
