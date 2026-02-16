@@ -128,25 +128,25 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div :if={@search_term != "" and String.length(@search_term) >= 2}>
         <.h2>Search Results</.h2>
 
-        <div :if={length(@search_results) > 0} class="border-t border-stone-200">
+        <div :if={length(@search_results) > 0} class="space-y-2">
           <%= for location <- @search_results do %>
-            <div class="py-3 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div class="flex-1 min-w-0">
-                <.location_row location={location} />
-              </div>
+            <div class="border border-stone-200 rounded-lg p-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                  <.location_row location={location} />
+                </div>
 
-              <div class="flex items-center shrink-0">
                 <.link
                   href={~p"/my/lifelist/#{location.slug}"}
-                  class="text-forest-600 hover:underline text-sm no-underline"
+                  class="shrink-0 ml-4 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
                 >
                   Lifelist
                 </.link>
               </div>
-            </div>
 
-            <div :if={length(location.ancestry) > 0} class="-mt-2 pb-2 text-xs text-stone-400">
-              <.location_breadcrumb ancestry={location.ancestry} name_cache={@name_cache} />
+              <div :if={length(location.ancestry) > 0} class="mt-1 text-xs text-stone-400">
+                <.location_breadcrumb ancestry={location.ancestry} name_cache={@name_cache} />
+              </div>
             </div>
           <% end %>
         </div>
@@ -160,7 +160,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
       <%!-- Main locations hierarchy (hidden when searching) --%>
       <div :if={@search_term == ""}>
-        <div :if={@top_locations && length(@top_locations) > 0} class="border-t border-stone-200">
+        <div :if={@top_locations && length(@top_locations) > 0}>
           <%= for location <- @top_locations do %>
             <.render_location
               grouped_locations={@grouped_locations}
@@ -198,46 +198,37 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     """
   end
 
-  def render_location(assigns) do
+  def render_location(%{children: children} = assigns) when children != [] do
     ~H"""
-    <div class="py-3 border-b border-stone-100">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div class="border border-stone-200 rounded-lg mb-2">
+      <div class="flex items-center justify-between gap-2 p-3">
         <div class="flex items-center space-x-2 flex-1 min-w-0">
-          <%!-- Expand/collapse button only for locations with children --%>
-          <%= if Enum.any?(@children) do %>
-            <button
-              phx-click="toggle_location"
-              phx-value-location_id={@location.id}
-              class="shrink-0 p-1 hover:bg-stone-50 rounded transition-colors"
-            >
-              <.icon
-                name="hero-chevron-right"
-                class={"w-4 h-4 text-stone-400 hover:text-stone-600 transition-transform duration-200 #{if MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: ""}"}
-              />
-            </button>
-          <% else %>
-            <div class="shrink-0 w-6"></div>
-          <% end %>
+          <button
+            phx-click="toggle_location"
+            phx-value-location_id={@location.id}
+            class="shrink-0 p-1 hover:bg-stone-50 rounded transition-colors"
+          >
+            <.icon
+              name="hero-chevron-right"
+              class={"w-4 h-4 text-stone-400 hover:text-stone-600 transition-transform duration-200 #{if MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: ""}"}
+            />
+          </button>
 
           <div class="flex-1 min-w-0">
             <.location_row location={@location} />
           </div>
         </div>
 
-        <div class="flex items-center shrink-0 sm:ml-4">
-          <.link
-            href={~p"/my/lifelist/#{@location.slug}"}
-            class="text-forest-600 hover:underline text-sm no-underline"
-          >
-            Lifelist
-          </.link>
-        </div>
+        <.link
+          href={~p"/my/lifelist/#{@location.slug}"}
+          class="shrink-0 ml-4 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
+        >
+          Lifelist
+        </.link>
       </div>
 
-      <%!-- Children locations --%>
       <%= if MapSet.member?(@expanded_locations, @location.id) do %>
-        <hr class="border-stone-100 mt-2" />
-        <div class="ml-4 pl-4 border-l-2 border-stone-200">
+        <div class="px-3 pb-3">
           <%= for child <- Map.get(@grouped_locations, @location.id, []) do %>
             <.render_location
               location={child}
@@ -249,6 +240,28 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           <% end %>
         </div>
       <% end %>
+    </div>
+    """
+  end
+
+  def render_location(assigns) do
+    ~H"""
+    <div class="border border-stone-200 rounded-lg mb-2">
+      <div class="flex items-center justify-between gap-2 p-3">
+        <div class="flex items-center space-x-2 flex-1 min-w-0">
+          <div class="shrink-0 w-6"></div>
+          <div class="flex-1 min-w-0">
+            <.location_row location={@location} />
+          </div>
+        </div>
+
+        <.link
+          href={~p"/my/lifelist/#{@location.slug}"}
+          class="shrink-0 ml-4 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
+        >
+          Lifelist
+        </.link>
+      </div>
     </div>
     """
   end
@@ -270,7 +283,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </span>
           <%= if @location.is_private do %>
             <span title="Private">
-              <.icon name="hero-lock-closed" class="w-4 h-4 text-stone-400 shrink-0" />
+              <.icon name="hero-lock-closed" class="w-4 h-4 text-stone-700 shrink-0" />
             </span>
           <% end %>
           <span
