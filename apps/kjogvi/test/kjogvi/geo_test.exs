@@ -335,23 +335,25 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "get_all_locations_grouped/0" do
-    test "returns locations grouped by parent" do
+  describe "all_locations_by_parent/0" do
+    test "returns locations grouped by parent id" do
       parent = insert(:location)
       insert(:location, ancestry: [parent.id])
       insert(:location, ancestry: [parent.id])
 
-      {locations, grouped} = Geo.get_all_locations_grouped()
-      assert length(locations) >= 3
+      grouped = Geo.all_locations_by_parent()
+
       assert length(grouped[parent.id]) == 2
+      assert grouped[nil] != []
     end
 
     test "excludes special locations" do
       insert(:location, location_type: "special")
       insert(:location, location_type: "country")
 
-      {locations, _grouped} = Geo.get_all_locations_grouped()
-      refute Enum.any?(locations, &(&1.location_type == "special"))
+      grouped = Geo.all_locations_by_parent()
+      all = Enum.flat_map(grouped, fn {_k, v} -> v end)
+      refute Enum.any?(all, &(&1.location_type == "special"))
     end
   end
 

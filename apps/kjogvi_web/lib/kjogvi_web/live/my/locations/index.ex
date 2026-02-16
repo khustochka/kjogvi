@@ -7,34 +7,26 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {all_locations, grouped_locations} = Geo.get_all_locations_grouped()
+    grouped_locations = Geo.all_locations_by_parent()
 
     # Start with only top-level locations (no parents)
     top_locations = grouped_locations[nil] || []
 
     # Auto-expand top-level locations to show countries by default
-    continent_ids = top_locations |> Enum.map(& &1.id) |> MapSet.new()
-
-    # Load children for all continents
-    open_locations =
-      top_locations
-      |> Enum.reduce(%{}, fn continent, acc ->
-        Map.put(acc, continent.id, grouped_locations[continent.id] || [])
-      end)
+    expanded_locations = top_locations |> Enum.map(& &1.id) |> MapSet.new()
 
     {
       :ok,
       socket
       |> assign(:page_title, "Locations")
       |> assign(:grouped_locations, grouped_locations)
-      |> assign(:all_locations, all_locations |> Map.new(fn loc -> {loc.id, loc} end))
+      |> assign(:name_cache, build_name_cache(grouped_locations))
       |> assign(:top_locations, top_locations)
-      |> assign(:total_locations, length(all_locations))
+      |> assign(:total_locations, count_locations(grouped_locations))
       |> assign(:search_term, "")
       |> assign(:search_results, [])
       |> assign(:specials, Geo.get_specials())
-      |> assign(:expanded_locations, continent_ids)
-      |> assign(:open_locations, open_locations)
+      |> assign(:expanded_locations, expanded_locations)
     }
   end
 
@@ -54,48 +46,23 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         []
       end
 
-    # Preload ancestor names for search results that have ancestry
-    ancestor_cache =
-      if search_results != [] do
-        search_results
-        |> Enum.flat_map(& &1.ancestry)
-        |> Enum.uniq()
-        |> Enum.map(&{&1, socket.assigns.all_locations[&1].name_en})
-        |> Map.new()
-      else
-        %{}
-      end
-
     {:noreply,
      socket
      |> assign(:search_term, search_term)
-     |> assign(:search_results, search_results)
-     |> assign(:ancestor_cache, ancestor_cache)}
+     |> assign(:search_results, search_results)}
   end
 
   @impl true
   def handle_event("toggle_location", %{"location_id" => location_id_str}, socket) do
     location_id = String.to_integer(location_id_str)
+    expanded = socket.assigns.expanded_locations
 
-    %{
-      expanded_locations: expanded_locations,
-      open_locations: open_locations,
-      grouped_locations: grouped_locations
-    } = socket.assigns
+    new_expanded =
+      if MapSet.member?(expanded, location_id),
+        do: MapSet.delete(expanded, location_id),
+        else: MapSet.put(expanded, location_id)
 
-    {new_expanded, new_open_locations} =
-      if MapSet.member?(expanded_locations, location_id) do
-        # Collapse - remove from expanded and clear children
-        {MapSet.delete(expanded_locations, location_id), Map.delete(open_locations, location_id)}
-      else
-        {MapSet.put(expanded_locations, location_id),
-         Map.put(open_locations, location_id, grouped_locations[location_id])}
-      end
-
-    {:noreply,
-     socket
-     |> assign(:expanded_locations, new_expanded)
-     |> assign(:open_locations, new_open_locations)}
+    {:noreply, assign(socket, :expanded_locations, new_expanded)}
   end
 
   @impl true
@@ -183,7 +150,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               <%!-- Show location path/breadcrumb --%>
               <div :if={length(location.ancestry) > 0} class="mt-2 text-xs text-gray-500">
                 <span class="font-medium">Path:</span>
-                <.location_breadcrumb ancestry={location.ancestry} ancestor_cache={@ancestor_cache} />
+                <.location_breadcrumb ancestry={location.ancestry} name_cache={@name_cache} />
               </div>
             </div>
           <% end %>
@@ -208,7 +175,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               children={Map.get(@grouped_locations, location.id, [])}
               location={location}
               expanded_locations={@expanded_locations}
-              open_locations={@open_locations}
               level={0}
             />
           <% end %>
@@ -283,16 +249,15 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       </div>
 
       <%!-- Children locations --%>
-      <%= if MapSet.member?(@expanded_locations, @location.id) && @open_locations[@location.id] do %>
+      <%= if MapSet.member?(@expanded_locations, @location.id) do %>
         <div class="ml-4 sm:ml-6 pb-2 pr-0 border-t border-gray-50">
           <div class="pt-2">
-            <%= for child <- @open_locations[@location.id] do %>
+            <%= for child <- Map.get(@grouped_locations, @location.id, []) do %>
               <.render_location
                 location={child}
                 grouped_locations={@grouped_locations}
                 children={Map.get(@grouped_locations, child.id, [])}
                 expanded_locations={@expanded_locations}
-                open_locations={@open_locations}
                 level={@level + 1}
               />
             <% end %>
@@ -354,9 +319,21 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <%= if index > 0 do %>
           >
         <% end %>
-        {Map.get(@ancestor_cache, ancestor_id, "Unknown")}
+        {Map.get(@name_cache, ancestor_id, "Unknown")}
       <% end %>
     </span>
     """
+  end
+
+  defp build_name_cache(grouped_locations) do
+    grouped_locations
+    |> Enum.flat_map(fn {_parent_id, locations} -> locations end)
+    |> Map.new(fn loc -> {loc.id, loc.name_en} end)
+  end
+
+  defp count_locations(grouped_locations) do
+    Enum.reduce(grouped_locations, 0, fn {_parent_id, locations}, acc ->
+      acc + length(locations)
+    end)
   end
 end

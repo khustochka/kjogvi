@@ -104,19 +104,17 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
-  def get_all_locations_grouped do
-    locations =
-      Location
-      |> Location.Query.load_cards_count()
-      |> where([l], l.location_type != "special" or is_nil(l.location_type))
-      |> Repo.all()
+  @doc """
+  Returns all non-special locations grouped by parent ID (last element of ancestry).
 
-    # Group locations by their parent ID (last element of ancestry)
-    grouped_locations =
-      locations
-      |> Enum.group_by(&List.last(&1.ancestry))
-
-    {locations, grouped_locations}
+  Top-level locations (no parent) are grouped under `nil`.
+  """
+  def all_locations_by_parent do
+    from(l in Location,
+      where: l.location_type != "special" or is_nil(l.location_type)
+    )
+    |> Repo.all()
+    |> Enum.group_by(&List.last(&1.ancestry))
   end
 
   def get_child_locations(parent_id) do
