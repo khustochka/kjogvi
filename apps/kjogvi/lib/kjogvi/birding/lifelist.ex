@@ -107,16 +107,30 @@ defmodule Kjogvi.Birding.Lifelist do
       |> distinct(true)
       |> select([_o, c], c.location_id)
 
+    ancestor_ids =
+      from(cl in Location,
+        where: cl.id in subquery(card_location_ids),
+        select: fragment("unnest(?)", cl.ancestry)
+      )
+
+    # IDs of special locations whose members (or descendants of members) have cards
+    special_parent_ids =
+      from(cl in Location,
+        where: cl.id in subquery(card_location_ids),
+        join: sl in "special_locations",
+        on:
+          field(sl, :child_location_id) == cl.id or
+            field(sl, :child_location_id) in cl.ancestry,
+        distinct: true,
+        select: field(sl, :parent_location_id)
+      )
+
     from(ll in Location,
       where: not is_nil(ll.public_index),
       where:
         ll.id in subquery(card_location_ids) or
-          ll.id in subquery(
-            from(cl in Location,
-              where: cl.id in subquery(card_location_ids),
-              select: fragment("unnest(?)", cl.ancestry)
-            )
-          ),
+          ll.id in subquery(ancestor_ids) or
+          ll.id in subquery(special_parent_ids),
       select: ll.id
     )
     |> Repo.all()

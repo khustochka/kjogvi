@@ -569,6 +569,51 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert canada.id in ids
     end
 
+    test "includes special locations whose members have observations" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      member_loc = insert(:location, name_en: "Member Location")
+
+      special_loc =
+        insert(:location,
+          name_en: "Special Area",
+          location_type: "special",
+          public_index: 1,
+          special_child_locations: [member_loc]
+        )
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, user: user, location: member_loc)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      ids = Lifelist.location_ids(scope)
+      assert special_loc.id in ids
+    end
+
+    test "includes special locations when descendant of member has observations" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      member_loc = insert(:location, name_en: "Member Location")
+      child_of_member = insert(:location, name_en: "Child", ancestry: [member_loc.id])
+
+      special_loc =
+        insert(:location,
+          name_en: "Special Area",
+          location_type: "special",
+          public_index: 1,
+          special_child_locations: [member_loc]
+        )
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, user: user, location: child_of_member)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      ids = Lifelist.location_ids(scope)
+      assert special_loc.id in ids
+    end
+
     test "excludes locations without public_index" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
