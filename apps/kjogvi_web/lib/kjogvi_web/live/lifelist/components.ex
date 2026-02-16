@@ -14,20 +14,20 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     ~H"""
     <ol
       id={@id}
-      class="lifers-list border-t-1 border-gray-200"
+      class="lifers-list border-t border-stone-200"
       style={"--lifersTotal:#{@lifelist.total + 1};"}
     >
       <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
-        <%!-- ch is the width of a "0" --%>
         <li
           value={@lifelist.total - i}
-          class="py-6 border-b-1 border-gray-200 grid grid-cols-[3.5ch_2fr_auto_3fr] gap-x-2 md:gap-x-6 gap-y-1 items-top md:items-center"
+          class="py-4 border-b border-stone-100 grid grid-cols-[3.5ch_2fr_auto_3fr] gap-x-2 md:gap-x-6 gap-y-1 items-top md:items-center"
         >
-          <span class="counter text-gray-500 col-span-1 align-right justify-self-end"></span>
+          <span class="counter text-stone-400 text-sm col-span-1 justify-self-end tabular-nums">
+          </span>
           <div class="mb-1 col-span-3 md:col-span-1">
             <.species_link species={lifer.species_page} />
           </div>
-          <div class="col-start-2 col-end-5 md:col-span-1 align-left justify-self-end text-right text-sm text-zinc-600">
+          <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
             <time time={lifer.observ_date}>
               {format_date(lifer.observ_date)}
             </time>
@@ -35,15 +35,14 @@ defmodule KjogviWeb.Live.Lifelist.Components do
               <.icon name="hero-clipboard-document-list" class="w-[18px] text-gray-400" />
             </.link>
           </div>
-          <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right italic text-[0.93rem] text-gray-700">
+          <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
             <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>
               <%!-- Do not break the line below --%>
               <span class="after:content-['_·']">{Geo.Location.name_local_part(location)}</span><span class="sr-only">, </span>
-              <%= with country when not is_nil(country) <- location.cached_country do %>
-                <span class="font-medium whitespace-nowrap">
+              <%= if location.cached_country do %>
+                <span class="text-stone-600 font-medium whitespace-nowrap">
                   {Geo.Location.name_administrative_part(location)}
                 </span>
-                <span class="flag">{Kjogvi.Geo.Location.to_flag_emoji(country)}</span>
               <% end %>
             <% end %>
           </div>

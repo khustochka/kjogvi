@@ -269,7 +269,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         </div>
 
         <%= if @filter.exclude_heard_only and length(@lifelist.extras.heard_only.list) > 0 do %>
-          <.h3 id="heard-only-list" class="md:mb-2! text-purple-400!">
+          <.h3 id="heard-only-list" class="md:mb-2! text-stone-600!">
             Heard only
           </.h3>
 

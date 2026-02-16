@@ -11,13 +11,12 @@ defmodule KjogviWeb.BirdingComponents do
   def species_link(assigns) do
     ~H"""
     <span class="species_link">
-      <strong phx-no-format class="font-normal small-caps text-[0.95rem]">
-        <.link
-          patch={~p"/species/#{@species}"}
-          class="px-1 py-0.5 no-underline bg-lime-200 hover:bg-lime-300"
-        ><%= @species.name_en %></.link>
-      </strong>
-      <i class="whitespace-nowrap text-neutral-500">{@species.name_sci}</i>
+      <.link
+        phx-no-format
+        patch={~p"/species/#{@species}"}
+        class="text-[1.05rem] font-semibold text-forest-500 underline decoration-forest-200 hover:decoration-forest-400 underline-offset-2"
+      ><%= @species.name_en %></.link>
+      <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@species.name_sci}</i>
     </span>
     """
   end
