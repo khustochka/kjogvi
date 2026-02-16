@@ -131,6 +131,17 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
+  @doc """
+  Returns member locations for a special location, or an empty list if not special.
+  """
+  def special_member_locations(%Location{location_type: "special"} = location) do
+    location
+    |> Repo.preload(special_child_locations: from(l in Location, order_by: l.name_en))
+    |> Map.get(:special_child_locations)
+  end
+
+  def special_member_locations(%Location{}), do: []
+
   def get_specials do
     Location
     |> Location.Query.specials()
@@ -165,6 +176,17 @@ defmodule Kjogvi.Geo do
       select: count(c.id)
     )
     |> Repo.one()
+  end
+
+  @doc """
+  Returns direct children of a location (where it is the last element of ancestry).
+  """
+  def direct_children(location_id) do
+    from(l in Location,
+      where: fragment("?[array_length(?, 1)] = ?", l.ancestry, l.ancestry, ^location_id),
+      order_by: l.name_en
+    )
+    |> Repo.all()
   end
 
   def children_count(location_id) do

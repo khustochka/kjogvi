@@ -136,12 +136,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                   <.location_row location={location} />
                 </div>
 
-                <.link
-                  href={~p"/my/lifelist/#{location.slug}"}
-                  class="shrink-0 ml-4 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
-                >
-                  Lifelist
-                </.link>
+                <.lifelist_link slug={location.slug} />
               </div>
 
               <div :if={length(location.ancestry) > 0} class="mt-1 text-xs text-stone-400">
@@ -225,12 +220,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </div>
         </div>
 
-        <.link
-          href={~p"/my/lifelist/#{@location.slug}"}
-          class="shrink-0 ml-4 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
-        >
-          Lifelist
-        </.link>
+        <.lifelist_link slug={@location.slug} />
       </div>
 
       <%= if has_children?(assigns) and MapSet.member?(@expanded_locations, @location.id) do %>
@@ -250,50 +240,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     """
   end
 
-  attr :location, :map, required: true
-
-  def location_row(assigns) do
-    ~H"""
-    <div class="min-w-0">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-0.5 sm:space-y-0">
-        <div class="flex items-center space-x-2 min-w-0">
-          <span class="text-sm font-medium text-stone-800 truncate">
-            <.link
-              href={~p"/my/locations/#{@location.slug}"}
-              class="text-stone-800 hover:underline no-underline"
-            >
-              {@location.name_en}
-            </.link>
-          </span>
-          <%= if @location.is_private do %>
-            <span title="Private">
-              <.icon name="hero-lock-closed" class="w-4 h-4 text-stone-700 shrink-0" />
-            </span>
-          <% end %>
-          <span
-            :if={@location.iso_code && @location.iso_code != ""}
-            class="text-stone-500 font-mono text-sm shrink-0"
-          >
-            {String.upcase(@location.iso_code)}
-          </span>
-        </div>
-      </div>
-      <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
-        <span class="text-xs text-stone-500 truncate">{@location.slug}</span>
-        <span
-          :if={@location.location_type}
-          class={[
-            "inline-block px-2 py-0.5 text-xs font-medium rounded-full shrink-0",
-            type_badge_classes(@location.location_type)
-          ]}
-        >
-          {@location.location_type}
-        </span>
-      </div>
-    </div>
-    """
-  end
-
   def location_breadcrumb(assigns) do
     ~H"""
     <span class="text-stone-400">
@@ -305,18 +251,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <% end %>
     </span>
     """
-  end
-
-  defp type_badge_classes(type) do
-    case type do
-      "continent" -> "bg-forest-100 text-forest-700"
-      "country" -> "bg-sky-100 text-sky-700"
-      "region" -> "bg-amber-100 text-amber-700"
-      "city" -> "bg-violet-100 text-violet-700"
-      "raion" -> "bg-teal-100 text-teal-700"
-      "special" -> "bg-rose-100 text-rose-700"
-      _other -> "bg-stone-100 text-stone-600"
-    end
   end
 
   defp build_name_cache(grouped_locations) do

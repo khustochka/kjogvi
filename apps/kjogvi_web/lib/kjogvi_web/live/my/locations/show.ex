@@ -13,7 +13,8 @@ defmodule KjogviWeb.Live.My.Locations.Show do
     if location do
       ancestors = Location.ancestors(location)
       cards_count = Geo.cards_count(location.id)
-      children_count = Geo.children_count(location.id)
+      children = Geo.direct_children(location.id)
+      member_locations = Geo.special_member_locations(location)
 
       {:ok,
        socket
@@ -21,7 +22,8 @@ defmodule KjogviWeb.Live.My.Locations.Show do
        |> assign(:location, location)
        |> assign(:ancestors, ancestors)
        |> assign(:cards_count, cards_count)
-       |> assign(:children_count, children_count)}
+       |> assign(:children, children)
+       |> assign(:member_locations, member_locations)}
     else
       {:ok,
        socket
@@ -38,233 +40,150 @@ defmodule KjogviWeb.Live.My.Locations.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <.h1>
-      {@location.name_en}
-    </.h1>
-
     <div class="space-y-6">
-      <%!-- Location Details Card --%>
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <.icon name="hero-map-pin" class="w-5 h-5 mr-2 text-blue-500" /> Location Details
-        </h2>
+      <%!-- Breadcrumbs --%>
+      <nav id="location-breadcrumbs" class="text-sm text-stone-500">
+        <.link href={~p"/my/locations"} class="text-forest-600 hover:underline no-underline">
+          All locations
+        </.link>
+        <%= for ancestor <- @ancestors do %>
+          <span class="mx-1 text-stone-400">/</span>
+          <.link
+            href={~p"/my/locations/#{ancestor.slug}"}
+            class="text-forest-600 hover:underline no-underline"
+          >
+            {ancestor.name_en}
+          </.link>
+        <% end %>
+        <span class="mx-1 text-stone-400">/</span>
+        <span class="text-stone-700">{@location.name_en}</span>
+      </nav>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <dt class="text-sm font-medium text-gray-500">Name</dt>
-            <dd class="mt-1 text-sm text-gray-900">{@location.name_en}</dd>
-          </div>
-
-          <div>
-            <dt class="text-sm font-medium text-gray-500">Slug</dt>
-            <dd class="mt-1 text-sm text-gray-900 font-mono">{@location.slug}</dd>
-          </div>
-
-          <div :if={@location.location_type}>
-            <dt class="text-sm font-medium text-gray-500">Type</dt>
-            <dd class="mt-1">
-              <span class="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
-                {@location.location_type}
+      <%!-- Header + stats --%>
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <.h1 class="mb-0!">
+            {@location.name_en}
+            <%= if @location.is_private do %>
+              <span title="Private">
+                <.icon name="hero-lock-closed" class="w-6 h-6 text-stone-500 align-middle" />
               </span>
-            </dd>
-          </div>
-
-          <div :if={@location.iso_code}>
-            <dt class="text-sm font-medium text-gray-500">ISO Code</dt>
-            <dd class="mt-1 text-sm text-gray-900 font-mono font-semibold">
+            <% end %>
+          </.h1>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+            <span class="text-sm text-stone-500 font-mono">{@location.slug}</span>
+            <span
+              :if={@location.iso_code && @location.iso_code != ""}
+              class="text-stone-500 font-mono text-sm font-semibold"
+            >
               {String.upcase(@location.iso_code)}
-            </dd>
+            </span>
+            <.type_badge :if={@location.location_type} type={@location.location_type} />
           </div>
+          <.link
+            id="lifelist-link"
+            href={~p"/my/lifelist/#{@location.slug}"}
+            class="mt-2 inline-flex items-center gap-1 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
+          >
+            Lifelist
+          </.link>
+        </div>
 
-          <div>
-            <dt class="text-sm font-medium text-gray-500">Visibility</dt>
-            <dd class="mt-1">
-              <span class={[
-                "inline-flex items-center px-2 py-1 text-xs font-medium rounded-full",
-                if(@location.is_private,
-                  do: "bg-red-100 text-red-700",
-                  else: "bg-green-100 text-green-700"
-                )
-              ]}>
-                <%= if @location.is_private do %>
-                  <.icon name="hero-lock-closed" class="w-3 h-3 mr-1" /> Private
-                <% else %>
-                  <.icon name="hero-globe-alt" class="w-3 h-3 mr-1" /> Public
-                <% end %>
-              </span>
-            </dd>
+        <div id="location-stats" class="flex flex-wrap gap-2 mb-1">
+          <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
+            <span class="text-lg font-header font-bold tracking-tight">
+              {@cards_count}
+            </span>
+            <span class="text-forest-100 text-sm font-medium">cards</span>
           </div>
+          <div
+            :if={@children != []}
+            class="inline-flex items-baseline gap-2 bg-stone-600 text-white px-3 py-2 rounded-lg"
+          >
+            <span class="text-lg font-header font-bold tracking-tight">
+              {length(@children)}
+            </span>
+            <span class="text-stone-200 text-sm font-medium">sub-locations</span>
+          </div>
+        </div>
+      </div>
 
+      <%!-- Location details --%>
+      <div
+        :if={has_details?(@location)}
+        id="location-details"
+        class="border border-stone-200 rounded-lg p-4"
+      >
+        <div class="flex flex-wrap gap-x-6 gap-y-3">
           <div :if={@location.lat && @location.lon}>
-            <dt class="text-sm font-medium text-gray-500">Coordinates</dt>
-            <dd class="mt-1 text-sm text-gray-900 font-mono">
+            <dt class="text-xs font-medium text-stone-400 uppercase tracking-wider">
+              Coordinates
+            </dt>
+            <dd class="mt-0.5 text-sm text-stone-800 font-mono">
               {@location.lat}, {@location.lon}
             </dd>
           </div>
-        </div>
 
-        <%!-- Special attributes --%>
-        <div :if={@location.is_patch || @location.is_5mr} class="mt-4 pt-4 border-t border-gray-200">
-          <dt class="text-sm font-medium text-gray-500 mb-2">Special Attributes</dt>
-          <div class="flex flex-wrap gap-2">
-            <span
-              :if={@location.is_patch}
-              class="inline-flex items-center px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 rounded-full"
-            >
+          <div :if={@location.is_patch}>
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
               <.icon name="hero-sparkles" class="w-3 h-3 mr-1" /> Patch
             </span>
-            <span
-              :if={@location.is_5mr}
-              class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
-            >
+          </div>
+
+          <div :if={@location.is_5mr}>
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-sky-100 text-sky-700 rounded-full">
               <.icon name="hero-map" class="w-3 h-3 mr-1" /> 5-Mile Radius
             </span>
           </div>
         </div>
       </div>
 
-      <%!-- Ancestors Table --%>
-      <div
-        :if={length(@ancestors) > 0}
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
-      >
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <.icon name="hero-arrow-trending-up" class="w-5 h-5 mr-2 text-green-500" />
-          Location Ancestry
-        </h2>
+      <%!-- Ancestry chain --%>
+      <div :if={length(@ancestors) > 0} id="location-ancestry" class="space-y-2">
+        <.h2 class="mb-3!">Ancestry</.h2>
 
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Level
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ISO Code
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <%= for {ancestor, index} <- Enum.with_index(@ancestors) do %>
-                <tr class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {index + 1}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-8 w-8">
-                        <div class="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <.icon name="hero-map-pin" class="h-4 w-4 text-blue-600" />
-                        </div>
-                      </div>
-                      <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">
-                          <.link
-                            href={~p"/my/locations/#{ancestor.slug}"}
-                            class="underline"
-                          >
-                            {ancestor.name_en}
-                          </.link>
-                        </div>
-                        <div class="text-sm text-gray-500 font-mono">
-                          {ancestor.slug}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      :if={ancestor.location_type}
-                      class="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
-                    >
-                      {ancestor.location_type}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                    {if ancestor.iso_code, do: String.upcase(ancestor.iso_code), else: "—"}
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
+        <div class="border border-stone-200 rounded-lg divide-y divide-stone-100">
+          <%= for ancestor <- @ancestors do %>
+            <div class="flex items-center justify-between gap-2 px-4 py-2.5">
+              <.location_row location={ancestor} />
+              <.lifelist_link slug={ancestor.slug} />
+            </div>
+          <% end %>
         </div>
       </div>
 
-      <%!-- Statistics Card --%>
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <.icon name="hero-chart-bar" class="w-5 h-5 mr-2 text-purple-500" /> Statistics
-        </h2>
+      <%!-- Children --%>
+      <div :if={@children != []} id="location-children">
+        <.h2 class="mb-3!">Sub-locations</.h2>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div class="bg-blue-50 rounded-lg p-4">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <.icon name="hero-document-text" class="h-6 w-6 text-blue-600" />
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-blue-700">Cards</p>
-                <p class="text-2xl font-semibold text-blue-900">{@cards_count}</p>
-              </div>
+        <div class="border border-stone-200 rounded-lg divide-y divide-stone-100">
+          <%= for child <- @children do %>
+            <div class="flex items-center justify-between gap-2 px-4 py-2.5">
+              <.location_row location={child} />
+              <.lifelist_link slug={child.slug} />
             </div>
-          </div>
-
-          <div class="bg-green-50 rounded-lg p-4">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <.icon name="hero-map-pin" class="h-6 w-6 text-green-600" />
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-green-700">Child Locations</p>
-                <p class="text-2xl font-semibold text-green-900">{@children_count}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-purple-50 rounded-lg p-4">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <.icon name="hero-arrow-trending-up" class="h-6 w-6 text-purple-600" />
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-purple-700">Hierarchy Level</p>
-                <p class="text-2xl font-semibold text-purple-900">{length(@ancestors) + 1}</p>
-              </div>
-            </div>
-          </div>
+          <% end %>
         </div>
       </div>
 
-      <%!-- Actions Card --%>
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <.icon name="hero-adjustments-vertical" class="w-5 h-5 mr-2 text-gray-500" /> Actions
-        </h2>
+      <%!-- Member locations (for special locations) --%>
+      <div :if={@member_locations != []} id="location-members">
+        <.h2 class="mb-3!">Member locations</.h2>
 
-        <div class="flex flex-wrap gap-3">
-          <.link
-            href={~p"/my/lifelist/#{@location.slug}"}
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <.icon name="hero-clipboard" class="w-4 h-4 mr-2" /> View Lifelist
-          </.link>
-
-          <.link
-            href={~p"/my/locations"}
-            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <.icon name="hero-arrow-left" class="w-4 h-4 mr-2" /> Back to Locations
-          </.link>
+        <div class="border border-stone-200 rounded-lg divide-y divide-stone-100">
+          <%= for member <- @member_locations do %>
+            <div class="flex items-center justify-between gap-2 px-4 py-2.5">
+              <.location_row location={member} />
+              <.lifelist_link slug={member.slug} />
+            </div>
+          <% end %>
         </div>
       </div>
     </div>
     """
+  end
+
+  defp has_details?(location) do
+    (location.lat && location.lon) || location.is_patch || location.is_5mr
   end
 end
