@@ -69,33 +69,50 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.h1>
-        Locations
-      </.h1>
-
-      <%!-- Stats summary --%>
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
-          <div class="flex items-center">
-            <.icon name="hero-map-pin" class="w-4 h-4 mr-2 text-blue-500 shrink-0" />
-            <span>{length(@top_locations)} top-level locations</span>
-          </div>
-          <div class="flex items-center">
-            <.icon name="hero-sparkles" class="w-4 h-4 mr-2 text-green-500 shrink-0" />
-            <span>{length(@specials)} special locations</span>
-          </div>
-          <div class="flex items-center">
-            <.icon name="hero-document-text" class="w-4 h-4 mr-2 text-purple-500 shrink-0" />
-            <span>
-              {@total_locations} total locations
+      <%!-- Header + stats --%>
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <.h1 class="mb-0!">
+          Locations
+        </.h1>
+        <div class="flex flex-wrap gap-2 mb-1">
+          <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
+            <span class="text-lg font-header font-bold tracking-tight">
+              {@total_locations}
             </span>
+            <span class="text-forest-100 text-sm font-medium">total</span>
+          </div>
+          <div class="inline-flex items-baseline gap-2 bg-stone-600 text-white px-3 py-2 rounded-lg">
+            <span class="text-lg font-header font-bold tracking-tight">
+              {length(@top_locations)}
+            </span>
+            <span class="text-stone-200 text-sm font-medium">top-level</span>
+          </div>
+          <div
+            :if={length(@specials) > 0}
+            class="inline-flex items-baseline gap-2 bg-stone-500 text-white px-3 py-2 rounded-lg"
+          >
+            <span class="text-lg font-header font-bold tracking-tight">
+              {length(@specials)}
+            </span>
+            <span class="text-stone-200 text-sm font-medium">special</span>
           </div>
         </div>
       </div>
 
+      <%!-- Search --%>
       <div class="w-full">
-        <%!-- Search results count --%>
-        <div :if={@search_term != ""} class="mt-2 text-sm text-gray-600">
+        <form phx-change="search" class="w-full">
+          <input
+            id="location-search"
+            type="search"
+            name="search"
+            value={@search_term}
+            placeholder="Search locations by name, slug, or country code..."
+            class="w-full px-3 py-2 text-stone-900 bg-white border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500"
+            phx-debounce="300"
+          />
+        </form>
+        <div :if={@search_term != ""} class="mt-2 text-sm text-stone-600">
           <%= if String.length(@search_term) < 2 do %>
             Type at least 2 characters to search...
           <% else %>
@@ -105,70 +122,45 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             <% end %>
           <% end %>
         </div>
-
-        <form phx-change="search" class="w-full">
-          <input
-            id="location-search"
-            type="search"
-            name="search"
-            value={@search_term}
-            placeholder="Search locations by name, slug, or country code..."
-            class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            phx-debounce="300"
-          />
-        </form>
       </div>
 
       <%!-- Search results --%>
-      <div
-        :if={@search_term != "" and String.length(@search_term) >= 2}
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
-      >
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <.icon name="hero-magnifying-glass" class="w-5 h-5 mr-2 text-blue-500 shrink-0" />
-          Search Results
-        </h2>
+      <div :if={@search_term != "" and String.length(@search_term) >= 2}>
+        <.h2>Search Results</.h2>
 
-        <div :if={length(@search_results) > 0} class="space-y-2">
+        <div :if={length(@search_results) > 0} class="border-t border-stone-200">
           <%= for location <- @search_results do %>
-            <div class="border border-gray-100 rounded-lg p-4 hover:border-gray-200 transition-colors">
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div class="flex-1 min-w-0">
-                  <.location_card location={location} show_type={false} />
-                </div>
-
-                <div class="flex items-center space-x-4 text-sm text-gray-500 shrink-0">
-                  <.link
-                    href={~p"/my/lifelist/#{location.slug}"}
-                    class="text-blue-600 hover:text-blue-700 text-sm lg:text-base hover:underline transition-colors"
-                  >
-                    Lifelist
-                  </.link>
-                </div>
+            <div class="py-3 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <.location_row location={location} />
               </div>
 
-              <%!-- Show location path/breadcrumb --%>
-              <div :if={length(location.ancestry) > 0} class="mt-2 text-xs text-gray-500">
-                <span class="font-medium">Path:</span>
-                <.location_breadcrumb ancestry={location.ancestry} name_cache={@name_cache} />
+              <div class="flex items-center shrink-0">
+                <.link
+                  href={~p"/my/lifelist/#{location.slug}"}
+                  class="text-forest-600 hover:underline text-sm no-underline"
+                >
+                  Lifelist
+                </.link>
               </div>
+            </div>
+
+            <div :if={length(location.ancestry) > 0} class="-mt-2 pb-2 text-xs text-stone-400">
+              <.location_breadcrumb ancestry={location.ancestry} name_cache={@name_cache} />
             </div>
           <% end %>
         </div>
 
-        <div :if={length(@search_results) == 0} class="text-center py-8 text-gray-500">
-          <.icon name="hero-magnifying-glass" class="w-12 h-12 mx-auto mb-4 text-gray-300" />
+        <div :if={length(@search_results) == 0} class="text-center py-8 text-stone-500">
+          <.icon name="hero-magnifying-glass" class="w-12 h-12 mx-auto mb-4 text-stone-300" />
           <p class="text-lg font-medium">No locations found</p>
           <p class="text-sm">Try a different search term or check your spelling.</p>
         </div>
       </div>
 
       <%!-- Main locations hierarchy (hidden when searching) --%>
-      <div
-        :if={@search_term == ""}
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
-      >
-        <div :if={@top_locations && length(@top_locations) > 0} class="space-y-2">
+      <div :if={@search_term == ""}>
+        <div :if={@top_locations && length(@top_locations) > 0} class="border-t border-stone-200">
           <%= for location <- @top_locations do %>
             <.render_location
               grouped_locations={@grouped_locations}
@@ -182,28 +174,22 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
         <div
           :if={!@top_locations || length(@top_locations) == 0}
-          class="text-center py-8 text-gray-500"
+          class="text-center py-8 text-stone-500"
         >
-          <.icon name="hero-map-pin" class="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          <.icon name="hero-map-pin" class="w-12 h-12 mx-auto mb-4 text-stone-300" />
           <p class="text-lg font-medium">No locations found</p>
           <p class="text-sm">Locations will appear here once they are added to the system.</p>
         </div>
       </div>
 
       <%!-- Special locations section --%>
-      <div
-        :if={@specials && length(@specials) > 0}
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
-      >
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <.icon name="hero-sparkles" class="w-5 h-5 mr-2 text-yellow-500 shrink-0" />
-          Special Locations
-        </h2>
+      <div :if={@specials && length(@specials) > 0}>
+        <.h2>Special Locations</.h2>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <%= for location <- @specials do %>
-            <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <.location_card location={location} show_type={true} />
+            <div class="border border-stone-200 bg-stone-50 rounded-lg p-4">
+              <.location_row location={location} />
             </div>
           <% end %>
         </div>
@@ -214,34 +200,34 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   def render_location(assigns) do
     ~H"""
-    <div class="border border-gray-100 rounded-l-lg mb-2 hover:border-gray-200 transition-colors">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-4">
-        <div class="flex items-center space-x-3 flex-1 min-w-0">
+    <div class="py-3 border-b border-stone-100">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="flex items-center space-x-2 flex-1 min-w-0">
           <%!-- Expand/collapse button only for locations with children --%>
           <%= if Enum.any?(@children) do %>
             <button
               phx-click="toggle_location"
               phx-value-location_id={@location.id}
-              class="shrink-0 p-1 hover:bg-gray-50 rounded transition-colors"
+              class="shrink-0 p-1 hover:bg-stone-50 rounded transition-colors"
             >
               <.icon
                 name="hero-chevron-right"
-                class={"w-4 h-4 text-gray-500 transition-transform duration-200 #{if MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: ""}"}
+                class={"w-4 h-4 text-stone-400 hover:text-stone-600 transition-transform duration-200 #{if MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: ""}"}
               />
             </button>
           <% else %>
-            <div class="shrink-0 p-1 w-6 h-6"></div>
+            <div class="shrink-0 w-6"></div>
           <% end %>
 
           <div class="flex-1 min-w-0">
-            <.location_card location={@location} show_type={false} />
+            <.location_row location={@location} />
           </div>
         </div>
 
-        <div class="flex items-center space-x-4 text-sm text-gray-500 shrink-0 sm:ml-4">
+        <div class="flex items-center shrink-0 sm:ml-4">
           <.link
             href={~p"/my/lifelist/#{@location.slug}"}
-            class="text-blue-600 hover:text-blue-700 text-sm lg:text-base hover:underline transition-colors"
+            class="text-forest-600 hover:underline text-sm no-underline"
           >
             Lifelist
           </.link>
@@ -250,63 +236,62 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
       <%!-- Children locations --%>
       <%= if MapSet.member?(@expanded_locations, @location.id) do %>
-        <div class="ml-4 sm:ml-6 pb-2 pr-0 border-t border-gray-50">
-          <div class="pt-2">
-            <%= for child <- Map.get(@grouped_locations, @location.id, []) do %>
-              <.render_location
-                location={child}
-                grouped_locations={@grouped_locations}
-                children={Map.get(@grouped_locations, child.id, [])}
-                expanded_locations={@expanded_locations}
-                level={@level + 1}
-              />
-            <% end %>
-          </div>
+        <hr class="border-stone-100 mt-2" />
+        <div class="ml-4 pl-4 border-l-2 border-stone-200">
+          <%= for child <- Map.get(@grouped_locations, @location.id, []) do %>
+            <.render_location
+              location={child}
+              grouped_locations={@grouped_locations}
+              children={Map.get(@grouped_locations, child.id, [])}
+              expanded_locations={@expanded_locations}
+              level={@level + 1}
+            />
+          <% end %>
         </div>
       <% end %>
     </div>
     """
   end
 
-  def location_card(assigns) do
-    ~H"""
-    <div class="flex items-center space-x-3 min-w-0">
-      <div class="shrink-0">
-        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-          <.icon name="hero-map-pin" class="w-4 h-4 text-blue-600" />
-        </div>
-      </div>
+  attr :location, :map, required: true
 
-      <div class="flex-1 min-w-0">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
-          <div class="flex items-center space-x-2 min-w-0">
-            <p class="text-sm font-medium text-gray-900 truncate">
-              <.link href={~p"/my/locations/#{@location.slug}"} class="hover:underline">
-                {@location.name_en}
-              </.link>
-            </p>
-            <%= if @location.is_private do %>
-              <span title="Private">
-                <.icon name="hero-lock-closed" class="w-4 h-4 text-gray-400 shrink-0" />
-              </span>
-            <% end %>
-            <span
-              :if={@location.iso_code && @location.iso_code != ""}
-              class="text-gray-600 font-mono text-sm shrink-0"
+  def location_row(assigns) do
+    ~H"""
+    <div class="min-w-0">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-0.5 sm:space-y-0">
+        <div class="flex items-center space-x-2 min-w-0">
+          <span class="text-sm font-medium text-stone-800 truncate">
+            <.link
+              href={~p"/my/locations/#{@location.slug}"}
+              class="text-stone-800 hover:underline no-underline"
             >
-              {String.upcase(@location.iso_code)}
+              {@location.name_en}
+            </.link>
+          </span>
+          <%= if @location.is_private do %>
+            <span title="Private">
+              <.icon name="hero-lock-closed" class="w-4 h-4 text-stone-400 shrink-0" />
             </span>
-          </div>
-        </div>
-        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-          <p class="text-xs text-gray-500 truncate">{@location.slug}</p>
+          <% end %>
           <span
-            :if={@location.location_type}
-            class="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full shrink-0"
+            :if={@location.iso_code && @location.iso_code != ""}
+            class="text-stone-500 font-mono text-sm shrink-0"
           >
-            {@location.location_type}
+            {String.upcase(@location.iso_code)}
           </span>
         </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+        <span class="text-xs text-stone-500 truncate">{@location.slug}</span>
+        <span
+          :if={@location.location_type}
+          class={[
+            "inline-block px-2 py-0.5 text-xs font-medium rounded-full shrink-0",
+            type_badge_classes(@location.location_type)
+          ]}
+        >
+          {@location.location_type}
+        </span>
       </div>
     </div>
     """
@@ -314,7 +299,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   def location_breadcrumb(assigns) do
     ~H"""
-    <span class="text-gray-400">
+    <span class="text-stone-400">
       <%= for {ancestor_id, index} <- Enum.with_index(@ancestry) do %>
         <%= if index > 0 do %>
           >
@@ -323,6 +308,18 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <% end %>
     </span>
     """
+  end
+
+  defp type_badge_classes(type) do
+    case type do
+      "continent" -> "bg-forest-100 text-forest-700"
+      "country" -> "bg-sky-100 text-sky-700"
+      "region" -> "bg-amber-100 text-amber-700"
+      "city" -> "bg-violet-100 text-violet-700"
+      "raion" -> "bg-teal-100 text-teal-700"
+      "special" -> "bg-rose-100 text-rose-700"
+      _other -> "bg-stone-100 text-stone-600"
+    end
   end
 
   defp build_name_cache(grouped_locations) do

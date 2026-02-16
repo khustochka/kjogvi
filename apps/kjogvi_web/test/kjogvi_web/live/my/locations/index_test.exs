@@ -28,7 +28,9 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    assert has_element?(index_live, "span", "2 total locations")
+    # Total count is shown in a stat pill with the number in its own span
+    assert has_element?(index_live, "span", "2")
+    assert has_element?(index_live, "span", "total")
   end
 
   test "expands and collapses a parent location", %{conn: conn} do
