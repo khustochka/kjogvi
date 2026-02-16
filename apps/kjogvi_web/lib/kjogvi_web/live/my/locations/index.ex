@@ -198,21 +198,27 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     """
   end
 
-  def render_location(%{children: children} = assigns) when children != [] do
+  defp has_children?(assigns), do: assigns.children != []
+
+  def render_location(assigns) do
     ~H"""
-    <div class="border-t border-b border-l border-stone-200 rounded-l-lg mb-2">
+    <div class="mb-2 border-t border-b border-l border-stone-200 rounded-l-lg">
       <div class="flex items-center justify-between gap-2 p-3">
         <div class="flex items-center space-x-2 flex-1 min-w-0">
-          <button
-            phx-click="toggle_location"
-            phx-value-location_id={@location.id}
-            class="shrink-0 p-1 hover:bg-stone-50 rounded transition-colors"
-          >
-            <.icon
-              name="hero-chevron-right"
-              class={"w-4 h-4 text-stone-400 hover:text-stone-600 transition-transform duration-200 #{if MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: ""}"}
-            />
-          </button>
+          <%= if has_children?(assigns) do %>
+            <button
+              phx-click="toggle_location"
+              phx-value-location_id={@location.id}
+              class="shrink-0 p-1 hover:bg-stone-50 rounded transition-colors"
+            >
+              <.icon
+                name="hero-chevron-right"
+                class={"w-4 h-4 text-stone-400 hover:text-stone-600 transition-transform duration-200 #{if MapSet.member?(@expanded_locations, @location.id), do: "rotate-90", else: ""}"}
+              />
+            </button>
+          <% else %>
+            <div class="shrink-0 w-6"></div>
+          <% end %>
 
           <div class="flex-1 min-w-0">
             <.location_row location={@location} />
@@ -227,8 +233,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </.link>
       </div>
 
-      <%= if MapSet.member?(@expanded_locations, @location.id) do %>
-        <div class="pl-3 pb-3 ">
+      <%= if has_children?(assigns) and MapSet.member?(@expanded_locations, @location.id) do %>
+        <div class="pl-3 pb-3">
           <%= for child <- Map.get(@grouped_locations, @location.id, []) do %>
             <.render_location
               location={child}
@@ -240,28 +246,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           <% end %>
         </div>
       <% end %>
-    </div>
-    """
-  end
-
-  def render_location(assigns) do
-    ~H"""
-    <div class="border border-stone-200 rounded-lg mb-2">
-      <div class="flex items-center justify-between gap-2 p-3">
-        <div class="flex items-center space-x-2 flex-1 min-w-0">
-          <div class="shrink-0 w-6"></div>
-          <div class="flex-1 min-w-0">
-            <.location_row location={@location} />
-          </div>
-        </div>
-
-        <.link
-          href={~p"/my/lifelist/#{@location.slug}"}
-          class="shrink-0 ml-4 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
-        >
-          Lifelist
-        </.link>
-      </div>
     </div>
     """
   end
