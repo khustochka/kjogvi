@@ -160,7 +160,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
       <%!-- Main locations hierarchy (hidden when searching) --%>
       <div :if={@search_term == ""}>
-        <div :if={@top_locations && length(@top_locations) > 0}>
+        <div :if={@top_locations && length(@top_locations) > 0} class="border-r border-stone-200">
           <%= for location <- @top_locations do %>
             <.render_location
               grouped_locations={@grouped_locations}
@@ -200,7 +200,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   def render_location(%{children: children} = assigns) when children != [] do
     ~H"""
-    <div class="border border-stone-200 rounded-lg mb-2">
+    <div class="border-t border-b border-l border-stone-200 rounded-l-lg mb-2">
       <div class="flex items-center justify-between gap-2 p-3">
         <div class="flex items-center space-x-2 flex-1 min-w-0">
           <button
@@ -228,7 +228,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       </div>
 
       <%= if MapSet.member?(@expanded_locations, @location.id) do %>
-        <div class="px-3 pb-3">
+        <div class="pl-3 pb-3 ">
           <%= for child <- Map.get(@grouped_locations, @location.id, []) do %>
             <.render_location
               location={child}
