@@ -82,4 +82,6 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 - Coordinate changes across `kjogvi` and `ornithologue` apps when adding features
 - Examine existing LiveViews in `apps/kjogvi_web/lib/kjogvi_web/live/` for patterns
 - When designing frontend, always make it responsive (check on smaller screen sizes)
+- Be mindful of how it will present on text-based browsers (e.g. lynx) and for screen readers
+- When creating a bunch of homogenous elements (e.g. filters), implement them using `<ul>` and `<li>`, even if they are not rendered visually as a list.
 <!-- usage-rules-end -->
