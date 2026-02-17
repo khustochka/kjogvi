@@ -12,6 +12,8 @@ defmodule KjogviWeb.LocationComponents do
 
   import KjogviWeb.IconComponents
 
+  alias Kjogvi.Geo.Location
+
   @doc """
   Renders a location row with name link, privacy icon, ISO code, slug, and type badge.
   """
@@ -46,6 +48,7 @@ defmodule KjogviWeb.LocationComponents do
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
         <span class="text-xs text-stone-500 truncate">{@location.slug}</span>
         <.type_badge :if={@location.location_type} type={@location.location_type} />
+        <.lifelist_badge :if={Location.show_on_lifelist?(@location)} />
       </div>
     </div>
     """
@@ -84,11 +87,22 @@ defmodule KjogviWeb.LocationComponents do
   end
 
   @doc """
+  Renders a badge indicating the location is shown in lifelist filters.
+  """
+  def lifelist_badge(assigns) do
+    ~H"""
+    <span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full shrink-0 bg-forest-100 text-forest-600">
+      lifelist filter
+    </span>
+    """
+  end
+
+  @doc """
   Returns Tailwind classes for a location type badge.
   """
   def type_badge_classes(type) do
     case type do
-      "continent" -> "bg-forest-100 text-forest-700"
+      "continent" -> "bg-indigo-100 text-indigo-700"
       "country" -> "bg-sky-100 text-sky-700"
       "region" -> "bg-amber-100 text-amber-700"
       "city" -> "bg-violet-100 text-violet-700"

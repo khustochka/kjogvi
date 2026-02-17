@@ -100,6 +100,22 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     refute has_element?(show_live, "#location-members")
   end
 
+  test "shows lifelist badge when location has public_index", %{conn: conn} do
+    location = insert(:location, name_en: "Canada", public_index: 1)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    assert has_element?(show_live, "#location-details span", "lifelist filter")
+  end
+
+  test "does not show lifelist badge when location has no public_index", %{conn: conn} do
+    location = insert(:location, name_en: "Local Park", public_index: nil)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    refute has_element?(show_live, "span", "lifelist filter")
+  end
+
   test "redirects to index for nonexistent slug", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/my/locations"}}} =
              live(conn, ~p"/my/locations/nonexistent")

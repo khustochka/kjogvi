@@ -135,6 +135,10 @@ defmodule KjogviWeb.Live.My.Locations.Show do
               <.icon name="hero-map" class="w-3 h-3 mr-1" /> 5-Mile Radius
             </span>
           </div>
+
+          <div :if={Location.show_on_lifelist?(@location)}>
+            <.lifelist_badge />
+          </div>
         </div>
       </div>
 
@@ -184,6 +188,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
   end
 
   defp has_details?(location) do
-    (location.lat && location.lon) || location.is_patch || location.is_5mr
+    (location.lat && location.lon) || location.is_patch || location.is_5mr ||
+      Location.show_on_lifelist?(location)
   end
 end

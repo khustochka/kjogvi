@@ -33,6 +33,22 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     assert has_element?(index_live, "span", "total")
   end
 
+  test "shows lifelist badge for location with public_index", %{conn: conn} do
+    insert(:location, name_en: "Canada", public_index: 1)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "span", "lifelist filter")
+  end
+
+  test "does not show lifelist badge for location without public_index", %{conn: conn} do
+    insert(:location, name_en: "Local Park", public_index: nil)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    refute has_element?(index_live, "span", "lifelist filter")
+  end
+
   test "expands and collapses a parent location", %{conn: conn} do
     parent = insert(:location, name_en: "Europe", location_type: "continent")
     insert(:location, name_en: "Germany", ancestry: [parent.id], location_type: "country")
