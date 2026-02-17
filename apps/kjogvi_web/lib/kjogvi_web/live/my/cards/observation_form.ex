@@ -15,10 +15,10 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
   def observation_row(assigns) do
     ~H"""
     <div class={[
-      "p-4 border rounded-lg",
+      "rounded-lg",
       if(@is_marked_for_deletion,
-        do: "border-red-300 bg-red-50 opacity-60",
-        else: "border-gray-200 bg-white"
+        do: "border-red-300 bg-red-50 opacity-60 p-4 border",
+        else: "border-gray-200 bg-white p-4 border lg:border-0 lg:p-0"
       )
     ]}>
       <%!-- Hidden input to track observation order --%>
@@ -36,6 +36,9 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
         <div class="flex items-center justify-between">
           <div class="flex-1 line-through text-gray-500">
             <span class="font-medium">
+              {@obs_form[:id].value}
+            </span>
+            <span class="font-medium">
               {taxon_display(@obs)}
             </span>
             <span :if={@obs_form[:quantity].value} class="ml-2">
@@ -46,18 +49,18 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
             type="button"
             phx-click="restore_observation"
             phx-value-index={@obs_form.index}
-            class="inline-flex items-center gap-2 rounded-lg bg-green-100 px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-200"
+            class="inline-flex items-center gap-2 rounded-lg bg-green-100 px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-200 border border-green-500"
           >
             <.icon name="hero-arrow-uturn-left" class="w-4 h-4" /> Restore
           </button>
         </div>
       <% else %>
-        <div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-3 lg:grid-cols-[minmax(10rem,1.2fr)_6rem_minmax(6rem,0.8fr)_minmax(6rem,0.8fr)_auto_auto] lg:items-end">
+        <div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-3 lg:grid-cols-[minmax(10rem,1fr)_8rem_minmax(6rem,0.8fr)_minmax(6rem,0.8fr)_auto_auto] lg:items-end">
           <div class="col-span-2 lg:col-span-1">
             <.live_component
               module={KjogviWeb.Live.Components.AutocompleteSearch}
               id={"taxon_search_#{@obs_form.index}"}
-              label="Taxon"
+              label={(@obs_form[:id].value && "Observation ##{@obs_form[:id].value}") || "Taxon"}
               placeholder="Search and select taxon..."
               current_value={taxon_display(@obs)}
               hidden_name={"card[observations][#{@obs_form.index}][taxon_key]"}
@@ -94,7 +97,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
               <CoreComponents.input type="checkbox" field={@obs_form[:hidden]} /> Hidden
             </label>
             <label class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap">
-              <CoreComponents.input type="checkbox" field={@obs_form[:unreported]} /> Unrep.
+              <CoreComponents.input type="checkbox" field={@obs_form[:unreported]} /> Unreported
             </label>
           </div>
 
@@ -104,9 +107,13 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
             phx-value-index={@obs_form.index}
             aria-label="Remove observation"
             title="Remove observation"
-            class="rounded-lg bg-red-100 p-2 text-red-700 hover:bg-red-200 self-end mb-0.5"
+            class="rounded-lg bg-red-100 px-2 pb-2 pt-1 text-red-700 hover:bg-red-200 self-end mb-0.5"
           >
-            <.icon name="hero-trash" class="w-4 h-4" />
+            <%= if @obs_form[:id].value do %>
+              <.icon name="hero-trash" class="w-4 h-4" />
+            <% else %>
+              <.icon name="hero-x-mark" class="w-4 h-4" />
+            <% end %>
           </button>
         </div>
       <% end %>
