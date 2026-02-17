@@ -104,7 +104,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     }
   end
 
-  def handle_event("validate", %{"card" => card_params}, socket) do
+  def handle_event("sync_card", %{"card" => card_params}, socket) do
     # Sync form field values to card struct
     card = socket.assigns.card
     updated_card = merge_params_into_card(card, card_params)
@@ -153,7 +153,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       {if @action == :create, do: "New Card", else: "Edit Card ##{@card.id}"}
     </CoreComponents.header>
 
-    <.form for={@form} id="card-form" phx-submit="save" phx-change="validate" class="space-y-4">
+    <.form for={@form} id="card-form" phx-submit="save" phx-change="sync_card" class="space-y-4">
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="shrink-0">
           <.live_component
