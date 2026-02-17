@@ -14,7 +14,7 @@ defmodule KjogviWeb.BirdingComponents do
       <.link
         phx-no-format
         patch={~p"/species/#{@species}"}
-        class="text-[1.05rem] font-semibold text-forest-500 underline decoration-forest-200 hover:decoration-forest-400 underline-offset-2"
+        class="text-[1.05rem] font-semibold text-forest-500 underline decoration-forest-200 hover:decoration-forest-500 hover:bg-forest-100 rounded-sm px-1 -mx-1 underline-offset-2 transition"
       ><%= @species.name_en %></.link>
       <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@species.name_sci}</i>
     </span>
