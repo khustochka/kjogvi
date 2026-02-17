@@ -52,8 +52,8 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
           </button>
         </div>
       <% else %>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-8">
-          <div class="sm:col-span-3">
+        <div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-3 lg:grid-cols-[minmax(10rem,1.2fr)_6rem_minmax(6rem,0.8fr)_minmax(6rem,0.8fr)_auto_auto] lg:items-end">
+          <div class="col-span-2 lg:col-span-1">
             <.live_component
               module={KjogviWeb.Live.Components.AutocompleteSearch}
               id={"taxon_search_#{@obs_form.index}"}
@@ -65,6 +65,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
               search_fn={fn query -> Kjogvi.Search.Taxon.search_taxa(query, @current_user) end}
               on_select_event="taxon_selected"
               on_select_params={%{"index" => @obs_form.index}}
+              compact={true}
               errors={
                 if show_field_error?(@obs_form, :taxon_key),
                   do: Enum.map(@obs_form[:taxon_key].errors, &CoreComponents.translate_error/1),
@@ -73,62 +74,78 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
             />
           </div>
 
-          <div class="sm:col-span-2">
-            <CoreComponents.input
-              type="text"
-              field={@obs_form[:quantity]}
-              label="Quantity"
-            />
+          <div class="col-span-2 lg:col-span-1">
+            <.compact_input field={@obs_form[:quantity]} label="Quantity" />
           </div>
 
-          <div class="flex items-end gap-1 sm:col-span-2">
-            <div class="flex-1">
-              <label class="block text-xs font-semibold leading-6 text-zinc-800">
-                <CoreComponents.input type="checkbox" field={@obs_form[:voice]} class="mt-1" />
-                Heard only
-              </label>
-            </div>
-            <div class="flex-1">
-              <label class="block text-xs font-semibold leading-6 text-zinc-800">
-                <CoreComponents.input type="checkbox" field={@obs_form[:hidden]} class="mt-1" />
-                Hidden
-              </label>
-            </div>
-            <div class="flex-1">
-              <label class="block text-xs font-semibold leading-6 text-zinc-800">
-                <CoreComponents.input
-                  type="checkbox"
-                  field={@obs_form[:unreported]}
-                  class="mt-1"
-                /> Unreported
-              </label>
-            </div>
+          <div class="col-span-2 lg:col-span-1">
+            <.compact_input field={@obs_form[:notes]} label="Notes" />
+          </div>
+
+          <div class="col-span-2 lg:col-span-1">
+            <.compact_input field={@obs_form[:private_notes]} label="Private notes" />
+          </div>
+
+          <div class="flex lg:flex-col gap-2 lg:gap-0.5 items-end lg:items-start lg:justify-end">
+            <label class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap">
+              <CoreComponents.input type="checkbox" field={@obs_form[:voice]} /> Heard
+            </label>
+            <label class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap">
+              <CoreComponents.input type="checkbox" field={@obs_form[:hidden]} /> Hidden
+            </label>
+            <label class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap">
+              <CoreComponents.input type="checkbox" field={@obs_form[:unreported]} /> Unrep.
+            </label>
           </div>
 
           <button
             type="button"
             phx-click="remove_observation"
             phx-value-index={@obs_form.index}
-            class="inline-flex items-center gap-2 rounded-lg bg-red-100 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-200 h-fit"
+            aria-label="Remove observation"
+            title="Remove observation"
+            class="rounded-lg bg-red-100 p-2 text-red-700 hover:bg-red-200 self-end mb-0.5"
           >
-            <.icon name="hero-trash" class="w-4 h-4" /> Remove
+            <.icon name="hero-trash" class="w-4 h-4" />
           </button>
         </div>
-
-        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <CoreComponents.input
-            type="text"
-            field={@obs_form[:notes]}
-            label="Public notes"
-          />
-
-          <CoreComponents.input
-            type="text"
-            field={@obs_form[:private_notes]}
-            label="Private notes"
-          />
-        </div>
       <% end %>
+    </div>
+    """
+  end
+
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :label, :string, required: true
+  attr :rest, :global, include: ~w(placeholder)
+
+  defp compact_input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+
+    assigns =
+      assigns
+      |> assign(:id, field.id)
+      |> assign(:name, field.name)
+      |> assign(:value, field.value)
+      |> assign(:errors, Enum.map(errors, &CoreComponents.translate_error/1))
+
+    ~H"""
+    <div>
+      <label for={@id} class="block text-sm font-semibold leading-6 text-zinc-800">
+        {@label}
+      </label>
+      <input
+        type="text"
+        id={@id}
+        name={@name}
+        value={Phoenix.HTML.Form.normalize_value("text", @value)}
+        class={[
+          "block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 px-2 py-1",
+          @errors == [] && "border-zinc-300 focus:border-zinc-400",
+          @errors != [] && "border-rose-400 focus:border-rose-400"
+        ]}
+        {@rest}
+      />
+      <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
     </div>
     """
   end

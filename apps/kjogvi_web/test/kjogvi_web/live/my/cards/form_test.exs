@@ -101,11 +101,10 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
     test "can remove new observations immediately", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/cards/new")
 
-      html = render(lv)
-      assert html =~ "Remove"
+      assert has_element?(lv, ~s(button[aria-label="Remove observation"]))
 
       # New observations (without ID) get removed immediately
-      lv |> element("button", "Remove") |> render_click()
+      lv |> element(~s(button[aria-label="Remove observation"])) |> render_click()
 
       html = render(lv)
       assert html =~ "No observations yet"
@@ -137,8 +136,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       lv |> element("button", "Add Observation") |> render_click()
       lv |> element("button", "Add Observation") |> render_click()
 
-      html = render(lv)
-      assert html =~ "Remove"
+      assert has_element?(lv, ~s(button[aria-label="Remove observation"]))
     end
 
     test "location search results display with dropdown styling", %{conn: conn} do
@@ -636,13 +634,13 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
           quantity: "1"
         })
 
-      {:ok, lv, html} = live(conn, "/my/cards/#{card.id}/edit")
+      {:ok, lv, _html} = live(conn, "/my/cards/#{card.id}/edit")
 
       # Existing observation should have Remove button
-      assert html =~ "Remove"
+      assert has_element?(lv, ~s(button[aria-label="Remove observation"]))
 
       # Mark for deletion
-      lv |> element("button", "Remove") |> render_click()
+      lv |> element(~s(button[aria-label="Remove observation"])) |> render_click()
 
       html = render(lv)
       # Should show as grayed out with Restore button
@@ -652,10 +650,9 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       # Restore the observation
       lv |> element("button", "Restore") |> render_click()
 
-      html = render(lv)
       # Should be back to normal with Remove button
-      assert html =~ "Remove"
-      refute html =~ "line-through"
+      assert has_element?(lv, ~s(button[aria-label="Remove observation"]))
+      refute render(lv) =~ "line-through"
     end
   end
 

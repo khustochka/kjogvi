@@ -63,6 +63,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
   attr :errors, :list, default: []
   attr :debounce, :string, default: "300"
   attr :min_length, :integer, default: 2
+  attr :compact, :boolean, default: false
 
   @impl true
   def mount(socket) do
@@ -82,7 +83,8 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
      |> assign_new(:debounce, fn -> "300" end)
      |> assign_new(:min_length, fn -> 2 end)
      |> assign_new(:on_select_params, fn -> %{} end)
-     |> assign_new(:errors, fn -> [] end)}
+     |> assign_new(:errors, fn -> [] end)
+     |> assign_new(:compact, fn -> false end)}
   end
 
   @impl true
@@ -179,7 +181,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
     ~H"""
     <div phx-click-away={JS.push("clear", target: @myself)}>
       <label class="block text-sm font-semibold leading-6 text-zinc-800">{@label}</label>
-      <div class="relative mt-2">
+      <div class={["relative", !@compact && "mt-2"]}>
         <input
           type="search"
           id={@id}
@@ -193,6 +195,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
           value={display_value(@search_term, @current_value)}
           class={[
             "mt-0 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+            @compact && "px-2 py-1",
             @errors == [] && "border-zinc-300 focus:border-zinc-400",
             @errors != [] && "border-rose-400 focus:border-rose-400"
           ]}

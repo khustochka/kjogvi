@@ -24,6 +24,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       :ok,
       socket
       |> assign(:marked_for_deletion, MapSet.new())
+      |> assign(:container_class, "max-w-7xl")
     }
   end
 
