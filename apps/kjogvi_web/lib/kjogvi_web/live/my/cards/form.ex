@@ -139,9 +139,11 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     <nav id="card-breadcrumbs" class="text-sm text-stone-500 mb-4">
       <.breadcrumb_link href={~p"/my/cards"}>Cards</.breadcrumb_link>
       <span :if={@action == :edit} class="mx-1 text-stone-400">/</span>
-      <.breadcrumb_link :if={@action == :edit} href={~p"/my/cards/#{@card.id}"}>
-        Card #{@card.id}
-      </.breadcrumb_link>
+      <.breadcrumb_link
+        :if={@action == :edit}
+        href={~p"/my/cards/#{@card.id}"}
+        phx-no-format
+      >Card #{@card.id}</.breadcrumb_link>
       <span class="mx-1 text-stone-400">/</span>
       <span class="text-stone-700">
         {if @action == :create, do: "New Card", else: "Edit"}

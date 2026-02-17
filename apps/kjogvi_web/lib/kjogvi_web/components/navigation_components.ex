@@ -70,9 +70,8 @@ defmodule KjogviWeb.NavigationComponents do
       href={@href}
       class="text-forest-600 no-underline hover:underline"
       {@rest}
-    >
-      {render_slot(@inner_block)}
-    </.link>
+      phx-no-format
+    >{render_slot(@inner_block)}</.link>
     """
   end
 

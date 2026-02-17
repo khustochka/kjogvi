@@ -46,9 +46,10 @@ defmodule KjogviWeb.Live.My.Locations.Show do
         <.breadcrumb_link href={~p"/my/locations"}>All locations</.breadcrumb_link>
         <%= for ancestor <- @ancestors do %>
           <span class="mx-1 text-stone-400">/</span>
-          <.breadcrumb_link href={~p"/my/locations/#{ancestor.slug}"}>
-            {ancestor.name_en}
-          </.breadcrumb_link>
+          <.breadcrumb_link
+            href={~p"/my/locations/#{ancestor.slug}"}
+            phx-no-format
+          >{ancestor.name_en}</.breadcrumb_link>
         <% end %>
         <span class="mx-1 text-stone-400">/</span>
         <span class="text-stone-700">{@location.name_en}</span>
