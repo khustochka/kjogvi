@@ -154,22 +154,20 @@ defmodule KjogviWeb.Live.Lifelist.Index do
               <div id="lifelist-location-selector">
                 <div class="filter-label">Location</div>
                 <div class="flex flex-wrap items-center gap-1 text-[0.8125rem] mb-2 pl-[5px]">
-                  <.link
+                  <.breadcrumb_link
                     :if={@filter.location != nil}
                     patch={lifelist_path(@current_scope, %{@filter | location: nil})}
-                    class="text-forest-600 hover:underline"
                   >
                     World
-                  </.link>
+                  </.breadcrumb_link>
                   <span :if={@filter.location == nil} class="font-bold text-stone-700">World</span>
                   <span :for={ancestor <- @location_ancestors} class="flex items-center gap-1">
                     <span class="text-stone-300">&rsaquo;</span>
-                    <.link
-                      patch={lifelist_path(@current_scope, %{@filter | location: ancestor})}
-                      class="text-forest-600 hover:underline"
-                    >
+                    <.breadcrumb_link patch={
+                      lifelist_path(@current_scope, %{@filter | location: ancestor})
+                    }>
                       {ancestor.name_en}
-                    </.link>
+                    </.breadcrumb_link>
                   </span>
                 </div>
                 <ul class="flex flex-wrap gap-1">

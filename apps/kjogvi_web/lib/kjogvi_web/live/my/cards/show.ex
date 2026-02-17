@@ -29,6 +29,12 @@ defmodule KjogviWeb.Live.My.Cards.Show do
   @impl true
   def render(assigns) do
     ~H"""
+    <nav id="card-breadcrumbs" class="text-sm text-stone-500 mb-4">
+      <.breadcrumb_link href={~p"/my/cards"}>Cards</.breadcrumb_link>
+      <span class="mx-1 text-stone-400">/</span>
+      <span class="text-stone-700">Card #{@card.id}</span>
+    </nav>
+
     <CoreComponents.header>
       Card #{@card.id}
       <:subtitle>
@@ -41,12 +47,9 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     </CoreComponents.header>
 
     <div class="mb-4 flex justify-end">
-      <.link
-        navigate={~p"/my/cards/#{@card.id}/edit"}
-        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700  no-underline"
-      >
-        <.icon name="hero-pencil-square" class="w-4 h-4" /> Edit Card
-      </.link>
+      <.action_button navigate={~p"/my/cards/#{@card.id}/edit"} icon="hero-pencil-square">
+        Edit Card
+      </.action_button>
     </div>
 
     <CoreComponents.list>

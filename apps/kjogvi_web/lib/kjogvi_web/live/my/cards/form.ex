@@ -136,6 +136,18 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     assigns = assign(assigns, :effort_types, effort_types)
 
     ~H"""
+    <nav id="card-breadcrumbs" class="text-sm text-stone-500 mb-4">
+      <.breadcrumb_link href={~p"/my/cards"}>Cards</.breadcrumb_link>
+      <span :if={@action == :edit} class="mx-1 text-stone-400">/</span>
+      <.breadcrumb_link :if={@action == :edit} href={~p"/my/cards/#{@card.id}"}>
+        Card #{@card.id}
+      </.breadcrumb_link>
+      <span class="mx-1 text-stone-400">/</span>
+      <span class="text-stone-700">
+        {if @action == :create, do: "New Card", else: "Edit"}
+      </span>
+    </nav>
+
     <CoreComponents.header>
       {if @action == :create, do: "New Card", else: "Edit Card ##{@card.id}"}
     </CoreComponents.header>
@@ -226,16 +238,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       <CoreComponents.input type="textarea" field={@form[:notes]} label="Notes" rows="3" />
 
       <div class="pt-6 border-t border-gray-200">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-zinc-800">Observations</h3>
-          <button
-            type="button"
-            phx-click="add_observation"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            <.icon name="hero-plus" class="w-4 h-4" /> Add Observation
-          </button>
-        </div>
+        <h3 class="text-lg font-semibold text-zinc-800 mb-4">Observations</h3>
 
         <div class="space-y-4">
           <.inputs_for :let={obs_form} field={@form[:observations]}>
@@ -251,6 +254,14 @@ defmodule KjogviWeb.Live.My.Cards.Form do
         <p :if={@card.observations == []} class="text-gray-500 italic py-4">
           No observations yet. Click "Add Observation" to start recording.
         </p>
+
+        <button
+          type="button"
+          phx-click="add_observation"
+          class="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          <.icon name="hero-plus" class="w-4 h-4" /> Add Observation
+        </button>
       </div>
 
       <div class="flex gap-4 pt-6">
@@ -261,12 +272,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
           <.icon name="hero-check" class="w-4 h-4" /> Save Card
         </button>
 
-        <.link
-          navigate={~p"/my/cards"}
-          class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-6 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-300 no-underline"
-        >
-          Cancel
-        </.link>
+        <.action_button navigate={~p"/my/cards"} variant="secondary">Cancel</.action_button>
       </div>
     </form>
     """

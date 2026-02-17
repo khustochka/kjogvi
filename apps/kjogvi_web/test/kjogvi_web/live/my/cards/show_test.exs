@@ -9,6 +9,15 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
     %{conn: log_in_user(conn, user), user: user}
   end
 
+  test "renders breadcrumbs with link to cards index", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    assert has_element?(show_live, "#card-breadcrumbs")
+    assert has_element?(show_live, "#card-breadcrumbs a", "Cards")
+  end
+
   test "renders with no observations", %{conn: conn, user: user} do
     card = insert(:card, user: user)
 

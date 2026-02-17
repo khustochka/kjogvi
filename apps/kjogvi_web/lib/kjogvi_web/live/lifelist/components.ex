@@ -31,9 +31,13 @@ defmodule KjogviWeb.Live.Lifelist.Components do
             <time time={lifer.observ_date}>
               {format_date(lifer.observ_date)}
             </time>
-            <.link :if={@show_private_details} navigate={~p"/my/cards/#{lifer.card_id}"}>
-              <.icon name="hero-clipboard-document-list" class="w-[18px] text-gray-400" />
-            </.link>
+            <.icon_link
+              :if={@show_private_details}
+              navigate={~p"/my/cards/#{lifer.card_id}"}
+              icon="hero-clipboard-document-list"
+              label="View card"
+              class="text-gray-400"
+            />
           </div>
           <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
             <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>

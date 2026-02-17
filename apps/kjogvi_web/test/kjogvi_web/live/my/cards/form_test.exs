@@ -54,6 +54,13 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "New Card"
     end
 
+    test "renders breadcrumbs on new card form", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      assert has_element?(lv, "#card-breadcrumbs")
+      assert has_element?(lv, "#card-breadcrumbs a", "Cards")
+    end
+
     test "renders location field with type=search", %{conn: conn} do
       {:ok, _lv, html} = live(conn, "/my/cards/new")
       assert html =~ "Location"
@@ -496,6 +503,14 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
         })
 
       {:ok, conn: conn, user: user, card: card, location1: location1, location2: location2}
+    end
+
+    test "renders breadcrumbs on edit card form with link to card", %{conn: conn, card: card} do
+      {:ok, lv, _html} = live(conn, "/my/cards/#{card.id}/edit")
+
+      assert has_element?(lv, "#card-breadcrumbs")
+      assert has_element?(lv, "#card-breadcrumbs a", "Cards")
+      assert has_element?(lv, "#card-breadcrumbs a", "Card ##{card.id}")
     end
 
     test "can edit card and change location", %{

@@ -43,12 +43,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
     </.h1>
 
     <div class="mb-4 flex justify-end">
-      <.link
-        navigate={~p"/my/cards/new"}
-        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 no-underline"
-      >
-        <.icon name="hero-plus" class="w-4 h-4" /> New Card
-      </.link>
+      <.action_button navigate={~p"/my/cards/new"} icon="hero-plus">New Card</.action_button>
     </div>
 
     <CoreComponents.table id="cards" rows={@cards}>
@@ -72,12 +67,12 @@ defmodule KjogviWeb.Live.My.Cards.Index do
         </span>
       </:col>
       <:col :let={card} label="Actions">
-        <.link
+        <.icon_link
           navigate={~p"/my/cards/#{card.id}/edit"}
+          icon="hero-pencil-square"
+          label="Edit card"
           class="text-blue-600 hover:text-blue-700"
-        >
-          <.icon name="hero-pencil-square" class="w-4 h-4" />
-        </.link>
+        />
       </:col>
     </CoreComponents.table>
 
