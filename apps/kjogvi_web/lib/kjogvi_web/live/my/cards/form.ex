@@ -25,6 +25,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       socket
       |> assign(:marked_for_deletion, MapSet.new())
       |> assign(:container_class, "max-w-7xl")
+      |> assign(:effort_types, Birding.Card.effort_types())
     }
   end
 
@@ -133,9 +134,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   @impl true
   def render(assigns) do
-    effort_types = Kjogvi.Birding.Card.effort_types()
-    assigns = assign(assigns, :effort_types, effort_types)
-
     ~H"""
     <nav id="card-breadcrumbs" class="text-sm text-stone-500 mb-4">
       <.breadcrumb_link href={~p"/my/cards"}>Cards</.breadcrumb_link>
@@ -155,7 +153,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       {if @action == :create, do: "New Card", else: "Edit Card ##{@card.id}"}
     </CoreComponents.header>
 
-    <form phx-submit="save" phx-change="validate" phx-debounce="200" class="space-y-4">
+    <.form for={@form} id="card-form" phx-submit="save" phx-change="validate" class="space-y-4">
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="shrink-0">
           <.live_component
@@ -278,7 +276,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
         <.action_button navigate={~p"/my/cards"} variant="secondary">Cancel</.action_button>
       </div>
-    </form>
+    </.form>
     """
   end
 
