@@ -55,7 +55,7 @@ defmodule KjogviWeb.FormComponents do
   def input(%{type: "password"} = assigns) do
     ~H"""
     <fieldset class="fieldset mb-2">
-      <label>
+      <label for={@id}>
         <span :if={@label} class="block text-sm font-semibold leading-6 text-zinc-800">{@label}</span>
         <div class="relative">
           <input

@@ -90,13 +90,22 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
           </div>
 
           <div class="flex lg:flex-col gap-2 lg:gap-0.5 items-end lg:items-start lg:justify-end">
-            <label class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap">
+            <label
+              for={@obs_form[:voice].id}
+              class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap"
+            >
               <CoreComponents.input type="checkbox" field={@obs_form[:voice]} /> Heard
             </label>
-            <label class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap">
+            <label
+              for={@obs_form[:hidden].id}
+              class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap"
+            >
               <CoreComponents.input type="checkbox" field={@obs_form[:hidden]} /> Hidden
             </label>
-            <label class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap">
+            <label
+              for={@obs_form[:unreported].id}
+              class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap"
+            >
               <CoreComponents.input type="checkbox" field={@obs_form[:unreported]} /> Unreported
             </label>
           </div>

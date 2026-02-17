@@ -180,7 +180,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearch do
   def render(assigns) do
     ~H"""
     <div phx-click-away={JS.push("clear", target: @myself)}>
-      <label class="block text-sm font-semibold leading-6 text-zinc-800">{@label}</label>
+      <label for={@id} class="block text-sm font-semibold leading-6 text-zinc-800">{@label}</label>
       <div class={["relative", !@compact && "mt-2"]}>
         <input
           type="search"
