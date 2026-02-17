@@ -656,6 +656,50 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
     end
   end
 
+  describe "double submit protection" do
+    setup do
+      user = UsersFixtures.user_fixture()
+      conn = conn_for_user(user)
+      location = GeoFixtures.location_fixture(name_en: "Test Park")
+      {:ok, conn: conn, user: user, location: location}
+    end
+
+    test "submit button has phx-disable-with attribute", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      assert has_element?(lv, ~s(button[type="submit"][phx-disable-with]))
+    end
+
+    test "successful submit navigates away, preventing double submit", %{
+      conn: conn,
+      user: user,
+      location: location
+    } do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      search_and_select_location(lv, "Test")
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "STATIONARY",
+          "start_time" => "08:00",
+          "duration_minutes" => "30",
+          "location_id" => to_string(location.id)
+        }
+      }
+
+      # First submit navigates away from the form
+      lv |> render_submit("save", form_data)
+      {path, _flash} = assert_redirect(lv)
+      assert path =~ ~r"/my/cards/\d+"
+
+      # Only one card was created
+      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
+      assert length(cards.entries) == 1
+    end
+  end
+
   describe "form validation errors" do
     setup do
       {user, book} = create_user_with_book()
