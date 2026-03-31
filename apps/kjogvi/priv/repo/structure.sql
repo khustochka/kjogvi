@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict xdqXjhiCEKHBOr2e5ECMRMgdM6RmP6verUdhpK1gdhW6zozaXOzfgmBw5slAjc3
+\restrict FeP2qmYX1S5KCq4T1u9VDduox3yRahfkh8gVmQ0LtPW3f5TP6aE2ncJJ8YbkABb
 
 -- Dumped from database version 17.6 (Debian 17.6-2.pgdg12+1)
--- Dumped by pg_dump version 18.1
+-- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -292,7 +292,8 @@ CREATE TABLE public.users (
     extras jsonb DEFAULT '{}'::jsonb,
     confirmed_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    default_book_signature character varying(255)
 );
 
 
@@ -596,6 +597,13 @@ CREATE UNIQUE INDEX species_taxa_mappings_taxon_key_index ON public.species_taxa
 
 
 --
+-- Name: users_default_book_signature_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX users_default_book_signature_index ON public.users USING btree (default_book_signature);
+
+
+--
 -- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -716,7 +724,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict xdqXjhiCEKHBOr2e5ECMRMgdM6RmP6verUdhpK1gdhW6zozaXOzfgmBw5slAjc3
+\unrestrict FeP2qmYX1S5KCq4T1u9VDduox3yRahfkh8gVmQ0LtPW3f5TP6aE2ncJJ8YbkABb
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -724,3 +732,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240120044005);
 INSERT INTO public."schema_migrations" (version) VALUES (20240627032425);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013044023);
 INSERT INTO public."schema_migrations" (version) VALUES (20251015130047);
+INSERT INTO public."schema_migrations" (version) VALUES (20260115190000);
