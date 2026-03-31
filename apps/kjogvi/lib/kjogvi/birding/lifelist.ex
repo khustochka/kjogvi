@@ -140,24 +140,23 @@ defmodule Kjogvi.Birding.Lifelist do
 
   defp generate_with_species(scope, filter, opts \\ []) do
     Lifelist.Query.lifelist_query(scope, filter, opts)
+    |> fetch_with_species()
+  end
+
+  defp fetch_with_species(query) do
+    query
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
-    |> Kjogvi.Repo.preload(:species_page)
+    |> Repo.preload(:species_page)
   end
 
   defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do
-    species_pages = Enum.map(result.list, & &1.species_page_id)
-
-    new_filter = %{filter | exclude_heard_only: false}
-
-    full_list =
-      generate_with_species(scope, new_filter)
+    seen_species_page_ids = Enum.map(result.list, & &1.species_page_id)
 
     heard_only_list =
-      full_list
-      |> Enum.reject(fn life_obs ->
-        life_obs.species_page_id in species_pages
-      end)
+      Lifelist.Query.lifelist_query(scope, %{filter | exclude_heard_only: false})
+      |> where([l], l.species_page_id not in ^seen_species_page_ids)
+      |> fetch_with_species()
       |> Location.Query.preload_all_locations()
       |> then(fn list ->
         %Result{

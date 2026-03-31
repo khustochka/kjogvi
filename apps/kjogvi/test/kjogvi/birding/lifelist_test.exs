@@ -472,6 +472,58 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert length(result.list) == 1
       assert length(result.extras.heard_only.list) == 1
     end
+
+    test "heard only extras is empty when all species have been seen" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user}
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, observ_date: ~D"2023-06-01", user: user)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true)
+
+      assert length(result.list) == 1
+      assert result.extras.heard_only.list == []
+      assert result.extras.heard_only.total == 0
+    end
+
+    test "heard only extras respects year filter" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user}
+
+      {taxon1, _} = Factory.create_species_taxon_with_page()
+      card1 = insert(:card, observ_date: ~D"2022-05-10", user: user)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1), voice: true)
+
+      {taxon2, _} = Factory.create_species_taxon_with_page()
+      card2 = insert(:card, observ_date: ~D"2023-08-15", user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2), voice: true)
+
+      result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true, year: 2022)
+
+      assert result.list == []
+      assert length(result.extras.heard_only.list) == 1
+      assert hd(result.extras.heard_only.list).species_page.name_sci == taxon1.name_sci
+    end
+
+    test "heard only species uses earliest voice-only observation date" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user}
+
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      card1 = insert(:card, observ_date: ~D"2022-03-01", user: user)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon), voice: true)
+
+      card2 = insert(:card, observ_date: ~D"2023-09-15", user: user)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon), voice: true)
+
+      result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true)
+
+      assert result.list == []
+      assert length(result.extras.heard_only.list) == 1
+      assert hd(result.extras.heard_only.list).observ_date == ~D[2022-03-01]
+    end
   end
 
   describe "top/3" do
