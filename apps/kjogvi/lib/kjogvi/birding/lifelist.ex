@@ -3,8 +3,6 @@ defmodule Kjogvi.Birding.Lifelist do
   Lifelist generation.
   """
 
-  import Ecto.Query
-
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
 
@@ -75,9 +73,7 @@ defmodule Kjogvi.Birding.Lifelist do
   Get all years in a list based on provided filter options.
   """
   def years(scope, filter \\ []) do
-    Lifelist.Query.observations_filtered(scope, filter)
-    |> distinct(true)
-    |> select([_o, c], c.cached_year)
+    Lifelist.Query.years_query(scope, filter)
     |> Repo.all()
     |> Enum.sort()
   end
@@ -88,9 +84,7 @@ defmodule Kjogvi.Birding.Lifelist do
   Get all months in a list based on provided filter options.
   """
   def months(scope, filter \\ []) do
-    Lifelist.Query.observations_filtered(scope, filter)
-    |> distinct(true)
-    |> select([_o, c], c.cached_month)
+    Lifelist.Query.months_query(scope, filter)
     |> Repo.all()
     |> Enum.sort()
   end
@@ -102,37 +96,7 @@ defmodule Kjogvi.Birding.Lifelist do
   observations matching the given filter.
   """
   def location_ids(scope, filter \\ []) do
-    card_location_ids =
-      Lifelist.Query.observations_filtered(scope, filter)
-      |> distinct(true)
-      |> select([_o, c], c.location_id)
-
-    ancestor_ids =
-      from(cl in Location,
-        where: cl.id in subquery(card_location_ids),
-        select: fragment("unnest(?)", cl.ancestry)
-      )
-
-    # IDs of special locations whose members (or descendants of members) have cards
-    special_parent_ids =
-      from(cl in Location,
-        where: cl.id in subquery(card_location_ids),
-        join: sl in "special_locations",
-        on:
-          field(sl, :child_location_id) == cl.id or
-            field(sl, :child_location_id) in cl.ancestry,
-        distinct: true,
-        select: field(sl, :parent_location_id)
-      )
-
-    from(ll in Location,
-      where: not is_nil(ll.public_index),
-      where:
-        ll.id in subquery(card_location_ids) or
-          ll.id in subquery(ancestor_ids) or
-          ll.id in subquery(special_parent_ids),
-      select: ll.id
-    )
+    Lifelist.Query.location_ids_query(scope, filter)
     |> Repo.all()
   end
 
@@ -154,8 +118,9 @@ defmodule Kjogvi.Birding.Lifelist do
     seen_species_page_ids = Enum.map(result.list, & &1.species_page_id)
 
     heard_only_list =
-      Lifelist.Query.lifelist_query(scope, %{filter | exclude_heard_only: false})
-      |> where([l], l.species_page_id not in ^seen_species_page_ids)
+      Lifelist.Query.lifelist_query(scope, %{filter | exclude_heard_only: false},
+        excluding_species: seen_species_page_ids
+      )
       |> fetch_with_species()
       |> Location.Query.preload_all_locations()
       |> then(fn list ->
