@@ -153,22 +153,32 @@ defmodule KjogviWeb.Live.Lifelist.Index do
               <%!-- Location --%>
               <div id="lifelist-location-selector">
                 <div class="filter-label">Location</div>
-                <div class="flex flex-wrap items-center gap-1 text-[0.8125rem] mb-2 pl-[5px]">
-                  <.breadcrumb_link
-                    :if={@filter.location != nil}
-                    patch={lifelist_path(@current_scope, %{@filter | location: nil})}
-                    phx-no-format
-                  >World</.breadcrumb_link>
-                  <span :if={@filter.location == nil} class="font-bold text-stone-700">World</span>
-                  <span :for={ancestor <- @location_ancestors} class="flex items-center gap-1">
+                <ul
+                  :if={@location_ancestors != []}
+                  class="flex flex-wrap items-center gap-1 pb-2 mb-2 border-b border-stone-100"
+                >
+                  <.sidebar_location_pill
+                    href={lifelist_path(@current_scope, %{@filter | location: nil})}
+                  >
+                    World
+                  </.sidebar_location_pill>
+                  <li :for={ancestor <- @location_ancestors} class="flex items-center gap-1">
                     <span class="text-stone-300">&rsaquo;</span>
-                    <.breadcrumb_link
-                      patch={lifelist_path(@current_scope, %{@filter | location: ancestor})}
-                      phx-no-format
-                    >{ancestor.name_en}</.breadcrumb_link>
-                  </span>
-                </div>
+                    <.sidebar_location_pill
+                      href={lifelist_path(@current_scope, %{@filter | location: ancestor})}
+                    >
+                      {ancestor.name_en}
+                    </.sidebar_location_pill>
+                  </li>
+                </ul>
                 <ul class="flex flex-wrap gap-1">
+                  <.sidebar_location_pill
+                    :if={@location_ancestors == []}
+                    selected={@filter.location == nil}
+                    href={lifelist_path(@current_scope, %{@filter | location: nil})}
+                  >
+                    World
+                  </.sidebar_location_pill>
                   <.sidebar_location_pill
                     :for={{location, active, selected} <- @location_siblings}
                     selected={selected}

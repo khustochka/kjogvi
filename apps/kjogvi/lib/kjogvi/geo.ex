@@ -69,9 +69,18 @@ defmodule Kjogvi.Geo do
           end)
 
         children =
-          Enum.filter(all, fn child ->
-            effective_lifelist_parent(child.ancestry, lifelist_ids) == loc.id
-          end)
+          if my_parent == nil do
+            # Top-level location: show children of all top-level locations
+            top_level_ids = MapSet.new(siblings, & &1.id) |> MapSet.put(loc.id)
+
+            Enum.filter(all, fn child ->
+              effective_lifelist_parent(child.ancestry, lifelist_ids) in top_level_ids
+            end)
+          else
+            Enum.filter(all, fn child ->
+              effective_lifelist_parent(child.ancestry, lifelist_ids) == loc.id
+            end)
+          end
 
         %{ancestors: ancestors, siblings: siblings, children: children}
     end
