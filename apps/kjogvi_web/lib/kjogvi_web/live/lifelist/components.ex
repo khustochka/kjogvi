@@ -134,7 +134,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   def sidebar_filter_pill(%{active: false} = assigns) do
     ~H"""
     <li class={@class}>
-      <span class="block text-center py-1 text-[0.8125rem] leading-snug text-stone-400 border border-stone-200 rounded bg-transparent">
+      <span class="block text-center py-1 text-[0.8125rem] leading-snug text-stone-300 border border-stone-100 rounded bg-transparent">
         {render_slot(@inner_block)}
       </span>
     </li>
@@ -146,7 +146,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     <li class={@class}>
       <.link
         patch={@href}
-        class="block text-center py-1 text-[0.8125rem] leading-snug text-forest-600 bg-white border border-stone-200 rounded hover:bg-forest-50 no-underline"
+        class="block text-center py-1 text-[0.8125rem] leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 no-underline"
       >
         {render_slot(@inner_block)}
       </.link>
@@ -176,7 +176,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   def sidebar_location_pill(%{active: false} = assigns) do
     ~H"""
     <li class={["inline", @class]}>
-      <span class="inline-block px-2 py-0.5 text-[0.8125rem] leading-snug text-stone-400 border border-stone-200 rounded">
+      <span class="inline-block px-2 py-0.5 text-[0.8125rem] leading-snug text-stone-300 border border-stone-100 rounded">
         {render_slot(@inner_block)}
       </span>
     </li>
@@ -188,7 +188,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     <li class={["inline", @class]}>
       <.link
         patch={@href}
-        class="inline-block px-2 py-0.5 text-[0.8125rem] leading-snug text-forest-600 bg-white border border-stone-200 rounded hover:bg-forest-50 no-underline"
+        class="inline-block px-2 py-0.5 text-[0.8125rem] leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 no-underline"
       >
         {render_slot(@inner_block)}
       </.link>

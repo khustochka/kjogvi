@@ -157,16 +157,16 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                   :if={@location_ancestors != []}
                   class="flex flex-wrap items-center gap-1 pb-2 mb-2 border-b border-stone-100"
                 >
-                  <.sidebar_location_pill
-                    href={lifelist_path(@current_scope, %{@filter | location: nil})}
-                  >
+                  <.sidebar_location_pill href={
+                    lifelist_path(@current_scope, %{@filter | location: nil})
+                  }>
                     World
                   </.sidebar_location_pill>
                   <li :for={ancestor <- @location_ancestors} class="flex items-center gap-1">
                     <span class="text-stone-300">&rsaquo;</span>
-                    <.sidebar_location_pill
-                      href={lifelist_path(@current_scope, %{@filter | location: ancestor})}
-                    >
+                    <.sidebar_location_pill href={
+                      lifelist_path(@current_scope, %{@filter | location: ancestor})
+                    }>
                       {ancestor.name_en}
                     </.sidebar_location_pill>
                   </li>
