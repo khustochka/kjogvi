@@ -36,7 +36,10 @@ defmodule Kjogvi.GeoFixtures do
         :ancestry,
         :is_private,
         :is_patch,
-        :is_5mr
+        :is_5mr,
+        :public_index,
+        :cached_country_id,
+        :cached_subdivision_id
       ])
       |> validate_required([:slug, :name_en, :ancestry, :is_private, :is_patch, :is_5mr])
       |> Repo.insert()
