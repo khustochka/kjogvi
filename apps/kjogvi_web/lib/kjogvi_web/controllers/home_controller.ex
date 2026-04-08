@@ -6,6 +6,7 @@ defmodule KjogviWeb.HomeController do
 
   # require Integer
   alias Kjogvi.Birding
+  alias Kjogvi.Birding.Diary
   alias Kjogvi.Birding.Lifelist
   alias KjogviWeb.Live
 
@@ -42,8 +43,11 @@ defmodule KjogviWeb.HomeController do
         end
       end)
 
+    diary_entries = Diary.recent_entries(lifelist_scope)
+
     conn
     |> assign(:lists, primary_lists ++ country_lists)
+    |> assign(:diary_entries, diary_entries)
     |> render(:home)
   end
 end
