@@ -22,7 +22,7 @@ defmodule Kjogvi.Birding.Diary do
   alias Kjogvi.Birding.Lifelist
 
   @default_limit 5
-  @cutoff_days 90
+  @cutoff_days 93
 
   @doc """
   Returns diary entries for the most recent days that have events.

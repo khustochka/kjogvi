@@ -4,7 +4,6 @@ defmodule KjogviWeb.HomeController do
   @top_lifelist_num 5
   @default_countries ["canada", "ukraine"]
 
-  # require Integer
   alias Kjogvi.Birding
   alias Kjogvi.Birding.Diary
   alias Kjogvi.Birding.Lifelist
