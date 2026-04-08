@@ -19,17 +19,17 @@ defmodule Kjogvi.Legacy.Import.Locations do
 
     five_mr_slugs = for loc <- locations, loc.is_5mr, do: loc.slug
 
-    _ = Repo.insert_all(Kjogvi.Geo.Location, locations)
+    _ = Repo.insert_all(Location, locations)
 
     _ = Repo.query!("SELECT setval('locations_id_seq', (SELECT MAX(id) FROM locations));")
 
     five_mr_loc =
-      from(l in Kjogvi.Geo.Location, where: l.slug == "5mr")
+      from(l in Location, where: l.slug == "5mr")
       |> preload(:special_child_locations)
       |> Repo.one()
 
     five_mr_children =
-      from(l in Kjogvi.Geo.Location, where: l.slug in ^five_mr_slugs)
+      from(l in Location, where: l.slug in ^five_mr_slugs)
       |> Repo.all()
 
     five_mr_loc
@@ -37,27 +37,17 @@ defmodule Kjogvi.Legacy.Import.Locations do
     |> Repo.update()
 
     arabat_loc =
-      from(l in Kjogvi.Geo.Location, where: l.slug == "arabat_spit")
+      from(l in Location, where: l.slug == "arabat_spit")
       |> preload(:special_child_locations)
       |> Repo.one()
 
     arabat_children =
-      from(l in Kjogvi.Geo.Location, where: l.slug in ["arabatska_khersonska", "arabatska_krym"])
+      from(l in Location, where: l.slug in ["arabatska_khersonska", "arabatska_krym"])
       |> Repo.all()
 
     arabat_loc
     |> Ecto.Changeset.change(%{special_child_locations: arabat_children})
     |> Repo.update()
-  end
-
-  def after_import do
-    Location
-    |> Repo.all()
-    |> Enum.each(fn loc ->
-      loc
-      |> Location.set_public_location_changeset()
-      |> Repo.update()
-    end)
   end
 
   def truncate do
@@ -106,13 +96,13 @@ defmodule Kjogvi.Legacy.Import.Locations do
       :ebird_location_id,
       :name_ru,
       :name_uk,
-      :cached_country_id
+      :cached_public_locus_id
     ])
     |> Map.put(:is_5mr, loc.five_mile_radius)
     |> Map.put(:location_type, location_type)
     |> Map.put(:is_patch, loc.patch)
     |> Map.put(:is_private, loc.private_loc)
-    |> Map.put(:cached_country_id, loc.cached_country_id)
+    |> Map.put(:cached_public_location_id, loc.cached_public_locus_id)
     |> Map.put(:inserted_at, time)
     |> Map.put(:updated_at, time)
   end

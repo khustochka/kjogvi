@@ -67,16 +67,16 @@ defmodule Kjogvi.Legacy.Import do
     Kjogvi.Legacy.Import.Observations.import(columns, rows, opts)
   end
 
-  defp after_import(:locations, opts) do
-    :telemetry.span(
-      [:kjogvi, :legacy, :import, :locations, :after_import],
-      telemetry_metadata(opts),
-      fn ->
-        Kjogvi.Legacy.Import.Locations.after_import()
+  defp after_import(:locations, _opts) do
+    # :telemetry.span(
+    #   [:kjogvi, :legacy, :import, :locations, :after_import],
+    #   telemetry_metadata(opts),
+    #   fn ->
+    #     Kjogvi.Legacy.Import.Locations.after_import()
 
-        {:ok, telemetry_metadata(opts)}
-      end
-    )
+    #     {:ok, telemetry_metadata(opts)}
+    #   end
+    # )
   end
 
   defp after_import(:cards, _opts) do
