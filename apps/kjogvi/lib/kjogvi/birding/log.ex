@@ -82,13 +82,19 @@ defmodule Kjogvi.Birding.Log do
       Enum.map(rows, fn row ->
         area = if row.location_id_scope, do: location_map[row.location_id_scope], else: nil
         type = if row.year_scope, do: :year, else: :total
-        {area, type, row.year_scope, row.life_observation}
+        {area, type, row.year_scope, row.life_observation, row.list_total}
       end)
 
     deduplicated = deduplicate(candidates)
 
-    Enum.map(deduplicated, fn {area, type, year, life_obs} ->
-      %Entry{type: type, area: area, year: year, life_observations: [life_obs]}
+    Enum.map(deduplicated, fn {area, type, year, life_obs, list_total} ->
+      %Entry{
+        type: type,
+        area: area,
+        year: year,
+        life_observations: [life_obs],
+        list_total: list_total
+      }
     end)
   end
 
@@ -97,17 +103,17 @@ defmodule Kjogvi.Birding.Log do
   defp deduplicate(candidates) do
     total_area_ids =
       candidates
-      |> Enum.filter(fn {_area, type, _year, _obs} -> type == :total end)
-      |> Enum.map(fn {area, _type, _year, _obs} -> area_id(area) end)
+      |> Enum.filter(fn {_area, type, _year, _obs, _total} -> type == :total end)
+      |> Enum.map(fn {area, _type, _year, _obs, _total} -> area_id(area) end)
       |> MapSet.new()
 
     year_area_ids =
       candidates
-      |> Enum.filter(fn {_area, type, _year, _obs} -> type == :year end)
-      |> Enum.map(fn {area, _type, year, _obs} -> {area_id(area), year} end)
+      |> Enum.filter(fn {_area, type, _year, _obs, _total} -> type == :year end)
+      |> Enum.map(fn {area, _type, year, _obs, _total} -> {area_id(area), year} end)
       |> MapSet.new()
 
-    Enum.reject(candidates, fn {area, type, year, _obs} ->
+    Enum.reject(candidates, fn {area, type, year, _obs, _total} ->
       covered?(area, type, year, total_area_ids, year_area_ids)
     end)
   end
@@ -159,7 +165,15 @@ defmodule Kjogvi.Birding.Log do
     |> Enum.map(fn {{type, _area_id, year}, group} ->
       area = hd(group).area
       life_obs = Enum.flat_map(group, & &1.life_observations)
-      %Entry{type: type, area: area, year: year, life_observations: life_obs}
+      list_total = group |> Enum.map(& &1.list_total) |> Enum.max()
+
+      %Entry{
+        type: type,
+        area: area,
+        year: year,
+        life_observations: life_obs,
+        list_total: list_total
+      }
     end)
     |> Enum.sort_by(&entry_sort_key/1)
   end

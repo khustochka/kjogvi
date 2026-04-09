@@ -235,6 +235,22 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     end
   end
 
+  test "each row has an anchor id matching its rank", %{conn: conn} do
+    {taxon1, _} = Factory.create_species_taxon_with_page()
+    {taxon2, _} = Factory.create_species_taxon_with_page()
+
+    card1 = insert(:main_user_card, observ_date: ~D"2023-01-01")
+    insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    card2 = insert(:main_user_card, observ_date: ~D"2023-06-01")
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+    {:ok, view, _html} = live(conn, ~p"/lifelist")
+
+    # 2 species total; most recent is rank 2, oldest is rank 1
+    assert has_element?(view, "#lifer-2")
+    assert has_element?(view, "#lifer-1")
+  end
+
   test "correct links for guest user", %{conn: conn} do
     ukraine =
       insert(:location,

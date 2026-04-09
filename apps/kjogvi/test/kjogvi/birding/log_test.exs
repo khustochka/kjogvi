@@ -244,6 +244,41 @@ defmodule Kjogvi.Birding.LogTest do
       assert length(entries) == 2
     end
 
+    test "list_total reflects cumulative species count for the list" do
+      user = user_fixture()
+      {taxon1, _} = Factory.create_species_taxon_with_page()
+      {taxon2, _} = Factory.create_species_taxon_with_page()
+      country = insert_country("Canada")
+      site = insert_site(country)
+
+      yesterday = Date.add(Date.utc_today(), -1)
+      today = Date.utc_today()
+
+      # First species yesterday
+      c1 = card(user, yesterday, site)
+      obs(c1, Ornitho.Schema.Taxon.key(taxon1))
+
+      # Second species today
+      c2 = card(user, today, site)
+      obs(c2, Ornitho.Schema.Taxon.key(taxon2))
+
+      entries = Log.recent_entries(scope(user))
+
+      # Today's world lifer entry should show list_total = 2
+      {_date, today_entries} =
+        Enum.find(entries, fn {date, _} -> date == today end)
+
+      lifer_entry = Enum.find(today_entries, &(&1.type == :total && is_nil(&1.area)))
+      assert lifer_entry.list_total == 2
+
+      # Yesterday's world lifer entry should show list_total = 1
+      {_date, yesterday_entries} =
+        Enum.find(entries, fn {date, _} -> date == yesterday end)
+
+      yesterday_lifer = Enum.find(yesterday_entries, &(&1.type == :total && is_nil(&1.area)))
+      assert yesterday_lifer.list_total == 1
+    end
+
     test "respects the cutoff_days option" do
       user = user_fixture()
       {taxon, _} = Factory.create_species_taxon_with_page()

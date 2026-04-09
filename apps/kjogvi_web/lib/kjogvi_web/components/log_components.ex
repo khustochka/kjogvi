@@ -3,14 +3,14 @@ defmodule KjogviWeb.LogComponents do
   Component to render a log (recent additions list).
   """
 
-  use Phoenix.Component
-  use KjogviWeb, :verified_routes
+  use KjogviWeb, :html
 
   import KjogviWeb.HeaderComponents
   import KjogviWeb.BirdingComponents
   import KjogviWeb.FormatComponents
 
   attr :log_entries, :list, doc: "List of log entries", required: true
+  attr :current_scope, :any, required: true
 
   def log(assigns) do
     ~H"""
@@ -41,8 +41,14 @@ defmodule KjogviWeb.LogComponents do
                   />{if i <
                           length(entry.life_observations) - 1,
                         do: ", ",
-                        else: "."}</span>
+                        else: ""}</span>
                     <% end %>
+                    <span :if={entry.list_total} class="text-stone-400 text-sm">
+                      (<.link
+                        href={lifelist_path(@current_scope, log_entry_filter(entry)) <> "#lifer-#{entry.list_total}"}
+                        class="underline"
+                      >{entry.list_total}</.link>)
+                    </span>
                   </div>
                 </li>
               <% end %>
@@ -53,6 +59,9 @@ defmodule KjogviWeb.LogComponents do
     </section>
     """
   end
+
+  defp log_entry_filter(%{area: area, type: :total}), do: [location: area]
+  defp log_entry_filter(%{area: area, type: :year, year: year}), do: [location: area, year: year]
 
   defp log_entry_label(%{area: nil, type: :total} = entry) do
     if length(entry.life_observations) == 1 do

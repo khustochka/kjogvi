@@ -16,9 +16,10 @@ defmodule Kjogvi.Birding.Log.Entry do
           type: entry_type(),
           area: %Kjogvi.Geo.Location{} | nil,
           year: integer() | nil,
-          life_observations: [%Kjogvi.Birding.LifeObservation{}]
+          life_observations: [%Kjogvi.Birding.LifeObservation{}],
+          list_total: non_neg_integer() | nil
         }
 
   @enforce_keys [:type, :life_observations]
-  defstruct [:type, :area, :year, life_observations: []]
+  defstruct [:type, :area, :year, :list_total, life_observations: []]
 end

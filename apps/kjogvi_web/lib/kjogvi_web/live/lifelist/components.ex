@@ -19,6 +19,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     >
       <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
         <li
+          id={"lifer-#{@lifelist.total - i}"}
           value={@lifelist.total - i}
           class="py-4 border-b border-stone-100 grid grid-cols-[3.5ch_2fr_auto_3fr] gap-x-2 md:gap-x-6 gap-y-1 items-top md:items-center"
         >

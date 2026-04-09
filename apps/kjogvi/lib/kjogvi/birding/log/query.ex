@@ -51,10 +51,36 @@ defmodule Kjogvi.Birding.Log.Query do
         [total_subq, year_subq]
       end)
 
-    # Union all subqueries, then filter to only rows where observ_date >= since_date
+    # Union all subqueries, add a cumulative species count per scope,
+    # then filter to only rows where observ_date >= since_date.
+    # The window function must run before the date filter so it counts
+    # all species in the list, not just the recent ones.
     union_query = union_all_queries(location_queries)
 
-    from(r in subquery(union_query),
+    windowed_query =
+      from(r in subquery(union_query),
+        select: %{
+          species_page_id: r.species_page_id,
+          observ_date: r.observ_date,
+          start_time: r.start_time,
+          obs_id: r.obs_id,
+          card_id: r.card_id,
+          location_id: r.location_id,
+          location_id_scope: r.location_id_scope,
+          year_scope: r.year_scope,
+          list_total:
+            fragment(
+              "COUNT(*) OVER (PARTITION BY ?, ? ORDER BY ?, ? NULLS LAST, ?)",
+              r.location_id_scope,
+              r.year_scope,
+              r.observ_date,
+              r.start_time,
+              r.obs_id
+            )
+        }
+      )
+
+    from(r in subquery(windowed_query),
       where: r.observ_date >= ^since_date,
       order_by: [desc: r.observ_date]
     )
