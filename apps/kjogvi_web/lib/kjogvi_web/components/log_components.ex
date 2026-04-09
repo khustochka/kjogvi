@@ -21,12 +21,12 @@ defmodule KjogviWeb.LogComponents do
         No recent additions.
       </div>
 
-      <ol :if={@log_entries != []} class="list-none">
+      <dl :if={@log_entries != []} class="md:grid md:grid-cols-[auto_1fr] md:gap-x-8">
         <%= for {date, entries} <- @log_entries do %>
-          <li class="mb-8">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-stone-400 mb-3">
-              <time datetime={Date.to_iso8601(date)}>{format_date(date)}</time>
-            </h3>
+          <dt class="mb-2 md:mb-0 md:pt-0.5 text-sm font-semibold text-stone-400 md:text-right whitespace-nowrap">
+            <time datetime={Date.to_iso8601(date)}>{format_date(date)}</time>
+          </dt>
+          <dd class="mb-6 md:mb-4">
             <ul class="list-none space-y-2">
               <%= for entry <- entries do %>
                 <li class="flex gap-2 items-baseline">
@@ -53,9 +53,9 @@ defmodule KjogviWeb.LogComponents do
                 </li>
               <% end %>
             </ul>
-          </li>
+          </dd>
         <% end %>
-      </ol>
+      </dl>
     </section>
     """
   end
