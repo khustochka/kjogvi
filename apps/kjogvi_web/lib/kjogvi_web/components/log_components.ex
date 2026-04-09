@@ -73,17 +73,17 @@ defmodule KjogviWeb.LogComponents do
 
   defp log_entry_label(%{area: nil, type: :year, year: year} = entry) do
     if length(entry.life_observations) == 1 do
-      "New species for #{year} year list:"
+      "New species for #{year} list:"
     else
-      "Added #{length(entry.life_observations)} species to #{year} year list:"
+      "Added #{length(entry.life_observations)} species to #{year} list:"
     end
   end
 
   defp log_entry_label(%{area: area, type: :total} = entry) do
     if length(entry.life_observations) == 1 do
-      "New species for #{area.name_en}:"
+      "New species in #{area.name_en}:"
     else
-      "Added #{length(entry.life_observations)} species for #{area.name_en}:"
+      "Added #{length(entry.life_observations)} species in #{area.name_en}:"
     end
   end
 
@@ -91,7 +91,7 @@ defmodule KjogviWeb.LogComponents do
     if length(entry.life_observations) == 1 do
       "New species for #{area.name_en} in #{year}:"
     else
-      "Added #{length(entry.life_observations)} species for #{area.name_en} in #{year}:"
+      "Added #{length(entry.life_observations)} species to #{area.name_en} list in #{year}:"
     end
   end
 end
