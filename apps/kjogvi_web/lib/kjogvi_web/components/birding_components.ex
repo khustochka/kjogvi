@@ -6,7 +6,10 @@ defmodule KjogviWeb.BirdingComponents do
   use Phoenix.Component
   use KjogviWeb, :verified_routes
 
+  alias Kjogvi.Pages.Species
   alias Ornitho.Schema.Taxon
+
+  attr :species, Species, required: true
 
   def species_link(assigns) do
     ~H"""
@@ -16,6 +19,19 @@ defmodule KjogviWeb.BirdingComponents do
         patch={~p"/species/#{@species}"}
         class="text-[1.05rem] font-semibold text-forest-500 underline decoration-forest-200 hover:decoration-forest-500 hover:bg-forest-100 rounded-sm px-1 -mx-1 underline-offset-2 transition"
       ><%= @species.name_en %></.link> <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@species.name_sci}</i></span>
+    """
+  end
+
+  attr :species, Species, required: true
+
+  def species_link_name_only(assigns) do
+    ~H"""
+    <span class="species_link" phx-no-format>
+      <.link
+        phx-no-format
+        patch={~p"/species/#{@species}"}
+        class="font-semibold text-forest-500 underline decoration-forest-200 hover:decoration-forest-500 hover:bg-forest-100 rounded-sm px-1 -mx-1 underline-offset-2 transition"
+      ><%= @species.name_en %></.link></span>
     """
   end
 

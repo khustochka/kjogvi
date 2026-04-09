@@ -1,7 +1,7 @@
 defmodule KjogviWeb.DiaryHTML do
   use KjogviWeb, :html
 
-  import KjogviWeb.Partials
+  import KjogviWeb.DiaryComponents
 
   embed_templates "diary_html/*"
 end
