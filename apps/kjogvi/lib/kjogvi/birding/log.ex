@@ -1,10 +1,10 @@
-defmodule Kjogvi.Birding.Diary do
+defmodule Kjogvi.Birding.Log do
   @moduledoc """
-  Diary: generates a feed of notable birding events (species added to lists).
+  Log: generates a feed of notable birding entries (species added to lists).
 
   For each date in the recent past, we compute which species were "added" to
   which lists (World total, Country total, Subdivision total, World year,
-  Country year, Subdivision year). Events are deduplicated so that if a species
+  Country year, Subdivision year). Entries are deduplicated so that if a species
   is a world lifer, we do not also report it as a new Canadian bird on the same day.
 
   ## Deduplication logic
@@ -17,29 +17,29 @@ defmodule Kjogvi.Birding.Diary do
   Priority within a type: world > country > subdivision (by ancestry depth).
   """
 
-  alias Kjogvi.Birding.Diary.Event
-  alias Kjogvi.Birding.Diary.Query
+  alias Kjogvi.Birding.Log.Entry
+  alias Kjogvi.Birding.Log.Query
   alias Kjogvi.Birding.Lifelist
 
   @default_limit 5
   @cutoff_days 93
 
   @doc """
-  Returns diary entries for the most recent days that have events.
+  Returns log entries for the most recent days that have entries.
 
   Options:
   - `:limit` — max number of distinct dates to return (default #{@default_limit})
   - `:cutoff_days` — how many days back to look (default #{@cutoff_days})
 
-  Returns a list of `{date, [%Event{}]}` tuples, newest first.
+  Returns a list of `{date, [%Entry{}]}` tuples, newest first.
   """
-  @spec recent_entries(Lifelist.scope(), keyword()) :: [{Date.t(), [Event.t()]}]
+  @spec recent_entries(Lifelist.scope(), keyword()) :: [{Date.t(), [Entry.t()]}]
   def recent_entries(scope, opts \\ []) do
     limit = Keyword.get(opts, :limit, @default_limit)
     cutoff_days = Keyword.get(opts, :cutoff_days, @cutoff_days)
     since_date = Date.add(Date.utc_today(), -cutoff_days)
 
-    locations = Query.diary_locations()
+    locations = Query.log_locations()
     location_map = Map.new(locations, &{&1.id, &1})
 
     rows = Query.firsts_in_range(scope, locations, since_date)
@@ -56,28 +56,28 @@ defmodule Kjogvi.Birding.Diary do
 
   # --- Private ---
 
-  # Group raw rows into {date, [event]} tuples, applying deduplication.
+  # Group raw rows into {date, [entry]} tuples, applying deduplication.
   defp build_entries(rows, location_map) do
     rows
     |> Enum.group_by(& &1.observ_date)
     |> Enum.sort_by(fn {date, _} -> date end, {:desc, Date})
     |> Enum.map(fn {date, date_rows} ->
-      events =
+      entries =
         date_rows
         |> group_by_species()
         |> Enum.flat_map(fn {_species_page_id, species_rows} ->
-          build_species_events(species_rows, location_map)
+          build_species_entries(species_rows, location_map)
         end)
-        |> merge_events()
+        |> merge_entries()
 
-      {date, events}
+      {date, entries}
     end)
-    |> Enum.reject(fn {_date, events} -> events == [] end)
+    |> Enum.reject(fn {_date, entries} -> entries == [] end)
   end
 
   # Returns all candidate (area, type, life_observation) tuples for a species on a date,
   # then deduplicates by ancestry.
-  defp build_species_events(rows, location_map) do
+  defp build_species_entries(rows, location_map) do
     candidates =
       Enum.map(rows, fn row ->
         area = if row.location_id_scope, do: location_map[row.location_id_scope], else: nil
@@ -88,7 +88,7 @@ defmodule Kjogvi.Birding.Diary do
     deduplicated = deduplicate(candidates)
 
     Enum.map(deduplicated, fn {area, type, year, life_obs} ->
-      %Event{type: type, area: area, year: year, life_observations: [life_obs]}
+      %Entry{type: type, area: area, year: year, life_observations: [life_obs]}
     end)
   end
 
@@ -112,10 +112,10 @@ defmodule Kjogvi.Birding.Diary do
     end)
   end
 
-  # An event is covered if the same area or any ancestor area has a
-  # same-or-higher priority event.
-  # - A :total event is covered if an ancestor has a :total.
-  # - A :year event is covered if self or ancestor has a :total,
+  # An entry is covered if the same area or any ancestor area has a
+  # same-or-higher priority entry.
+  # - A :total entry is covered if an ancestor has a :total.
+  # - A :year entry is covered if self or ancestor has a :total,
   #   OR a strict ancestor has a :year for the same year.
   # "World" (nil area) has no ancestors. A world :year is covered if
   # world :total exists.
@@ -150,22 +150,22 @@ defmodule Kjogvi.Birding.Diary do
     Enum.group_by(rows, & &1.species_page_id)
   end
 
-  # Merge events with the same (type, area, year) into a single event with
+  # Merge entries with the same (type, area, year) into a single entry with
   # multiple life_observations. This handles the case where multiple species
   # are new to the same area on the same date.
-  defp merge_events(events) do
-    events
+  defp merge_entries(entries) do
+    entries
     |> Enum.group_by(fn e -> {e.type, area_id(e.area), e.year} end)
     |> Enum.map(fn {{type, _area_id, year}, group} ->
       area = hd(group).area
       life_obs = Enum.flat_map(group, & &1.life_observations)
-      %Event{type: type, area: area, year: year, life_observations: life_obs}
+      %Entry{type: type, area: area, year: year, life_observations: life_obs}
     end)
-    |> Enum.sort_by(&event_sort_key/1)
+    |> Enum.sort_by(&entry_sort_key/1)
   end
 
-  # Sort events: total before year, world before country before subdivision.
-  defp event_sort_key(%Event{type: type, area: area, year: year}) do
+  # Sort entries: total before year, world before country before subdivision.
+  defp entry_sort_key(%Entry{type: type, area: area, year: year}) do
     type_order = if type == :total, do: 0, else: 1
     depth = if area, do: length(area.ancestry), else: 0
     {type_order, depth, year}

@@ -7,7 +7,7 @@ defmodule KjogviWeb.HomeHTML do
   use KjogviWeb, :html
 
   import KjogviWeb.Partials
-  import KjogviWeb.DiaryComponents
+  import KjogviWeb.LogComponents
 
   embed_templates "home_html/*"
 end

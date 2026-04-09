@@ -1,6 +1,6 @@
-defmodule Kjogvi.Birding.Diary.Query do
+defmodule Kjogvi.Birding.Log.Query do
   @moduledoc """
-  Queries to build the diary event feed.
+  Queries to build the log entry feed.
 
   For each (location, year_scope) combination we find the first-ever observation
   date per species — i.e., the date that species was "added" to that list.
@@ -165,9 +165,9 @@ defmodule Kjogvi.Birding.Diary.Query do
 
   @doc """
   Returns locations with `public_index` set (countries and subdivisions used as
-  diary scopes).
+  log scopes).
   """
-  def diary_locations do
+  def log_locations do
     from(l in Location,
       where: not is_nil(l.public_index),
       where: l.location_type in ["country", "region"],

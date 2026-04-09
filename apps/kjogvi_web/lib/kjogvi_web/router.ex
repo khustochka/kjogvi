@@ -68,7 +68,7 @@ defmodule KjogviWeb.Router do
       live "/cards/:id/edit", Live.My.Cards.Form, :edit
       live "/cards/:id", Live.My.Cards.Show, :show
 
-      get "/diary", DiaryController, :show
+      get "/log", LogController, :show
 
       live "/account/settings", Live.My.Account.Settings, :edit
       live "/account/settings/confirm_email/:token", Live.My.Account.Settings, :confirm_email

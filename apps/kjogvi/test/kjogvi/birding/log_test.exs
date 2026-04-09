@@ -1,9 +1,9 @@
-defmodule Kjogvi.Birding.DiaryTest do
+defmodule Kjogvi.Birding.LogTest do
   use Kjogvi.DataCase, async: true
 
   import Kjogvi.UsersFixtures
 
-  alias Kjogvi.Birding.Diary
+  alias Kjogvi.Birding.Log
   alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Factory
   alias Kjogvi.GeoFixtures
@@ -53,10 +53,10 @@ defmodule Kjogvi.Birding.DiaryTest do
   describe "recent_entries/2" do
     test "returns empty list when no observations" do
       user = user_fixture()
-      assert Diary.recent_entries(scope(user)) == []
+      assert Log.recent_entries(scope(user)) == []
     end
 
-    test "returns a lifer event for a new world species" do
+    test "returns a lifer entry for a new world species" do
       user = user_fixture()
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country = insert_country("Canada")
@@ -66,18 +66,18 @@ defmodule Kjogvi.Birding.DiaryTest do
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Diary.recent_entries(scope(user))
+      entries = Log.recent_entries(scope(user))
       assert length(entries) == 1
 
-      {date, events} = hd(entries)
+      {date, day_entries} = hd(entries)
       assert date == today
 
-      lifer_event = Enum.find(events, &(&1.type == :total && is_nil(&1.area)))
-      assert lifer_event != nil
-      assert length(lifer_event.life_observations) == 1
+      lifer_entry = Enum.find(day_entries, &(&1.type == :total && is_nil(&1.area)))
+      assert lifer_entry != nil
+      assert length(lifer_entry.life_observations) == 1
     end
 
-    test "a lifer suppresses country and subdivision total events" do
+    test "a lifer suppresses country and subdivision total entries" do
       user = user_fixture()
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country = insert_country("Canada")
@@ -88,13 +88,13 @@ defmodule Kjogvi.Birding.DiaryTest do
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Diary.recent_entries(scope(user))
-      {_date, events} = hd(entries)
+      entries = Log.recent_entries(scope(user))
+      {_date, day_entries} = hd(entries)
 
-      # Only the world lifer event should appear (total for nil area)
-      total_events = Enum.filter(events, &(&1.type == :total))
-      assert length(total_events) == 1
-      assert hd(total_events).area == nil
+      # Only the world lifer entry should appear (total for nil area)
+      total_entries = Enum.filter(day_entries, &(&1.type == :total))
+      assert length(total_entries) == 1
+      assert hd(total_entries).area == nil
     end
 
     test "country total is shown when species is not a world lifer" do
@@ -115,18 +115,20 @@ defmodule Kjogvi.Birding.DiaryTest do
       c2 = card(user, today, site_ca)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Diary.recent_entries(scope(user))
+      entries = Log.recent_entries(scope(user))
       today_entry = Enum.find(entries, fn {date, _} -> date == today end)
       assert today_entry != nil
 
-      {_date, events} = today_entry
+      {_date, day_entries} = today_entry
 
       # Should show Canada total (not a world lifer, but new for Canada)
-      ca_total = Enum.find(events, &(&1.type == :total && &1.area && &1.area.id == country_ca.id))
+      ca_total =
+        Enum.find(day_entries, &(&1.type == :total && &1.area && &1.area.id == country_ca.id))
+
       assert ca_total != nil
 
       # Should NOT show world total (it was seen in Ukraine yesterday)
-      world_total = Enum.find(events, &(&1.type == :total && is_nil(&1.area)))
+      world_total = Enum.find(day_entries, &(&1.type == :total && is_nil(&1.area)))
       assert world_total == nil
     end
 
@@ -142,17 +144,17 @@ defmodule Kjogvi.Birding.DiaryTest do
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Diary.recent_entries(scope(user))
-      {_date, events} = hd(entries)
+      entries = Log.recent_entries(scope(user))
+      {_date, day_entries} = hd(entries)
 
       # Subdivision total should be suppressed since Canada total covers it
       sub_total =
-        Enum.find(events, &(&1.type == :total && &1.area && &1.area.id == subdivision.id))
+        Enum.find(day_entries, &(&1.type == :total && &1.area && &1.area.id == subdivision.id))
 
       assert sub_total == nil
     end
 
-    test "year event is shown when species is not new to the year list" do
+    test "year entry is shown when species is not new to the year list" do
       user = user_fixture()
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country = insert_country("Canada")
@@ -168,23 +170,23 @@ defmodule Kjogvi.Birding.DiaryTest do
       c2 = card(user, this_year_date, site)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Diary.recent_entries(scope(user))
+      entries = Log.recent_entries(scope(user))
       today_entry = Enum.find(entries, fn {date, _} -> date == this_year_date end)
       assert today_entry != nil
 
-      {_date, events} = today_entry
+      {_date, day_entries} = today_entry
 
-      # Should have a year event for world (nil area), not a total
-      year_event = Enum.find(events, &(&1.type == :year && is_nil(&1.area)))
-      assert year_event != nil
-      assert year_event.year == this_year_date.year
+      # Should have a year entry for world (nil area), not a total
+      year_entry = Enum.find(day_entries, &(&1.type == :year && is_nil(&1.area)))
+      assert year_entry != nil
+      assert year_entry.year == this_year_date.year
 
-      # Should NOT show a total event (not a lifer)
-      world_total = Enum.find(events, &(&1.type == :total && is_nil(&1.area)))
+      # Should NOT show a total entry (not a lifer)
+      world_total = Enum.find(day_entries, &(&1.type == :total && is_nil(&1.area)))
       assert world_total == nil
     end
 
-    test "lifer suppresses year event for the same area" do
+    test "lifer suppresses year entry for the same area" do
       user = user_fixture()
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country = insert_country("Canada")
@@ -194,17 +196,17 @@ defmodule Kjogvi.Birding.DiaryTest do
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Diary.recent_entries(scope(user))
-      {_date, events} = hd(entries)
+      entries = Log.recent_entries(scope(user))
+      {_date, day_entries} = hd(entries)
 
       # World total present
-      assert Enum.any?(events, &(&1.type == :total && is_nil(&1.area)))
+      assert Enum.any?(day_entries, &(&1.type == :total && is_nil(&1.area)))
 
-      # World year event should be suppressed (lifer covers it)
-      refute Enum.any?(events, &(&1.type == :year && is_nil(&1.area)))
+      # World year entry should be suppressed (lifer covers it)
+      refute Enum.any?(day_entries, &(&1.type == :year && is_nil(&1.area)))
     end
 
-    test "multiple species added on same day are grouped into one event per area/type" do
+    test "multiple species added on same day are grouped into one entry per area/type" do
       user = user_fixture()
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
@@ -216,12 +218,12 @@ defmodule Kjogvi.Birding.DiaryTest do
       obs(c, Ornitho.Schema.Taxon.key(taxon1))
       obs(c, Ornitho.Schema.Taxon.key(taxon2))
 
-      entries = Diary.recent_entries(scope(user))
-      {_date, events} = hd(entries)
+      entries = Log.recent_entries(scope(user))
+      {_date, day_entries} = hd(entries)
 
-      lifer_event = Enum.find(events, &(&1.type == :total && is_nil(&1.area)))
-      assert lifer_event != nil
-      assert length(lifer_event.life_observations) == 2
+      lifer_entry = Enum.find(day_entries, &(&1.type == :total && is_nil(&1.area)))
+      assert lifer_entry != nil
+      assert length(lifer_entry.life_observations) == 2
     end
 
     test "respects the limit option" do
@@ -230,7 +232,7 @@ defmodule Kjogvi.Birding.DiaryTest do
       site = insert_site(country)
 
       # Create observations of different species on 3 different dates so each
-      # date produces at least one new event.
+      # date produces at least one new entry.
       for i <- 0..2 do
         {taxon, _} = Factory.create_species_taxon_with_page()
         d = Date.add(Date.utc_today(), -i)
@@ -238,7 +240,7 @@ defmodule Kjogvi.Birding.DiaryTest do
         obs(c, Ornitho.Schema.Taxon.key(taxon))
       end
 
-      entries = Diary.recent_entries(scope(user), limit: 2)
+      entries = Log.recent_entries(scope(user), limit: 2)
       assert length(entries) == 2
     end
 
@@ -253,7 +255,7 @@ defmodule Kjogvi.Birding.DiaryTest do
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       # Only look back 5 days — should find nothing
-      entries = Diary.recent_entries(scope(user), cutoff_days: 5)
+      entries = Log.recent_entries(scope(user), cutoff_days: 5)
       assert entries == []
     end
   end
