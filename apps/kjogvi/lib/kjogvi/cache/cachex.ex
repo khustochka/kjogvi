@@ -33,4 +33,9 @@ defmodule Kjogvi.Cache.Cachex do
     {_, value} = Cachex.fetch(@cache_name, key, fallback, opts)
     value
   end
+
+  def delete(key, _opts) do
+    {_, _} = Cachex.del(@cache_name, key)
+    :ok
+  end
 end

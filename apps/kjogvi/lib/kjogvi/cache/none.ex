@@ -25,4 +25,8 @@ defmodule Kjogvi.Cache.None do
         val
     end
   end
+
+  def delete(_key, _opts) do
+    :ok
+  end
 end

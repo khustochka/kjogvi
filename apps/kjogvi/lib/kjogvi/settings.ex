@@ -20,6 +20,15 @@ defmodule Kjogvi.Settings do
     end)
   end
 
+  @doc """
+  Evicts the cached main user. Call this after updating any field on the main
+  user that is projected into the cached record (see `get_main_user/0`), so
+  subsequent reads see the new value.
+  """
+  def invalidate_main_user() do
+    Kjogvi.Cache.delete(key(@main_user_key))
+  end
+
   defp get_main_user() do
     Users.admins()
     |> select([u], %{

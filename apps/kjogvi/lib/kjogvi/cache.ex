@@ -29,6 +29,10 @@ defmodule Kjogvi.Cache do
     adapter().fetch(key, fallback, opts)
   end
 
+  def delete(key, opts \\ []) do
+    adapter().delete(key, opts)
+  end
+
   defp config() do
     Application.get_env(:kjogvi, :cache)
     |> Map.new()

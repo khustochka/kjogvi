@@ -233,8 +233,14 @@ defmodule Kjogvi.Users do
     |> User.settings_changeset(attrs)
     |> Repo.update()
     |> case do
-      {:ok, user} -> {:ok, user}
-      {:error, :user, changeset} -> {:error, changeset}
+      {:ok, user} ->
+        # The main user projection (Kjogvi.Settings.main_user/0) includes
+        # settings fields; evict so the next read reflects the update.
+        if admin?(user), do: Kjogvi.Settings.invalidate_main_user()
+        {:ok, user}
+
+      {:error, :user, changeset} ->
+        {:error, changeset}
     end
   end
 
@@ -386,8 +392,8 @@ defmodule Kjogvi.Users do
   @doc """
   Returns true if user is an admin, false otherwise.
   """
-  def admin?(user) do
-    @admin_role in user.roles
+  def admin?(%User{roles: roles}) do
+    @admin_role in roles
   end
 
   def admins do
