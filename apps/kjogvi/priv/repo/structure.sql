@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict FeP2qmYX1S5KCq4T1u9VDduox3yRahfkh8gVmQ0LtPW3f5TP6aE2ncJJ8YbkABb
+\restrict Z4Un65lxmjCbmD3Ar9F5yHFXY4DJkSfksN6seQI35YwN0jlQ5htAYOycFRs3uCb
 
 -- Dumped from database version 17.6 (Debian 17.6-2.pgdg12+1)
 -- Dumped by pg_dump version 18.3
@@ -288,7 +288,7 @@ CREATE TABLE public.users (
     id bigint NOT NULL,
     email public.citext NOT NULL,
     hashed_password character varying(255) NOT NULL,
-    roles character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    roles character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
     extras jsonb DEFAULT '{}'::jsonb,
     confirmed_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
@@ -724,7 +724,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict FeP2qmYX1S5KCq4T1u9VDduox3yRahfkh8gVmQ0LtPW3f5TP6aE2ncJJ8YbkABb
+\unrestrict Z4Un65lxmjCbmD3Ar9F5yHFXY4DJkSfksN6seQI35YwN0jlQ5htAYOycFRs3uCb
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -733,3 +733,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20240627032425);
 INSERT INTO public."schema_migrations" (version) VALUES (20251013044023);
 INSERT INTO public."schema_migrations" (version) VALUES (20251015130047);
 INSERT INTO public."schema_migrations" (version) VALUES (20260115190000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260410000000);
