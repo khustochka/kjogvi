@@ -27,6 +27,23 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
+  Returns the set of locations the log settings UI can offer as toggles:
+  all countries, all regions, and any other lifelist filter location
+  (e.g. continents or specials) that doesn't fall into those types.
+
+  Ordering is left to the caller — the settings UI groups regions under
+  their country, which is easier to express in Elixir than in SQL.
+  """
+  def get_log_settings_locations do
+    from(l in Location,
+      where:
+        l.location_type in ["country", "region"] or
+          not is_nil(l.public_index)
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Returns hierarchical context for the lifelist location filter.
 
   Given a selected location (or nil for "World"), returns:

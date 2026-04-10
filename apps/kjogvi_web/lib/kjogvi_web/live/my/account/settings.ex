@@ -126,7 +126,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
               Choose which lists to include in the recent additions log.
             </p>
 
-            <table class="w-full text-sm">
+            <table class="w-full md:max-w-lg text-sm">
               <thead>
                 <tr class="border-b border-zinc-200">
                   <th class="text-left py-2 font-semibold">Location</th>
@@ -136,7 +136,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
               </thead>
               <tbody>
                 <%= for {row, i} <- Enum.with_index(@log_location_rows) do %>
-                  <tr class="border-b border-zinc-100">
+                  <tr class="border-b border-zinc-300">
                     <td class="py-2">
                       <input
                         type="hidden"
@@ -144,12 +144,18 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                         value={row.location_id || ""}
                       />
                       <span :if={row.location_id == nil} class="inline-flex items-center gap-1">
-                        <.icon name="fa-solid-earth-americas" class="h-4 w-4" /> {row.name}
+                        <.icon name="fa-solid-earth-americas" class="h-4 w-4 text-gray-500" /> {row.name}
                       </span>
-                      <span :if={row.flag} class="inline-flex items-center gap-1">
+                      <span
+                        :if={row.location_id != nil && !row.nested && row.flag}
+                        class="inline-flex items-center gap-1"
+                      >
                         <span>{row.flag}</span> {row.name}
                       </span>
-                      <span :if={row.location_id != nil && !row.flag}>
+                      <span :if={row.location_id != nil && !row.nested && !row.flag}>
+                        {row.name}
+                      </span>
+                      <span :if={row.nested} class="pl-6">
                         {row.name}
                       </span>
                     </td>
@@ -303,22 +309,21 @@ defmodule KjogviWeb.Live.My.Account.Settings do
   end
 
   # Build the list of rows for the log settings table.
-  # World + all public locations + any private locations that already have settings.
+  # World + all countries/regions/lifelist filters + any locations that already
+  # have settings but aren't otherwise in the list (e.g. private ones).
   defp build_log_location_rows(user) do
     log_settings = user.extras.log_settings
     existing_settings = Map.new(log_settings, &{&1.location_id, &1})
 
-    public_locations =
-      Geo.get_lifelist_locations()
-      |> Enum.filter(&(&1.location_type in ["country", "region"]))
+    offered_locations = Geo.get_log_settings_locations()
+    offered_ids = MapSet.new(offered_locations, & &1.id)
 
-    public_ids = MapSet.new(public_locations, & &1.id)
-
-    # Private locations that have settings but aren't in the public list
+    # Locations that already have settings but aren't in the offered set
+    # (e.g. private locations, or anything outside countries/regions/lifelist filters).
     extra_location_ids =
       existing_settings
       |> Map.keys()
-      |> Enum.filter(&(&1 && !MapSet.member?(public_ids, &1)))
+      |> Enum.filter(&(&1 && !MapSet.member?(offered_ids, &1)))
 
     extra_locations =
       if extra_location_ids != [] do
@@ -327,7 +332,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
         []
       end
 
-    all_locations = public_locations ++ extra_locations
+    sorted_locations = sort_log_locations(offered_locations ++ extra_locations)
 
     # World row first
     world_setting = Map.get(existing_settings, nil)
@@ -336,16 +341,67 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       location_id: nil,
       name: "World",
       flag: nil,
+      nested: false,
       life: if(world_setting, do: world_setting.life, else: false),
       year: if(world_setting, do: world_setting.year, else: false)
     }
 
-    location_rows = Enum.map(all_locations, &location_to_row(&1, existing_settings))
+    location_rows =
+      Enum.map(sorted_locations, fn {loc, nested?} ->
+        location_to_row(loc, nested?, existing_settings)
+      end)
 
     [world_row | location_rows]
   end
 
-  defp location_to_row(loc, existing_settings) do
+  # Group child locations under their country. Returns a flat list of
+  # {location, nested?} tuples so the template can render nesting explicitly
+  # instead of guessing from presence of a flag.
+  #
+  # Top-level order: continents/specials first (alphabetical), then countries
+  # (alphabetical), each country immediately followed by its children. Inside
+  # each country block, regions come first (alphabetical), then any other
+  # sub-country locations (specials, etc.) alphabetical.
+  defp sort_log_locations(locations) do
+    {countries, others} = Enum.split_with(locations, &(&1.location_type == "country"))
+    country_ids = MapSet.new(countries, & &1.id)
+
+    {children, top_level_others} =
+      Enum.split_with(
+        others,
+        &(&1.cached_country_id && MapSet.member?(country_ids, &1.cached_country_id))
+      )
+
+    children_by_country = Enum.group_by(children, & &1.cached_country_id)
+
+    non_country_top =
+      top_level_others
+      |> Enum.sort_by(& &1.name_en)
+      |> Enum.map(&{&1, false})
+
+    country_blocks =
+      countries
+      |> Enum.sort_by(& &1.name_en)
+      |> Enum.flat_map(fn country ->
+        country_children =
+          children_by_country
+          |> Map.get(country.id, [])
+          |> sort_country_children()
+          |> Enum.map(&{&1, true})
+
+        [{country, false} | country_children]
+      end)
+
+    non_country_top ++ country_blocks
+  end
+
+  # Regions first (alphabetical), then everything else alphabetical.
+  defp sort_country_children(children) do
+    {regions, rest} = Enum.split_with(children, &(&1.location_type == "region"))
+    Enum.sort_by(regions, & &1.name_en) ++ Enum.sort_by(rest, & &1.name_en)
+  end
+
+  defp location_to_row(loc, nested?, existing_settings) do
     setting = Map.get(existing_settings, loc.id)
 
     flag =
@@ -360,6 +416,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       location_id: loc.id,
       name: loc.name_en,
       flag: flag,
+      nested: nested?,
       life: if(setting, do: setting.life, else: false),
       year: if(setting, do: setting.year, else: false)
     }
