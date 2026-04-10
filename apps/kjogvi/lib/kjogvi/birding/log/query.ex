@@ -12,7 +12,6 @@ defmodule Kjogvi.Birding.Log.Query do
   alias Kjogvi.Birding.Card
   alias Kjogvi.Birding.Observation
   alias Kjogvi.Birding.LifeObservation
-  alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
 
   @doc false
@@ -164,28 +163,21 @@ defmodule Kjogvi.Birding.Log.Query do
 
   @doc false
   def preload_life_observations(rows) do
-    obs_ids = Enum.map(rows, & &1.obs_id)
+    species_page_ids = rows |> Enum.map(& &1.species_page_id) |> Enum.uniq()
 
-    obs_map =
-      from(o in Observation,
-        where: o.id in ^obs_ids,
-        join: c in assoc(o, :card),
-        join: stm in assoc(o, :species_taxa_mapping),
-        select: %{
-          id: o.id,
-          card_id: c.id,
-          species_page_id: stm.species_page_id,
-          observ_date: c.observ_date,
-          start_time: c.start_time,
-          location_id: c.location_id
-        }
-      )
+    species_pages =
+      from(p in Kjogvi.Pages.Species, where: p.id in ^species_page_ids)
       |> Repo.all()
-      |> Enum.map(&Repo.load(LifeObservation, &1))
-      |> Location.Query.preload_all_locations()
-      |> Repo.preload(:species_page)
       |> Map.new(&{&1.id, &1})
 
-    Enum.map(rows, fn row -> Map.put(row, :life_observation, obs_map[row.obs_id]) end)
+    Enum.map(rows, fn row ->
+      life_obs = %LifeObservation{
+        id: row.obs_id,
+        species_page_id: row.species_page_id,
+        species_page: species_pages[row.species_page_id]
+      }
+
+      Map.put(row, :life_observation, life_obs)
+    end)
   end
 end
