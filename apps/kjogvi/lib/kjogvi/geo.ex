@@ -134,6 +134,13 @@ defmodule Kjogvi.Geo do
     |> Repo.all()
   end
 
+  def get_locations_by_ids([]), do: []
+
+  def get_locations_by_ids(ids) do
+    from(l in Location, where: l.id in ^ids)
+    |> Repo.all()
+  end
+
   def get_locations do
     Location
     |> Location.Query.load_cards_count()

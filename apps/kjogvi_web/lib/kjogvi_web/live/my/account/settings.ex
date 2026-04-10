@@ -4,6 +4,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Users
+  alias Kjogvi.Geo
 
   def render(assigns) do
     ~H"""
@@ -118,6 +119,73 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                 </div>
               </.inputs_for>
             </.inputs_for>
+            <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
+              Log settings
+            </h3>
+            <p class="text-sm text-zinc-500 mb-2">
+              Choose which lists to include in the recent additions log.
+            </p>
+
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-zinc-200">
+                  <th class="text-left py-2 font-semibold">Location</th>
+                  <th class="text-center py-2 font-semibold w-20">Life</th>
+                  <th class="text-center py-2 font-semibold w-20">Year</th>
+                </tr>
+              </thead>
+              <tbody>
+                <%= for {row, i} <- Enum.with_index(@log_location_rows) do %>
+                  <tr class="border-b border-zinc-100">
+                    <td class="py-2">
+                      <input
+                        type="hidden"
+                        name={"user[extras][log_settings][#{i}][location_id]"}
+                        value={row.location_id || ""}
+                      />
+                      <span :if={row.location_id == nil} class="inline-flex items-center gap-1">
+                        <.icon name="fa-solid-earth-americas" class="h-4 w-4" /> {row.name}
+                      </span>
+                      <span :if={row.flag} class="inline-flex items-center gap-1">
+                        <span>{row.flag}</span> {row.name}
+                      </span>
+                      <span :if={row.location_id != nil && !row.flag}>
+                        {row.name}
+                      </span>
+                    </td>
+                    <td class="text-center py-2">
+                      <input
+                        type="hidden"
+                        name={"user[extras][log_settings][#{i}][life]"}
+                        value="false"
+                      />
+                      <input
+                        type="checkbox"
+                        name={"user[extras][log_settings][#{i}][life]"}
+                        value="true"
+                        checked={row.life}
+                        class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                      />
+                    </td>
+                    <td class="text-center py-2">
+                      <input
+                        type="hidden"
+                        name={"user[extras][log_settings][#{i}][year]"}
+                        value="false"
+                      />
+                      <input
+                        type="checkbox"
+                        name={"user[extras][log_settings][#{i}][year]"}
+                        value="true"
+                        checked={row.year}
+                        class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                      />
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+
             <:actions>
               <CoreComponents.button phx-disable-with="Saving...">
                 Update
@@ -154,6 +222,8 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     book_options =
       Enum.map(books, fn b -> {"#{b.name} (#{b.slug}/#{b.version})", "#{b.slug}/#{b.version}"} end)
 
+    log_location_rows = build_log_location_rows(user)
+
     socket =
       socket
       |> assign(:current_password, nil)
@@ -165,6 +235,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       |> assign(:settings_form, to_form(settings_changeset))
       |> assign(:ebird_password_show, false)
       |> assign(:book_options, book_options)
+      |> assign(:log_location_rows, log_location_rows)
 
     {:ok, socket}
   end
@@ -229,5 +300,68 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
     end
+  end
+
+  # Build the list of rows for the log settings table.
+  # World + all public locations + any private locations that already have settings.
+  defp build_log_location_rows(user) do
+    log_settings = user.extras.log_settings
+    existing_settings = Map.new(log_settings, &{&1.location_id, &1})
+
+    public_locations =
+      Geo.get_lifelist_locations()
+      |> Enum.filter(&(&1.location_type in ["country", "region"]))
+
+    public_ids = MapSet.new(public_locations, & &1.id)
+
+    # Private locations that have settings but aren't in the public list
+    extra_location_ids =
+      existing_settings
+      |> Map.keys()
+      |> Enum.filter(&(&1 && !MapSet.member?(public_ids, &1)))
+
+    extra_locations =
+      if extra_location_ids != [] do
+        Geo.get_locations_by_ids(extra_location_ids)
+      else
+        []
+      end
+
+    all_locations = public_locations ++ extra_locations
+
+    # World row first
+    world_setting = Map.get(existing_settings, nil)
+
+    world_row = %{
+      location_id: nil,
+      name: "World",
+      flag: nil,
+      life: if(world_setting, do: world_setting.life, else: false),
+      year: if(world_setting, do: world_setting.year, else: false)
+    }
+
+    location_rows = Enum.map(all_locations, &location_to_row(&1, existing_settings))
+
+    [world_row | location_rows]
+  end
+
+  defp location_to_row(loc, existing_settings) do
+    setting = Map.get(existing_settings, loc.id)
+
+    flag =
+      if loc.location_type == "country" do
+        case Kjogvi.Geo.Location.to_flag_emoji(loc) do
+          "" -> nil
+          f -> f
+        end
+      end
+
+    %{
+      location_id: loc.id,
+      name: loc.name_en,
+      flag: flag,
+      life: if(setting, do: setting.life, else: false),
+      year: if(setting, do: setting.year, else: false)
+    }
   end
 end

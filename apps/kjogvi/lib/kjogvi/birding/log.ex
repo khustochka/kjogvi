@@ -20,12 +20,15 @@ defmodule Kjogvi.Birding.Log do
   alias Kjogvi.Birding.Log.Entry
   alias Kjogvi.Birding.Log.Query
   alias Kjogvi.Birding.Lifelist
+  alias Kjogvi.Geo
 
   @default_limit 5
   @cutoff_days 93
 
   @doc """
   Returns log entries for the most recent days that have entries.
+
+  Log settings are read from `scope.user.extras.log_settings`.
 
   Options:
   - `:limit` — max number of distinct dates to return (default #{@default_limit})
@@ -37,9 +40,16 @@ defmodule Kjogvi.Birding.Log do
   def recent_entries(scope, opts \\ []) do
     limit = Keyword.get(opts, :limit, @default_limit)
     cutoff_days = Keyword.get(opts, :cutoff_days, @cutoff_days)
+    log_settings = scope.user.extras.log_settings
     since_date = Date.add(Date.utc_today(), -cutoff_days)
 
-    locations = Query.log_locations()
+    location_ids =
+      log_settings
+      |> Enum.filter(&(&1.location_id && (&1.life || &1.year)))
+      |> Enum.map(& &1.location_id)
+
+    locations = Geo.get_locations_by_ids(location_ids)
+
     location_map = Map.new(locations, &{&1.id, &1})
 
     rows = Query.firsts_in_range(scope, locations, since_date)
@@ -50,11 +60,52 @@ defmodule Kjogvi.Birding.Log do
       rows
       |> Query.preload_life_observations()
       |> build_entries(location_map)
+      |> filter_entries_by_settings(log_settings)
       |> Enum.take(limit)
     end
   end
 
-  # --- Private ---
+  @doc """
+  Returns true if the user has any log entries enabled based on their settings.
+  When no settings are configured, the log is disabled.
+  """
+  @spec any_enabled?(Lifelist.scope()) :: boolean()
+  def any_enabled?(%{user: %{extras: %{log_settings: []}}}), do: false
+
+  def any_enabled?(%{user: %{extras: %{log_settings: log_settings}}}) do
+    Enum.any?(log_settings, fn setting ->
+      setting.life || setting.year
+    end)
+  end
+
+  # Filter built entries based on log_settings (removing specific type entries)
+  defp filter_entries_by_settings(date_entries, []), do: date_entries
+
+  defp filter_entries_by_settings(date_entries, log_settings) do
+    settings_map = Map.new(log_settings, &{&1.location_id, &1})
+
+    date_entries
+    |> Enum.map(fn {date, entries} ->
+      filtered =
+        Enum.filter(entries, fn entry ->
+          location_id = area_id(entry.area)
+
+          case Map.get(settings_map, location_id) do
+            nil ->
+              true
+
+            setting ->
+              case entry.type do
+                :life -> setting.life
+                :year -> setting.year
+              end
+          end
+        end)
+
+      {date, filtered}
+    end)
+    |> Enum.reject(fn {_date, entries} -> entries == [] end)
+  end
 
   # Group raw rows into {date, [entry]} tuples, applying deduplication.
   defp build_entries(rows, location_map) do

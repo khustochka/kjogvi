@@ -6,7 +6,7 @@ defmodule Kjogvi.Birding.Lifelist.Scope do
 
   alias Kjogvi.Birding.Lifelist
 
-  @type t() :: %__MODULE__{user: %{id: integer()}, include_private: boolean()}
+  @type t() :: %__MODULE__{user: %{id: integer(), extras: map()}, include_private: boolean()}
 
   @enforce_keys [:user]
 

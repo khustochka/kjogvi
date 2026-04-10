@@ -188,17 +188,4 @@ defmodule Kjogvi.Birding.Log.Query do
 
     Enum.map(rows, fn row -> Map.put(row, :life_observation, obs_map[row.obs_id]) end)
   end
-
-  @doc """
-  Returns locations with `public_index` set (countries and subdivisions used as
-  log scopes).
-  """
-  def log_locations do
-    from(l in Location,
-      where: not is_nil(l.public_index),
-      where: l.location_type in ["country", "region"],
-      order_by: l.public_index
-    )
-    |> Repo.all()
-  end
 end
