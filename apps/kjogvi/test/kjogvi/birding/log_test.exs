@@ -72,7 +72,7 @@ defmodule Kjogvi.Birding.LogTest do
       {date, day_entries} = hd(entries)
       assert date == today
 
-      lifer_entry = Enum.find(day_entries, &(&1.type == :total && is_nil(&1.area)))
+      lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
       assert lifer_entry != nil
       assert length(lifer_entry.life_observations) == 1
     end
@@ -92,7 +92,7 @@ defmodule Kjogvi.Birding.LogTest do
       {_date, day_entries} = hd(entries)
 
       # Only the world lifer entry should appear (total for nil area)
-      total_entries = Enum.filter(day_entries, &(&1.type == :total))
+      total_entries = Enum.filter(day_entries, &(&1.type == :life))
       assert length(total_entries) == 1
       assert hd(total_entries).area == nil
     end
@@ -123,12 +123,12 @@ defmodule Kjogvi.Birding.LogTest do
 
       # Should show Canada total (not a world lifer, but new for Canada)
       ca_total =
-        Enum.find(day_entries, &(&1.type == :total && &1.area && &1.area.id == country_ca.id))
+        Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == country_ca.id))
 
       assert ca_total != nil
 
       # Should NOT show world total (it was seen in Ukraine yesterday)
-      world_total = Enum.find(day_entries, &(&1.type == :total && is_nil(&1.area)))
+      world_total = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
       assert world_total == nil
     end
 
@@ -149,7 +149,7 @@ defmodule Kjogvi.Birding.LogTest do
 
       # Subdivision total should be suppressed since Canada total covers it
       sub_total =
-        Enum.find(day_entries, &(&1.type == :total && &1.area && &1.area.id == subdivision.id))
+        Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == subdivision.id))
 
       assert sub_total == nil
     end
@@ -182,7 +182,7 @@ defmodule Kjogvi.Birding.LogTest do
       assert year_entry.year == this_year_date.year
 
       # Should NOT show a total entry (not a lifer)
-      world_total = Enum.find(day_entries, &(&1.type == :total && is_nil(&1.area)))
+      world_total = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
       assert world_total == nil
     end
 
@@ -200,7 +200,7 @@ defmodule Kjogvi.Birding.LogTest do
       {_date, day_entries} = hd(entries)
 
       # World total present
-      assert Enum.any?(day_entries, &(&1.type == :total && is_nil(&1.area)))
+      assert Enum.any?(day_entries, &(&1.type == :life && is_nil(&1.area)))
 
       # World year entry should be suppressed (lifer covers it)
       refute Enum.any?(day_entries, &(&1.type == :year && is_nil(&1.area)))
@@ -221,7 +221,7 @@ defmodule Kjogvi.Birding.LogTest do
       entries = Log.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
-      lifer_entry = Enum.find(day_entries, &(&1.type == :total && is_nil(&1.area)))
+      lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
       assert lifer_entry != nil
       assert length(lifer_entry.life_observations) == 2
     end
@@ -268,14 +268,14 @@ defmodule Kjogvi.Birding.LogTest do
       {_date, today_entries} =
         Enum.find(entries, fn {date, _} -> date == today end)
 
-      lifer_entry = Enum.find(today_entries, &(&1.type == :total && is_nil(&1.area)))
+      lifer_entry = Enum.find(today_entries, &(&1.type == :life && is_nil(&1.area)))
       assert lifer_entry.list_total == 2
 
       # Yesterday's world lifer entry should show list_total = 1
       {_date, yesterday_entries} =
         Enum.find(entries, fn {date, _} -> date == yesterday end)
 
-      yesterday_lifer = Enum.find(yesterday_entries, &(&1.type == :total && is_nil(&1.area)))
+      yesterday_lifer = Enum.find(yesterday_entries, &(&1.type == :life && is_nil(&1.area)))
       assert yesterday_lifer.list_total == 1
     end
 

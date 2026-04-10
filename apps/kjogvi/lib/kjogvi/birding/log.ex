@@ -81,7 +81,7 @@ defmodule Kjogvi.Birding.Log do
     candidates =
       Enum.map(rows, fn row ->
         area = if row.location_id_scope, do: location_map[row.location_id_scope], else: nil
-        type = if row.year_scope, do: :year, else: :total
+        type = if row.year_scope, do: :year, else: :life
         {area, type, row.year_scope, row.life_observation, row.list_total}
       end)
 
@@ -103,7 +103,7 @@ defmodule Kjogvi.Birding.Log do
   defp deduplicate(candidates) do
     total_area_ids =
       candidates
-      |> Enum.filter(fn {_area, type, _year, _obs, _total} -> type == :total end)
+      |> Enum.filter(fn {_area, type, _year, _obs, _total} -> type == :life end)
       |> Enum.map(fn {area, _type, _year, _obs, _total} -> area_id(area) end)
       |> MapSet.new()
 
@@ -120,18 +120,18 @@ defmodule Kjogvi.Birding.Log do
 
   # An entry is covered if the same area or any ancestor area has a
   # same-or-higher priority entry.
-  # - A :total entry is covered if an ancestor has a :total.
-  # - A :year entry is covered if self or ancestor has a :total,
+  # - A :life entry is covered if an ancestor has a :life.
+  # - A :year entry is covered if self or ancestor has a :life,
   #   OR a strict ancestor has a :year for the same year.
   # "World" (nil area) has no ancestors. A world :year is covered if
-  # world :total exists.
+  # world :life exists.
   defp covered?(area, type, year, total_area_ids, year_area_ids) do
     self_id = area_id(area)
     ancestor_ids = full_ancestor_chain(area)
     ids_to_check = [self_id | ancestor_ids]
 
     case type do
-      :total ->
+      :life ->
         Enum.any?(ancestor_ids, &MapSet.member?(total_area_ids, &1))
 
       :year ->
@@ -180,7 +180,7 @@ defmodule Kjogvi.Birding.Log do
 
   # Sort entries: total before year, world before country before subdivision.
   defp entry_sort_key(%Entry{type: type, area: area, year: year}) do
-    type_order = if type == :total, do: 0, else: 1
+    type_order = if type == :life, do: 0, else: 1
     depth = if area, do: length(area.ancestry), else: 0
     {type_order, depth, year}
   end

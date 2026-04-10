@@ -60,10 +60,10 @@ defmodule KjogviWeb.LogComponents do
     """
   end
 
-  defp log_entry_filter(%{area: area, type: :total}), do: [location: area]
+  defp log_entry_filter(%{area: area, type: :life}), do: [location: area]
   defp log_entry_filter(%{area: area, type: :year, year: year}), do: [location: area, year: year]
 
-  defp log_entry_label(%{area: nil, type: :total} = entry) do
+  defp log_entry_label(%{area: nil, type: :life} = entry) do
     if length(entry.life_observations) == 1 do
       "New lifer:"
     else
@@ -79,7 +79,7 @@ defmodule KjogviWeb.LogComponents do
     end
   end
 
-  defp log_entry_label(%{area: area, type: :total} = entry) do
+  defp log_entry_label(%{area: area, type: :life} = entry) do
     if length(entry.life_observations) == 1 do
       "New species in #{area.name_en}:"
     else
