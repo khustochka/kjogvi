@@ -5,9 +5,12 @@ defmodule Kjogvi.Birding.Log.Cache do
   Recomputing the recent-additions feed is expensive (it scans every
   observation a user has), but the result only changes when an observation
   or the user's `log_settings` changes. We cache one entry per
-  `(user_id, include_private, limit, cutoff_days, today)` tuple. Including
-  the current date in the key ensures stale results don't survive day
-  boundaries.
+  `(user_id, limit, cutoff_days, today)` tuple. Including the current
+  date in the key ensures stale results don't survive day boundaries.
+
+  Only the public feed is cached. The private view (site owner viewing
+  their own data, `include_private: true`) is a single-user code path
+  with negligible cache benefit and is computed directly on every call.
 
   Invalidation enumerates all known variants for a user. The set of
   variants is small (each call site uses a fixed `(limit, cutoff_days)`
@@ -22,12 +25,11 @@ defmodule Kjogvi.Birding.Log.Cache do
 
   @doc """
   Returns the cached value for `key_parts`, computing it via `fallback/0`
-  on miss. `key_parts` is a tuple of `(user_id, include_private, limit,
-  cutoff_days)`.
+  on miss. `key_parts` is a tuple of `(user_id, limit, cutoff_days)`.
   """
-  def fetch({user_id, include_private, limit, cutoff_days}, fallback)
+  def fetch({user_id, limit, cutoff_days}, fallback)
       when is_function(fallback, 0) do
-    key = build_key(user_id, include_private, limit, cutoff_days, Date.utc_today())
+    key = build_key(user_id, limit, cutoff_days, Date.utc_today())
 
     Kjogvi.Cache.fetch(
       key,
@@ -55,9 +57,8 @@ defmodule Kjogvi.Birding.Log.Cache do
   defp cache_keys_for_user(user_id) do
     today = Date.utc_today()
 
-    for include_private <- [true, false],
-        {limit, cutoff_days} <- known_variants() do
-      build_key(user_id, include_private, limit, cutoff_days, today)
+    for {limit, cutoff_days} <- known_variants() do
+      build_key(user_id, limit, cutoff_days, today)
     end
   end
 
@@ -73,8 +74,8 @@ defmodule Kjogvi.Birding.Log.Cache do
     ]
   end
 
-  defp build_key(user_id, include_private, limit, cutoff_days, date) do
+  defp build_key(user_id, limit, cutoff_days, date) do
     @prefix <>
-      "#{user_id}:#{include_private}:#{limit}:#{cutoff_days}:#{Date.to_iso8601(date)}"
+      "#{user_id}:#{limit}:#{cutoff_days}:#{Date.to_iso8601(date)}"
   end
 end

@@ -29,10 +29,11 @@ defmodule Kjogvi.Birding.Log do
   @doc """
   Returns log entries for the most recent days that have entries.
 
-  Log settings are read from `scope.user.extras.log_settings`. Results are
-  cached per `(user_id, include_private, limit, cutoff_days)` and the
-  current date; cache entries are evicted when observations or
-  `log_settings` change (see `Kjogvi.Birding.Log.Cache`).
+  Log settings are read from `scope.user.extras.log_settings`. Results for
+  the public feed (`include_private: false`) are cached per
+  `(user_id, limit, cutoff_days)` and the current date; cache entries are
+  evicted when observations or `log_settings` change (see
+  `Kjogvi.Birding.Log.Cache`). The private view bypasses the cache.
 
   Options:
   - `:limit` — max number of distinct dates to return (default #{@default_limit})
@@ -45,10 +46,14 @@ defmodule Kjogvi.Birding.Log do
     limit = Keyword.get(opts, :limit, @default_limit)
     cutoff_days = Keyword.get(opts, :cutoff_days, @cutoff_days)
 
-    Cache.fetch(
-      {scope.user.id, scope.include_private, limit, cutoff_days},
-      fn -> compute_recent_entries(scope, limit, cutoff_days) end
-    )
+    if scope.include_private do
+      compute_recent_entries(scope, limit, cutoff_days)
+    else
+      Cache.fetch(
+        {scope.user.id, limit, cutoff_days},
+        fn -> compute_recent_entries(scope, limit, cutoff_days) end
+      )
+    end
   end
 
   defp compute_recent_entries(scope, limit, cutoff_days) do
