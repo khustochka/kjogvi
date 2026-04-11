@@ -76,13 +76,22 @@ defmodule Kjogvi.Birding do
     %Card{}
     |> Card.changeset(attrs)
     |> Repo.insert()
+    |> tap_invalidate_log_cache(user.id)
   end
 
   def update_card(card, attrs) do
     card
     |> Card.changeset(attrs)
     |> Repo.update()
+    |> tap_invalidate_log_cache(card.user_id)
   end
+
+  defp tap_invalidate_log_cache({:ok, _} = result, user_id) do
+    Kjogvi.Birding.Log.Cache.invalidate(user_id)
+    result
+  end
+
+  defp tap_invalidate_log_cache(other, _user_id), do: other
 
   @doc """
   Returns a list of day-of-month integers for which the user has cards

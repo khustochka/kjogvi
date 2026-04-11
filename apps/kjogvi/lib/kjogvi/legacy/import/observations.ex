@@ -22,6 +22,15 @@ defmodule Kjogvi.Legacy.Import.Observations do
   def after_import do
     # Promoting
     Kjogvi.Pages.Promotion.promote_observations_by_query(Observation)
+
+    # Legacy imports bypass `Kjogvi.Birding.create_card/2`, so the per-write
+    # log cache invalidation doesn't run. Evict the main user's log cache
+    # once at the tail of the pipeline — legacy imports target the
+    # single-user site owner.
+    case Kjogvi.Settings.main_user() do
+      nil -> :ok
+      user -> Kjogvi.Birding.Log.Cache.invalidate(user.id)
+    end
   end
 
   def truncate do

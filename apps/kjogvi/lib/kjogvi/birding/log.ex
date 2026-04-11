@@ -17,6 +17,7 @@ defmodule Kjogvi.Birding.Log do
   Priority within a type: world > country > subdivision (by ancestry depth).
   """
 
+  alias Kjogvi.Birding.Log.Cache
   alias Kjogvi.Birding.Log.Entry
   alias Kjogvi.Birding.Log.Query
   alias Kjogvi.Birding.Lifelist
@@ -28,7 +29,10 @@ defmodule Kjogvi.Birding.Log do
   @doc """
   Returns log entries for the most recent days that have entries.
 
-  Log settings are read from `scope.user.extras.log_settings`.
+  Log settings are read from `scope.user.extras.log_settings`. Results are
+  cached per `(user_id, include_private, limit, cutoff_days)` and the
+  current date; cache entries are evicted when observations or
+  `log_settings` change (see `Kjogvi.Birding.Log.Cache`).
 
   Options:
   - `:limit` — max number of distinct dates to return (default #{@default_limit})
@@ -40,6 +44,14 @@ defmodule Kjogvi.Birding.Log do
   def recent_entries(scope, opts \\ []) do
     limit = Keyword.get(opts, :limit, @default_limit)
     cutoff_days = Keyword.get(opts, :cutoff_days, @cutoff_days)
+
+    Cache.fetch(
+      {scope.user.id, scope.include_private, limit, cutoff_days},
+      fn -> compute_recent_entries(scope, limit, cutoff_days) end
+    )
+  end
+
+  defp compute_recent_entries(scope, limit, cutoff_days) do
     log_settings = scope.user.extras.log_settings
     since_date = Date.add(Date.utc_today(), -cutoff_days)
 
