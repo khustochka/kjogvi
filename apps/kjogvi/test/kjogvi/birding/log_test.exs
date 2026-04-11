@@ -390,6 +390,206 @@ defmodule Kjogvi.Birding.LogTest do
       end
     end
 
+    test "world lifer annotates covered country and subdivision when enabled in settings" do
+      {taxon, _page} = Factory.create_species_taxon_with_page()
+      country = insert_country("Canada")
+      subdivision = insert_subdivision("Manitoba", country)
+      site = insert_site(country, subdivision)
+
+      user =
+        user_fixture()
+        |> put_log_settings(all_enabled_settings([country, subdivision]))
+
+      today = Date.utc_today()
+      c = card(user, today, site)
+      obs(c, Ornitho.Schema.Taxon.key(taxon))
+
+      entries = Log.recent_entries(scope(user))
+      {_date, day_entries} = hd(entries)
+
+      lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
+      assert lifer_entry != nil
+
+      covered_ids = Enum.map(lifer_entry.covered_areas, fn {area, _} -> area.id end)
+      assert country.id in covered_ids
+      assert subdivision.id in covered_ids
+
+      # covered list_totals match the life totals for each area (1 for each)
+      for {_area, total} <- lifer_entry.covered_areas do
+        assert total == 1
+      end
+
+      # Canada/Manitoba should NOT appear as standalone entries
+      refute Enum.any?(day_entries, &(&1.type == :life && &1.area && &1.area.id == country.id))
+
+      refute Enum.any?(
+               day_entries,
+               &(&1.type == :life && &1.area && &1.area.id == subdivision.id)
+             )
+    end
+
+    test "covered_areas is empty when area is not enabled in log_settings" do
+      {taxon, _page} = Factory.create_species_taxon_with_page()
+      country = insert_country("Canada")
+      subdivision = insert_subdivision("Manitoba", country)
+      site = insert_site(country, subdivision)
+
+      # Only World enabled; Canada/Manitoba not in settings
+      user =
+        user_fixture()
+        |> put_log_settings([%{location_id: nil, life: true, year: true}])
+
+      today = Date.utc_today()
+      c = card(user, today, site)
+      obs(c, Ornitho.Schema.Taxon.key(taxon))
+
+      entries = Log.recent_entries(scope(user))
+      {_date, day_entries} = hd(entries)
+
+      lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
+      assert lifer_entry.covered_areas == []
+    end
+
+    test "covered_areas excludes areas where life is disabled even if year is enabled" do
+      {taxon, _page} = Factory.create_species_taxon_with_page()
+      country = insert_country("Canada")
+      site = insert_site(country)
+
+      # Canada year enabled, life disabled
+      settings = [
+        %{location_id: nil, life: true, year: true},
+        %{location_id: country.id, life: false, year: true}
+      ]
+
+      user = user_fixture() |> put_log_settings(settings)
+
+      today = Date.utc_today()
+      c = card(user, today, site)
+      obs(c, Ornitho.Schema.Taxon.key(taxon))
+
+      entries = Log.recent_entries(scope(user))
+      {_date, day_entries} = hd(entries)
+
+      lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
+      refute Enum.any?(lifer_entry.covered_areas, fn {a, _} -> a.id == country.id end)
+    end
+
+    test "species with matching covered areas are grouped into one entry" do
+      {t1, _} = Factory.create_species_taxon_with_page()
+      {t2, _} = Factory.create_species_taxon_with_page()
+      country = insert_country("Canada")
+      site = insert_site(country)
+
+      user =
+        user_fixture()
+        |> put_log_settings(all_enabled_settings([country]))
+
+      today = Date.utc_today()
+      c = card(user, today, site)
+      obs(c, Ornitho.Schema.Taxon.key(t1))
+      obs(c, Ornitho.Schema.Taxon.key(t2))
+
+      entries = Log.recent_entries(scope(user))
+      {_date, day_entries} = hd(entries)
+
+      lifer_entries = Enum.filter(day_entries, &(&1.type == :life && is_nil(&1.area)))
+      assert length(lifer_entries) == 1
+
+      lifer_entry = hd(lifer_entries)
+      assert length(lifer_entry.life_observations) == 2
+
+      # covered_areas' list_total is the max (latest) across the group
+      {_area, ca_total} =
+        Enum.find(lifer_entry.covered_areas, fn {a, _} -> a.id == country.id end)
+
+      assert ca_total == 2
+    end
+
+    test "world lifer and Canada-only lifer create two separate entries" do
+      {t1, _} = Factory.create_species_taxon_with_page()
+      {t2, _} = Factory.create_species_taxon_with_page()
+      country_ca = insert_country("Canada", 1)
+      country_ua = insert_country("Ukraine", 2)
+      site_ca = insert_site(country_ca)
+      site_ua = insert_site(country_ua)
+
+      user =
+        user_fixture()
+        |> put_log_settings(all_enabled_settings([country_ca, country_ua]))
+
+      # t2 was seen long ago in Ukraine (already a world lifer)
+      long_ago = Date.add(Date.utc_today(), -30)
+      c_old = card(user, long_ago, site_ua)
+      obs(c_old, Ornitho.Schema.Taxon.key(t2))
+
+      # Today: both in Canada
+      today = Date.utc_today()
+      c = card(user, today, site_ca)
+      obs(c, Ornitho.Schema.Taxon.key(t1))
+      obs(c, Ornitho.Schema.Taxon.key(t2))
+
+      entries = Log.recent_entries(scope(user))
+      today_entry = Enum.find(entries, fn {d, _} -> d == today end)
+      {_date, day_entries} = today_entry
+
+      # t1: world lifer (primary = World), covered areas include Canada
+      world_lifer = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
+      assert world_lifer != nil
+      assert length(world_lifer.life_observations) == 1
+      assert Enum.any?(world_lifer.covered_areas, fn {a, _} -> a.id == country_ca.id end)
+
+      # t2: Canada lifer as its own primary entry
+      canada_lifer =
+        Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == country_ca.id))
+
+      assert canada_lifer != nil
+      assert length(canada_lifer.life_observations) == 1
+      assert canada_lifer.covered_areas == []
+    end
+
+    test "covered :life areas do not leak onto :year primaries" do
+      {taxon, _page} = Factory.create_species_taxon_with_page()
+      country_ca = insert_country("Canada", 1)
+      country_ua = insert_country("Ukraine", 2)
+      subdivision = insert_subdivision("Manitoba", country_ca)
+      site_ca = insert_site(country_ca, subdivision)
+      site_ua = insert_site(country_ua)
+
+      user =
+        user_fixture()
+        |> put_log_settings(all_enabled_settings([country_ca, country_ua, subdivision]))
+
+      # Seen in Ukraine last year — already world lifer and on the 2024 year list
+      last_year = ~D[2024-06-15]
+      c_old = card(user, last_year, site_ua)
+      obs(c_old, Ornitho.Schema.Taxon.key(taxon))
+
+      # Today: seen in Canada. This is a Canada lifer, Manitoba lifer, AND a
+      # new 2026 year bird (at world and all ancestor scopes).
+      today = Date.utc_today()
+      c = card(user, today, site_ca)
+      obs(c, Ornitho.Schema.Taxon.key(taxon))
+
+      entries = Log.recent_entries(scope(user))
+      today_entry = Enum.find(entries, fn {d, _} -> d == today end)
+      {_date, day_entries} = today_entry
+
+      # :life primary is Canada; Manitoba should be in its covered_areas.
+      canada_life =
+        Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == country_ca.id))
+
+      assert canada_life != nil
+      assert Enum.any?(canada_life.covered_areas, fn {a, _} -> a.id == subdivision.id end)
+
+      # :year primary is world for the current year. It must NOT have any
+      # covered :life areas attached.
+      world_year =
+        Enum.find(day_entries, &(&1.type == :year && is_nil(&1.area) && &1.year == today.year))
+
+      assert world_year != nil
+      assert world_year.covered_areas == []
+    end
+
     test "log_settings with all disabled returns empty" do
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country = insert_country("Canada")

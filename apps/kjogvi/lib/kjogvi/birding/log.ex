@@ -59,7 +59,7 @@ defmodule Kjogvi.Birding.Log do
     else
       rows
       |> Query.preload_life_observations()
-      |> build_entries(location_map)
+      |> build_entries(location_map, log_settings)
       |> filter_entries_by_settings(log_settings)
       |> Enum.take(limit)
     end
@@ -108,7 +108,9 @@ defmodule Kjogvi.Birding.Log do
   end
 
   # Group raw rows into {date, [entry]} tuples, applying deduplication.
-  defp build_entries(rows, location_map) do
+  defp build_entries(rows, location_map, log_settings) do
+    life_enabled_ids = life_enabled_area_ids(log_settings)
+
     rows
     |> Enum.group_by(& &1.observ_date)
     |> Enum.sort_by(fn {date, _} -> date end, {:desc, Date})
@@ -117,18 +119,27 @@ defmodule Kjogvi.Birding.Log do
         date_rows
         |> group_by_species()
         |> Enum.flat_map(fn {_species_page_id, species_rows} ->
-          build_species_entries(species_rows, location_map)
+          build_species_primaries(species_rows, location_map, life_enabled_ids)
         end)
-        |> merge_entries()
+        |> merge_primaries()
 
       {date, entries}
     end)
     |> Enum.reject(fn {_date, entries} -> entries == [] end)
   end
 
-  # Returns all candidate (area, type, life_observation) tuples for a species on a date,
-  # then deduplicates by ancestry.
-  defp build_species_entries(rows, location_map) do
+  # log_settings area_ids where :life is enabled. nil represents World.
+  defp life_enabled_area_ids(log_settings) do
+    log_settings
+    |> Enum.filter(& &1.life)
+    |> Enum.map(& &1.location_id)
+    |> MapSet.new()
+  end
+
+  # Build the per-species primary candidates, each annotated with the
+  # `:life` hit set (as [{area, list_total}]) that this primary also covers.
+  # Returns a list of intermediate maps used by `merge_primaries/1`.
+  defp build_species_primaries(rows, location_map, life_enabled_ids) do
     candidates =
       Enum.map(rows, fn row ->
         area = if row.location_id_scope, do: location_map[row.location_id_scope], else: nil
@@ -136,22 +147,37 @@ defmodule Kjogvi.Birding.Log do
         {area, type, row.year_scope, row.life_observation, row.list_total}
       end)
 
-    deduplicated = deduplicate(candidates)
+    {primaries, covered} = partition_candidates(candidates)
 
-    Enum.map(deduplicated, fn {area, type, year, life_obs, list_total} ->
-      %Entry{
+    # Only :life covered candidates become secondary annotations, and only
+    # when the area is enabled for :life in log_settings.
+    covered_life =
+      covered
+      |> Enum.filter(fn {area, type, _year, _obs, _total} ->
+        type == :life and MapSet.member?(life_enabled_ids, area_id(area))
+      end)
+      |> Enum.map(fn {area, _type, _year, _obs, total} -> {area, total} end)
+
+    Enum.map(primaries, fn {area, type, year, life_obs, list_total} ->
+      # Covered :life annotations only apply to :life primaries.
+      # A :year primary should not be annotated with life-scope secondaries.
+      attached = if type == :life, do: covered_life, else: []
+
+      %{
         type: type,
         area: area,
         year: year,
-        life_observations: [life_obs],
-        list_total: list_total
+        life_obs: life_obs,
+        list_total: list_total,
+        covered_life: attached
       }
     end)
   end
 
-  # Remove candidates that are "covered" by a more significant candidate.
-  # Significance: total > year; shallower ancestry (world > country > subdivision).
-  defp deduplicate(candidates) do
+  # Partition candidates into {primary, covered} based on ancestry priority.
+  # Primary: survives dedup (not covered by any more significant candidate).
+  # Covered: would have been dropped by the old dedup.
+  defp partition_candidates(candidates) do
     total_area_ids =
       candidates
       |> Enum.filter(fn {_area, type, _year, _obs, _total} -> type == :life end)
@@ -164,8 +190,8 @@ defmodule Kjogvi.Birding.Log do
       |> Enum.map(fn {area, _type, year, _obs, _total} -> {area_id(area), year} end)
       |> MapSet.new()
 
-    Enum.reject(candidates, fn {area, type, year, _obs, _total} ->
-      covered?(area, type, year, total_area_ids, year_area_ids)
+    Enum.split_with(candidates, fn {area, type, year, _obs, _total} ->
+      not covered?(area, type, year, total_area_ids, year_area_ids)
     end)
   end
 
@@ -207,26 +233,49 @@ defmodule Kjogvi.Birding.Log do
     Enum.group_by(rows, & &1.species_page_id)
   end
 
-  # Merge entries with the same (type, area, year) into a single entry with
-  # multiple life_observations. This handles the case where multiple species
-  # are new to the same area on the same date.
-  defp merge_entries(entries) do
-    entries
-    |> Enum.group_by(fn e -> {e.type, area_id(e.area), e.year} end)
-    |> Enum.map(fn {{type, _area_id, year}, group} ->
-      area = hd(group).area
-      life_obs = Enum.flat_map(group, & &1.life_observations)
+  # Merge per-species primary candidates into final entries. Species are
+  # grouped by (type, primary area, year, set of covered :life area ids) so
+  # that a single %Entry{} only contains species sharing the same profile of
+  # covered secondaries. For each merged entry the `list_total` at the
+  # primary area and the list_totals at each covered area are the max across
+  # the group — i.e. the count after the latest species in the group.
+  defp merge_primaries(primaries) do
+    primaries
+    |> Enum.group_by(fn p ->
+      covered_ids = p.covered_life |> Enum.map(fn {a, _} -> area_id(a) end) |> Enum.sort()
+      {p.type, area_id(p.area), p.year, covered_ids}
+    end)
+    |> Enum.map(fn {{type, _area_id, year, _covered_ids}, group} ->
+      head = hd(group)
+      life_obs = Enum.map(group, & &1.life_obs)
       list_total = group |> Enum.map(& &1.list_total) |> Enum.max()
+      covered_areas = merge_covered(group)
 
       %Entry{
         type: type,
-        area: area,
+        area: head.area,
         year: year,
         life_observations: life_obs,
-        list_total: list_total
+        list_total: list_total,
+        covered_areas: covered_areas
       }
     end)
     |> Enum.sort_by(&entry_sort_key/1)
+  end
+
+  # Across a group of species that share the same covered-area set, compute
+  # the max list_total per covered area (i.e. the total after the latest
+  # species in the group was added for that area).
+  defp merge_covered(group) do
+    group
+    |> Enum.flat_map(& &1.covered_life)
+    |> Enum.group_by(fn {area, _total} -> area_id(area) end)
+    |> Enum.map(fn {_id, entries} ->
+      {area, _} = hd(entries)
+      max_total = entries |> Enum.map(fn {_a, t} -> t end) |> Enum.max()
+      {area, max_total}
+    end)
+    |> Enum.sort_by(fn {area, _} -> length(area.ancestry) end)
   end
 
   # Sort entries: total before year, world before country before subdivision.
