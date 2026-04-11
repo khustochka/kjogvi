@@ -20,7 +20,7 @@ defmodule KjogviWeb.HomeController do
       },
       {
         Live.Lifelist.Presenter.title(year: 2025),
-        Birding.Lifelist.top(lifelist_scope, @top_lifelist_num, year: 2025)
+        Birding.Lifelist.top(lifelist_scope, @top_lifelist_num, year: 2026)
       }
     ]
 
@@ -42,19 +42,12 @@ defmodule KjogviWeb.HomeController do
         end
       end)
 
-    log_enabled = Log.any_enabled?(lifelist_scope)
-
-    log_entries =
-      if log_enabled do
-        Log.recent_entries(lifelist_scope)
-      else
-        []
-      end
+    log_entries = Log.recent_entries(lifelist_scope)
 
     conn
+    |> assign(:page_title, "Birding highlights")
     |> assign(:lists, primary_lists ++ country_lists)
     |> assign(:log_entries, log_entries)
-    |> assign(:log_enabled, log_enabled)
     |> render(:home)
   end
 end

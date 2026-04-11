@@ -65,6 +65,11 @@ defmodule KjogviWeb.LogComponents do
   defp entry_label(%{entry: %{life_observations: obs}} = assigns)
        when length(obs) == 1 do
     ~H"""
+    <.icon
+      :if={@entry.type == :life and is_nil(@entry.area)}
+      name="fa-solid-star"
+      class="w-4 h-4 text-amber-300 mr-px"
+    />
     <span phx-no-format>{singular_prefix(@entry)} <.total_badge
       scope={@current_scope}
       filter={primary_filter(@entry)}
@@ -113,7 +118,10 @@ defmodule KjogviWeb.LogComponents do
 
   # Phrasing for a single-species primary entry. Uses "in" for areas and
   # "for" for years, consistently across singular and plural forms.
-  defp singular_prefix(%{area: nil, type: :life}), do: "New lifer"
+  defp singular_prefix(%{area: nil, type: :life}) do
+    "New lifer"
+  end
+
   defp singular_prefix(%{area: area, type: :life}), do: "New species in #{area.name_en}"
   defp singular_prefix(%{area: nil, type: :year, year: year}), do: "New species for #{year}"
 

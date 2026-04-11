@@ -11,6 +11,7 @@ defmodule KjogviWeb.LogController do
     log_entries = Log.recent_entries(log_scope, limit: 366, cutoff_days: 366)
 
     conn
+    |> assign(:page_title, "Birding log")
     |> assign(:log_entries, log_entries)
     |> render(:show)
   end
