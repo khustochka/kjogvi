@@ -4,7 +4,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Util
-  alias Kjogvi.Birding
   alias Kjogvi.Birding.Lifelist
 
   alias KjogviWeb.DateHelper
@@ -17,7 +16,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @impl true
   def mount(_params, _session, %{assigns: assigns} = socket) do
     lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
-    all_years = Birding.Lifelist.years(lifelist_scope)
+    all_years = Lifelist.years(lifelist_scope)
 
     {
       :ok,
@@ -35,18 +34,18 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     filter = build_filter(assigns.current_scope, params)
 
-    lifelist = Birding.Lifelist.generate(lifelist_scope, filter)
+    lifelist = Lifelist.generate(lifelist_scope, filter)
 
     years =
-      Birding.Lifelist.years(lifelist_scope, Map.put(filter, :year, nil))
+      Lifelist.years(lifelist_scope, Map.put(filter, :year, nil))
       |> then(&Util.Enum.zip_inclusion(assigns.all_years, &1))
 
     months =
-      Birding.Lifelist.months(lifelist_scope, Map.put(filter, :month, nil))
+      Lifelist.months(lifelist_scope, Map.put(filter, :month, nil))
       |> then(&Util.Enum.zip_inclusion(@all_months, &1))
 
     active_location_ids =
-      Birding.Lifelist.location_ids(lifelist_scope, Map.put(filter, :location, nil))
+      Lifelist.location_ids(lifelist_scope, Map.put(filter, :location, nil))
 
     location_context = Kjogvi.Geo.get_lifelist_location_context(filter.location)
 
@@ -91,7 +90,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     ~H"""
     <%!-- Page title + stats --%>
     <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
-      <.h1 class={["!mb-0", header_style(assigns)]}>
+      <.h1 class={["mb-0!", header_style(assigns)]}>
         {@page_header}
       </.h1>
       <div class="flex flex-wrap gap-2 mb-1">
