@@ -1,4 +1,4 @@
-defmodule KjogviWeb.LogControllerTest do
+defmodule KjogviWeb.Live.My.Log.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
   import Kjogvi.UsersFixtures

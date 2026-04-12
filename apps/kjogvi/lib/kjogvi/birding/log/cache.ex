@@ -69,7 +69,7 @@ defmodule Kjogvi.Birding.Log.Cache do
     [
       # Home page (KjogviWeb.HomeController)
       {5, 93},
-      # /my/log (KjogviWeb.LogController)
+      # /my/log (KjogviWeb.My.Log.Index)
       {366, 366}
     ]
   end
