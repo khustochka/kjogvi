@@ -84,6 +84,11 @@ defmodule KjogviWeb.LogComponents do
 
   defp entry_label(assigns) do
     ~H"""
+    <.icon
+      :if={@entry.type == :life and is_nil(@entry.area)}
+      name="fa-solid-star"
+      class="w-4 h-4 text-amber-300 mr-px"
+    />
     <span phx-no-format>{plural_prefix(@entry)} <.total_badge
       scope={@current_scope}
       filter={primary_filter(@entry)}
