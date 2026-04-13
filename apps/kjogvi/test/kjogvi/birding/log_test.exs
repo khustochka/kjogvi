@@ -92,7 +92,7 @@ defmodule Kjogvi.Birding.LogTest do
       assert length(lifer_entry.life_observations) == 1
     end
 
-    test "a lifer suppresses country and subdivision total entries" do
+    test "a lifer suppresses country, subdivision, and year entries" do
       user = user_fixture()
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country = insert_country("Canada")
@@ -110,6 +110,9 @@ defmodule Kjogvi.Birding.LogTest do
       total_entries = Enum.filter(day_entries, &(&1.type == :life))
       assert length(total_entries) == 1
       assert hd(total_entries).area == nil
+
+      # World year entry should also be suppressed (lifer covers it)
+      refute Enum.any?(day_entries, &(&1.type == :year && is_nil(&1.area)))
     end
 
     test "country total is shown when species is not a world lifer" do
@@ -150,28 +153,6 @@ defmodule Kjogvi.Birding.LogTest do
       assert world_total == nil
     end
 
-    test "subdivision total is suppressed when country total is present" do
-      user = user_fixture()
-      {taxon, _page} = Factory.create_species_taxon_with_page()
-      country = insert_country("Canada")
-      subdivision = insert_subdivision("Manitoba", country)
-      site = insert_site(country, subdivision)
-
-      # First time in Canada (also first in Manitoba)
-      today = Date.utc_today()
-      c = card(user, today, site)
-      obs(c, Ornitho.Schema.Taxon.key(taxon))
-
-      entries = Log.recent_entries(scope(user))
-      {_date, day_entries} = hd(entries)
-
-      # Subdivision total should be suppressed since Canada total covers it
-      sub_total =
-        Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == subdivision.id))
-
-      assert sub_total == nil
-    end
-
     test "year entry is shown when species is not new to the year list" do
       user = user_fixture()
       {taxon, _page} = Factory.create_species_taxon_with_page()
@@ -202,26 +183,6 @@ defmodule Kjogvi.Birding.LogTest do
       # Should NOT show a total entry (not a lifer)
       world_total = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
       assert world_total == nil
-    end
-
-    test "lifer suppresses year entry for the same area" do
-      user = user_fixture()
-      {taxon, _page} = Factory.create_species_taxon_with_page()
-      country = insert_country("Canada")
-      site = insert_site(country)
-
-      today = Date.utc_today()
-      c = card(user, today, site)
-      obs(c, Ornitho.Schema.Taxon.key(taxon))
-
-      entries = Log.recent_entries(scope(user))
-      {_date, day_entries} = hd(entries)
-
-      # World total present
-      assert Enum.any?(day_entries, &(&1.type == :life && is_nil(&1.area)))
-
-      # World year entry should be suppressed (lifer covers it)
-      refute Enum.any?(day_entries, &(&1.type == :year && is_nil(&1.area)))
     end
 
     test "multiple species added on same day are grouped into one entry per area/type" do
@@ -588,6 +549,55 @@ defmodule Kjogvi.Birding.LogTest do
 
       assert world_year != nil
       assert world_year.covered_areas == []
+    end
+
+    test "year filter scopes to the given year, bypassing cutoff and limit" do
+      user = user_fixture()
+      country = insert_country("Canada")
+      site = insert_site(country)
+
+      {taxon_2020, _} = Factory.create_species_taxon_with_page()
+      {taxon_2025, _} = Factory.create_species_taxon_with_page()
+
+      # Observation far in the past (beyond any default cutoff)
+      c1 = card(user, ~D[2020-06-15], site)
+      obs(c1, Ornitho.Schema.Taxon.key(taxon_2020))
+
+      # Observation in 2025
+      c2 = card(user, ~D[2025-03-15], site)
+      obs(c2, Ornitho.Schema.Taxon.key(taxon_2025))
+
+      # cutoff_days would exclude 2020 data, but year filter finds it
+      assert Log.recent_entries(scope(user), cutoff_days: 5) == []
+
+      entries_2020 = Log.recent_entries(scope(user), year: 2020)
+      assert [{~D[2020-06-15], _}] = entries_2020
+
+      # Only 2025 entries returned, 2020 excluded
+      entries_2025 = Log.recent_entries(scope(user), year: 2025)
+      dates = Enum.map(entries_2025, fn {date, _} -> date end)
+      assert ~D[2025-03-15] in dates
+      refute Enum.any?(dates, &(&1.year == 2020))
+
+      # Year with no observations returns empty
+      assert Log.recent_entries(scope(user), year: 2023) == []
+    end
+
+    test "year filter returns all entries without limit" do
+      user = user_fixture()
+      country = insert_country("Canada")
+      site = insert_site(country)
+
+      # Create observations on many different dates in 2025
+      for i <- 1..5 do
+        {taxon, _} = Factory.create_species_taxon_with_page()
+        c = card(user, Date.new!(2025, i, 10), site)
+        obs(c, Ornitho.Schema.Taxon.key(taxon))
+      end
+
+      # With year filter, all 5 dates should appear (no limit applied)
+      entries = Log.recent_entries(scope(user), year: 2025)
+      assert length(entries) == 5
     end
 
     test "log_settings with all disabled returns empty" do

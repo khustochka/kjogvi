@@ -13,7 +13,7 @@ defmodule KjogviWeb.Live.My.Log.IndexTest do
 
   test "renders the log page", %{conn: conn} do
     conn = get(conn, ~p"/my/log")
-    assert html_response(conn, 200) =~ "Recent additions"
+    assert html_response(conn, 200) =~ "Birding log"
   end
 
   test "list_total links to the correct lifelist anchor", %{conn: conn, user: user} do

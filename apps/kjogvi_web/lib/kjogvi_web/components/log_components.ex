@@ -5,7 +5,6 @@ defmodule KjogviWeb.LogComponents do
 
   use KjogviWeb, :html
 
-  import KjogviWeb.HeaderComponents
   import KjogviWeb.BirdingComponents
   import KjogviWeb.FormatComponents
 
@@ -14,9 +13,7 @@ defmodule KjogviWeb.LogComponents do
 
   def log(assigns) do
     ~H"""
-    <section class="mt-12">
-      <.h2>Recent additions</.h2>
-
+    <div class="mt-2">
       <div :if={@log_entries == []} class="flex gap-2 items-center text-zinc-500 italic">
         No recent additions.
       </div>
@@ -50,7 +47,7 @@ defmodule KjogviWeb.LogComponents do
           </dd>
         <% end %>
       </dl>
-    </section>
+    </div>
     """
   end
 

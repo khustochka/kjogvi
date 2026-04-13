@@ -45,20 +45,42 @@ defmodule Kjogvi.Birding.Log do
   def recent_entries(scope, opts \\ []) do
     limit = Keyword.get(opts, :limit, @default_limit)
     cutoff_days = Keyword.get(opts, :cutoff_days, @cutoff_days)
+    year = Keyword.get(opts, :year)
+
+    filter =
+      if year do
+        [year: year]
+      else
+        [
+          limit: limit,
+          cutoff_days: cutoff_days
+        ]
+      end
 
     if scope.include_private do
-      compute_recent_entries(scope, limit, cutoff_days)
+      compute_recent_entries(scope, filter)
     else
+      # Shortcut: since year filter is only used for private view, we only use
+      # the cache with limit and cutoff_days filters, which are relevant for the public view.
       Cache.fetch(
         {scope.user.id, limit, cutoff_days},
-        fn -> compute_recent_entries(scope, limit, cutoff_days) end
+        fn -> compute_recent_entries(scope, filter) end
       )
     end
   end
 
-  defp compute_recent_entries(scope, limit, cutoff_days) do
+  defp compute_recent_entries(scope, filter) do
+    limit = Keyword.get(filter, :limit)
+    year = Keyword.get(filter, :year)
+
+    {start_date, end_date} =
+      if year do
+        {Date.new!(year, 1, 1), Date.new!(year, 12, 31)}
+      else
+        {Date.add(Date.utc_today(), -Keyword.get(filter, :cutoff_days)), nil}
+      end
+
     log_settings = scope.user.extras.log_settings
-    since_date = Date.add(Date.utc_today(), -cutoff_days)
 
     location_ids =
       log_settings
@@ -69,7 +91,7 @@ defmodule Kjogvi.Birding.Log do
 
     location_map = Map.new(locations, &{&1.id, &1})
 
-    rows = Query.firsts_in_range(scope, locations, since_date)
+    rows = Query.firsts_in_range(scope, locations, {start_date, end_date})
 
     if rows == [] do
       []
@@ -78,7 +100,13 @@ defmodule Kjogvi.Birding.Log do
       |> Query.preload_life_observations()
       |> build_entries(location_map, log_settings)
       |> filter_entries_by_settings(log_settings)
-      |> Enum.take(limit)
+      |> then(fn entries ->
+        if limit do
+          Enum.take(entries, limit)
+        else
+          entries
+        end
+      end)
     end
   end
 

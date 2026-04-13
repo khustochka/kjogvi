@@ -24,7 +24,7 @@ defmodule Kjogvi.Birding.Log.Query do
   alias Kjogvi.Repo
 
   @doc false
-  def firsts_in_range(scope, locations, since_date) do
+  def firsts_in_range(scope, locations, {start_date, end_date}) do
     %{user: %{id: user_id}, include_private: include_private} = scope
 
     # Scope ids: nil represents the World scope. Each location id represents
@@ -83,13 +83,19 @@ defmodule Kjogvi.Birding.Log.Query do
       )
 
     from(r in subquery(windowed_query),
-      where: r.observ_date >= ^since_date,
+      where: r.observ_date >= ^start_date,
       order_by: [desc: r.observ_date]
     )
+    |> then(fn query ->
+      if end_date do
+        query
+        |> where([r], r.observ_date <= ^end_date)
+      else
+        query
+      end
+    end)
     |> Repo.all()
   end
-
-  # --- Private helpers ---
 
   # Cross-join the base join against the list of scope ids and keep only
   # rows where the card belongs to that scope (World matches every card;
