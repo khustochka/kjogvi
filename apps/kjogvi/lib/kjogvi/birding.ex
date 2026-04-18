@@ -121,10 +121,8 @@ defmodule Kjogvi.Birding do
   end
 
   @doc """
-  Returns the earliest date after the user's latest card that has no cards,
-  or `nil` if that date is still in the future.
-
-  Returns `nil` when the user has no cards.
+  Returns a suggested date for a new card: the day after the user's latest
+  card, capped at today. Returns today when the user has no cards.
   """
   def next_empty_date(user) do
     latest_date =
@@ -134,18 +132,15 @@ defmodule Kjogvi.Birding do
       |> select([card: c], max(c.observ_date))
       |> Repo.one()
 
+    today = Date.utc_today()
+
     case latest_date do
       nil ->
-        nil
+        today
 
       date ->
         candidate = Date.add(date, 1)
-
-        if Date.compare(candidate, Date.utc_today()) in [:lt, :eq] do
-          candidate
-        else
-          nil
-        end
+        if Date.compare(candidate, today) == :gt, do: today, else: candidate
     end
   end
 
