@@ -229,4 +229,48 @@ defmodule Kjogvi.Geo do
     )
     |> Repo.one()
   end
+
+  @doc """
+  Returns a changeset for creating or editing a location.
+  """
+  def change_location(%Location{} = location, attrs \\ %{}) do
+    Location.changeset(location, attrs)
+  end
+
+  @doc """
+  Creates a location.
+  """
+  def create_location(attrs) do
+    %Location{}
+    |> Location.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a location.
+  """
+  def update_location(%Location{} = location, attrs) do
+    location
+    |> Location.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a location. Refuses if the location has children or cards.
+  """
+  def delete_location(%Location{} = location) do
+    children = children_count(location.id)
+    cards = cards_count(location.id)
+
+    cond do
+      children > 0 ->
+        {:error, :has_children}
+
+      cards > 0 ->
+        {:error, :has_cards}
+
+      true ->
+        Repo.delete(location)
+    end
+  end
 end

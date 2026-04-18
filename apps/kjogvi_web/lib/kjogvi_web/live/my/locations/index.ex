@@ -74,7 +74,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <.h1 class="mb-0!">
           Locations
         </.h1>
-        <div class="flex flex-wrap gap-2 mb-1">
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+          <.action_button navigate={~p"/my/locations/new"} icon="hero-plus">
+            Add Location
+          </.action_button>
           <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
             <span class="text-lg font-header font-bold tracking-tight">
               {@total_locations}

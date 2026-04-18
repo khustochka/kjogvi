@@ -38,6 +38,26 @@ defmodule KjogviWeb.Live.My.Locations.Show do
   end
 
   @impl true
+  def handle_event("delete", _params, socket) do
+    case Geo.delete_location(socket.assigns.location) do
+      {:ok, _location} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Location deleted")
+         |> push_navigate(to: ~p"/my/locations")}
+
+      {:error, :has_children} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has sub-locations")}
+
+      {:error, :has_cards} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has cards")}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not delete location")}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
@@ -76,13 +96,38 @@ defmodule KjogviWeb.Live.My.Locations.Show do
             </span>
             <.type_badge :if={@location.location_type} type={@location.location_type} />
           </div>
-          <.link
-            id="lifelist-link"
-            href={~p"/my/lifelist/#{@location.slug}"}
-            class="mt-2 inline-flex items-center gap-1 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
-          >
-            Lifelist
-          </.link>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <.link
+              id="lifelist-link"
+              href={~p"/my/lifelist/#{@location.slug}"}
+              class="inline-flex items-center gap-1 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
+            >
+              Lifelist
+            </.link>
+            <.action_button
+              navigate={~p"/my/locations/#{@location.slug}/edit"}
+              icon="hero-pencil-square"
+              variant="secondary"
+            >
+              Edit
+            </.action_button>
+            <.action_button
+              navigate={~p"/my/locations/new?parent_id=#{@location.id}"}
+              icon="hero-plus"
+              variant="secondary"
+            >
+              Add sub-location
+            </.action_button>
+            <button
+              id="delete-location-button"
+              type="button"
+              phx-click="delete"
+              data-confirm={"Delete location \"#{@location.name_en}\"? This cannot be undone."}
+              class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700"
+            >
+              <.icon name="hero-trash" class="w-4 h-4" /> Delete
+            </button>
+          </div>
         </div>
 
         <div id="location-stats" class="flex flex-wrap gap-2 mb-1">
