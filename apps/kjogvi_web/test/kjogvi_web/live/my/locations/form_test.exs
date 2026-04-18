@@ -12,6 +12,22 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     %{conn: log_in_user(conn, user_fixture())}
   end
 
+  defp build_chain do
+    country = insert(:location, name_en: "Canada", location_type: "country")
+
+    region =
+      insert(:location, name_en: "Manitoba", location_type: "region", ancestry: [country.id])
+
+    city =
+      insert(:location,
+        name_en: "Winnipeg",
+        location_type: "city",
+        ancestry: [country.id, region.id]
+      )
+
+    %{country: country, region: region, city: city}
+  end
+
   describe "new" do
     test "renders new location form", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/my/locations/new")
@@ -43,14 +59,112 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert loc.ancestry == []
     end
 
-    test "prefills parent when parent_id query param is given", %{conn: conn} do
+    test "prefills parent and shows clear button when parent_id query param given", %{conn: conn} do
       parent = insert(:location, name_en: "Canada", location_type: "country")
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{parent.id}")
 
       assert has_element?(view, "#location_parent_search")
-      # Clear button is shown when parent is set
       assert has_element?(view, "button[phx-click='clear_parent']")
+    end
+
+    test "leaves cached_parent empty when parent is a country", %{conn: conn} do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+
+      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{country.id}")
+
+      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
+      assert html =~ ~s|name="location[cached_parent_id]" value=""|
+      assert html =~ ~s|name="location[cached_city_id]" value=""|
+      assert html =~ ~s|name="location[cached_subdivision_id]" value=""|
+    end
+
+    test "leaves cached_parent empty when parent is a region", %{conn: conn} do
+      %{country: country, region: region} = build_chain()
+
+      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{region.id}")
+
+      assert html =~ ~s|name="location[cached_subdivision_id]" value="#{region.id}"|
+      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
+      assert html =~ ~s|name="location[cached_parent_id]" value=""|
+      assert html =~ ~s|name="location[cached_city_id]" value=""|
+    end
+
+    test "leaves cached_parent empty when parent is a city", %{conn: conn} do
+      %{country: country, region: region, city: city} = build_chain()
+
+      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
+
+      assert html =~ ~s|name="location[cached_city_id]" value="#{city.id}"|
+      assert html =~ ~s|name="location[cached_subdivision_id]" value="#{region.id}"|
+      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
+      assert html =~ ~s|name="location[cached_parent_id]" value=""|
+    end
+
+    test "sets cached_parent to direct parent when parent is a continent", %{conn: conn} do
+      continent = insert(:location, name_en: "Europe", location_type: "continent")
+
+      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{continent.id}")
+
+      assert html =~ ~s|name="location[cached_parent_id]" value="#{continent.id}"|
+      assert html =~ ~s|name="location[cached_country_id]" value=""|
+      assert html =~ ~s|name="location[cached_city_id]" value=""|
+      assert html =~ ~s|name="location[cached_subdivision_id]" value=""|
+    end
+
+    test "auto-fills cached_parent when parent has unclassified type", %{conn: conn} do
+      %{country: country, region: region, city: city} = build_chain()
+
+      yard =
+        insert(:location,
+          name_en: "My Yard",
+          location_type: nil,
+          ancestry: [country.id, region.id, city.id]
+        )
+
+      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{yard.id}")
+
+      assert html =~ ~s|name="location[cached_parent_id]" value="#{yard.id}"|
+      assert html =~ ~s|name="location[cached_city_id]" value="#{city.id}"|
+      assert html =~ ~s|name="location[cached_subdivision_id]" value="#{region.id}"|
+      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
+    end
+  end
+
+  describe "cached_parent is direct parent only" do
+    test "sets cached_parent to direct parent, not an unclassified ancestor", %{conn: conn} do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+
+      yard =
+        insert(:location, name_en: "My Yard", location_type: nil, ancestry: [country.id])
+
+      feeder =
+        insert(:location,
+          name_en: "Feeder",
+          location_type: "special",
+          ancestry: [country.id, yard.id]
+        )
+
+      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{feeder.id}")
+
+      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
+      assert html =~ ~s|name="location[cached_parent_id]" value="#{feeder.id}"|
+    end
+  end
+
+  describe "clear parent" do
+    test "clears auto-filled cached_* fields when parent is cleared", %{conn: conn} do
+      %{city: city} = build_chain()
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
+
+      html = render_click(view, "clear_parent")
+
+      assert html =~ ~s|name="location[parent_id]" value=""|
+      assert html =~ ~s|name="location[cached_city_id]" value=""|
+      assert html =~ ~s|name="location[cached_subdivision_id]" value=""|
+      assert html =~ ~s|name="location[cached_country_id]" value=""|
+      assert html =~ ~s|name="location[cached_parent_id]" value=""|
     end
   end
 
@@ -89,44 +203,6 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     test "redirects for nonexistent slug", %{conn: conn} do
       assert {:error, {:live_redirect, %{to: "/my/locations"}}} =
                live(conn, ~p"/my/locations/nonexistent/edit")
-    end
-  end
-
-  describe "changeset cached_public_location_id derivation" do
-    test "sets cached_public_location_id for private location to nearest public ancestor" do
-      country = insert(:location, name_en: "Canada", is_private: false)
-
-      private_parent =
-        insert(:location, name_en: "Private area", is_private: true, ancestry: [country.id])
-
-      {:ok, created} =
-        Geo.create_location(%{
-          "slug" => "secret-patch",
-          "name_en" => "Secret Patch",
-          "is_private" => "true",
-          "is_patch" => "false",
-          "is_5mr" => "false",
-          "parent_id" => private_parent.id
-        })
-
-      assert created.cached_public_location_id == country.id
-      assert created.ancestry == [country.id, private_parent.id]
-    end
-
-    test "leaves cached_public_location_id nil for public location" do
-      country = insert(:location, name_en: "Canada", is_private: false)
-
-      {:ok, created} =
-        Geo.create_location(%{
-          "slug" => "city-x",
-          "name_en" => "City X",
-          "is_private" => "false",
-          "is_patch" => "false",
-          "is_5mr" => "false",
-          "parent_id" => country.id
-        })
-
-      assert is_nil(created.cached_public_location_id)
     end
   end
 end

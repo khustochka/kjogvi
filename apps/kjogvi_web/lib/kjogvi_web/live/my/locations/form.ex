@@ -16,6 +16,12 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   alias KjogviWeb.Live.Components.AutocompleteSearch
 
   @cached_fields [:cached_parent, :cached_city, :cached_subdivision, :cached_country]
+  @cached_id_fields %{
+    cached_parent: :cached_parent_id,
+    cached_city: :cached_city_id,
+    cached_subdivision: :cached_subdivision_id,
+    cached_country: :cached_country_id
+  }
 
   @impl true
   def mount(_params, _session, socket) do
@@ -55,7 +61,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
     location =
       %Location{
-        parent_id: parent_id,
         is_private: false,
         is_patch: false,
         is_5mr: false,
@@ -64,7 +69,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         cached_subdivision: nil,
         cached_country: nil
       }
-      |> Map.put(:parent, parent_id && Repo.get(Location, parent_id))
+      |> apply_parent(parent_id)
 
     {
       :noreply,
@@ -113,43 +118,34 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   end
 
   def handle_event("clear_parent", _params, socket) do
-    location = %{socket.assigns.location | parent_id: nil, parent: nil}
+    location =
+      socket.assigns.location
+      |> apply_parent(nil)
+      |> set_cached(:cached_parent, nil)
+      |> set_cached(:cached_city, nil)
+      |> set_cached(:cached_subdivision, nil)
+      |> set_cached(:cached_country, nil)
+
     {:noreply, assign_location(socket, location)}
   end
 
   def handle_event("clear_cached", %{"field" => field}, socket) do
-    atom = String.to_existing_atom(field)
-    id_atom = String.to_existing_atom("#{field}_id")
-
-    location =
-      socket.assigns.location
-      |> Map.put(id_atom, nil)
-      |> Map.put(atom, nil)
-
+    location = set_cached(socket.assigns.location, String.to_existing_atom(field), nil)
     {:noreply, assign_location(socket, location)}
   end
 
   @impl true
   def handle_info({:autocomplete_select, "parent_selected", %{"result" => result}}, socket) do
-    parent = %Location{id: result.id, name_en: result.long_name}
-    location = %{socket.assigns.location | parent_id: result.id, parent: parent}
+    location = apply_parent(socket.assigns.location, result.id)
     {:noreply, assign_location(socket, location)}
   end
 
   def handle_info({:autocomplete_select, "cached_selected", params}, socket) do
-    field = params["field"]
+    field = String.to_existing_atom(params["field"])
     result = params["result"]
-
-    atom = String.to_existing_atom(field)
-    id_atom = String.to_existing_atom("#{field}_id")
-
     cached_struct = %Location{id: result.id, name_en: result.name_en}
 
-    location =
-      socket.assigns.location
-      |> Map.put(id_atom, result.id)
-      |> Map.put(atom, cached_struct)
-
+    location = set_cached(socket.assigns.location, field, cached_struct)
     {:noreply, assign_location(socket, location)}
   end
 
@@ -253,7 +249,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       </div>
 
       <div class="pt-2">
-        <p class="text-stone-700 font-medium">Full name:</p>
         <CoreComponents.input type="text" field={@form[:name_en]} label="English name" />
       </div>
 
@@ -326,6 +321,61 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   defp cancel_path(:edit, location), do: ~p"/my/locations/#{location.slug}"
   defp cancel_path(:create, _), do: ~p"/my/locations"
+
+  # Sets parent_id, parent struct, and auto-fills cached_* slots based on
+  # parent's ancestry chain (walked deepest-first; each ancestor goes into
+  # the slot matching its location_type, deepest unclassified becomes
+  # cached_parent).
+  defp apply_parent(location, nil) do
+    location
+    |> Map.put(:parent_id, nil)
+    |> Map.put(:parent, nil)
+  end
+
+  defp apply_parent(location, parent_id) do
+    parent = Repo.get(Location, parent_id)
+    chain = Location.ancestors(parent) ++ [parent]
+
+    cached =
+      Enum.reduce(chain, %{city: nil, subdivision: nil, country: nil}, fn loc, acc ->
+        slot =
+          case loc.location_type do
+            "country" -> :country
+            "region" -> :subdivision
+            "city" -> :city
+            _ -> nil
+          end
+
+        if slot && Map.fetch!(acc, slot) == nil, do: Map.put(acc, slot, loc), else: acc
+      end)
+
+    cached_parent =
+      if parent.id in Enum.map(Map.values(cached), &(&1 && &1.id)),
+        do: nil,
+        else: parent
+
+    location
+    |> Map.put(:parent_id, parent.id)
+    |> Map.put(:parent, parent)
+    |> set_cached(:cached_parent, cached_parent)
+    |> set_cached(:cached_city, cached.city)
+    |> set_cached(:cached_subdivision, cached.subdivision)
+    |> set_cached(:cached_country, cached.country)
+  end
+
+  defp set_cached(location, field, nil) do
+    location
+    |> Map.put(field, nil)
+    |> Map.put(cached_id_field(field), nil)
+  end
+
+  defp set_cached(location, field, %Location{} = loc) do
+    location
+    |> Map.put(field, loc)
+    |> Map.put(cached_id_field(field), loc.id)
+  end
+
+  defp cached_id_field(field), do: Map.fetch!(@cached_id_fields, field)
 
   defp merge_assoc_ids(params, location) do
     params
