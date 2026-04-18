@@ -22,7 +22,7 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 
-    assert has_element?(show_live, "#location-breadcrumbs a", "All locations")
+    assert has_element?(show_live, "#location-breadcrumbs a", "Locations")
   end
 
   test "shows ancestor locations in breadcrumbs", %{conn: conn} do

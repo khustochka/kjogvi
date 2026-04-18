@@ -63,7 +63,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
     <div class="space-y-6">
       <%!-- Breadcrumbs --%>
       <nav id="location-breadcrumbs" class="text-sm text-stone-500">
-        <.breadcrumb_link href={~p"/my/locations"}>All locations</.breadcrumb_link>
+        <.breadcrumb_link href={~p"/my/locations"}>Locations</.breadcrumb_link>
         <%= for ancestor <- @ancestors do %>
           <span class="mx-1 text-stone-400">/</span>
           <.breadcrumb_link

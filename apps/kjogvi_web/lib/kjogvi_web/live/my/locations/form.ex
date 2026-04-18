@@ -36,7 +36,9 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           location
           |> Repo.preload(@cached_fields)
           |> Location.with_parent_id()
-          |> preload_parent()
+
+        location =
+          Map.put(location, :parent, location.parent_id && Repo.get(Location, location.parent_id))
 
         {
           :noreply,
@@ -49,20 +51,20 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   end
 
   def handle_params(params, _url, socket) do
-    parent_id = parse_int(params["parent_id"])
+    parent_id = params["parent_id"] && String.to_integer(params["parent_id"])
 
-    location = %Location{
-      parent_id: parent_id,
-      is_private: false,
-      is_patch: false,
-      is_5mr: false,
-      cached_parent: nil,
-      cached_city: nil,
-      cached_subdivision: nil,
-      cached_country: nil
-    }
-
-    location = preload_parent(location)
+    location =
+      %Location{
+        parent_id: parent_id,
+        is_private: false,
+        is_patch: false,
+        is_5mr: false,
+        cached_parent: nil,
+        cached_city: nil,
+        cached_subdivision: nil,
+        cached_country: nil
+      }
+      |> Map.put(:parent, parent_id && Repo.get(Location, parent_id))
 
     {
       :noreply,
@@ -79,39 +81,18 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     |> assign(:form, to_form(Geo.change_location(location)))
   end
 
-  defp preload_parent(%Location{parent_id: nil} = location) do
-    Map.put(location, :parent, nil)
-  end
-
-  defp preload_parent(%Location{parent_id: parent_id} = location) do
-    parent = Repo.get(Location, parent_id)
-    Map.put(location, :parent, parent)
-  end
-
   @impl true
   def handle_event("validate", %{"location" => params}, socket) do
-    location = merge_params_into_location(socket.assigns.location, params)
-
     changeset =
-      location
-      |> Geo.change_location(%{})
+      socket.assigns.location
+      |> Geo.change_location(merge_assoc_ids(params, socket.assigns.location))
       |> Map.put(:action, :validate)
 
-    {:noreply,
-     socket
-     |> assign(:location, location)
-     |> assign(:form, to_form(changeset))}
+    {:noreply, assign(socket, :form, to_form(changeset))}
   end
 
   def handle_event("save", %{"location" => params}, socket) do
-    # Merge virtual/select fields from current location struct
-    params =
-      params
-      |> Map.put("parent_id", socket.assigns.location.parent_id)
-      |> Map.put("cached_parent_id", socket.assigns.location.cached_parent_id)
-      |> Map.put("cached_city_id", socket.assigns.location.cached_city_id)
-      |> Map.put("cached_subdivision_id", socket.assigns.location.cached_subdivision_id)
-      |> Map.put("cached_country_id", socket.assigns.location.cached_country_id)
+    params = merge_assoc_ids(params, socket.assigns.location)
 
     result =
       case socket.assigns.action do
@@ -162,7 +143,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     atom = String.to_existing_atom(field)
     id_atom = String.to_existing_atom("#{field}_id")
 
-    cached_struct = %Location{id: result.id, name_en: result.long_name}
+    cached_struct = %Location{id: result.id, name_en: result.name_en}
 
     location =
       socket.assigns.location
@@ -208,14 +189,23 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         </div>
 
         <div>
-          <CoreComponents.input
-            type="select"
-            field={@form[:location_type]}
-            label="Locus type"
-            prompt="— none —"
-            options={Location.location_types()}
+          <label
+            for={@form[:location_type].id}
+            class="block text-sm font-semibold leading-6 text-zinc-800"
+          >
+            Locus type
+          </label>
+          <select
+            id={@form[:location_type].id}
+            name={@form[:location_type].name}
             size={length(Location.location_types()) + 1}
-          />
+            class="mt-2 inline-block w-auto min-w-48 pr-8 rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 text-base"
+          >
+            {Phoenix.HTML.Form.options_for_select(
+              [{"— none —", ""} | Location.location_types()],
+              @form[:location_type].value || ""
+            )}
+          </select>
         </div>
       </div>
 
@@ -312,16 +302,16 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           id={"location_#{@field}_search"}
           label={@label}
           placeholder=""
-          current_value={location_name(@current)}
+          current_value={(@current && @current.name_en) || ""}
           hidden_name={"location[#{@field}_id]"}
-          hidden_value={current_id(@current)}
+          hidden_value={(@current && @current.id) || ""}
           search_fn={&Search.Location.search_locations/1}
           on_select_event={@on_select_event}
           on_select_params={@on_select_params}
         />
       </div>
       <button
-        :if={match?(%Location{}, @current)}
+        :if={@current}
         type="button"
         phx-click={@on_clear_event}
         phx-value-field={@on_clear_params["field"]}
@@ -334,37 +324,15 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     """
   end
 
-  defp location_name(%Location{name_en: name}), do: name || ""
-  defp location_name(_), do: ""
-
-  defp current_id(%Location{id: id}) when not is_nil(id), do: id
-  defp current_id(_), do: ""
-
   defp cancel_path(:edit, location), do: ~p"/my/locations/#{location.slug}"
   defp cancel_path(:create, _), do: ~p"/my/locations"
 
-  defp parse_int(nil), do: nil
-  defp parse_int(""), do: nil
-  defp parse_int(str) when is_binary(str), do: String.to_integer(str)
-  defp parse_int(int) when is_integer(int), do: int
-
-  # Merge form params into location struct, preserving non-form-controlled fields.
-  defp merge_params_into_location(location, params) do
-    %{
-      location
-      | slug: params["slug"],
-        name_en: params["name_en"],
-        location_type: empty_to_nil(params["location_type"]),
-        iso_code: empty_to_nil(params["iso_code"]),
-        is_private: params["is_private"] == "true",
-        is_patch: params["is_patch"] == "true",
-        is_5mr: params["is_5mr"] == "true",
-        lat: empty_to_nil(params["lat"]),
-        lon: empty_to_nil(params["lon"])
-    }
+  defp merge_assoc_ids(params, location) do
+    params
+    |> Map.put("parent_id", location.parent_id)
+    |> Map.put("cached_parent_id", location.cached_parent_id)
+    |> Map.put("cached_city_id", location.cached_city_id)
+    |> Map.put("cached_subdivision_id", location.cached_subdivision_id)
+    |> Map.put("cached_country_id", location.cached_country_id)
   end
-
-  defp empty_to_nil(nil), do: nil
-  defp empty_to_nil(""), do: nil
-  defp empty_to_nil(v), do: v
 end
