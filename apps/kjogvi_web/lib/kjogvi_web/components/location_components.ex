@@ -98,6 +98,64 @@ defmodule KjogviWeb.LocationComponents do
   end
 
   @doc """
+  Renders a Google Static Maps image centered on given coordinates.
+
+  Links through to Google Maps in a new tab. Renders nothing when coordinates
+  or the `GOOGLE_MAPS_API_KEY` env var are missing.
+  """
+  attr :lat, :any, required: true
+  attr :lon, :any, required: true
+  attr :alt, :string, default: "Map"
+  attr :zoom, :integer, default: 12
+  attr :size, :string, default: "600x300"
+  attr :maptype, :string, default: "roadmap", values: ~w(roadmap satellite hybrid terrain)
+  attr :class, :string, default: "w-full max-w-2xl rounded-lg border border-stone-200"
+  attr :rest, :global
+
+  def static_map(assigns) do
+    assigns = assign(assigns, :url, static_map_url(assigns))
+
+    ~H"""
+    <a
+      :if={@url}
+      href={"https://www.google.com/maps/search/?api=1&query=#{@lat},#{@lon}"}
+      target="_blank"
+      rel="noopener"
+      class="block"
+      {@rest}
+    >
+      <img src={@url} alt={@alt} class={@class} loading="lazy" />
+    </a>
+    """
+  end
+
+  defp static_map_url(%{lat: lat, lon: lon, zoom: zoom, size: size, maptype: maptype})
+       when not is_nil(lat) and not is_nil(lon) do
+    case Application.get_env(:kjogvi_web, :google_maps, [])[:api_key] do
+      key when is_binary(key) and key != "" ->
+        coords = "#{lat},#{lon}"
+
+        query =
+          URI.encode_query(%{
+            "center" => coords,
+            "zoom" => Integer.to_string(zoom),
+            "size" => size,
+            "scale" => "2",
+            "maptype" => maptype,
+            "markers" => "color:red|#{coords}",
+            "key" => key
+          })
+
+        "https://maps.googleapis.com/maps/api/staticmap?" <> query
+
+      _ ->
+        nil
+    end
+  end
+
+  defp static_map_url(_), do: nil
+
+  @doc """
   Returns Tailwind classes for a location type badge.
   """
   def type_badge_classes(type) do

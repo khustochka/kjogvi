@@ -213,6 +213,14 @@ defmodule KjogviWeb.Live.My.Locations.Show do
         </div>
       </div>
 
+      <%!-- Static map --%>
+      <.static_map
+        id="location-map"
+        lat={@location.lat}
+        lon={@location.lon}
+        alt={"Map showing location of #{@location.name_en}"}
+      />
+
       <%!-- Ancestry chain --%>
       <div :if={length(@ancestors) > 0} id="location-ancestry" class="space-y-2">
         <.h2 class="mb-3!">Ancestry</.h2>

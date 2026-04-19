@@ -166,6 +166,41 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     assert has_element?(show_live, "#delete-location-button[disabled]")
   end
 
+  describe "static map" do
+    setup do
+      original = Application.get_env(:kjogvi_web, :google_maps)
+      on_exit(fn -> Application.put_env(:kjogvi_web, :google_maps, original) end)
+      :ok
+    end
+
+    test "renders when coords present and api key configured", %{conn: conn} do
+      Application.put_env(:kjogvi_web, :google_maps, api_key: "test-key")
+      location = insert(:location, name_en: "Has Coords", lat: 49.8951, lon: -97.1384)
+
+      {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+      assert has_element?(show_live, "#location-map img")
+    end
+
+    test "hidden when api key missing", %{conn: conn} do
+      Application.put_env(:kjogvi_web, :google_maps, api_key: nil)
+      location = insert(:location, name_en: "Has Coords", lat: 49.8951, lon: -97.1384)
+
+      {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+      refute has_element?(show_live, "#location-map")
+    end
+
+    test "hidden when coords missing", %{conn: conn} do
+      Application.put_env(:kjogvi_web, :google_maps, api_key: "test-key")
+      location = insert(:location, name_en: "No Coords", lat: nil, lon: nil)
+
+      {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+      refute has_element?(show_live, "#location-map")
+    end
+  end
+
   test "redirects to index for nonexistent slug", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/my/locations"}}} =
              live(conn, ~p"/my/locations/nonexistent")
