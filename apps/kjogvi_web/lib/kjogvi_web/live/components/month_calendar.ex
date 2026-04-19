@@ -2,15 +2,14 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
   @moduledoc """
   A month calendar component for selecting observation dates.
 
-  Displays a calendar grid with month navigation, highlights days that have
-  existing cards, and allows click-to-select. Communicates the selected date
-  to the parent via `send(self(), {:calendar_select, ...})`.
+  Displays a calendar grid with month navigation and allows
+  click-to-select. Communicates the selected date to the parent via
+  `send(self(), {:calendar_select, ...})`.
 
   ## Attributes
 
   - `:id` - Unique component identifier
   - `:selected_date` - Currently selected date (Date or nil)
-  - `:user` - The user whose cards to highlight
   - `:hidden_name` - Form parameter name for the date value
   - `:errors` - List of error messages
   - `:label` - Display label
@@ -18,13 +17,11 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
 
   use KjogviWeb, :live_component
 
-  alias Kjogvi.Birding
   alias KjogviWeb.CoreComponents
   alias KjogviWeb.DateHelper
 
   attr :id, :string, required: true
   attr :selected_date, :any, default: nil
-  attr :user, :any, required: true
   attr :hidden_name, :string, required: true
   attr :errors, :list, default: []
   attr :label, :string, default: "Observation Date"
@@ -34,7 +31,6 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
     {:ok,
      socket
      |> assign(:initialized, false)
-     |> assign(:card_days, MapSet.new())
      |> assign(:today, Date.utc_today())}
   end
 
@@ -48,10 +44,8 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
 
     socket =
       if socket.assigns.initialized do
-        # On subsequent updates, keep the displayed month but refresh card days
         socket
       else
-        # First mount: derive displayed month from selected_date or today
         date = assigns[:selected_date] || Date.utc_today()
 
         socket
@@ -60,32 +54,26 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
         |> assign(:initialized, true)
       end
 
-    {:ok, load_card_days(socket)}
+    {:ok, socket}
   end
 
   @impl true
   def handle_event("prev_month", _params, socket) do
     {year, month} = prev_month(socket.assigns.displayed_year, socket.assigns.displayed_month)
 
-    socket =
-      socket
-      |> assign(:displayed_year, year)
-      |> assign(:displayed_month, month)
-      |> load_card_days()
-
-    {:noreply, socket}
+    {:noreply,
+     socket
+     |> assign(:displayed_year, year)
+     |> assign(:displayed_month, month)}
   end
 
   def handle_event("next_month", _params, socket) do
     {year, month} = next_month(socket.assigns.displayed_year, socket.assigns.displayed_month)
 
-    socket =
-      socket
-      |> assign(:displayed_year, year)
-      |> assign(:displayed_month, month)
-      |> load_card_days()
-
-    {:noreply, socket}
+    {:noreply,
+     socket
+     |> assign(:displayed_year, year)
+     |> assign(:displayed_month, month)}
   end
 
   def handle_event("select_day", %{"day" => day_str}, socket) do
@@ -153,7 +141,6 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
                   selected_date={@selected_date}
                   displayed_year={@displayed_year}
                   displayed_month={@displayed_month}
-                  card_days={@card_days}
                   today={@today}
                   myself={@myself}
                 />
@@ -186,8 +173,6 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
         assigns.selected_date.month == assigns.displayed_month and
         assigns.selected_date.day == day
 
-    has_card = MapSet.member?(assigns.card_days, day)
-
     is_today =
       assigns.today.year == assigns.displayed_year and
         assigns.today.month == assigns.displayed_month and
@@ -197,7 +182,6 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
       assigns
       |> assign(:day, day)
       |> assign(:is_selected, is_selected)
-      |> assign(:has_card, has_card)
       |> assign(:is_today, is_today)
 
     ~H"""
@@ -210,25 +194,13 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
       class={[
         "block w-8 h-8 rounded text-sm leading-8 cursor-pointer",
         @is_selected && "bg-teal-700 text-white font-bold",
-        !@is_selected && @has_card && "bg-teal-100 text-teal-800",
-        !@is_selected && !@has_card && @is_today && "text-red-600 font-semibold",
-        !@is_selected && !@has_card && !@is_today && "hover:bg-zinc-100"
+        !@is_selected && @is_today && "text-red-600 font-semibold",
+        !@is_selected && !@is_today && "hover:bg-zinc-100"
       ]}
     >
       {@day}
     </button>
     """
-  end
-
-  defp load_card_days(socket) do
-    days =
-      Birding.card_days_in_month(
-        socket.assigns.user,
-        socket.assigns.displayed_year,
-        socket.assigns.displayed_month
-      )
-
-    assign(socket, :card_days, MapSet.new(days))
   end
 
   @doc false

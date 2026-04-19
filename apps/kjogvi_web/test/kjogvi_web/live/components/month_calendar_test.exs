@@ -107,18 +107,6 @@ defmodule KjogviWeb.Live.Components.MonthCalendarTest do
 
       refute current_month_label == next_month_label
     end
-
-    test "highlights days with existing cards", %{conn: conn, user: user} do
-      insert(:card, user: user, observ_date: Date.utc_today())
-
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
-
-      today = Date.utc_today()
-      day_button = element(lv, "#day-#{today.day}")
-      html = render(day_button)
-
-      assert html =~ "bg-teal-100"
-    end
   end
 
   defp extract_month_label(html) do

@@ -160,7 +160,6 @@ defmodule KjogviWeb.Live.My.Cards.Form do
             module={MonthCalendar}
             id="observ_date_calendar"
             selected_date={@card.observ_date}
-            user={@current_scope.user}
             hidden_name="card[observ_date]"
             errors={
               if show_field_error?(@form, :observ_date),
