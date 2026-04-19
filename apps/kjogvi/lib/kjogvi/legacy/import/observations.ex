@@ -4,14 +4,15 @@ defmodule Kjogvi.Legacy.Import.Observations do
   alias Kjogvi.Repo
   alias Kjogvi.Birding.Observation
 
-  def import(columns_str, rows, _opts) do
+  def import(columns_str, rows, opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
+    book_signature = book_signature!(opts)
 
     obs =
       for row <- rows do
         Enum.zip(columns, row)
         |> Map.new()
-        |> transform_keys
+        |> transform_keys(book_signature)
       end
 
     _ = Repo.insert_all(Observation, obs)
@@ -38,18 +39,19 @@ defmodule Kjogvi.Legacy.Import.Observations do
     _ = Repo.query!("ALTER SEQUENCE observations_id_seq RESTART;")
   end
 
-  defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs) do
+  defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs, book_signature) do
     %{obs | ebird_code: "bird1"}
     |> Map.put(:unreported, true)
-    |> transform_keys
+    |> transform_keys(book_signature)
   end
 
   defp transform_keys(
-         %{created_at: created_at, updated_at: updated_at, ebird_code: ebird_code} = obs
+         %{created_at: created_at, updated_at: updated_at, ebird_code: ebird_code} = obs,
+         book_signature
        ) do
     obs
     |> Map.drop([:created_at, :post_id, :taxon_id, :ebird_code])
-    |> Map.put(:taxon_key, "#{taxonomy_slug()}/#{ebird_code}")
+    |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
     |> Map.put(:inserted_at, convert_timestamp(created_at))
     |> Map.put(:updated_at, convert_timestamp(updated_at))
   end
@@ -69,8 +71,18 @@ defmodule Kjogvi.Legacy.Import.Observations do
     %{dt | microsecond: {usec, 6}}
   end
 
-  defp taxonomy_slug do
-    Kjogvi.Legacy.Import.config()
-    |> Keyword.fetch!(:taxonomy_slug)
+  defp book_signature!(opts) do
+    case Keyword.get(opts, :user) do
+      %{default_book_signature: sig} when is_binary(sig) and sig != "" ->
+        sig
+
+      %{default_book_signature: _} ->
+        raise ArgumentError,
+              "Legacy import requires the user to have `default_book_signature` set. " <>
+                "Configure it in account settings."
+
+      _ ->
+        raise ArgumentError, "Legacy import requires a :user option"
+    end
   end
 end
