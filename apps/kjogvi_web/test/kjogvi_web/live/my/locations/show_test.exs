@@ -14,7 +14,31 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 
     assert has_element?(show_live, "h1", "Manitoba")
-    assert has_element?(show_live, "span", "ca-mb")
+    assert has_element?(show_live, "#location-details", "ca-mb")
+  end
+
+  test "shows full long name as subtitle when richer than name_en", %{conn: conn} do
+    country = insert(:location, name_en: "Canada", location_type: "country")
+
+    location =
+      insert(:location,
+        name_en: "Manitoba",
+        location_type: "region",
+        ancestry: [country.id],
+        cached_country_id: country.id
+      )
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    assert has_element?(show_live, "#location-full-name", "Manitoba, Canada")
+  end
+
+  test "omits full name subtitle when equal to name_en", %{conn: conn} do
+    location = insert(:location, name_en: "Solo")
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    refute has_element?(show_live, "#location-full-name")
   end
 
   test "shows breadcrumbs with link to all locations", %{conn: conn} do
@@ -114,6 +138,32 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 
     refute has_element?(show_live, "span", "lifelist filter")
+  end
+
+  test "delete button enabled for empty location", %{conn: conn} do
+    location = insert(:location, name_en: "Empty")
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    refute has_element?(show_live, "#delete-location-button[disabled]")
+  end
+
+  test "delete button disabled when location has children", %{conn: conn} do
+    parent = insert(:location, name_en: "Canada")
+    insert(:location, name_en: "Manitoba", ancestry: [parent.id])
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{parent.slug}")
+
+    assert has_element?(show_live, "#delete-location-button[disabled]")
+  end
+
+  test "delete button disabled when location has cards", %{conn: conn} do
+    location = insert(:location, name_en: "With Cards")
+    insert(:card, location: location)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    assert has_element?(show_live, "#delete-location-button[disabled]")
   end
 
   test "redirects to index for nonexistent slug", %{conn: conn} do

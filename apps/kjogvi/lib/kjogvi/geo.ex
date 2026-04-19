@@ -139,6 +139,7 @@ defmodule Kjogvi.Geo do
     from(l in Location,
       where: l.location_type != "special" or is_nil(l.location_type)
     )
+    |> Location.Query.load_cards_count()
     |> Repo.all()
     |> Enum.group_by(&List.last(&1.ancestry))
   end
@@ -253,6 +254,13 @@ defmodule Kjogvi.Geo do
     location
     |> Location.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Returns true if the location can be deleted (no children, no cards).
+  """
+  def can_delete_location?(%Location{} = location) do
+    children_count(location.id) == 0 and cards_count(location.id) == 0
   end
 
   @doc """

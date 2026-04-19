@@ -53,6 +53,34 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   end
 
   @impl true
+  def handle_event("delete", %{"id" => id_str}, socket) do
+    location = Kjogvi.Repo.get!(Kjogvi.Geo.Location, String.to_integer(id_str))
+
+    case Geo.delete_location(location) do
+      {:ok, _} ->
+        grouped_locations = Geo.all_locations_by_parent()
+        top_locations = grouped_locations[nil] || []
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Location deleted")
+         |> assign(:grouped_locations, grouped_locations)
+         |> assign(:name_cache, build_name_cache(grouped_locations))
+         |> assign(:top_locations, top_locations)
+         |> assign(:total_locations, count_locations(grouped_locations))}
+
+      {:error, :has_children} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has sub-locations")}
+
+      {:error, :has_cards} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has cards")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not delete location")}
+    end
+  end
+
+  @impl true
   def handle_event("toggle_location", %{"location_id" => location_id_str}, socket) do
     location_id = String.to_integer(location_id_str)
     expanded = socket.assigns.expanded_locations
@@ -74,7 +102,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <.h1 class="mb-0!">
           Locations
         </.h1>
-        <div class="flex flex-wrap items-center gap-2 mb-1">
+        <div class="flex flex-wrap items-stretch gap-2 mb-1">
           <.action_button navigate={~p"/my/locations/new"} icon="hero-plus">
             Add Location
           </.action_button>
@@ -116,13 +144,13 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           />
         </form>
         <div :if={@search_term != ""} class="mt-2 text-sm text-stone-600">
-          <%= if String.length(@search_term) < 2 do %>
-            Type at least 2 characters to search...
-          <% else %>
-            {length(@search_results)} location(s) found
-            <%= if length(@search_results) == 20 do %>
-              (showing first 20 results)
-            <% end %>
+          <%= cond do %>
+            <% String.length(@search_term) < 2 -> %>
+              Type at least 2 characters to search...
+            <% length(@search_results) == 20 -> %>
+              Showing first 20 matches — narrow your search to find a specific one
+            <% true -> %>
+              {length(@search_results)} location(s) found
           <% end %>
         </div>
       </div>
@@ -140,6 +168,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                 </div>
 
                 <.lifelist_link slug={location.slug} />
+                <.row_actions
+                  location={location}
+                  can_delete={Geo.can_delete_location?(location)}
+                />
               </div>
 
               <div :if={length(location.ancestry) > 0} class="mt-1 text-xs text-stone-400">
@@ -224,6 +256,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
 
         <.lifelist_link slug={@location.slug} />
+        <.row_actions
+          location={@location}
+          can_delete={!has_children?(assigns) and (Map.get(@location, :cards_count) || 0) == 0}
+        />
       </div>
 
       <%= if has_children?(assigns) and MapSet.member?(@expanded_locations, @location.id) do %>
@@ -239,6 +275,34 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           <% end %>
         </div>
       <% end %>
+    </div>
+    """
+  end
+
+  attr :location, :map, required: true
+  attr :can_delete, :boolean, required: true
+
+  def row_actions(assigns) do
+    ~H"""
+    <div class="shrink-0 flex items-center gap-1">
+      <.link
+        href={~p"/my/locations/#{@location.slug}/edit"}
+        class="p-1.5 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded"
+        title="Edit"
+      >
+        <.icon name="hero-pencil-square" class="w-4 h-4" />
+      </.link>
+      <button
+        :if={@can_delete}
+        type="button"
+        phx-click="delete"
+        phx-value-id={@location.id}
+        data-confirm={"Delete location \"#{@location.name_en}\"? This cannot be undone."}
+        class="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded"
+        title="Delete"
+      >
+        <.icon name="hero-trash" class="w-4 h-4" />
+      </button>
     </div>
     """
   end
