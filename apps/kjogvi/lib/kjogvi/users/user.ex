@@ -17,6 +17,7 @@ defmodule Kjogvi.Users.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime_usec
     field :roles, {:array, :string}, default: []
+    field :is_main_user, :boolean, default: false
     field :default_book_signature, :string
     embeds_one :extras, Extras, on_replace: :update, defaults_to_struct: true
 

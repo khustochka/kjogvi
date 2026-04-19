@@ -8,8 +8,8 @@ defmodule Kjogvi.Settings do
 
   import Ecto.Query
 
-  alias Kjogvi.Users
   alias Kjogvi.Repo
+  alias Kjogvi.Users
 
   def main_user() do
     Kjogvi.Cache.fetch(key(@main_user_key), fn _ ->
@@ -30,16 +30,15 @@ defmodule Kjogvi.Settings do
   end
 
   defp get_main_user() do
-    Users.admins()
+    Users.main_user_query()
     |> select([u], %{
       id: u.id,
       extras: fragment("jsonb_build_object('log_settings', ?->'log_settings')", u.extras)
     })
-    |> first()
     |> Repo.one()
     |> case do
       nil -> nil
-      row -> Repo.load(Kjogvi.Users.User, row)
+      row -> Repo.load(Users.User, row)
     end
   end
 

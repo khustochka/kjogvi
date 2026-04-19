@@ -86,11 +86,23 @@ defmodule Kjogvi.Users do
 
   @doc """
   Register an admin user.
+
+  If no main user exists yet (e.g. the first admin created during initial
+  setup), the new admin is marked as the main user.
   """
   def register_admin(attrs) do
     %User{}
     |> User.admin_changeset(attrs)
+    |> maybe_mark_main_user()
     |> Repo.insert()
+  end
+
+  defp maybe_mark_main_user(changeset) do
+    if Repo.exists?(main_user_query()) do
+      changeset
+    else
+      Ecto.Changeset.put_change(changeset, :is_main_user, true)
+    end
   end
 
   @doc """
@@ -401,5 +413,23 @@ defmodule Kjogvi.Users do
 
   def admins do
     from u in User, where: ^admin_role() in u.roles
+  end
+
+  @doc """
+  Queryable for the main user.
+  """
+  def main_user_query do
+    from u in User, where: u.is_main_user
+  end
+
+  @doc """
+  Returns the full main user record, or raises if none is set.
+
+  Unlike `Kjogvi.Settings.main_user/0`, this is not cached and returns
+  a full `%User{}` — use it when you need fields beyond the cached
+  projection (e.g. `default_book_signature`).
+  """
+  def main_user!() do
+    Repo.one!(main_user_query())
   end
 end
