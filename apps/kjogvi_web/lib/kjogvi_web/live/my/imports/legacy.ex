@@ -59,7 +59,6 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     %{ref: ref} =
       Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn ->
         Kjogvi.Legacy.Import.run(user, import_id: import_id)
-        {:ok, %{message: "Legacy import done."}}
       end)
 
     send(self(), {:register_import, __MODULE__, ref})

@@ -4,17 +4,36 @@ defmodule Kjogvi.Legacy.Import do
   def run(user, opts \\ []) do
     new_opts = Keyword.put(opts, :user, user)
 
-    :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(new_opts), fn ->
-      prepare_import(new_opts)
+    case validate(user) do
+      :ok ->
+        :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(new_opts), fn ->
+          prepare_import(new_opts)
 
-      perform_import(:locations, new_opts)
+          perform_import(:locations, new_opts)
 
-      perform_import(:cards, new_opts)
+          perform_import(:cards, new_opts)
 
-      perform_import(:observations, new_opts)
+          perform_import(:observations, new_opts)
 
-      {:ok, telemetry_metadata(new_opts)}
-    end)
+          {{:ok, %{message: "Legacy import done."}}, telemetry_metadata(new_opts)}
+        end)
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp validate(%{default_book_signature: sig}) when is_binary(sig) and sig != "" do
+    :ok
+  end
+
+  defp validate(_user) do
+    {:error,
+     %{
+       message:
+         "Legacy import requires a default taxonomy. " <>
+           "Set it in account settings before running the import."
+     }}
   end
 
   def prepare_import(opts \\ []) do
