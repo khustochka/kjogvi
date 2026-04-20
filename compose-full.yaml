@@ -4,8 +4,8 @@ services:
       context: .
     environment:
       SECRET_KEY_BASE: M0wBY/H0jPgHjM2ml/wTYn/HKsIopIlsvQvP3MJTXNSptX20f3BcFyjH5MtsFRJW
-      DATABASE_URL: postgres://kjogvi:kjogvi@database/kjogvi_prod
-      DATABASE_ORNITHO_URL: postgres://kjogvi:kjogvi@database/ornithologue_prod
+      DATABASE_URL: postgres://kjogvi:kjogvi@database-demo/kjogvi_prod
+      DATABASE_ORNITHO_URL: postgres://kjogvi:kjogvi@database-demo/ornithologue_prod
       PHX_PORT: 5040
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
@@ -13,16 +13,17 @@ services:
       ORNITHO_IMPORTER_S3_REGION: ${ORNITHO_IMPORTER_S3_REGION}
       LEGACY_URL: ${LEGACY_URL}
       LEGACY_API_KEY: ${LEGACY_API_KEY}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
     # env_file:
     #   - .env.docker
     # command: 
     ports:
       - "5040:4000"
     depends_on:
-      database:
+      database-demo:
         condition: service_healthy  
 
-  database:
+  database-demo:
     image: postgres:17.9-trixie
     environment:
       POSTGRES_USER: kjogvi
@@ -32,17 +33,17 @@ services:
     ports:
       - "5498:5432"
     volumes:
-      - pg_data17:/var/lib/postgresql/data
+      - pg_data17-demo:/var/lib/postgresql/data
     configs:
       - source: create_ornitho_db
         target: /docker-entrypoint-initdb.d/create-ornitho-db.sql  
     healthcheck:
-      test: pg_isready -U kjogvi -h 127.0.0.1
+      test: pg_isready -U kjogvi -h 127.0.0.1 -d kjogvi_prod
       interval: 3s
 
 # Declare the volumes that our application uses.
 volumes:
-  pg_data17:
+  pg_data17-demo:
 
 configs:
   create_ornitho_db:    
