@@ -5,6 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta
+      :if={Application.get_env(:kjogvi_web, :google_maps, [])[:api_key]}
+      name="google-maps-api-key"
+      content={Application.get_env(:kjogvi_web, :google_maps, [])[:api_key]}
+    />
     <!-- This section is not Live-refreshed, so in Dev Tools it may show the data for the initial page -->
     <.meta_robots content={assigns[:robots]} />
     <!-- End of not Live-refreshed section -->

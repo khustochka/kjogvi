@@ -35,16 +35,15 @@ defmodule Kjogvi.Geo.Location do
     field :iso_code, :string
     field :is_private, :boolean, default: false
     field :is_patch, :boolean, default: false
-    field :is_5mr, :boolean, default: false
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
     belongs_to(:cached_public_location, Location)
 
-    belongs_to(:cached_country, Location)
     belongs_to(:cached_parent, Location)
     belongs_to(:cached_city, Location)
     belongs_to(:cached_subdivision, Location)
+    belongs_to(:cached_country, Location)
 
     has_many(:cards, Kjogvi.Birding.Card)
     has_many(:observations, through: [:cards, :observations])
@@ -53,27 +52,104 @@ defmodule Kjogvi.Geo.Location do
       join_through: "special_locations",
       join_keys: [parent_location_id: :id, child_location_id: :id]
 
+    many_to_many :special_parent_locations, Location,
+      join_through: "special_locations",
+      join_keys: [child_location_id: :id, parent_location_id: :id]
+
     timestamps()
 
     field :cards_count, :integer, virtual: true
+
+    field :parent_id, :integer, virtual: true
 
     field :ancestors, :any,
       virtual: true,
       default: struct(Ecto.Association.NotLoaded, %{__field__: :ancestors})
   end
 
+  @editable_fields ~w(
+    slug
+    name_en
+    location_type
+    iso_code
+    is_private
+    is_patch
+    lat
+    lon
+    parent_id
+    cached_parent_id
+    cached_city_id
+    cached_subdivision_id
+    cached_country_id
+  )a
+
+  @location_types ~w(continent country region city raion special)
+
+  def location_types, do: @location_types
+
   @doc false
   def changeset(location, attrs) do
     location
-    |> cast(attrs, [])
+    |> cast(attrs, @editable_fields)
     |> validate_required([
       :slug,
       :name_en,
-      :ancestry,
       :is_private,
-      :is_patch,
-      :is_5mr
+      :is_patch
     ])
+    |> validate_inclusion(:location_type, @location_types)
+    |> unique_constraint(:slug)
+    |> put_ancestry()
+    |> put_cached_public_location()
+  end
+
+  defp put_ancestry(changeset) do
+    case fetch_field(changeset, :parent_id) do
+      {_, nil} ->
+        put_change(changeset, :ancestry, [])
+
+      {_, parent_id} ->
+        case Repo.get(__MODULE__, parent_id) do
+          nil ->
+            add_error(changeset, :parent_id, "does not exist")
+
+          parent ->
+            put_change(changeset, :ancestry, parent.ancestry ++ [parent.id])
+        end
+
+      :error ->
+        changeset
+    end
+  end
+
+  defp put_cached_public_location(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+
+  defp put_cached_public_location(changeset) do
+    is_private = get_field(changeset, :is_private)
+    ancestry = get_field(changeset, :ancestry) || []
+
+    cond do
+      not is_private ->
+        put_change(changeset, :cached_public_location_id, nil)
+
+      ancestry == [] ->
+        put_change(changeset, :cached_public_location_id, nil)
+
+      true ->
+        public_id = nearest_public_ancestor_id(ancestry)
+        put_change(changeset, :cached_public_location_id, public_id)
+    end
+  end
+
+  defp nearest_public_ancestor_id(ancestry) do
+    ancestors =
+      from(l in __MODULE__, where: l.id in ^ancestry, select: {l.id, l.is_private})
+      |> Repo.all()
+      |> Map.new()
+
+    ancestry
+    |> Enum.reverse()
+    |> Enum.find(fn id -> ancestors[id] == false end)
   end
 
   def set_public_location_changeset(%Location{is_private: true} = location) do
@@ -147,6 +223,13 @@ defmodule Kjogvi.Geo.Location do
 
   def add_ancestors(location) do
     %{location | ancestors: ancestors(location)}
+  end
+
+  @doc """
+  Derives virtual `parent_id` from `ancestry` (last element), for form editing.
+  """
+  def with_parent_id(%__MODULE__{ancestry: ancestry} = location) do
+    %{location | parent_id: List.last(ancestry)}
   end
 
   def ancestors(%{ancestry: ancestry} = _location) do

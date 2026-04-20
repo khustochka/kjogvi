@@ -12,8 +12,7 @@ defmodule Kjogvi.Geo.LocationTest do
             name_en: "Test",
             ancestry: [],
             is_private: false,
-            is_patch: false,
-            is_5mr: false
+            is_patch: false
           },
           %{}
         )
@@ -28,8 +27,7 @@ defmodule Kjogvi.Geo.LocationTest do
             name_en: "Test",
             ancestry: [],
             is_private: false,
-            is_patch: false,
-            is_5mr: false
+            is_patch: false
           },
           %{}
         )
@@ -44,8 +42,7 @@ defmodule Kjogvi.Geo.LocationTest do
             slug: "test-loc",
             ancestry: [],
             is_private: false,
-            is_patch: false,
-            is_5mr: false
+            is_patch: false
           },
           %{}
         )

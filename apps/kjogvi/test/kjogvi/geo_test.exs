@@ -455,4 +455,40 @@ defmodule Kjogvi.GeoTest do
       refute Enum.any?(results, &(&1.location_type == "special"))
     end
   end
+
+  describe "create_location/1 cached_public_location_id derivation" do
+    test "sets cached_public_location_id for private location to nearest public ancestor" do
+      country = insert(:location, name_en: "Canada", is_private: false)
+
+      private_parent =
+        insert(:location, name_en: "Private area", is_private: true, ancestry: [country.id])
+
+      {:ok, created} =
+        Geo.create_location(%{
+          "slug" => "secret-patch",
+          "name_en" => "Secret Patch",
+          "is_private" => "true",
+          "is_patch" => "false",
+          "parent_id" => private_parent.id
+        })
+
+      assert created.cached_public_location_id == country.id
+      assert created.ancestry == [country.id, private_parent.id]
+    end
+
+    test "leaves cached_public_location_id nil for public location" do
+      country = insert(:location, name_en: "Canada", is_private: false)
+
+      {:ok, created} =
+        Geo.create_location(%{
+          "slug" => "city-x",
+          "name_en" => "City X",
+          "is_private" => "false",
+          "is_patch" => "false",
+          "parent_id" => country.id
+        })
+
+      assert is_nil(created.cached_public_location_id)
+    end
+  end
 end

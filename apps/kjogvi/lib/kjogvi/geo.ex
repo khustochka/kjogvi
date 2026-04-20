@@ -139,6 +139,7 @@ defmodule Kjogvi.Geo do
     from(l in Location,
       where: l.location_type != "special" or is_nil(l.location_type)
     )
+    |> Location.Query.load_cards_count()
     |> Repo.all()
     |> Enum.group_by(&List.last(&1.ancestry))
   end
@@ -228,5 +229,56 @@ defmodule Kjogvi.Geo do
       select: count(l.id)
     )
     |> Repo.one()
+  end
+
+  @doc """
+  Returns a changeset for creating or editing a location.
+  """
+  def change_location(%Location{} = location, attrs \\ %{}) do
+    Location.changeset(location, attrs)
+  end
+
+  @doc """
+  Creates a location.
+  """
+  def create_location(attrs) do
+    %Location{}
+    |> Location.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a location.
+  """
+  def update_location(%Location{} = location, attrs) do
+    location
+    |> Location.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Returns true if the location can be deleted (no children, no cards).
+  """
+  def can_delete_location?(%Location{} = location) do
+    children_count(location.id) == 0 and cards_count(location.id) == 0
+  end
+
+  @doc """
+  Deletes a location. Refuses if the location has children or cards.
+  """
+  def delete_location(%Location{} = location) do
+    children = children_count(location.id)
+    cards = cards_count(location.id)
+
+    cond do
+      children > 0 ->
+        {:error, :has_children}
+
+      cards > 0 ->
+        {:error, :has_cards}
+
+      true ->
+        Repo.delete(location)
+    end
   end
 end

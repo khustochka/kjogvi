@@ -49,6 +49,53 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     refute has_element?(index_live, "span", "lifelist filter")
   end
 
+  test "row shows edit link for every location", %{conn: conn} do
+    location = insert(:location, name_en: "Winnipeg")
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "a[href='/my/locations/#{location.slug}/edit']")
+  end
+
+  test "row shows delete button when location can be deleted", %{conn: conn} do
+    location = insert(:location, name_en: "Empty")
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{location.id}']")
+  end
+
+  test "row hides delete button when location has children", %{conn: conn} do
+    parent = insert(:location, name_en: "Canada")
+    insert(:location, name_en: "Manitoba", ancestry: [parent.id])
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    refute has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{parent.id}']")
+  end
+
+  test "row hides delete button when location has cards", %{conn: conn} do
+    location = insert(:location, name_en: "With Cards")
+    insert(:card, location: location)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    refute has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{location.id}']")
+  end
+
+  test "deletes a location", %{conn: conn} do
+    location = insert(:location, name_en: "Doomed")
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    index_live
+    |> element("button[phx-click='delete'][phx-value-id='#{location.id}']")
+    |> render_click()
+
+    refute has_element?(index_live, "a", "Doomed")
+    assert is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, location.id))
+  end
+
   test "expands and collapses a parent location", %{conn: conn} do
     parent = insert(:location, name_en: "Europe", location_type: "continent")
     insert(:location, name_en: "Germany", ancestry: [parent.id], location_type: "country")

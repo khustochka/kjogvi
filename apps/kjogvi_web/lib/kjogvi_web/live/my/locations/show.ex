@@ -5,16 +5,33 @@ defmodule KjogviWeb.Live.My.Locations.Show do
 
   alias Kjogvi.Geo
   alias Kjogvi.Geo.Location
+  alias Kjogvi.Repo
 
   @impl true
   def mount(%{"slug" => slug}, _session, socket) do
-    location = Geo.location_by_slug_scope(socket.assigns.current_scope, slug)
+    location =
+      socket.assigns.current_scope
+      |> Geo.location_by_slug_scope(slug)
+      |> case do
+        nil ->
+          nil
+
+        loc ->
+          Repo.preload(loc, [
+            :cached_parent,
+            :cached_city,
+            :cached_subdivision,
+            :cached_country,
+            :special_parent_locations
+          ])
+      end
 
     if location do
       ancestors = Location.ancestors(location)
       cards_count = Geo.cards_count(location.id)
       children = Geo.direct_children(location.id)
       member_locations = Geo.special_member_locations(location)
+      can_delete = children == [] and cards_count == 0
 
       {:ok,
        socket
@@ -23,7 +40,8 @@ defmodule KjogviWeb.Live.My.Locations.Show do
        |> assign(:ancestors, ancestors)
        |> assign(:cards_count, cards_count)
        |> assign(:children, children)
-       |> assign(:member_locations, member_locations)}
+       |> assign(:member_locations, member_locations)
+       |> assign(:can_delete, can_delete)}
     else
       {:ok,
        socket
@@ -38,12 +56,32 @@ defmodule KjogviWeb.Live.My.Locations.Show do
   end
 
   @impl true
+  def handle_event("delete", _params, socket) do
+    case Geo.delete_location(socket.assigns.location) do
+      {:ok, _location} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Location deleted")
+         |> push_navigate(to: ~p"/my/locations")}
+
+      {:error, :has_children} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has sub-locations")}
+
+      {:error, :has_cards} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has cards")}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not delete location")}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
       <%!-- Breadcrumbs --%>
       <nav id="location-breadcrumbs" class="text-sm text-stone-500">
-        <.breadcrumb_link href={~p"/my/locations"}>All locations</.breadcrumb_link>
+        <.breadcrumb_link href={~p"/my/locations"}>Locations</.breadcrumb_link>
         <%= for ancestor <- @ancestors do %>
           <span class="mx-1 text-stone-400">/</span>
           <.breadcrumb_link
@@ -66,23 +104,44 @@ defmodule KjogviWeb.Live.My.Locations.Show do
               </span>
             <% end %>
           </.h1>
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-            <span class="text-sm text-stone-500 font-mono">{@location.slug}</span>
-            <span
-              :if={@location.iso_code && @location.iso_code != ""}
-              class="text-stone-500 font-mono text-sm font-semibold"
-            >
-              {String.upcase(@location.iso_code)}
-            </span>
-            <.type_badge :if={@location.location_type} type={@location.location_type} />
-          </div>
-          <.link
-            id="lifelist-link"
-            href={~p"/my/lifelist/#{@location.slug}"}
-            class="mt-2 inline-flex items-center gap-1 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
+          <p
+            :if={Location.long_name(@location) != @location.name_en}
+            id="location-full-name"
+            class="mt-2 text-lg text-stone-600"
           >
-            Lifelist
-          </.link>
+            {Location.long_name(@location)}
+          </p>
+          <div class="mt-6 flex flex-wrap items-center gap-2">
+            <.action_button
+              navigate={~p"/my/locations/#{@location.slug}/edit"}
+              icon="hero-pencil-square"
+              variant="secondary"
+            >
+              Edit
+            </.action_button>
+            <.action_button
+              navigate={~p"/my/locations/new?parent_id=#{@location.id}"}
+              icon="hero-plus"
+              variant="secondary"
+            >
+              Add sub-location
+            </.action_button>
+            <button
+              id="delete-location-button"
+              type="button"
+              phx-click="delete"
+              data-confirm={"Delete location \"#{@location.name_en}\"? This cannot be undone."}
+              disabled={!@can_delete}
+              title={
+                if @can_delete,
+                  do: "Delete this location",
+                  else: "Cannot delete: location has sub-locations or cards"
+              }
+              class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+            >
+              <.icon name="hero-trash" class="w-4 h-4" /> Delete
+            </button>
+          </div>
         </div>
 
         <div id="location-stats" class="flex flex-wrap gap-2 mb-1">
@@ -105,12 +164,22 @@ defmodule KjogviWeb.Live.My.Locations.Show do
       </div>
 
       <%!-- Location details --%>
-      <div
-        :if={has_details?(@location)}
-        id="location-details"
-        class="border border-stone-200 rounded-lg p-4"
-      >
-        <div class="flex flex-wrap gap-x-6 gap-y-3">
+      <div id="location-details" class="border border-stone-200 rounded-lg p-4">
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div>
+            <dt class="text-xs font-medium text-stone-400 uppercase tracking-wider">Slug</dt>
+            <dd class="mt-0.5 text-sm text-stone-800 font-mono">{@location.slug}</dd>
+          </div>
+
+          <div :if={@location.iso_code && @location.iso_code != ""}>
+            <dt class="text-xs font-medium text-stone-400 uppercase tracking-wider">ISO</dt>
+            <dd class="mt-0.5 text-sm text-stone-800 font-mono font-semibold">
+              {String.upcase(@location.iso_code)}
+            </dd>
+          </div>
+
+          <.type_badge :if={@location.location_type} type={@location.location_type} />
+
           <div :if={@location.lat && @location.lon}>
             <dt class="text-xs font-medium text-stone-400 uppercase tracking-wider">
               Coordinates
@@ -120,23 +189,41 @@ defmodule KjogviWeb.Live.My.Locations.Show do
             </dd>
           </div>
 
-          <div :if={@location.is_patch}>
-            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
-              <.icon name="hero-sparkles" class="w-3 h-3 mr-1" /> Patch
-            </span>
-          </div>
+          <span
+            :if={@location.is_patch}
+            class="inline-flex items-center px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full"
+          >
+            <.icon name="hero-sparkles" class="w-3 h-3 mr-1" /> Patch
+          </span>
 
-          <div :if={@location.is_5mr}>
+          <div
+            :for={parent <- @location.special_parent_locations}
+            id={"special-parent-badge-#{parent.id}"}
+          >
             <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-sky-100 text-sky-700 rounded-full">
-              <.icon name="hero-map" class="w-3 h-3 mr-1" /> 5-Mile Radius
+              <.icon name="hero-map" class="w-3 h-3 mr-1" />{parent.name_en}
             </span>
           </div>
 
-          <div :if={Location.show_on_lifelist?(@location)}>
-            <.lifelist_badge />
-          </div>
+          <.lifelist_badge :if={Location.show_on_lifelist?(@location)} />
+
+          <.link
+            id="lifelist-link"
+            href={~p"/my/lifelist/#{@location.slug}"}
+            class="ml-auto inline-flex items-center gap-1 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
+          >
+            Lifelist
+          </.link>
         </div>
       </div>
+
+      <%!-- Static map --%>
+      <.static_map
+        id="location-map"
+        lat={@location.lat}
+        lon={@location.lon}
+        alt={"Map showing location of #{@location.name_en}"}
+      />
 
       <%!-- Ancestry chain --%>
       <div :if={length(@ancestors) > 0} id="location-ancestry" class="space-y-2">
@@ -181,10 +268,5 @@ defmodule KjogviWeb.Live.My.Locations.Show do
       </div>
     </div>
     """
-  end
-
-  defp has_details?(location) do
-    (location.lat && location.lon) || location.is_patch || location.is_5mr ||
-      Location.show_on_lifelist?(location)
   end
 end

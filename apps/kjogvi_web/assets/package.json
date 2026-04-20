@@ -1,0 +1,8 @@
+{
+  "name": "kjogvi_web_assets",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@googlemaps/js-api-loader": "^1.16.8"
+  }
+}

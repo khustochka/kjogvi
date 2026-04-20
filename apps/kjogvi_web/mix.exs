@@ -129,7 +129,11 @@ defmodule KjogviWeb.MixProject do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+      "assets.setup": [
+        "tailwind.install --if-missing",
+        "esbuild.install --if-missing",
+        "cmd npm install --prefix assets"
+      ],
       "assets.build": ["tailwind kjogvi_web", "esbuild kjogvi_web"],
       "assets.deploy": [
         "tailwind kjogvi_web --minify",
