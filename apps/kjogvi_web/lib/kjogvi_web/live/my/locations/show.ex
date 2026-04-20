@@ -5,6 +5,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
 
   alias Kjogvi.Geo
   alias Kjogvi.Geo.Location
+  alias Kjogvi.Repo
 
   @impl true
   def mount(%{"slug" => slug}, _session, socket) do
@@ -16,11 +17,12 @@ defmodule KjogviWeb.Live.My.Locations.Show do
           nil
 
         loc ->
-          Kjogvi.Repo.preload(loc, [
+          Repo.preload(loc, [
             :cached_parent,
             :cached_city,
             :cached_subdivision,
-            :cached_country
+            :cached_country,
+            :special_parent_locations
           ])
       end
 
@@ -194,12 +196,14 @@ defmodule KjogviWeb.Live.My.Locations.Show do
             <.icon name="hero-sparkles" class="w-3 h-3 mr-1" /> Patch
           </span>
 
-          <span
-            :if={@location.is_5mr}
-            class="inline-flex items-center px-2 py-1 text-xs font-medium bg-sky-100 text-sky-700 rounded-full"
+          <div
+            :for={parent <- @location.special_parent_locations}
+            id={"special-parent-badge-#{parent.id}"}
           >
-            <.icon name="hero-map" class="w-3 h-3 mr-1" /> 5-Mile Radius
-          </span>
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-sky-100 text-sky-700 rounded-full">
+              <.icon name="hero-map" class="w-3 h-3 mr-1" />{parent.name_en}
+            </span>
+          </div>
 
           <.lifelist_badge :if={Location.show_on_lifelist?(@location)} />
 

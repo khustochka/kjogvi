@@ -63,7 +63,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       %Location{
         is_private: false,
         is_patch: false,
-        is_5mr: false,
         cached_parent: nil,
         cached_city: nil,
         cached_subdivision: nil,
@@ -254,7 +253,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
       <div class="flex flex-wrap items-center gap-6 pt-2">
         <CoreComponents.input type="checkbox" field={@form[:is_private]} label="Private loc" />
-        <CoreComponents.input type="checkbox" field={@form[:is_5mr]} label="5MR" />
         <CoreComponents.input type="checkbox" field={@form[:is_patch]} label="Patch" />
       </div>
 

@@ -35,7 +35,6 @@ defmodule Kjogvi.Geo.Location do
     field :iso_code, :string
     field :is_private, :boolean, default: false
     field :is_patch, :boolean, default: false
-    field :is_5mr, :boolean, default: false
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
@@ -52,6 +51,10 @@ defmodule Kjogvi.Geo.Location do
     many_to_many :special_child_locations, Location,
       join_through: "special_locations",
       join_keys: [parent_location_id: :id, child_location_id: :id]
+
+    many_to_many :special_parent_locations, Location,
+      join_through: "special_locations",
+      join_keys: [child_location_id: :id, parent_location_id: :id]
 
     timestamps()
 
@@ -71,7 +74,6 @@ defmodule Kjogvi.Geo.Location do
     iso_code
     is_private
     is_patch
-    is_5mr
     lat
     lon
     parent_id
@@ -93,8 +95,7 @@ defmodule Kjogvi.Geo.Location do
       :slug,
       :name_en,
       :is_private,
-      :is_patch,
-      :is_5mr
+      :is_patch
     ])
     |> validate_inclusion(:location_type, @location_types)
     |> unique_constraint(:slug)

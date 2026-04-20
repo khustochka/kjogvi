@@ -205,4 +205,20 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     assert {:error, {:redirect, %{to: "/my/locations"}}} =
              live(conn, ~p"/my/locations/nonexistent")
   end
+
+  test "renders a badge per special parent location", %{conn: conn} do
+    five_mr = insert(:location, name_en: "5-Mile Radius", location_type: "special")
+    arabat = insert(:location, name_en: "Arabat Spit", location_type: "special")
+    location = insert(:location, name_en: "Home Patch")
+
+    Kjogvi.Repo.insert_all("special_locations", [
+      %{parent_location_id: five_mr.id, child_location_id: location.id},
+      %{parent_location_id: arabat.id, child_location_id: location.id}
+    ])
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    assert has_element?(show_live, "#special-parent-badge-#{five_mr.id}", "5-Mile Radius")
+    assert has_element?(show_live, "#special-parent-badge-#{arabat.id}", "Arabat Spit")
+  end
 end

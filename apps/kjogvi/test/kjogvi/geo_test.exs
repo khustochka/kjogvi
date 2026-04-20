@@ -469,7 +469,6 @@ defmodule Kjogvi.GeoTest do
           "name_en" => "Secret Patch",
           "is_private" => "true",
           "is_patch" => "false",
-          "is_5mr" => "false",
           "parent_id" => private_parent.id
         })
 
@@ -486,7 +485,6 @@ defmodule Kjogvi.GeoTest do
           "name_en" => "City X",
           "is_private" => "false",
           "is_patch" => "false",
-          "is_5mr" => "false",
           "parent_id" => country.id
         })
 

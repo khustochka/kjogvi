@@ -18,6 +18,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
       end
 
     five_mr_slugs = for loc <- locations, loc.is_5mr, do: loc.slug
+    locations = Enum.map(locations, &Map.delete(&1, :is_5mr))
 
     _ = Repo.insert_all(Location, locations)
 

@@ -47,8 +47,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
             name_en: "Greenland",
             location_type: "country",
             is_private: "false",
-            is_patch: "false",
-            is_5mr: "false"
+            is_patch: "false"
           }
         )
         |> render_submit()
@@ -190,8 +189,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
             slug: "mb",
             name_en: "Manitoba (updated)",
             is_private: "false",
-            is_patch: "false",
-            is_5mr: "false"
+            is_patch: "false"
           }
         )
         |> render_submit()
