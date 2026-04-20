@@ -224,6 +224,72 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     end
   end
 
+  describe "map picker" do
+    test "renders map container with current coords as data attributes", %{conn: conn} do
+      location =
+        insert(:location,
+          name_en: "Winnipeg",
+          slug: "wpg",
+          lat: Decimal.new("49.89510"),
+          lon: Decimal.new("-97.13840")
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/#{location.slug}/edit")
+
+      assert has_element?(view, "#location-map-picker")
+
+      picker_html = view |> element("#location-map-picker") |> render()
+      assert picker_html =~ ~s|data-lat="49.89510"|
+      assert picker_html =~ ~s|data-lon="-97.13840"|
+    end
+
+    test "renders parent coords as data attributes when no coords set", %{conn: conn} do
+      parent =
+        insert(:location,
+          name_en: "Canada",
+          location_type: "country",
+          lat: Decimal.new("56.13040"),
+          lon: Decimal.new("-106.34680")
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{parent.id}")
+
+      picker_html = view |> element("#location-map-picker") |> render()
+      assert picker_html =~ ~s|data-parent-lat="56.13040"|
+      assert picker_html =~ ~s|data-parent-lon="-106.34680"|
+    end
+
+    test "map_picked event updates form lat/lon", %{conn: conn} do
+      location = insert(:location, name_en: "Manitoba", slug: "mb")
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/#{location.slug}/edit")
+
+      render_hook(view, "map_picked", %{"lat" => "49.895100", "lon" => "-97.138400"})
+
+      lat_input = view |> element("#location_lat") |> render()
+      lon_input = view |> element("#location_lon") |> render()
+      assert lat_input =~ ~s|value="49.895100"|
+      assert lon_input =~ ~s|value="-97.138400"|
+    end
+
+    test "map_cleared event clears lat/lon", %{conn: conn} do
+      location =
+        insert(:location,
+          name_en: "Winnipeg",
+          slug: "wpg",
+          lat: Decimal.new("49.89510"),
+          lon: Decimal.new("-97.13840")
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/#{location.slug}/edit")
+
+      render_click(view, "map_cleared")
+
+      lat_input = view |> element("#location_lat") |> render()
+      refute lat_input =~ ~s|value="|
+    end
+  end
+
   describe "edit" do
     test "renders edit form with current values", %{conn: conn} do
       location = insert(:location, name_en: "Manitoba", slug: "mb")

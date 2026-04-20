@@ -96,12 +96,45 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   @impl true
   def handle_event("validate", %{"location" => params}, socket) do
+    location = sync_coords(socket.assigns.location, params)
+
     changeset =
-      socket.assigns.location
-      |> Geo.change_location(merge_assoc_ids(params, socket.assigns.location))
+      location
+      |> Geo.change_location(merge_assoc_ids(params, location))
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, :form, to_form(changeset))}
+    {:noreply,
+     socket
+     |> assign(:location, location)
+     |> assign(:form, to_form(changeset))}
+  end
+
+  def handle_event("map_picked", %{"lat" => lat, "lon" => lon}, socket) do
+    location = %{socket.assigns.location | lat: to_decimal(lat), lon: to_decimal(lon)}
+
+    changeset =
+      location
+      |> Geo.change_location(%{"lat" => lat, "lon" => lon})
+      |> Map.put(:action, :validate)
+
+    {:noreply,
+     socket
+     |> assign(:location, location)
+     |> assign(:form, to_form(changeset))}
+  end
+
+  def handle_event("map_cleared", _params, socket) do
+    location = %{socket.assigns.location | lat: nil, lon: nil}
+
+    changeset =
+      location
+      |> Geo.change_location(%{"lat" => nil, "lon" => nil})
+      |> Map.put(:action, :validate)
+
+    {:noreply,
+     socket
+     |> assign(:location, location)
+     |> assign(:form, to_form(changeset))}
   end
 
   def handle_event("save", %{"location" => params}, socket) do
@@ -189,7 +222,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
             on_select_event="parent_selected"
             on_clear_event="clear_parent"
           />
-          <CoreComponents.input type="text" field={@form[:iso_code]} label="ISO code" />
         </div>
 
         <div>
@@ -260,14 +292,40 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         <CoreComponents.input type="text" field={@form[:name_en]} label="English name" />
       </div>
 
-      <div class="flex flex-wrap items-center gap-6 pt-2">
-        <CoreComponents.input type="checkbox" field={@form[:is_private]} label="Private loc" />
-        <CoreComponents.input type="checkbox" field={@form[:is_patch]} label="Patch" />
+      <div class="flex flex-wrap items-end gap-6 pt-2">
+        <div class="w-20">
+          <CoreComponents.input type="text" field={@form[:iso_code]} label="ISO" />
+        </div>
+        <div class="flex items-center h-[38px]">
+          <CoreComponents.input type="checkbox" field={@form[:is_private]} label="Private loc" />
+        </div>
+        <div class="flex items-center h-[38px]">
+          <CoreComponents.input type="checkbox" field={@form[:is_patch]} label="Patch" />
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-        <CoreComponents.input type="number" field={@form[:lat]} label="Latitude" step="0.000001" />
-        <CoreComponents.input type="number" field={@form[:lon]} label="Longitude" step="0.000001" />
+      <.map_picker location={@location} />
+
+      <div class="flex flex-wrap items-end gap-4 pt-2">
+        <div class="w-40">
+          <CoreComponents.input type="number" field={@form[:lat]} label="Latitude" step="0.000001" />
+        </div>
+        <div class="w-40">
+          <CoreComponents.input
+            type="number"
+            field={@form[:lon]}
+            label="Longitude"
+            step="0.000001"
+          />
+        </div>
+        <button
+          :if={@location.lat && @location.lon}
+          type="button"
+          phx-click="map_cleared"
+          class="mb-1 inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 rounded"
+        >
+          <.icon name="hero-x-mark" class="w-4 h-4" /> Clear coordinates
+        </button>
       </div>
 
       <div class="flex gap-4 pt-6">
@@ -322,6 +380,186 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       >
         <.icon name="hero-x-mark" class="w-4 h-4" />
       </button>
+    </div>
+    """
+  end
+
+  attr :location, :map, required: true
+
+  defp map_picker(assigns) do
+    parent = Map.get(assigns.location, :parent)
+
+    assigns =
+      assigns
+      |> assign(:parent_lat, parent && parent.lat)
+      |> assign(:parent_lon, parent && parent.lon)
+
+    ~H"""
+    <div class="pt-2">
+      <span class="block text-sm font-semibold text-zinc-800 mb-1">Map</span>
+      <p class="text-xs text-stone-500 mb-2">
+        Click on the map to place a marker. Drag marker to adjust.
+      </p>
+      <div
+        id="location-map-picker"
+        phx-hook=".LocationMapPicker"
+        data-lat={@location.lat && to_string(@location.lat)}
+        data-lon={@location.lon && to_string(@location.lon)}
+        data-parent-lat={@parent_lat && to_string(@parent_lat)}
+        data-parent-lon={@parent_lon && to_string(@parent_lon)}
+        class="w-full h-80 rounded-lg border border-stone-200 overflow-hidden bg-stone-100"
+      >
+        <div id="location-map-picker-canvas" phx-update="ignore" class="w-full h-full"></div>
+      </div>
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".LocationMapPicker">
+        import {Loader} from "@googlemaps/js-api-loader"
+
+        let loaderPromise = null
+        function loadGoogleMaps() {
+          if (!loaderPromise) {
+            const apiKey = document.querySelector("meta[name='google-maps-api-key']")?.content
+            if (!apiKey) {
+              return Promise.reject(new Error("Missing google-maps-api-key meta tag"))
+            }
+            const loader = new Loader({apiKey, version: "weekly"})
+            loaderPromise = loader.importLibrary("maps").then(async (maps) => {
+              const {Marker} = await loader.importLibrary("marker")
+              return {maps, Marker}
+            })
+          }
+          return loaderPromise
+        }
+
+        export default {
+          mounted() {
+            this.destroyed_ = false
+            const {lat, lon, parentLat, parentLon} = this.readCoords()
+
+            let center, zoom
+            if (lat !== null && lon !== null) {
+              center = {lat, lng: lon}
+              zoom = 10
+            } else if (parentLat !== null && parentLon !== null) {
+              center = {lat: parentLat, lng: parentLon}
+              zoom = 10
+            } else {
+              center = {lat: 20, lng: 0}
+              zoom = 2
+            }
+
+            this.lastLat = lat
+            this.lastLon = lon
+            this.lastParentLat = parentLat
+            this.lastParentLon = parentLon
+
+            loadGoogleMaps()
+              .then(({maps, Marker}) => {
+                if (this.destroyed_) return
+                const canvas = this.el.querySelector("#location-map-picker-canvas")
+                this.Marker = Marker
+                this.map = new maps.Map(canvas, {
+                  center,
+                  zoom,
+                  mapTypeId: "hybrid",
+                  gestureHandling: "greedy",
+                  mapTypeControl: true,
+                  streetViewControl: false,
+                  fullscreenControl: true,
+                  panControl: false,
+                  rotateControl: false,
+                  scaleControl: false,
+                })
+
+                const latest = this.readCoords()
+                if (latest.lat !== null && latest.lon !== null) {
+                  this.placeMarker(latest.lat, latest.lon)
+                }
+
+                this.map.addListener("click", (e) => {
+                  const lat = e.latLng.lat()
+                  const lng = e.latLng.lng()
+                  this.placeMarker(lat, lng)
+                  this.suppressPan = true
+                  this.pushEvent("map_picked", {lat: lat.toFixed(6), lon: lng.toFixed(6)})
+                })
+              })
+              .catch((err) => console.error("Google Maps failed to load", err))
+          },
+
+          updated() {
+            if (!this.map) return
+            const {lat, lon, parentLat, parentLon} = this.readCoords()
+            const coordsChanged = lat !== this.lastLat || lon !== this.lastLon
+            const parentChanged = parentLat !== this.lastParentLat || parentLon !== this.lastParentLon
+
+            if (coordsChanged) {
+              if (lat !== null && lon !== null) {
+                this.placeMarker(lat, lon)
+                if (!this.suppressPan) {
+                  const c = this.map.getCenter()
+                  if (Math.abs(c.lat() - lat) > 0.5 || Math.abs(c.lng() - lon) > 0.5) {
+                    this.map.setCenter({lat, lng: lon})
+                    this.map.setZoom(Math.max(this.map.getZoom(), 8))
+                  }
+                }
+              } else {
+                this.clearMarker()
+              }
+            } else if (parentChanged && lat === null && parentLat !== null && parentLon !== null) {
+              this.map.setCenter({lat: parentLat, lng: parentLon})
+              this.map.setZoom(10)
+            }
+
+            this.lastLat = lat
+            this.lastLon = lon
+            this.lastParentLat = parentLat
+            this.lastParentLon = parentLon
+            this.suppressPan = false
+          },
+
+          readCoords() {
+            const parse = (v) => (v === "" || v === undefined ? null : parseFloat(v))
+            return {
+              lat: parse(this.el.dataset.lat),
+              lon: parse(this.el.dataset.lon),
+              parentLat: parse(this.el.dataset.parentLat),
+              parentLon: parse(this.el.dataset.parentLon),
+            }
+          },
+
+          placeMarker(lat, lon) {
+            const pos = {lat, lng: lon}
+            if (this.marker) {
+              this.marker.setPosition(pos)
+            } else {
+              this.marker = new this.Marker({
+                position: pos,
+                map: this.map,
+                draggable: true,
+              })
+              this.marker.addListener("dragend", (e) => {
+                const lat = e.latLng.lat()
+                const lng = e.latLng.lng()
+                this.suppressPan = true
+                this.pushEvent("map_picked", {lat: lat.toFixed(6), lon: lng.toFixed(6)})
+              })
+            }
+          },
+
+          clearMarker() {
+            if (this.marker) {
+              this.marker.setMap(null)
+              this.marker = null
+            }
+          },
+
+          destroyed() {
+            this.destroyed_ = true
+            this.clearMarker()
+            this.map = null
+          },
+        }
+      </script>
     </div>
     """
   end
@@ -383,6 +621,24 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   end
 
   defp cached_id_field(field), do: Map.fetch!(@cached_id_fields, field)
+
+  defp sync_coords(location, %{"lat" => lat, "lon" => lon}) do
+    %{location | lat: to_decimal(lat), lon: to_decimal(lon)}
+  end
+
+  defp sync_coords(location, _), do: location
+
+  defp to_decimal(nil), do: nil
+  defp to_decimal(""), do: nil
+
+  defp to_decimal(value) when is_binary(value) do
+    case Decimal.parse(value) do
+      {decimal, ""} -> decimal
+      _ -> nil
+    end
+  end
+
+  defp to_decimal(%Decimal{} = value), do: value
 
   defp merge_assoc_ids(params, location) do
     params
