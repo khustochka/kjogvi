@@ -22,8 +22,15 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git \
+RUN apt-get update -y && apt-get install -y build-essential git curl \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# install node    
+RUN  --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
+    --mount=type=cache,id=dev-apt-lib,sharing=locked,target=/var/lib/apt \
+    curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get install --no-install-recommends -y  nodejs \
+    && rm -rf /var/lib/apt/lists /var/cache/apt/archives    
 
 # prepare build dir
 WORKDIR /app
@@ -70,6 +77,7 @@ COPY apps/ornitho_web/dist apps/ornitho_web/dist
 RUN mix compile
 
 # compile assets
+RUN cd apps/kjogvi_web/assets && npm install
 RUN mix assets.deploy
 
 # Changes to config/runtime.exs don't require recompiling the code
