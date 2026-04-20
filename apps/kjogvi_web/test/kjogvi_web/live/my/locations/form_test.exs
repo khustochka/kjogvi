@@ -152,10 +152,22 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
   end
 
   describe "clear parent" do
-    test "clears auto-filled cached_* fields when parent is cleared", %{conn: conn} do
+    test "clears auto-filled cached_* fields and preserves user-typed fields", %{conn: conn} do
       %{city: city} = build_chain()
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "my-spot",
+          name_en: "My Spot",
+          iso_code: "ca",
+          is_private: "true",
+          is_patch: "false"
+        }
+      )
+      |> render_change()
 
       html = render_click(view, "clear_parent")
 
@@ -164,6 +176,51 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert html =~ ~s|name="location[cached_subdivision_id]" value=""|
       assert html =~ ~s|name="location[cached_country_id]" value=""|
       assert html =~ ~s|name="location[cached_parent_id]" value=""|
+
+      slug_input = view |> element("#location_slug") |> render()
+      name_input = view |> element("#location_name_en") |> render()
+      iso_input = view |> element("#location_iso_code") |> render()
+
+      assert slug_input =~ ~s|value="my-spot"|
+      assert name_input =~ ~s|value="My Spot"|
+      assert iso_input =~ ~s|value="ca"|
+    end
+  end
+
+  describe "parent selected preserves typed fields" do
+    test "changing parent keeps user-typed slug/name/iso", %{conn: conn} do
+      %{city: city} = build_chain()
+      other_country = insert(:location, name_en: "France", location_type: "country")
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "my-spot",
+          name_en: "My Spot",
+          iso_code: "fr",
+          is_private: "false",
+          is_patch: "false"
+        }
+      )
+      |> render_change()
+
+      send(
+        view.pid,
+        {:autocomplete_select, "parent_selected",
+         %{"result" => %{id: other_country.id, name_en: "France"}}}
+      )
+
+      _ = render(view)
+
+      slug_input = view |> element("#location_slug") |> render()
+      name_input = view |> element("#location_name_en") |> render()
+      iso_input = view |> element("#location_iso_code") |> render()
+
+      assert slug_input =~ ~s|value="my-spot"|
+      assert name_input =~ ~s|value="My Spot"|
+      assert iso_input =~ ~s|value="fr"|
     end
   end
 

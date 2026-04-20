@@ -80,10 +80,19 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   end
 
   defp assign_location(socket, location) do
+    params = current_form_params(socket)
+    changeset = Geo.change_location(location, merge_assoc_ids(params, location))
+
     socket
     |> assign(:location, location)
-    |> assign(:form, to_form(Geo.change_location(location)))
+    |> assign(:form, to_form(changeset))
   end
+
+  defp current_form_params(%{assigns: %{form: %Phoenix.HTML.Form{params: params}}})
+       when is_map(params),
+       do: params
+
+  defp current_form_params(_), do: %{}
 
   @impl true
   def handle_event("validate", %{"location" => params}, socket) do
