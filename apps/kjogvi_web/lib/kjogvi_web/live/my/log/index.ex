@@ -14,12 +14,14 @@ defmodule KjogviWeb.Live.My.Log.Index do
   def mount(_params, _session, %{assigns: assigns} = socket) do
     lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
     all_years = Lifelist.years(lifelist_scope)
+    log_enabled? = Log.any_enabled?(lifelist_scope)
 
     {
       :ok,
       socket
       |> assign(:lifelist_scope, lifelist_scope)
       |> assign(:all_years, all_years)
+      |> assign(:log_enabled?, log_enabled?)
     }
   end
 
@@ -53,6 +55,15 @@ defmodule KjogviWeb.Live.My.Log.Index do
       {@page_title}
     </.h1>
 
+    <div class="mt-2 mb-4 text-sm">
+      <.link
+        navigate={~p"/my/account/settings#log-settings"}
+        class="text-forest-700 underline hover:text-forest-900"
+      >
+        Log settings
+      </.link>
+    </div>
+
     <ul class="my-6 flex flex-wrap gap-1.5">
       <.year_filter_entry
         text="Latest"
@@ -68,6 +79,21 @@ defmodule KjogviWeb.Live.My.Log.Index do
         />
       <% end %>
     </ul>
+
+    <div
+      :if={@log_entries == [] and not @log_enabled?}
+      id="log-empty-no-settings"
+      class="my-6 p-4 rounded border border-amber-300 bg-amber-50 text-sm text-stone-700"
+    >
+      No lists are selected for the log.
+      <.link
+        navigate={~p"/my/account/settings#log-settings"}
+        class="text-forest-700 underline hover:text-forest-900"
+      >
+        Enable some in Settings
+      </.link>
+      to start seeing recent additions.
+    </div>
 
     <.log log_entries={@log_entries} current_scope={@current_scope} />
     """

@@ -1,6 +1,7 @@
 defmodule KjogviWeb.Live.My.Log.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
+  import Phoenix.LiveViewTest
   import Kjogvi.UsersFixtures
 
   alias Kjogvi.Factory
@@ -14,6 +15,42 @@ defmodule KjogviWeb.Live.My.Log.IndexTest do
   test "renders the log page", %{conn: conn} do
     conn = get(conn, ~p"/my/log")
     assert html_response(conn, 200) =~ "Birding log"
+  end
+
+  test "always shows a link to log settings", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/my/log")
+
+    assert lv
+           |> element("a[href='/my/account/settings#log-settings']", "Log settings")
+           |> has_element?()
+  end
+
+  test "when no lists are enabled and log is empty, shows enable-lists callout", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/my/log")
+
+    assert has_element?(lv, "#log-empty-no-settings")
+  end
+
+  test "when at least one list is enabled, the enable-lists callout is hidden", %{
+    conn: conn,
+    user: user
+  } do
+    post(conn, "/my/account/settings", %{
+      "user" => %{
+        "extras" => %{
+          "log_settings" => %{
+            "0" => %{"location_id" => "", "life" => "true", "year" => "false"}
+          }
+        }
+      }
+    })
+
+    # Re-login the (unchanged) user to pick up updated extras in scope.
+    conn = log_in_user(build_conn(), Kjogvi.Repo.get!(Kjogvi.Users.User, user.id))
+
+    {:ok, lv, _html} = live(conn, ~p"/my/log")
+
+    refute has_element?(lv, "#log-empty-no-settings")
   end
 
   test "list_total links to the correct lifelist anchor", %{conn: conn, user: user} do

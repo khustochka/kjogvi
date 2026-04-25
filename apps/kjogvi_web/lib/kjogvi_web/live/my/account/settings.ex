@@ -119,7 +119,10 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                 </div>
               </.inputs_for>
             </.inputs_for>
-            <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
+            <h3
+              id="log-settings"
+              class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6 scroll-mt-4"
+            >
               Log settings
             </h3>
             <p class="text-sm text-zinc-500 mb-2">
