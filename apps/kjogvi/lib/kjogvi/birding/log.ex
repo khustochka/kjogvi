@@ -93,12 +93,14 @@ defmodule Kjogvi.Birding.Log do
 
     rows = Query.firsts_in_range(scope, locations, {start_date, end_date})
 
+    date_order = if year, do: :asc, else: :desc
+
     if rows == [] do
       []
     else
       rows
       |> Query.preload_life_observations()
-      |> build_entries(location_map, log_settings)
+      |> build_entries(location_map, log_settings, date_order)
       |> filter_entries_by_settings(log_settings)
       |> then(fn entries ->
         if limit do
@@ -153,12 +155,12 @@ defmodule Kjogvi.Birding.Log do
   end
 
   # Group raw rows into {date, [entry]} tuples, applying deduplication.
-  defp build_entries(rows, location_map, log_settings) do
+  defp build_entries(rows, location_map, log_settings, date_order) do
     life_enabled_ids = life_enabled_area_ids(log_settings)
 
     rows
     |> Enum.group_by(& &1.observ_date)
-    |> Enum.sort_by(fn {date, _} -> date end, {:desc, Date})
+    |> Enum.sort_by(fn {date, _} -> date end, {date_order, Date})
     |> Enum.map(fn {date, date_rows} ->
       entries =
         date_rows

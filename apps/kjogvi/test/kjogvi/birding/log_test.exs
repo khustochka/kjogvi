@@ -583,7 +583,7 @@ defmodule Kjogvi.Birding.LogTest do
       assert Log.recent_entries(scope(user), year: 2023) == []
     end
 
-    test "year filter returns all entries without limit" do
+    test "year filter returns all entries without limit, in ascending date order" do
       user = user_fixture()
       country = insert_country("Canada")
       site = insert_site(country)
@@ -595,9 +595,32 @@ defmodule Kjogvi.Birding.LogTest do
         obs(c, Ornitho.Schema.Taxon.key(taxon))
       end
 
-      # With year filter, all 5 dates should appear (no limit applied)
+      # With year filter, all 5 dates should appear (no limit applied),
+      # ordered chronologically ascending.
       entries = Log.recent_entries(scope(user), year: 2025)
+      dates = Enum.map(entries, fn {date, _} -> date end)
+
       assert length(entries) == 5
+      assert dates == Enum.sort(dates, {:asc, Date})
+    end
+
+    test "default (no year) returns dates in descending order" do
+      user = user_fixture()
+      country = insert_country("Canada")
+      site = insert_site(country)
+
+      today = Date.utc_today()
+
+      for i <- 0..4 do
+        {taxon, _} = Factory.create_species_taxon_with_page()
+        c = card(user, Date.add(today, -i), site)
+        obs(c, Ornitho.Schema.Taxon.key(taxon))
+      end
+
+      entries = Log.recent_entries(scope(user))
+      dates = Enum.map(entries, fn {date, _} -> date end)
+
+      assert dates == Enum.sort(dates, {:desc, Date})
     end
 
     test "log_settings with all disabled returns empty" do
