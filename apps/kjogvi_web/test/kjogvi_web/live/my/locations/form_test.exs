@@ -63,7 +63,8 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{parent.id}")
 
       assert has_element?(view, "#location_parent_search")
-      assert has_element?(view, "button[phx-click='clear_parent']")
+      # The autocomplete shows its custom × button when a value is set.
+      assert has_element?(view, "button[aria-label='Clear']")
     end
 
     test "leaves cached_parent empty when parent is a country", %{conn: conn} do
@@ -167,7 +168,12 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       )
       |> render_change()
 
-      html = render_click(view, "clear_parent")
+      # Click the × button inside the parent autocomplete to clear it.
+      view
+      |> element("#location_parent_search + button[aria-label='Clear']")
+      |> render_click()
+
+      html = render(view)
 
       assert html =~ ~s|name="location[parent_id]" value=""|
       assert html =~ ~s|name="location[cached_city_id]" value=""|
@@ -182,6 +188,116 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert slug_input =~ ~s|value="my-spot"|
       assert name_input =~ ~s|value="My Spot"|
       assert iso_input =~ ~s|value="ca"|
+    end
+
+    test "saving after clear persists with nil parent and cached_* fields", %{conn: conn} do
+      %{city: city} = build_chain()
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "no-parent-spot",
+          name_en: "No Parent Spot",
+          iso_code: "",
+          is_private: "false",
+          is_patch: "false"
+        }
+      )
+      |> render_change()
+
+      view
+      |> element("#location_parent_search + button[aria-label='Clear']")
+      |> render_click()
+
+      view
+      |> form("#location-form")
+      |> render_submit()
+
+      saved = Geo.location_by_slug("no-parent-spot")
+      assert saved
+      assert saved.parent_id == nil
+      assert saved.cached_parent_id == nil
+      assert saved.cached_city_id == nil
+      assert saved.cached_subdivision_id == nil
+      assert saved.cached_country_id == nil
+    end
+
+    test "editing: manually changing a cached_* autocomplete persists on save", %{conn: conn} do
+      %{country: country} = build_chain()
+      other_country = insert(:location, name_en: "France", location_type: "country")
+      existing = insert(:location, name_en: "Existing", cached_country_id: country.id)
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/#{existing.slug}/edit")
+
+      assert render(view) =~
+               ~s|name="location[cached_country_id]" value="#{country.id}"|
+
+      send(
+        view.pid,
+        {:autocomplete_select, "cached_selected",
+         %{
+           "field" => "cached_country",
+           "result" => %{id: other_country.id, name_en: other_country.name_en}
+         }}
+      )
+
+      _ = render(view)
+
+      assert render(view) =~
+               ~s|name="location[cached_country_id]" value="#{other_country.id}"|
+
+      view
+      |> form("#location-form")
+      |> render_submit()
+
+      saved = Kjogvi.Repo.get!(Kjogvi.Geo.Location, existing.id)
+      assert saved.cached_country_id == other_country.id
+    end
+
+    test "manually changing a cached_* autocomplete persists on save", %{conn: conn} do
+      %{country: country} = build_chain()
+      other_country = insert(:location, name_en: "France", location_type: "country")
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{country.id}")
+
+      # Sanity: cached_country_id is currently the original country.
+      assert render(view) =~
+               ~s|name="location[cached_country_id]" value="#{country.id}"|
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "manual-cached-spot",
+          name_en: "Manual Cached Spot"
+        }
+      )
+      |> render_change()
+
+      # User manually picks a different cached_country via the autocomplete.
+      send(
+        view.pid,
+        {:autocomplete_select, "cached_selected",
+         %{
+           "field" => "cached_country",
+           "result" => %{id: other_country.id, name_en: other_country.name_en}
+         }}
+      )
+
+      # Force a render to flush the message.
+      _ = render(view)
+
+      assert render(view) =~
+               ~s|name="location[cached_country_id]" value="#{other_country.id}"|
+
+      view
+      |> form("#location-form")
+      |> render_submit()
+
+      saved = Geo.location_by_slug("manual-cached-spot")
+      assert saved
+      assert saved.cached_country_id == other_country.id
     end
   end
 

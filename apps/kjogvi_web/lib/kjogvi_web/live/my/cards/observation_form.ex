@@ -6,6 +6,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
   use KjogviWeb, :html
 
   alias KjogviWeb.CoreComponents
+  alias KjogviWeb.Live.Components.TaxonAutocomplete
 
   attr :obs_form, :map, required: true
   attr :obs, :map, required: true
@@ -57,15 +58,13 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
       <% else %>
         <div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-3 lg:grid-cols-[minmax(10rem,1fr)_8rem_minmax(6rem,0.8fr)_minmax(6rem,0.8fr)_auto_auto] lg:items-end">
           <div class="col-span-2 lg:col-span-1">
-            <.live_component
-              module={KjogviWeb.Live.Components.AutocompleteSearch}
+            <TaxonAutocomplete.taxon_autocomplete
               id={"taxon_search_#{@obs_form.index}"}
               label={(@obs_form[:id].value && "Observation ##{@obs_form[:id].value}") || "Taxon"}
-              placeholder="Search and select taxon..."
               current_value={taxon_display(@obs)}
               hidden_name={"card[observations][#{@obs_form.index}][taxon_key]"}
               hidden_value={@obs_form[:taxon_key].value || ""}
-              search_fn={fn query -> Kjogvi.Search.Taxon.search_taxa(query, @current_user) end}
+              user={@current_user}
               on_select_event="taxon_selected"
               on_select_params={%{"index" => @obs_form.index}}
               compact={true}

@@ -1,11 +1,11 @@
-defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
+defmodule KjogviWeb.Live.Components.AutocompleteTest do
   use KjogviWeb.ConnCase
 
   import Phoenix.LiveViewTest
 
-  alias KjogviWeb.Live.Components.AutocompleteSearch
+  alias KjogviWeb.Live.Components.Autocomplete
 
-  # A minimal host LiveView to render AutocompleteSearch in isolation.
+  # A minimal host LiveView to render Autocomplete in isolation.
   # Captures messages sent by the component via send(self(), ...).
   #
   # Because live_isolated serializes the session through Plug.Crypto,
@@ -14,25 +14,30 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
   defmodule TestLive do
     use Phoenix.LiveView
 
+    alias KjogviWeb.Live.Components.Autocomplete.Highlight
+
     def render(assigns) do
       ~H"""
       <div>
         <.live_component
-          module={AutocompleteSearch}
+          module={Autocomplete}
           id="test_search"
           label={@label}
           placeholder={@placeholder}
-          current_value={@current_value}
-          hidden_name={@hidden_name}
-          hidden_value={@hidden_value}
+          input_value={@input_value}
           search_fn={@search_fn}
           on_select_event={@on_select_event}
           on_select_params={@on_select_params}
           errors={@errors}
           min_length={@min_length}
-        />
+        >
+          <:result :let={%{result: result, term: term}}>
+            <Highlight.highlighted_text text={display(result)} term={term} />
+          </:result>
+        </.live_component>
         <div id="selected-event">{@last_event}</div>
         <div id="selected-value">{@last_value}</div>
+        <div :if={@last_clear_event} id="cleared-event">{@last_clear_event}</div>
       </div>
       """
     end
@@ -41,16 +46,15 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       assigns = %{
         label: session["label"] || "Search",
         placeholder: session["placeholder"] || "Type to search...",
-        current_value: session["current_value"],
-        hidden_name: session["hidden_name"] || "item[id]",
-        hidden_value: session["hidden_value"] || "",
+        input_value: session["input_value"] || "",
         search_fn: resolve_search_fn(session["search_mode"]),
         on_select_event: session["on_select_event"] || "item_selected",
         on_select_params: session["on_select_params"] || %{},
         errors: session["errors"] || [],
         min_length: session["min_length"] || 2,
         last_event: "",
-        last_value: ""
+        last_value: "",
+        last_clear_event: nil
       }
 
       {:ok, Phoenix.Component.assign(socket, assigns)}
@@ -58,9 +62,17 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
 
     def handle_info({:autocomplete_select, event, params}, socket) do
       result = params["result"]
-      display = result[:long_name] || result[:name_en] || inspect(result)
+      display = display(result)
 
       {:noreply, Phoenix.Component.assign(socket, last_event: event, last_value: display)}
+    end
+
+    def handle_info({:autocomplete_clear, event, _params}, socket) do
+      {:noreply, Phoenix.Component.assign(socket, :last_clear_event, event)}
+    end
+
+    defp display(result) do
+      result[:long_name] || result[:name_en] || inspect(result)
     end
 
     # Predefined search functions, selected by session key
@@ -81,11 +93,11 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     end
 
     defp resolve_search_fn("mf_tuple") do
-      {KjogviWeb.Live.Components.AutocompleteSearchTest.StubSearch, :search}
+      {KjogviWeb.Live.Components.AutocompleteTest.StubSearch, :search}
     end
 
     defp resolve_search_fn("mfa_tuple") do
-      {KjogviWeb.Live.Components.AutocompleteSearchTest.StubSearch, :search_with_context,
+      {KjogviWeb.Live.Components.AutocompleteTest.StubSearch, :search_with_context,
        [:some_context]}
     end
 
@@ -97,20 +109,11 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       fn _q -> [%{id: 1, long_name: "Central Park, New York"}] end
     end
 
-    defp resolve_search_fn("taxa") do
-      fn _q ->
-        [%{id: 1, name_en: "House Sparrow", name_sci: "Passer domesticus"}]
-      end
-    end
-
-    defp resolve_search_fn("unknown_shape") do
-      fn _q -> [%{id: 1, custom_field: "something"}] end
-    end
-
     defp resolve_search_fn(_), do: fn _q -> [] end
   end
 
-  # Stub module for testing {module, function} and {module, function, args} search_fn variants
+  # Stub module for testing {module, function} and {module, function, args}
+  # search_fn variants.
   defmodule StubSearch do
     def search(query) do
       if String.contains?(query, "match") do
@@ -135,9 +138,7 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     session = %{
       "label" => opts[:label] || "Location",
       "placeholder" => opts[:placeholder] || "Search locations...",
-      "current_value" => opts[:current_value],
-      "hidden_name" => opts[:hidden_name] || "card[location_id]",
-      "hidden_value" => opts[:hidden_value] || "",
+      "input_value" => opts[:input_value],
       "search_mode" => opts[:search_mode] || "parks",
       "on_select_event" => opts[:on_select_event] || "location_selected",
       "on_select_params" => opts[:on_select_params] || %{},
@@ -157,15 +158,8 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       assert html =~ "Search locations..."
     end
 
-    test "renders hidden input with correct name", %{conn: conn} do
-      {_lv, html} = mount_component(conn, %{hidden_name: "card[location_id]"})
-
-      assert html =~ "card[location_id]"
-      assert html =~ "type=\"hidden\""
-    end
-
-    test "displays current_value when set", %{conn: conn} do
-      {_lv, html} = mount_component(conn, %{current_value: "Existing Location"})
+    test "displays input_value when set", %{conn: conn} do
+      {_lv, html} = mount_component(conn, %{input_value: "Existing Location"})
 
       assert html =~ "Existing Location"
     end
@@ -225,7 +219,6 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
       lv |> element("#test_search-result-0") |> render_click()
 
-      # Parent should have received the event and rendered it
       assert has_element?(lv, "#selected-event", "location_selected")
       assert has_element?(lv, "#selected-value", "Central Park")
     end
@@ -257,14 +250,63 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     test "empty search clears results", %{conn: conn} do
       {lv, _html} = mount_component(conn)
 
-      # Open results
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
       assert has_element?(lv, "#test_search-result-0")
 
-      # Search with empty value returns no results, closing dropdown
       lv |> element("#test_search") |> render_keyup(%{"value" => ""})
 
       refute has_element?(lv, "#test_search-result-0")
+    end
+  end
+
+  describe "abandon vs clear semantics" do
+    test "abandon (Escape) without prior selection does not notify parent", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search") |> render_hook("abandon", %{})
+
+      # No selection ever existed → no clear marker propagated to parent.
+      refute has_element?(lv, "#cleared-event")
+    end
+
+    test "abandon (Escape) with prior selection but non-empty typed text reverts only", %{
+      conn: conn
+    } do
+      {lv, _html} = mount_component(conn, %{input_value: "Existing"})
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search") |> render_hook("abandon", %{})
+
+      # Typed text was non-empty → revert, not clear.
+      refute has_element?(lv, "#cleared-event")
+    end
+
+    test "abandon with prior selection AND empty field notifies parent", %{conn: conn} do
+      {lv, _html} = mount_component(conn, %{input_value: "Existing"})
+
+      # User backspaces to empty.
+      lv |> element("#test_search") |> render_keyup(%{"value" => ""})
+      # Then click-away or Escape.
+      lv |> element("#test_search") |> render_hook("abandon", %{})
+
+      assert has_element?(lv, "#cleared-event", "location_selected")
+    end
+
+    test "explicit clear (× button) with prior selection notifies parent", %{conn: conn} do
+      {lv, _html} = mount_component(conn, %{input_value: "Existing"})
+
+      lv |> element("#test_search") |> render_hook("clear", %{})
+
+      assert has_element?(lv, "#cleared-event", "location_selected")
+    end
+
+    test "explicit clear without prior selection does not notify parent", %{conn: conn} do
+      {lv, _html} = mount_component(conn)
+
+      lv |> element("#test_search") |> render_hook("clear", %{})
+
+      refute has_element?(lv, "#cleared-event")
     end
   end
 
@@ -288,11 +330,9 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     test "defaults to min_length of 2", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "hello"})
 
-      # "h" is 1 char, below default min_length of 2
       lv |> element("#test_search") |> render_keyup(%{"value" => "h"})
       refute has_element?(lv, "#test_search-result-0")
 
-      # "he" is 2 chars, meets default min_length
       lv |> element("#test_search") |> render_keyup(%{"value" => "hello"})
       assert has_element?(lv, "#test_search-result-0")
     end
@@ -312,11 +352,9 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     test "re-opens dropdown on focus when results exist", %{conn: conn} do
       {lv, _html} = mount_component(conn)
 
-      # Search to get results
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
       assert has_element?(lv, "#test_search-result-0")
 
-      # Focus should keep results visible
       lv |> element("#test_search") |> render_focus()
 
       assert has_element?(lv, "#test_search-result-0")
@@ -351,7 +389,6 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     test "returns empty results when search_fn raises", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "raises"})
 
-      # Should not crash, just show no results
       refute has_element?(lv, "#test_search-result-0")
 
       lv |> element("#test_search") |> render_keyup(%{"value" => "anything"})
@@ -384,7 +421,6 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       {lv, _html} = mount_component(conn)
 
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
-      # Move down first, then up
       lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
       lv |> element("#test_search") |> render_hook("nav", %{"direction" => "up"})
 
@@ -396,7 +432,6 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       {lv, _html} = mount_component(conn)
 
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
-      # Already at 0, try to go up
       lv |> element("#test_search") |> render_hook("nav", %{"direction" => "up"})
 
       assert has_element?(lv, "#test_search-result-0[data-highlighted]")
@@ -405,12 +440,10 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
     test "highlight does not exceed last result index", %{conn: conn} do
       {lv, _html} = mount_component(conn)
 
-      # "parks" mode returns 2 results (indexes 0 and 1)
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
       lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
       lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
 
-      # Should still be at index 1 (last result)
       assert has_element?(lv, "#test_search-result-1[data-highlighted]")
     end
 
@@ -418,7 +451,6 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       {lv, _html} = mount_component(conn)
 
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
-      # Move to second result
       lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
       lv |> element("#test_search") |> render_hook("nav_select", %{})
 
@@ -440,11 +472,9 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       {lv, _html} = mount_component(conn)
 
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
-      # Move highlight down
       lv |> element("#test_search") |> render_hook("nav", %{"direction" => "down"})
       assert has_element?(lv, "#test_search-result-1[data-highlighted]")
 
-      # New search resets highlight
       lv |> element("#test_search") |> render_keyup(%{"value" => "parks"})
 
       assert has_element?(lv, "#test_search-result-0[data-highlighted]")
@@ -465,7 +495,6 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
       assert has_element?(lv, "#test_search-result-0[data-highlighted]")
 
-      # JS.push targets the component — simulate via the hooked input element
       lv |> element("#test_search") |> render_hook("highlight_result", %{"index" => 1})
 
       refute has_element?(lv, "#test_search-result-0[data-highlighted]")
@@ -476,17 +505,15 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       {lv, _html} = mount_component(conn)
 
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
-      # Mouse moves to second result
       lv |> element("#test_search") |> render_hook("highlight_result", %{"index" => 1})
-      # Keyboard moves back up
       lv |> element("#test_search") |> render_hook("nav", %{"direction" => "up"})
 
       assert has_element?(lv, "#test_search-result-0[data-highlighted]")
     end
   end
 
-  describe "result_display" do
-    test "displays long_name for location-like results", %{conn: conn} do
+  describe ":result slot rendering" do
+    test "renders slot output for each result", %{conn: conn} do
       {lv, _html} = mount_component(conn, %{search_mode: "locations"})
 
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
@@ -495,30 +522,12 @@ defmodule KjogviWeb.Live.Components.AutocompleteSearchTest do
       assert has_element?(lv, "#test_search-result-0", "New York")
     end
 
-    test "displays name_en and name_sci for taxon-like results", %{conn: conn} do
-      {lv, _html} = mount_component(conn, %{search_mode: "taxa"})
-
-      lv |> element("#test_search") |> render_keyup(%{"value" => "sparrow"})
-
-      assert has_element?(lv, "#test_search-result-0", "House")
-      assert has_element?(lv, "#test_search-result-0", "Passer domesticus")
-    end
-
-    test "highlights matching term in results", %{conn: conn} do
+    test "highlights matching term in results via Highlight helper", %{conn: conn} do
       {lv, _html} = mount_component(conn)
 
       lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
 
-      # The matched portion should be wrapped in <strong>
       assert has_element?(lv, "#test_search-result-0 strong", "Park")
-    end
-
-    test "falls back to inspect for unknown result shapes", %{conn: conn} do
-      {lv, _html} = mount_component(conn, %{search_mode: "unknown_shape"})
-
-      lv |> element("#test_search") |> render_keyup(%{"value" => "any"})
-
-      assert has_element?(lv, "#test_search-result-0", "custom_field")
     end
   end
 end

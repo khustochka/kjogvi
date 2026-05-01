@@ -4,6 +4,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Geo
+  alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
   @impl true
   def mount(_params, _session, socket) do
@@ -36,7 +37,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   end
 
   @impl true
-  def handle_event("search", %{"search" => search_term}, socket) do
+  def handle_event("filter_locations", %{"value" => search_term}, socket) do
     search_term = String.trim(search_term)
 
     search_results =
@@ -50,6 +51,13 @@ defmodule KjogviWeb.Live.My.Locations.Index do
      socket
      |> assign(:search_term, search_term)
      |> assign(:search_results, search_results)}
+  end
+
+  def handle_event("clear_location_filter", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_term, "")
+     |> assign(:search_results, [])}
   end
 
   @impl true
@@ -132,17 +140,13 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
       <%!-- Search --%>
       <div class="w-full">
-        <form phx-change="search" class="w-full">
-          <input
-            id="location-search"
-            type="search"
-            name="search"
-            value={@search_term}
-            placeholder="Search locations by name, slug, or country code..."
-            class="w-full px-3 py-2 text-stone-900 bg-white border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500"
-            phx-debounce="300"
-          />
-        </form>
+        <SearchInput.search_input
+          id="location-search"
+          value={@search_term}
+          placeholder="Search locations by name, slug, or country code..."
+          on_search="filter_locations"
+          on_clear="clear_location_filter"
+        />
         <div :if={@search_term != ""} class="mt-2 text-sm text-stone-600">
           <%= cond do %>
             <% String.length(@search_term) < 2 -> %>

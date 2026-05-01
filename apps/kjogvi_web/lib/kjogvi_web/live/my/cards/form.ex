@@ -14,7 +14,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   alias Kjogvi.Birding
   alias Kjogvi.Geo
-  alias Kjogvi.Search
+  alias KjogviWeb.Live.Components.LocationAutocomplete
   alias KjogviWeb.Live.Components.MonthCalendar
   alias KjogviWeb.Live.My.Cards.ObservationForm
 
@@ -172,15 +172,12 @@ defmodule KjogviWeb.Live.My.Cards.Form do
         <div class="flex-1 space-y-3">
           <div class="flex flex-col sm:flex-row items-start gap-4">
             <div class="w-full sm:flex-1">
-              <.live_component
-                module={KjogviWeb.Live.Components.AutocompleteSearch}
+              <LocationAutocomplete.location_autocomplete
                 id="location_search"
                 label="Location"
-                placeholder="Search and select location..."
                 current_value={location_display(@card)}
                 hidden_name="card[location_id]"
                 hidden_value={@form[:location_id].value || ""}
-                search_fn={&Search.Location.search_locations/1}
                 on_select_event="location_selected"
                 errors={
                   if show_field_error?(@form, :location_id),
@@ -317,6 +314,13 @@ defmodule KjogviWeb.Live.My.Cards.Form do
     {:noreply, assign_card(socket, updated_card)}
   end
 
+  def handle_info({:autocomplete_clear, "location_selected", _params}, socket) do
+    card = socket.assigns.card
+    updated_card = %{card | location_id: nil, location: nil}
+
+    {:noreply, assign_card(socket, updated_card)}
+  end
+
   def handle_info({:autocomplete_select, "taxon_selected", params}, socket) do
     index = params["index"]
     taxon = params["result"]
@@ -328,6 +332,25 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       |> Enum.map(fn {obs, idx} ->
         if idx == index do
           %{obs | taxon_key: taxon.key, taxon: taxon}
+        else
+          obs
+        end
+      end)
+
+    updated_card = %{card | observations: updated_observations}
+
+    {:noreply, assign_card(socket, updated_card)}
+  end
+
+  def handle_info({:autocomplete_clear, "taxon_selected", %{"index" => index}}, socket) do
+    card = socket.assigns.card
+
+    updated_observations =
+      card.observations
+      |> Enum.with_index()
+      |> Enum.map(fn {obs, idx} ->
+        if idx == index do
+          %{obs | taxon_key: nil, taxon: nil}
         else
           obs
         end

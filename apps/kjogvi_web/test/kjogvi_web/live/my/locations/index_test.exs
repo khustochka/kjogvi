@@ -96,6 +96,41 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     assert is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, location.id))
   end
 
+  describe "search" do
+    test "shows results matching the query", %{conn: conn} do
+      insert(:location, name_en: "Winnipeg")
+      insert(:location, name_en: "Toronto")
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+      html =
+        index_live
+        |> element("#location-search")
+        |> render_keyup(%{"value" => "Winnipeg"})
+
+      assert has_element?(index_live, "h2", "Search Results")
+      assert html =~ "Winnipeg"
+    end
+
+    test "clears results when the input is emptied", %{conn: conn} do
+      insert(:location, name_en: "Winnipeg")
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+      index_live
+      |> element("#location-search")
+      |> render_keyup(%{"value" => "Winnipeg"})
+
+      assert has_element?(index_live, "h2", "Search Results")
+
+      index_live
+      |> element("#location-search + button[aria-label='Clear']")
+      |> render_click()
+
+      refute has_element?(index_live, "h2", "Search Results")
+    end
+  end
+
   test "expands and collapses a parent location", %{conn: conn} do
     parent = insert(:location, name_en: "Europe", location_type: "continent")
     insert(:location, name_en: "Germany", ancestry: [parent.id], location_type: "country")

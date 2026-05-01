@@ -12,8 +12,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   alias Kjogvi.Geo
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
-  alias Kjogvi.Search
-  alias KjogviWeb.Live.Components.AutocompleteSearch
+  alias KjogviWeb.Live.Components.LocationAutocomplete
 
   @cached_fields [:cached_parent, :cached_city, :cached_subdivision, :cached_country]
   @cached_id_fields %{
@@ -141,8 +140,17 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
     result =
       case socket.assigns.action do
-        :create -> Geo.create_location(params)
-        :edit -> Geo.update_location(socket.assigns.location, params)
+        :create ->
+          Geo.create_location(params)
+
+        :edit ->
+          # Re-fetch from DB so Ecto can detect changes against the
+          # persisted state. socket.assigns.location is mutated
+          # in-place by autocomplete selections (parent/cached_*),
+          # which means casting attrs against it would diff to
+          # nothing — Ecto would skip the column write.
+          db_location = Repo.get!(Location, socket.assigns.location.id)
+          Geo.update_location(db_location, params)
       end
 
     case result do
@@ -157,7 +165,13 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     end
   end
 
-  def handle_event("clear_parent", _params, socket) do
+  @impl true
+  def handle_info({:autocomplete_select, "parent_selected", %{"result" => result}}, socket) do
+    location = apply_parent(socket.assigns.location, result.id)
+    {:noreply, assign_location(socket, location)}
+  end
+
+  def handle_info({:autocomplete_clear, "parent_selected", _params}, socket) do
     location =
       socket.assigns.location
       |> apply_parent(nil)
@@ -169,23 +183,17 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     {:noreply, assign_location(socket, location)}
   end
 
-  def handle_event("clear_cached", %{"field" => field}, socket) do
-    location = set_cached(socket.assigns.location, String.to_existing_atom(field), nil)
-    {:noreply, assign_location(socket, location)}
-  end
-
-  @impl true
-  def handle_info({:autocomplete_select, "parent_selected", %{"result" => result}}, socket) do
-    location = apply_parent(socket.assigns.location, result.id)
-    {:noreply, assign_location(socket, location)}
-  end
-
   def handle_info({:autocomplete_select, "cached_selected", params}, socket) do
     field = String.to_existing_atom(params["field"])
     result = params["result"]
     cached_struct = %Location{id: result.id, name_en: result.name_en}
 
     location = set_cached(socket.assigns.location, field, cached_struct)
+    {:noreply, assign_location(socket, location)}
+  end
+
+  def handle_info({:autocomplete_clear, "cached_selected", %{"field" => field}}, socket) do
+    location = set_cached(socket.assigns.location, String.to_existing_atom(field), nil)
     {:noreply, assign_location(socket, location)}
   end
 
@@ -219,7 +227,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
             label="Parent"
             current={@location.parent}
             on_select_event="parent_selected"
-            on_clear_event="clear_parent"
           />
         </div>
 
@@ -255,8 +262,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           current={@location.cached_parent}
           on_select_event="cached_selected"
           on_select_params={%{"field" => "cached_parent"}}
-          on_clear_event="clear_cached"
-          on_clear_params={%{"field" => "cached_parent"}}
         />
         <.autocomplete_row
           field="cached_city"
@@ -264,8 +269,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           current={@location.cached_city}
           on_select_event="cached_selected"
           on_select_params={%{"field" => "cached_city"}}
-          on_clear_event="clear_cached"
-          on_clear_params={%{"field" => "cached_city"}}
         />
         <.autocomplete_row
           field="cached_subdivision"
@@ -273,8 +276,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           current={@location.cached_subdivision}
           on_select_event="cached_selected"
           on_select_params={%{"field" => "cached_subdivision"}}
-          on_clear_event="clear_cached"
-          on_clear_params={%{"field" => "cached_subdivision"}}
         />
         <.autocomplete_row
           field="cached_country"
@@ -282,8 +283,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           current={@location.cached_country}
           on_select_event="cached_selected"
           on_select_params={%{"field" => "cached_country"}}
-          on_clear_event="clear_cached"
-          on_clear_params={%{"field" => "cached_country"}}
         />
       </div>
 
@@ -346,37 +345,19 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   attr :current, :any, default: nil
   attr :on_select_event, :string, required: true
   attr :on_select_params, :map, default: %{}
-  attr :on_clear_event, :string, required: true
-  attr :on_clear_params, :map, default: %{}
 
   defp autocomplete_row(assigns) do
     ~H"""
-    <div class="flex items-end gap-2">
-      <div class="flex-1">
-        <.live_component
-          module={AutocompleteSearch}
-          id={"location_#{@field}_search"}
-          label={@label}
-          placeholder=""
-          current_value={(@current && @current.name_en) || ""}
-          hidden_name={"location[#{@field}_id]"}
-          hidden_value={(@current && @current.id) || ""}
-          search_fn={&Search.Location.search_locations/1}
-          on_select_event={@on_select_event}
-          on_select_params={@on_select_params}
-        />
-      </div>
-      <button
-        :if={@current}
-        type="button"
-        phx-click={@on_clear_event}
-        phx-value-field={@on_clear_params["field"]}
-        class="mb-1 px-3 py-2 text-sm text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded"
-        aria-label="Clear"
-      >
-        <.icon name="hero-x-mark" class="w-4 h-4" />
-      </button>
-    </div>
+    <LocationAutocomplete.location_autocomplete
+      id={"location_#{@field}_search"}
+      label={@label}
+      placeholder=""
+      current_value={(@current && @current.name_en) || ""}
+      hidden_name={"location[#{@field}_id]"}
+      hidden_value={(@current && @current.id) || ""}
+      on_select_event={@on_select_event}
+      on_select_params={@on_select_params}
+    />
     """
   end
 

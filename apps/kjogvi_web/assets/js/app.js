@@ -25,9 +25,11 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/kjogvi_web"
 import topbar from "../vendor/topbar"
 import LocationMapPicker from "./hooks/location_map_picker"
+import AutocompletePicker from "./hooks/autocomplete_picker"
 
 const Hooks = {
   LocationMapPicker,
+  AutocompletePicker,
 }
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
