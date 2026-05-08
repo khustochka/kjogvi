@@ -143,7 +143,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                 <div class="filter-label">Location</div>
                 <ul
                   :if={@location_ancestors != []}
-                  class="flex flex-wrap items-center gap-1 pb-2 mb-2 border-b border-stone-100"
+                  class="flex flex-wrap items-center gap-1.5 lg:gap-1 pb-2 mb-2 border-b border-stone-100"
                 >
                   <.sidebar_location_pill href={
                     lifelist_path(@current_scope, %{@filter | location: nil})
@@ -159,7 +159,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                     </.sidebar_location_pill>
                   </li>
                 </ul>
-                <ul class="flex flex-wrap gap-1">
+                <ul class="flex flex-wrap gap-1.5 lg:gap-1">
                   <.sidebar_location_pill
                     :if={@location_ancestors == []}
                     selected={@filter.location == nil}
@@ -178,7 +178,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                 </ul>
                 <div :if={@location_children != []}>
                   <hr class="border-stone-100 my-2" />
-                  <ul class="flex flex-wrap gap-1">
+                  <ul class="flex flex-wrap gap-1.5 lg:gap-1">
                     <.sidebar_location_pill
                       :for={{location, active} <- @location_children}
                       selected={false}

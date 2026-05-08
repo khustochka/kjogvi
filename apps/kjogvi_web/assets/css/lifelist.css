@@ -21,10 +21,14 @@
 
 .sidebar-pill-grid {
   display: grid;
-  gap: 3px;
+  gap: 6px;
 }
-.sidebar-pill-grid.years { grid-template-columns: repeat(4, 1fr); }
-.sidebar-pill-grid.months { grid-template-columns: repeat(4, 1fr); }
+.sidebar-pill-grid.years { grid-template-columns: repeat(3, 1fr); }
+.sidebar-pill-grid.months { grid-template-columns: repeat(3, 1fr); }
+
+@media (min-width: 1024px) {
+  .sidebar-pill-grid { gap: 3px; }
+}
 
 /* Mobile: collapsible filter body */
 @media (max-width: 1023px) {
@@ -34,7 +38,7 @@
     transition: max-height 0.3s ease-out;
   }
   .filter-body.open {
-    max-height: 1000px;
+    max-height: 2000px;
   }
 }
 

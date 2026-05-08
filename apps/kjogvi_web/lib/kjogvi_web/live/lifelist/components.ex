@@ -148,7 +148,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   def sidebar_filter_pill(%{selected: true} = assigns) do
     ~H"""
     <li class={@class}>
-      <span class="block text-center py-1 text-[0.8125rem] leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
+      <span class="block text-center py-2 lg:py-1.5 text-base lg:text-sm leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
         {render_slot(@inner_block)}
       </span>
     </li>
@@ -158,7 +158,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   def sidebar_filter_pill(%{active: false} = assigns) do
     ~H"""
     <li class={@class}>
-      <span class="block text-center py-1 text-[0.8125rem] leading-snug text-stone-300 border border-stone-100 rounded bg-transparent">
+      <span class="block text-center py-2 lg:py-1.5 text-base lg:text-sm leading-snug text-stone-300 border border-stone-100 rounded bg-transparent">
         {render_slot(@inner_block)}
       </span>
     </li>
@@ -170,7 +170,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     <li class={@class}>
       <.link
         patch={@href}
-        class="block text-center py-1 text-[0.8125rem] leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 no-underline"
+        class="block text-center py-2 lg:py-1.5 text-base lg:text-sm leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 active:bg-forest-100 active:border-forest-300 phx-click-loading:bg-forest-100 phx-click-loading:border-forest-300 phx-click-loading:font-bold transition-colors no-underline"
       >
         {render_slot(@inner_block)}
       </.link>
@@ -190,7 +190,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   def sidebar_location_pill(%{selected: true} = assigns) do
     ~H"""
     <li class={["inline", @class]}>
-      <span class="inline-block px-2 py-0.5 text-[0.8125rem] leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
+      <span class="inline-block px-3 py-1.5 text-base lg:text-sm leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
         {render_slot(@inner_block)}
       </span>
     </li>
@@ -200,7 +200,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   def sidebar_location_pill(%{active: false} = assigns) do
     ~H"""
     <li class={["inline", @class]}>
-      <span class="inline-block px-2 py-0.5 text-[0.8125rem] leading-snug text-stone-300 border border-stone-100 rounded">
+      <span class="inline-block px-3 py-1.5 text-base lg:text-sm leading-snug text-stone-300 border border-stone-100 rounded">
         {render_slot(@inner_block)}
       </span>
     </li>
@@ -212,7 +212,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     <li class={["inline", @class]}>
       <.link
         patch={@href}
-        class="inline-block px-2 py-0.5 text-[0.8125rem] leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 no-underline"
+        class="inline-block px-3 py-1.5 text-base lg:text-sm leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 active:bg-forest-100 active:border-forest-300 phx-click-loading:bg-forest-100 phx-click-loading:border-forest-300 phx-click-loading:font-bold transition-colors no-underline"
       >
         {render_slot(@inner_block)}
       </.link>
