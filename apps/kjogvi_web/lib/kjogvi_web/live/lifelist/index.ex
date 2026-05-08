@@ -90,9 +90,27 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     ~H"""
     <%!-- Page title + stats --%>
     <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
-      <.h1 class={["mb-0!", header_style(assigns)]}>
-        {@page_header}
-      </.h1>
+      <div>
+        <.h1 class={["mb-0!", header_style(assigns)]}>
+          {@page_header}
+        </.h1>
+        <ul
+          :if={@filter.motorless or @filter.exclude_heard_only}
+          class="mt-2 flex flex-wrap items-center gap-2 list-none"
+          aria-label="Active filters"
+        >
+          <.filter_badge
+            :if={@filter.motorless}
+            label="Motorless only"
+            href={lifelist_path(@current_scope, %{@filter | motorless: false})}
+          />
+          <.filter_badge
+            :if={@filter.exclude_heard_only}
+            label="Heard only excluded"
+            href={lifelist_path(@current_scope, %{@filter | exclude_heard_only: false})}
+          />
+        </ul>
+      </div>
       <div class="flex flex-wrap gap-2 mb-1">
         <.species_count_header lifelist={@lifelist} />
       </div>
@@ -120,35 +138,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <%!-- Filter body: collapsed on mobile, always visible on desktop --%>
           <div id="filter-body" class="filter-body lg:block">
             <div class="mt-2 lg:mt-0 p-4 lg:p-0 bg-white border border-stone-200 lg:border-0 rounded-lg lg:rounded-none space-y-5">
-              <%!-- Toggles --%>
-              <ul class="space-y-2.5 list-none" aria-label="Filters">
-                <li>
-                  <.toggle_switch
-                    enabled={@filter.exclude_heard_only}
-                    href={
-                      lifelist_path(
-                        @current_scope,
-                        %{@filter | exclude_heard_only: !@filter.exclude_heard_only}
-                      )
-                    }
-                    off_label="Exclude heard only"
-                    on_label="Heard only excluded"
-                    on_action="Include"
-                  />
-                </li>
-                <li>
-                  <.toggle_switch
-                    enabled={@filter.motorless}
-                    href={lifelist_path(@current_scope, %{@filter | motorless: !@filter.motorless})}
-                    off_label="Motorless only"
-                    on_label="Motorless only"
-                    on_action="Include motorized"
-                  />
-                </li>
-              </ul>
-
-              <hr class="border-stone-100" />
-
               <%!-- Location --%>
               <div id="lifelist-location-selector">
                 <div class="filter-label">Location</div>
@@ -257,6 +246,35 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                   </.sidebar_filter_pill>
                 </ul>
               </div>
+
+              <hr class="border-stone-100" />
+
+              <%!-- Toggles (lower priority filters) --%>
+              <ul class="space-y-3 list-none" aria-label="Filters">
+                <li>
+                  <.toggle_switch
+                    enabled={@filter.exclude_heard_only}
+                    href={
+                      lifelist_path(
+                        @current_scope,
+                        %{@filter | exclude_heard_only: !@filter.exclude_heard_only}
+                      )
+                    }
+                    off_label="Exclude heard only"
+                    on_label="Heard only excluded"
+                    on_action="Include"
+                  />
+                </li>
+                <li>
+                  <.toggle_switch
+                    enabled={@filter.motorless}
+                    href={lifelist_path(@current_scope, %{@filter | motorless: !@filter.motorless})}
+                    off_label="Motorless only"
+                    on_label="Motorless only"
+                    on_action="Include motorized"
+                  />
+                </li>
+              </ul>
             </div>
           </div>
         </div>

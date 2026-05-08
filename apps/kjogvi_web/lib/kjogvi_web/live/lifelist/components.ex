@@ -86,20 +86,20 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     >
       <span
         class={[
-          "relative inline-block w-9 h-5 rounded-full transition-colors",
+          "relative inline-block w-9 h-5 lg:w-8 lg:h-[1.125rem] rounded-full transition-colors",
           if(@enabled, do: "bg-forest-500", else: "bg-slate-300 group-hover:bg-slate-400")
         ]}
         aria-hidden="true"
       >
         <span class={[
-          "absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow-sm transition-transform",
-          if(@enabled, do: "translate-x-4")
+          "absolute top-0.5 left-0.5 size-4 lg:size-3.5 bg-white rounded-full shadow-sm transition-transform",
+          if(@enabled, do: "translate-x-4 lg:translate-x-3.5")
         ]}>
         </span>
       </span>
       <span
         class={[
-          "text-base font-semibold whitespace-nowrap",
+          "text-base lg:text-sm font-semibold whitespace-nowrap",
           if(@enabled,
             do: "text-zinc-700",
             else: "text-zinc-400 group-hover:text-zinc-500"
@@ -110,6 +110,29 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         {@visual_label}<span :if={@enabled} class="sr-only">. {@on_action}</span>
       </span>
     </.link>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :href, :string, required: true
+
+  def filter_badge(assigns) do
+    ~H"""
+    <li>
+      <.link
+        patch={@href}
+        class="group inline-flex items-stretch rounded-sm bg-stone-200/70 hover:bg-stone-300/70 text-sm text-stone-700 no-underline whitespace-nowrap"
+        aria-label={"Remove filter: #{@label}"}
+      >
+        <span class="px-2.5 py-1">{@label}</span>
+        <span class="flex items-center px-1.5 border-l border-stone-400/20">
+          <.icon
+            name="hero-x-mark"
+            class="w-4 h-4 text-stone-500 group-hover:text-stone-700"
+          />
+        </span>
+      </.link>
+    </li>
     """
   end
 

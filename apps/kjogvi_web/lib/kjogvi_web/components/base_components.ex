@@ -15,15 +15,64 @@ defmodule KjogviWeb.BaseComponents do
 
   def link_to_top(assigns) do
     ~H"""
-    <div class="text-right my-2 text-gray-400">
-      <a
-        href="#top"
-        class="inline-block px-2 pb-2 border-4 border-gray-300 rounded text-center no-underline"
-      >
-        <div class="text-xs mb-1">Back to top</div>
-        <.icon name="hero-arrow-up-solid w-10 h-10" class="" />
-      </a>
-    </div>
+    <div aria-hidden="true" class="h-10"></div>
+    <a
+      id="link-to-top"
+      phx-hook=".LinkToTop"
+      href="#top"
+      aria-label="Back to top"
+      class="
+        fixed bottom-6 left-6 z-40
+        flex items-center justify-center
+        size-11 rounded-full
+        bg-white border border-stone-300 shadow-md
+        text-stone-600 hover:text-stone-800 hover:bg-stone-50
+        no-underline
+        opacity-0 pointer-events-none translate-y-2
+        transition-all duration-200
+        data-[visible=true]:opacity-100 data-[visible=true]:pointer-events-auto data-[visible=true]:translate-y-0
+      "
+    >
+      <.icon name="hero-arrow-up-solid w-5 h-5" />
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".LinkToTop">
+        export default {
+          mounted() {
+            this.hideTimer = null
+            this.atBottom = () => {
+              const scrollBottom = window.scrollY + window.innerHeight
+              return scrollBottom >= document.documentElement.scrollHeight - 50
+            }
+            this.onScroll = () => {
+              if (window.scrollY <= 300) {
+                clearTimeout(this.hideTimer)
+                this.el.dataset.visible = "false"
+                return
+              }
+              this.el.dataset.visible = "true"
+              clearTimeout(this.hideTimer)
+              if (!this.atBottom()) {
+                this.hideTimer = setTimeout(() => {
+                  if (!this.atBottom()) this.el.dataset.visible = "false"
+                }, 1500)
+              }
+            }
+            this.onHover = () => {
+              clearTimeout(this.hideTimer)
+              this.el.dataset.visible = "true"
+            }
+            window.addEventListener("scroll", this.onScroll, {passive: true})
+            this.el.addEventListener("mouseenter", this.onHover)
+            this.el.addEventListener("focus", this.onHover)
+            this.el.addEventListener("mouseleave", this.onScroll)
+            this.el.addEventListener("blur", this.onScroll)
+          },
+          destroyed() {
+            clearTimeout(this.hideTimer)
+            window.removeEventListener("scroll", this.onScroll)
+          },
+        }
+      </script>
+    </a>
     """
   end
 end

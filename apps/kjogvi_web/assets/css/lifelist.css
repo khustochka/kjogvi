@@ -38,15 +38,7 @@
   }
 }
 
-/* Desktop: always visible, sticky */
+/* Desktop: always visible */
 @media (min-width: 1024px) {
   .filter-body { max-height: none !important; }
-  .sidebar-sticky {
-    position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-    scrollbar-width: none;          /* Firefox */
-    &::-webkit-scrollbar { display: none; } /* Chrome/Safari */
-  }
 }
