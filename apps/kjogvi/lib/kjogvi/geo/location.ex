@@ -34,7 +34,6 @@ defmodule Kjogvi.Geo.Location do
     field :ancestry, {:array, :integer}, default: []
     field :iso_code, :string
     field :is_private, :boolean, default: false
-    field :is_patch, :boolean, default: false
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
@@ -73,7 +72,6 @@ defmodule Kjogvi.Geo.Location do
     location_type
     iso_code
     is_private
-    is_patch
     lat
     lon
     parent_id
@@ -94,8 +92,7 @@ defmodule Kjogvi.Geo.Location do
     |> validate_required([
       :slug,
       :name_en,
-      :is_private,
-      :is_patch
+      :is_private
     ])
     |> validate_inclusion(:location_type, @location_types)
     |> unique_constraint(:slug)
@@ -166,12 +163,6 @@ defmodule Kjogvi.Geo.Location do
 
   def show_on_lifelist?(location) do
     not is_nil(location.public_index)
-  end
-
-  def full_name(%{is_patch: true, cached_parent: cached_parent} = location)
-      when not is_nil(cached_parent) do
-    [cached_parent.name_en, location.name_en]
-    |> Enum.join(" - ")
   end
 
   def full_name(location) do
@@ -278,10 +269,6 @@ defmodule Kjogvi.Geo.Location do
     |> String.to_charlist()
     |> Enum.map(&(&1 + 127_397))
     |> to_string()
-  end
-
-  defp name_with_parent(%{is_patch: true} = location) do
-    full_name(location)
   end
 
   defp name_with_parent(%{cached_parent: nil} = location) do

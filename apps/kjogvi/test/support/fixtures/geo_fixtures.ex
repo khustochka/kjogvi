@@ -16,8 +16,7 @@ defmodule Kjogvi.GeoFixtures do
       name_en: "Test Location #{System.unique_integer()}",
       location_type: "unknown",
       ancestry: [],
-      is_private: false,
-      is_patch: false
+      is_private: false
     }
 
     Enum.into(attrs, default_attrs)
@@ -34,12 +33,11 @@ defmodule Kjogvi.GeoFixtures do
         :location_type,
         :ancestry,
         :is_private,
-        :is_patch,
         :public_index,
         :cached_country_id,
         :cached_subdivision_id
       ])
-      |> validate_required([:slug, :name_en, :ancestry, :is_private, :is_patch])
+      |> validate_required([:slug, :name_en, :ancestry, :is_private])
       |> Repo.insert()
 
     location

@@ -46,8 +46,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
             slug: "greenland",
             name_en: "Greenland",
             location_type: "country",
-            is_private: "false",
-            is_patch: "false"
+            is_private: "false"
           }
         )
         |> render_submit()
@@ -163,8 +162,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
           slug: "my-spot",
           name_en: "My Spot",
           iso_code: "ca",
-          is_private: "true",
-          is_patch: "false"
+          is_private: "true"
         }
       )
       |> render_change()
@@ -200,8 +198,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
           slug: "my-spot",
           name_en: "My Spot",
           iso_code: "fr",
-          is_private: "false",
-          is_patch: "false"
+          is_private: "false"
         }
       )
       |> render_change()
@@ -311,8 +308,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
           location: %{
             slug: "mb",
             name_en: "Manitoba (updated)",
-            is_private: "false",
-            is_patch: "false"
+            is_private: "false"
           }
         )
         |> render_submit()

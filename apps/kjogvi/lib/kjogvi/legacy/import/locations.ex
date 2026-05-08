@@ -101,7 +101,6 @@ defmodule Kjogvi.Legacy.Import.Locations do
     ])
     |> Map.put(:is_5mr, loc.five_mile_radius)
     |> Map.put(:location_type, location_type)
-    |> Map.put(:is_patch, loc.patch)
     |> Map.put(:is_private, loc.private_loc)
     |> Map.put(:cached_public_location_id, loc.cached_public_locus_id)
     |> Map.put(:inserted_at, time)

@@ -189,13 +189,6 @@ defmodule KjogviWeb.Live.My.Locations.Show do
             </dd>
           </div>
 
-          <span
-            :if={@location.is_patch}
-            class="inline-flex items-center px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full"
-          >
-            <.icon name="hero-sparkles" class="w-3 h-3 mr-1" /> Patch
-          </span>
-
           <div
             :for={parent <- @location.special_parent_locations}
             id={"special-parent-badge-#{parent.id}"}

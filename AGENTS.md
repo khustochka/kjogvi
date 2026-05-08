@@ -41,7 +41,7 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 - **Forms**: Use `to_form(changeset)` in LiveView, access via `@form[:field]` in templates. Never pass `@changeset` to templates
 - **Components**: Use `<.icon>`, `<.input>`, `<.link>` components
 - **Icons**: there are both Heroicons and FontAwesome icons
-- **Birding Data** ([kjogvi/lib/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex)): `Kjogvi.Birding` context, `Card`/`Location` models with privacy settings (`is_private`, `is_patch`)
+- **Birding Data** ([kjogvi/lib/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex)): `Kjogvi.Birding` context, `Card`/`Location` models with privacy settings (`is_private`)
 - **Taxonomy** ([ornithologue](./apps/ornithologue/)): Use `Kjogvi.OrnithoRepo`. Mounted at `/taxonomy` with `ornitho_web` macro
 - **Streams**: Use `stream(socket, :items, list)` + `phx-update="stream"`. Not enumerable—refetch and reset to filter. Track counts separately
 - **CSS**: Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS into `app.js`, not inline `<script>` tags

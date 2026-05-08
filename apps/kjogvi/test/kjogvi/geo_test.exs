@@ -468,7 +468,6 @@ defmodule Kjogvi.GeoTest do
           "slug" => "secret-patch",
           "name_en" => "Secret Patch",
           "is_private" => "true",
-          "is_patch" => "false",
           "parent_id" => private_parent.id
         })
 
@@ -484,7 +483,6 @@ defmodule Kjogvi.GeoTest do
           "slug" => "city-x",
           "name_en" => "City X",
           "is_private" => "false",
-          "is_patch" => "false",
           "parent_id" => country.id
         })
 

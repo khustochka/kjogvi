@@ -11,8 +11,7 @@ defmodule Kjogvi.Geo.LocationTest do
             slug: "test-loc",
             name_en: "Test",
             ancestry: [],
-            is_private: false,
-            is_patch: false
+            is_private: false
           },
           %{}
         )
@@ -26,8 +25,7 @@ defmodule Kjogvi.Geo.LocationTest do
           %Location{
             name_en: "Test",
             ancestry: [],
-            is_private: false,
-            is_patch: false
+            is_private: false
           },
           %{}
         )
@@ -41,8 +39,7 @@ defmodule Kjogvi.Geo.LocationTest do
           %Location{
             slug: "test-loc",
             ancestry: [],
-            is_private: false,
-            is_patch: false
+            is_private: false
           },
           %{}
         )
@@ -60,20 +57,9 @@ defmodule Kjogvi.Geo.LocationTest do
   end
 
   describe "full_name/1" do
-    test "returns name_en for non-patch location" do
-      location = %Location{name_en: "Assiniboine Park", is_patch: false, cached_parent: nil}
+    test "returns name_en" do
+      location = %Location{name_en: "Assiniboine Park", cached_parent: nil}
       assert Location.full_name(location) == "Assiniboine Park"
-    end
-
-    test "returns parent - name for patch location with cached parent" do
-      parent = %Location{name_en: "Wolseley"}
-      location = %Location{name_en: "Yard", is_patch: true, cached_parent: parent}
-      assert Location.full_name(location) == "Wolseley - Yard"
-    end
-
-    test "returns just name_en for patch without cached parent" do
-      location = %Location{name_en: "Yard", is_patch: true, cached_parent: nil}
-      assert Location.full_name(location) == "Yard"
     end
   end
 
@@ -81,7 +67,6 @@ defmodule Kjogvi.Geo.LocationTest do
     test "returns name without city when no cached city" do
       location = %Location{
         name_en: "Assiniboine Park",
-        is_patch: false,
         cached_parent: nil,
         cached_city: nil
       }
@@ -94,7 +79,6 @@ defmodule Kjogvi.Geo.LocationTest do
 
       location = %Location{
         name_en: "Assiniboine Park",
-        is_patch: false,
         cached_parent: nil,
         cached_city: city
       }
@@ -102,13 +86,12 @@ defmodule Kjogvi.Geo.LocationTest do
       assert Location.name_local_part(location) == "Assiniboine Park, Winnipeg"
     end
 
-    test "includes parent name for non-patch with cached parent" do
+    test "includes parent name when cached parent is present" do
       parent = %Location{name_en: "Fort Garry"}
       city = %Location{name_en: "Winnipeg"}
 
       location = %Location{
         name_en: "Duck Pond",
-        is_patch: false,
         cached_parent: parent,
         cached_city: city
       }
@@ -144,7 +127,6 @@ defmodule Kjogvi.Geo.LocationTest do
 
       location = %Location{
         name_en: "Assiniboine Park",
-        is_patch: false,
         cached_parent: nil,
         cached_city: nil,
         cached_subdivision: subdivision,
@@ -157,7 +139,6 @@ defmodule Kjogvi.Geo.LocationTest do
     test "returns just local part when no administrative part" do
       location = %Location{
         name_en: "Assiniboine Park",
-        is_patch: false,
         cached_parent: nil,
         cached_city: nil,
         cached_subdivision: nil,
