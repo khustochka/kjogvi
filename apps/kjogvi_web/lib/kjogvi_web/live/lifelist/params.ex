@@ -70,6 +70,14 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
+  defp add_param(acc, {"sort", sort}, _scope) do
+    case sort do
+      "taxonomy" -> add_success(acc, {:sort, :taxonomy})
+      "date" -> acc
+      _ -> add_error(acc, "Invalid sort value.")
+    end
+  end
+
   defp add_param(acc, {_, _}, _scope) do
     acc
   end

@@ -27,6 +27,10 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
     exclude_heard_only: [
       type: :boolean,
       default: false
+    ],
+    sort: [
+      type: {:in, [:date, :taxonomy]},
+      default: :date
     ]
   ]
 

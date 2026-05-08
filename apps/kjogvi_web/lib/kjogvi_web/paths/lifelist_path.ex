@@ -36,6 +36,10 @@ defmodule KjogviWeb.Paths.LifelistPath do
 
     query_filters
     |> Map.drop(@filter_exclude_from_query)
+    |> Map.update(:sort, nil, fn
+      :taxonomy -> "taxonomy"
+      _ -> nil
+    end)
     |> Paths.clean_query()
     |> then(&{year, location, &1})
   end

@@ -282,12 +282,21 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
       <%!-- Main content --%>
       <div class="flex-1 min-w-0">
+        <div class="mb-3 flex flex-wrap items-center justify-end gap-2">
+          <.sort_selector
+            current_sort={@filter.sort}
+            date_href={lifelist_path(@current_scope, %{@filter | sort: :date})}
+            taxonomy_href={lifelist_path(@current_scope, %{@filter | sort: :taxonomy})}
+          />
+        </div>
+
         <div class="mb-8">
           <.lifers_list
             id="lifelist-table"
             show_private_details={@current_scope.private_view}
             lifelist={@lifelist}
             location_field={@location_field}
+            sort={@filter.sort}
           />
         </div>
 
@@ -301,6 +310,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             show_private_details={@current_scope.private_view}
             lifelist={@lifelist.extras.heard_only}
             location_field={@location_field}
+            sort={@filter.sort}
           />
         <% end %>
 

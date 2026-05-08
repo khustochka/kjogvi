@@ -251,6 +251,41 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert has_element?(view, "#lifer-1")
   end
 
+  test "sorting taxonomically reorders species", %{conn: conn} do
+    {taxon1, _} = Factory.create_species_taxon_with_page()
+    {taxon2, _} = Factory.create_species_taxon_with_page()
+
+    # taxon1 created first ⇒ lower sort_order; observed earlier
+    card1 = insert(:main_user_card, observ_date: ~D"2020-01-01")
+    insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    card2 = insert(:main_user_card, observ_date: ~D"2024-01-01")
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+    pos = fn html, taxon ->
+      :binary.match(html, taxon.name_en) |> elem(0)
+    end
+
+    {:ok, _view, taxonomy_html} = live(conn, ~p"/lifelist?sort=taxonomy")
+    # Taxonomic (sort_order asc): taxon1 first
+    assert pos.(taxonomy_html, taxon1) < pos.(taxonomy_html, taxon2)
+
+    {:ok, _view, date_html} = live(conn, ~p"/lifelist")
+    # Date desc: taxon2 (more recent) first
+    assert pos.(date_html, taxon2) < pos.(date_html, taxon1)
+  end
+
+  test "sort selector links toggle between date and taxonomy", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/lifelist")
+
+    assert has_element?(view, "ul[aria-label=Sort] a", "Taxonomic")
+    assert has_element?(view, "ul[aria-label=Sort] span", "By date")
+
+    {:ok, view2, _html2} = live(conn, ~p"/lifelist?sort=taxonomy")
+
+    assert has_element?(view2, "ul[aria-label=Sort] span", "Taxonomic")
+    assert has_element?(view2, "ul[aria-label=Sort] a", "By date")
+  end
+
   test "correct links for guest user", %{conn: conn} do
     ukraine =
       insert(:location,

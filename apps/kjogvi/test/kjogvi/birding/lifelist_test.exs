@@ -526,6 +526,43 @@ defmodule Kjogvi.Birding.LifelistTest do
     end
   end
 
+  describe "generate/2 with sort: :taxonomy" do
+    test "orders species by taxonomic sort_order ascending, ignoring date" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: user, include_private: false}
+
+      # Earlier date but later sort_order
+      {taxon_late_taxonomy, _} = Factory.create_species_taxon_with_page()
+      card_old = insert(:card, observ_date: ~D[2020-01-01], user: user)
+
+      insert(:observation,
+        card: card_old,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon_late_taxonomy)
+      )
+
+      # Later date but earlier sort_order — created first ⇒ smaller sort_order
+      {taxon_early_taxonomy, _} = Factory.create_species_taxon_with_page()
+      card_recent = insert(:card, observ_date: ~D[2024-06-01], user: user)
+
+      insert(:observation,
+        card: card_recent,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon_early_taxonomy)
+      )
+
+      # Create two species, find which has smaller sort_order via species_pages
+      [first_sci, second_sci] =
+        [taxon_late_taxonomy, taxon_early_taxonomy]
+        |> Enum.sort_by(fn t ->
+          Kjogvi.Pages.Species.from_taxon(t).sort_order
+        end)
+        |> Enum.map(& &1.name_sci)
+
+      result = Kjogvi.Birding.Lifelist.generate(scope, sort: :taxonomy)
+
+      assert Enum.map(result.list, & &1.species_page.name_sci) == [first_sci, second_sci]
+    end
+  end
+
   describe "top/3" do
     test "returns the N newest species" do
       user = user_fixture()

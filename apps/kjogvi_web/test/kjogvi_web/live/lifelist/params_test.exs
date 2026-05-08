@@ -68,6 +68,21 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
     assert {:error, _} = result
   end
 
+  test "sort=taxonomy parameter" do
+    result = Params.to_filter(%{user: nil}, %{"sort" => "taxonomy"})
+    assert result == {:ok, Filter.discombo!(sort: :taxonomy)}
+  end
+
+  test "sort=date parameter (explicit default)" do
+    result = Params.to_filter(%{user: nil}, %{"sort" => "date"})
+    assert result == {:ok, Filter.discombo!([])}
+  end
+
+  test "invalid sort parameter" do
+    result = Params.to_filter(%{user: nil}, %{"sort" => "bogus"})
+    assert {:error, _} = result
+  end
+
   test "private location available in private view for user" do
     user = Kjogvi.UsersFixtures.user_fixture()
 

@@ -9,6 +9,34 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   attr :show_private_details, :boolean, default: false
   attr :lifelist, :list, required: true
   attr :location_field, :atom, required: true
+  attr :sort, :atom, default: :date
+
+  def lifers_list(%{sort: :taxonomy} = assigns) do
+    groups = group_by_taxonomy(assigns.lifelist.list)
+    assigns = assign(assigns, :groups, groups)
+
+    ~H"""
+    <ol id={@id} class="lifers-list lifers-list-asc border-t border-stone-200">
+      <%= for {{order, family}, lifers} <- @groups do %>
+        <li class="py-3 border-b border-stone-100 bg-stone-50/50 scroll-mt-4">
+          <a :if={family} id={family}></a>
+          <div class="px-2 text-sm uppercase tracking-wide text-stone-500 font-header font-semibold">
+            <span :if={order}>{order}</span>
+            <span :if={order && family} class="text-stone-300 mx-1">&middot;</span>
+            <span :if={family} class="text-stone-700">{family}</span>
+          </div>
+        </li>
+        <%= for lifer <- lifers do %>
+          <.lifer_row
+            lifer={lifer}
+            location_field={@location_field}
+            show_private_details={@show_private_details}
+          />
+        <% end %>
+      <% end %>
+    </ol>
+    """
+  end
 
   def lifers_list(assigns) do
     ~H"""
@@ -18,42 +46,114 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       style={"--lifersTotal:#{@lifelist.total + 1};"}
     >
       <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
-        <li
+        <.lifer_row
           id={"lifer-#{@lifelist.total - i}"}
           value={@lifelist.total - i}
-          class="py-4 border-b border-stone-100 grid grid-cols-[3.5ch_2fr_auto_3fr] gap-x-2 md:gap-x-6 gap-y-1 items-top md:items-center"
-        >
-          <span class="counter text-stone-400 text-sm col-span-1 justify-self-end tabular-nums">
-          </span>
-          <div class="mb-1 col-span-3 md:col-span-1">
-            <.species_link species={lifer.species_page} />
-          </div>
-          <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
-            <time time={lifer.observ_date}>
-              {format_date(lifer.observ_date)}
-            </time>
-            <.icon_link
-              :if={@show_private_details}
-              navigate={~p"/my/cards/#{lifer.card_id}"}
-              icon="hero-clipboard-document-list"
-              label="View card"
-              class="text-gray-400"
-            />
-          </div>
-          <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
-            <%= with location <- get_in(lifer, [Access.key!(@location_field)]) do %>
-              <%!-- Do not break the line below --%>
-              <span class="after:content-['_·']">{Geo.Location.name_local_part(location)}</span><span class="sr-only">, </span>
-              <%= if location.cached_country do %>
-                <span class="text-stone-600 font-medium whitespace-nowrap">
-                  {Geo.Location.name_administrative_part(location)}
-                </span>
-              <% end %>
-            <% end %>
-          </div>
-        </li>
+          lifer={lifer}
+          location_field={@location_field}
+          show_private_details={@show_private_details}
+        />
       <% end %>
     </ol>
+    """
+  end
+
+  attr :id, :string, default: nil
+  attr :value, :integer, default: nil
+  attr :lifer, :any, required: true
+  attr :location_field, :atom, required: true
+  attr :show_private_details, :boolean, default: false
+
+  defp lifer_row(assigns) do
+    ~H"""
+    <li
+      id={@id}
+      value={@value}
+      class="py-4 border-b border-stone-100 grid grid-cols-[3.5ch_2fr_auto_3fr] gap-x-2 md:gap-x-6 gap-y-1 items-top md:items-center"
+    >
+      <span class="counter text-stone-400 text-sm col-span-1 justify-self-end tabular-nums"></span>
+      <div class="mb-1 col-span-3 md:col-span-1">
+        <.species_link species={@lifer.species_page} />
+      </div>
+      <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
+        <time time={@lifer.observ_date}>
+          {format_date(@lifer.observ_date)}
+        </time>
+        <.icon_link
+          :if={@show_private_details}
+          navigate={~p"/my/cards/#{@lifer.card_id}"}
+          icon="hero-clipboard-document-list"
+          label="View card"
+          class="text-gray-400"
+        />
+      </div>
+      <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
+        <%= with location <- get_in(@lifer, [Access.key!(@location_field)]) do %>
+          <%!-- Do not break the line below --%>
+          <span class="after:content-['_·']">{Geo.Location.name_local_part(location)}</span><span class="sr-only">, </span>
+          <%= if location.cached_country do %>
+            <span class="text-stone-600 font-medium whitespace-nowrap">
+              {Geo.Location.name_administrative_part(location)}
+            </span>
+          <% end %>
+        <% end %>
+      </div>
+    </li>
+    """
+  end
+
+  defp group_by_taxonomy(lifers) do
+    lifers
+    |> Enum.chunk_by(fn lifer ->
+      {lifer.species_page.order, lifer.species_page.family}
+    end)
+    |> Enum.map(fn [first | _] = chunk ->
+      {{first.species_page.order, first.species_page.family}, chunk}
+    end)
+  end
+
+  attr :current_sort, :atom, required: true
+  attr :date_href, :string, required: true
+  attr :taxonomy_href, :string, required: true
+
+  def sort_selector(assigns) do
+    ~H"""
+    <ul class="inline-flex items-center gap-1 list-none" aria-label="Sort">
+      <li class="text-xs uppercase tracking-wide text-stone-500 font-semibold mr-1">
+        Sort:
+      </li>
+      <.sort_pill href={@date_href} selected={@current_sort == :date}>By date</.sort_pill>
+      <.sort_pill href={@taxonomy_href} selected={@current_sort == :taxonomy}>
+        Taxonomic
+      </.sort_pill>
+    </ul>
+    """
+  end
+
+  attr :href, :string, required: true
+  attr :selected, :boolean, default: false
+  slot :inner_block, required: true
+
+  defp sort_pill(%{selected: true} = assigns) do
+    ~H"""
+    <li>
+      <span class="inline-block px-3 py-1.5 text-sm leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
+        {render_slot(@inner_block)}
+      </span>
+    </li>
+    """
+  end
+
+  defp sort_pill(assigns) do
+    ~H"""
+    <li>
+      <.link
+        patch={@href}
+        class="inline-block px-3 py-1.5 text-sm leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 active:bg-forest-100 active:border-forest-300 phx-click-loading:bg-forest-100 phx-click-loading:border-forest-300 phx-click-loading:font-bold transition-colors no-underline"
+      >
+        {render_slot(@inner_block)}
+      </.link>
+    </li>
     """
   end
 

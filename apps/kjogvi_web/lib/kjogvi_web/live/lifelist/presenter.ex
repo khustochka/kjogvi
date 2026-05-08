@@ -51,6 +51,11 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
   Values for the robots meta tag.
   """
 
+  # Taxonomic sort - not indexed (date sort is canonical)
+  def robots(%{sort: :taxonomy}) do
+    [:noindex]
+  end
+
   # Full motorless checklist - indexed
   def robots(%{year: nil, location: nil, month: nil, motorless: true, exclude_heard_only: nil}) do
     nil

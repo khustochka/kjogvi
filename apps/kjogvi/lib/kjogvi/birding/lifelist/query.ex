@@ -18,12 +18,33 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   @spec lifelist_query(Lifelist.Scope.t()) :: Ecto.Query.t()
   @spec lifelist_query(Lifelist.Scope.t(), filter_or_keyword()) :: Ecto.Query.t()
   @spec lifelist_query(Lifelist.Scope.t(), filter_or_keyword(), keyword()) :: Ecto.Query.t()
-  def lifelist_query(scope, filter \\ [], opts \\ []) do
+  def lifelist_query(scope, filter \\ [], opts \\ [])
+
+  def lifelist_query(scope, %Filter{sort: :taxonomy} = filter, opts) do
+    query =
+      from l in subquery(lifers_query(scope, filter)),
+        join: sp in Kjogvi.Pages.Species,
+        on: sp.id == l.species_page_id,
+        order_by: [asc: sp.sort_order, asc: l.id],
+        limit: ^opts[:limit]
+
+    apply_excluding_species(query, opts)
+  end
+
+  def lifelist_query(scope, %Filter{} = filter, opts) do
     query =
       from l in subquery(lifers_query(scope, filter)),
         order_by: [desc: l.observ_date, desc_nulls_last: l.start_time, desc: l.id],
         limit: ^opts[:limit]
 
+    apply_excluding_species(query, opts)
+  end
+
+  def lifelist_query(scope, filter, opts) do
+    lifelist_query(scope, Filter.discombo!(filter), opts)
+  end
+
+  defp apply_excluding_species(query, opts) do
     case opts[:excluding_species] do
       nil -> query
       ids -> where(query, [l], l.species_page_id not in ^ids)

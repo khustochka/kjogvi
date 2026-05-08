@@ -7,6 +7,15 @@
   counter-increment: lifers -1;
 }
 
+.lifers-list-asc {
+  counter-reset: lifers 0;
+}
+
+.lifers-list-asc li .counter::before {
+  content: counter(lifers) ".";
+  counter-increment: lifers 1;
+}
+
 /* Sidebar filter styles */
 
 .filter-label {
