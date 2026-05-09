@@ -119,7 +119,9 @@ defmodule KjogviWeb.LogComponents do
   end
 
   # Phrasing for a single-species primary entry. Uses "in" for areas and
-  # "for" for years, consistently across singular and plural forms.
+  # "for" for years. The combined area+year form treats "{area} {year}" as
+  # the list name (e.g. "Winnipeg 2026") to avoid the misreading of
+  # "in {area} for {year}" as "seen in {area}, on the {year} list".
   defp singular_prefix(%{area: nil, type: :life}) do
     "New lifer"
   end
@@ -128,10 +130,10 @@ defmodule KjogviWeb.LogComponents do
   defp singular_prefix(%{area: nil, type: :year, year: year}), do: "New species for #{year}"
 
   defp singular_prefix(%{area: area, type: :year, year: year}),
-    do: "New species in #{area.name_en} for #{year}"
+    do: "New for #{area.name_en} #{year}"
 
   # Phrasing for a multi-species entry with no secondary covered areas.
-  # Parallels singular_prefix/1: "in" for areas, "for" for years.
+  # Parallels singular_prefix/1.
   defp plural_prefix(%{area: nil, type: :life, life_observations: obs}) do
     "Added #{length(obs)} new lifers"
   end
@@ -145,7 +147,7 @@ defmodule KjogviWeb.LogComponents do
   end
 
   defp plural_prefix(%{area: area, type: :year, year: year, life_observations: obs}) do
-    "Added #{length(obs)} new species in #{area.name_en} for #{year}"
+    "Added #{length(obs)} new species for #{area.name_en} #{year}"
   end
 
   defp primary_filter(%{area: area, type: :life}), do: [location: area]
