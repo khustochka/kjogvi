@@ -9,6 +9,19 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   alias Kjogvi.Ebird
   alias Kjogvi.Store
 
+  @component_id "ebird-import"
+
+  def on_mount(:attach, _params, _session, socket) do
+    {:cont, attach_hook(socket, :ebird_import_progress, :handle_info, &handle_progress/2)}
+  end
+
+  defp handle_progress({:ebird_preload_progress, data}, socket) do
+    send_update(__MODULE__, id: @component_id, status: :progress, data: data)
+    {:halt, socket}
+  end
+
+  defp handle_progress(_msg, socket), do: {:cont, socket}
+
   def mount(socket) do
     {
       :ok,
@@ -76,23 +89,13 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
         Ebird.Web.preload_new_checklists_for_user(user, import_id: import_id)
       end)
 
-    send(self(), {:register_import, __MODULE__, ref})
+    send(self(), {:register_import, __MODULE__, @component_id, ref})
 
     socket
     |> clear_flash()
     |> put_flash(:info, "eBird import in progress...")
     |> assign(:async_result, AsyncResult.loading())
     |> assign_preloads_data()
-  end
-
-  def handle_async(:ebird_preload, {:exit, _reason}, socket) do
-    socket =
-      socket
-      |> clear_flash()
-      |> put_flash(:error, "eBird preload failed: Server error")
-      |> assign(:async_result, %AsyncResult{})
-
-    {:noreply, socket}
   end
 
   def render(assigns) do
