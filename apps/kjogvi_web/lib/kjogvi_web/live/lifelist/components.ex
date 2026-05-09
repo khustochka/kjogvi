@@ -236,6 +236,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
             name="hero-x-mark"
             class="w-4 h-4 text-stone-500 group-hover:text-stone-700"
           />
+          <span class="sr-only">(remove)</span>
         </span>
       </.link>
     </li>
