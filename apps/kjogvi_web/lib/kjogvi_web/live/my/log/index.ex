@@ -64,20 +64,18 @@ defmodule KjogviWeb.Live.My.Log.Index do
       </.link>
     </div>
 
-    <ul class="my-6 flex flex-wrap gap-1.5">
-      <.year_filter_entry
-        text="Latest"
-        url={~p"/my/log"}
-        selected={is_nil(@year)}
-      />
+    <ul class="my-6 flex flex-wrap gap-1.5" aria-label="Year">
+      <.inline_filter_pill href={~p"/my/log"} selected={is_nil(@year)}>
+        Latest
+      </.inline_filter_pill>
 
-      <%= for year <- @all_years do %>
-        <.year_filter_entry
-          text={to_string(year)}
-          url={~p"/my/log?year=#{year}"}
-          selected={@year == year}
-        />
-      <% end %>
+      <.inline_filter_pill
+        :for={year <- @all_years}
+        href={~p"/my/log?year=#{year}"}
+        selected={@year == year}
+      >
+        {year}
+      </.inline_filter_pill>
     </ul>
 
     <div
@@ -96,29 +94,6 @@ defmodule KjogviWeb.Live.My.Log.Index do
     </div>
 
     <.log log_entries={@log_entries} current_scope={@current_scope} />
-    """
-  end
-
-  defp year_filter_entry(%{selected: true} = assigns) do
-    ~H"""
-    <li>
-      <span class="block text-center w-16 py-1 text-sm font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
-        {@text}
-      </span>
-    </li>
-    """
-  end
-
-  defp year_filter_entry(assigns) do
-    ~H"""
-    <li>
-      <.link
-        patch={@url}
-        class="block text-center w-16 py-1 text-sm text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 no-underline"
-      >
-        {@text}
-      </.link>
-    </li>
     """
   end
 end

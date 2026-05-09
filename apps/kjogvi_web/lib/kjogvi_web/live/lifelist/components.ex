@@ -153,38 +153,13 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       <li class="text-xs uppercase tracking-wide text-stone-500 font-semibold mr-1">
         Sort:
       </li>
-      <.sort_pill href={@date_href} selected={@current_sort == :date}>By date</.sort_pill>
-      <.sort_pill href={@taxonomy_href} selected={@current_sort == :taxonomy}>
+      <.inline_filter_pill href={@date_href} selected={@current_sort == :date}>
+        By date
+      </.inline_filter_pill>
+      <.inline_filter_pill href={@taxonomy_href} selected={@current_sort == :taxonomy}>
         Taxonomic
-      </.sort_pill>
+      </.inline_filter_pill>
     </ul>
-    """
-  end
-
-  attr :href, :string, required: true
-  attr :selected, :boolean, default: false
-  slot :inner_block, required: true
-
-  defp sort_pill(%{selected: true} = assigns) do
-    ~H"""
-    <li>
-      <span class="inline-block px-3 py-1.5 text-sm leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
-        {render_slot(@inner_block)}
-      </span>
-    </li>
-    """
-  end
-
-  defp sort_pill(assigns) do
-    ~H"""
-    <li>
-      <.link
-        patch={@href}
-        class="inline-block px-3 py-1.5 text-sm leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 active:bg-forest-100 active:border-forest-300 phx-click-loading:bg-forest-50 phx-click-loading:border-forest-200 transition-colors no-underline"
-      >
-        {render_slot(@inner_block)}
-      </.link>
-    </li>
     """
   end
 
@@ -262,90 +237,6 @@ defmodule KjogviWeb.Live.Lifelist.Components do
             class="w-4 h-4 text-stone-500 group-hover:text-stone-700"
           />
         </span>
-      </.link>
-    </li>
-    """
-  end
-
-  @doc """
-  Compact grid pill for sidebar year/month selectors.
-  """
-  attr :selected, :boolean, default: false
-  attr :active, :boolean, default: true
-  attr :href, :string, required: true
-  attr :class, :any, default: nil
-  slot :inner_block, required: true
-
-  def sidebar_filter_pill(%{selected: true} = assigns) do
-    ~H"""
-    <li class={@class}>
-      <span class="block text-center py-2 lg:py-1.5 text-base lg:text-sm leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
-        {render_slot(@inner_block)}
-      </span>
-    </li>
-    """
-  end
-
-  def sidebar_filter_pill(%{active: false} = assigns) do
-    ~H"""
-    <li class={@class}>
-      <span class="block text-center py-2 lg:py-1.5 text-base lg:text-sm leading-snug text-stone-300 border border-stone-100 rounded bg-transparent">
-        {render_slot(@inner_block)}
-      </span>
-    </li>
-    """
-  end
-
-  def sidebar_filter_pill(assigns) do
-    ~H"""
-    <li class={@class}>
-      <.link
-        patch={@href}
-        class="block text-center py-2 lg:py-1.5 text-base lg:text-sm leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 active:bg-forest-100 active:border-forest-300 phx-click-loading:bg-forest-50 phx-click-loading:border-forest-200 transition-colors no-underline"
-      >
-        {render_slot(@inner_block)}
-      </.link>
-    </li>
-    """
-  end
-
-  @doc """
-  Inline pill for sidebar location selector.
-  """
-  attr :selected, :boolean, default: false
-  attr :active, :boolean, default: true
-  attr :href, :string, required: true
-  attr :class, :any, default: nil
-  slot :inner_block, required: true
-
-  def sidebar_location_pill(%{selected: true} = assigns) do
-    ~H"""
-    <li class={["inline", @class]}>
-      <span class="inline-block px-3 py-1.5 text-base lg:text-sm leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded">
-        {render_slot(@inner_block)}
-      </span>
-    </li>
-    """
-  end
-
-  def sidebar_location_pill(%{active: false} = assigns) do
-    ~H"""
-    <li class={["inline", @class]}>
-      <span class="inline-block px-3 py-1.5 text-base lg:text-sm leading-snug text-stone-300 border border-stone-100 rounded">
-        {render_slot(@inner_block)}
-      </span>
-    </li>
-    """
-  end
-
-  def sidebar_location_pill(assigns) do
-    ~H"""
-    <li class={["inline", @class]}>
-      <.link
-        patch={@href}
-        class="inline-block px-3 py-1.5 text-base lg:text-sm leading-snug text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 active:bg-forest-100 active:border-forest-300 phx-click-loading:bg-forest-50 phx-click-loading:border-forest-200 transition-colors no-underline"
-      >
-        {render_slot(@inner_block)}
       </.link>
     </li>
     """

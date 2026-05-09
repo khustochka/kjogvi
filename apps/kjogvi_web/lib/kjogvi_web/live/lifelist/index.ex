@@ -160,48 +160,48 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                   :if={@location_ancestors != []}
                   class="flex flex-wrap items-center gap-1.5 lg:gap-1 pb-2 mb-2 border-b border-stone-100"
                 >
-                  <.sidebar_location_pill href={
+                  <.inline_filter_pill href={
                     lifelist_path(@current_scope, %{@filter | location: nil})
                   }>
                     World
-                  </.sidebar_location_pill>
+                  </.inline_filter_pill>
                   <li :for={ancestor <- @location_ancestors} class="flex items-center gap-1">
                     <span class="text-stone-300">&rsaquo;</span>
-                    <.sidebar_location_pill href={
+                    <.inline_filter_pill href={
                       lifelist_path(@current_scope, %{@filter | location: ancestor})
                     }>
                       {ancestor.name_en}
-                    </.sidebar_location_pill>
+                    </.inline_filter_pill>
                   </li>
                 </ul>
                 <ul class="flex flex-wrap gap-1.5 lg:gap-1">
-                  <.sidebar_location_pill
+                  <.inline_filter_pill
                     :if={@location_ancestors == []}
                     selected={@filter.location == nil}
                     href={lifelist_path(@current_scope, %{@filter | location: nil})}
                   >
                     World
-                  </.sidebar_location_pill>
-                  <.sidebar_location_pill
+                  </.inline_filter_pill>
+                  <.inline_filter_pill
                     :for={{location, active, selected} <- @location_siblings}
                     selected={selected}
                     active={active}
                     href={lifelist_path(@current_scope, %{@filter | location: location})}
                   >
                     {location.name_en}
-                  </.sidebar_location_pill>
+                  </.inline_filter_pill>
                 </ul>
                 <div :if={@location_children != []}>
                   <hr class="border-stone-100 my-2" />
                   <ul class="flex flex-wrap gap-1.5 lg:gap-1">
-                    <.sidebar_location_pill
+                    <.inline_filter_pill
                       :for={{location, active} <- @location_children}
                       selected={false}
                       active={active}
                       href={lifelist_path(@current_scope, %{@filter | location: location})}
                     >
                       {location.name_en}
-                    </.sidebar_location_pill>
+                    </.inline_filter_pill>
                   </ul>
                 </div>
               </div>
@@ -216,21 +216,21 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                   aria-label="Year"
                   class="sidebar-pill-grid years"
                 >
-                  <.sidebar_filter_pill
+                  <.grid_filter_pill
                     selected={is_nil(@filter.year)}
                     class="col-span-full"
                     href={lifelist_path(@current_scope, %{@filter | year: nil})}
                   >
                     All years
-                  </.sidebar_filter_pill>
-                  <.sidebar_filter_pill
+                  </.grid_filter_pill>
+                  <.grid_filter_pill
                     :for={{year, active} <- @years}
                     selected={@filter.year == year}
                     active={active}
                     href={lifelist_path(@current_scope, %{@filter | year: year})}
                   >
                     {year}
-                  </.sidebar_filter_pill>
+                  </.grid_filter_pill>
                 </ul>
               </div>
 
@@ -244,21 +244,21 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                   aria-label="Month"
                   class="sidebar-pill-grid months"
                 >
-                  <.sidebar_filter_pill
+                  <.grid_filter_pill
                     selected={is_nil(@filter.month)}
                     class="col-span-full"
                     href={lifelist_path(@current_scope, %{@filter | month: nil})}
                   >
                     All months
-                  </.sidebar_filter_pill>
-                  <.sidebar_filter_pill
+                  </.grid_filter_pill>
+                  <.grid_filter_pill
                     :for={{month, active} <- @months}
                     selected={@filter.month == month}
                     active={active}
                     href={lifelist_path(@current_scope, %{@filter | month: month})}
                   >
                     {DateHelper.short_month_name(month)}
-                  </.sidebar_filter_pill>
+                  </.grid_filter_pill>
                 </ul>
               </div>
 
