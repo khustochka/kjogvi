@@ -9,6 +9,10 @@ defmodule Kjogvi.Ebird.Web do
   alias Kjogvi.Birding
   alias Kjogvi.Types
 
+  @actions %{
+    preload: {:ebird_preload_progress, "eBird preload: "}
+  }
+
   @doc """
   Preload user's checklists from eBird. Select only those that are not yet imported.
   """
@@ -18,7 +22,7 @@ defmodule Kjogvi.Ebird.Web do
           Types.result([Checklist.Meta.t()])
   def preload_new_checklists_for_user(user, opts \\ []) do
     import_id = {:preload, opts[:import_id]}
-    new_opts = opts |> Keyword.put(:import_id, import_id)
+    new_opts = Keyword.put(opts, :import_id, import_id)
 
     if User.ebird_configured_async?(user) do
       with {:ok, checklists} <- Client.preload_checklists(user.extras.ebird, new_opts) do
@@ -37,7 +41,7 @@ defmodule Kjogvi.Ebird.Web do
     end
   end
 
-  def subscribe_progress(action, import_id) do
+  def subscribe_progress(action, import_id) when is_map_key(@actions, action) do
     Phoenix.PubSub.subscribe(Kjogvi.PubSub, progress_key({action, import_id}))
   end
 
@@ -45,21 +49,17 @@ defmodule Kjogvi.Ebird.Web do
     :ok
   end
 
-  def broadcast_progress({action, import_id}, message) do
+  def broadcast_progress({action, _import_id} = key, message) when is_map_key(@actions, action) do
+    {tag, prefix} = @actions[action]
+
     Phoenix.PubSub.broadcast(
       Kjogvi.PubSub,
-      progress_key({action, import_id}),
-      {"ebird_#{action}_progress", %{message: prefix(action) <> message}}
+      progress_key(key),
+      {tag, %{message: prefix <> message}}
     )
   end
 
   defp progress_key({action, import_id}) do
     "ebird:web:#{action}:progress:#{import_id}"
-  end
-
-  defp prefix(action) do
-    case action do
-      :preload -> "eBird preload: "
-    end
   end
 end
