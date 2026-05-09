@@ -125,6 +125,7 @@ defmodule Kjogvi.Birding.Lifelist do
       |> Location.Query.preload_all_locations()
       |> then(fn list ->
         %Result{
+          filter: filter,
           list: list,
           total: length(list)
         }

@@ -7,54 +7,90 @@ defmodule KjogviWeb.Live.Lifelist.Components do
 
   attr :id, :string, required: true
   attr :show_private_details, :boolean, default: false
-  attr :lifelist, :list, required: true
+  attr :groups, :list, required: true
   attr :location_field, :atom, required: true
   attr :sort, :atom, default: :date
-
-  def lifers_list(%{sort: :taxonomy} = assigns) do
-    groups = group_by_taxonomy(assigns.lifelist.list)
-    assigns = assign(assigns, :groups, groups)
-
-    ~H"""
-    <ol id={@id} class="lifers-list lifers-list-asc border-t border-stone-200">
-      <%= for {{order, family}, lifers} <- @groups do %>
-        <li class="py-3 border-b border-stone-100 bg-stone-50/50 scroll-mt-4">
-          <a :if={family} id={family}></a>
-          <div class="px-2 text-sm uppercase tracking-wide text-stone-500 font-header font-semibold">
-            <span :if={order}>{order}</span>
-            <span :if={order && family} class="text-stone-300 mx-1">&middot;</span>
-            <span :if={family} class="text-stone-700">{family}</span>
-          </div>
-        </li>
-        <%= for lifer <- lifers do %>
-          <.lifer_row
-            lifer={lifer}
-            location_field={@location_field}
-            show_private_details={@show_private_details}
-          />
-        <% end %>
-      <% end %>
-    </ol>
-    """
-  end
+  attr :anchor_prefix, :string, default: ""
 
   def lifers_list(assigns) do
     ~H"""
-    <ol
-      id={@id}
-      class="lifers-list border-t border-stone-200"
-      style={"--lifersTotal:#{@lifelist.total + 1};"}
+    <div id={@id}>
+      <div id={"#{@id}-by-#{@sort}"}>
+        <%= for {{header, lifers_with_rank}, group_index} <- Enum.with_index(@groups) do %>
+          <.group_header
+            :if={header != :none}
+            header={header}
+            anchor_prefix={@anchor_prefix}
+            class={if group_index == 0, do: "mt-0"}
+          />
+          <ol class="border-t border-stone-200">
+            <%= for {lifer, rank} <- lifers_with_rank do %>
+              <.lifer_row
+                id={lifer_id(@anchor_prefix, @sort, rank)}
+                value={rank}
+                lifer={lifer}
+                location_field={@location_field}
+                show_private_details={@show_private_details}
+              />
+            <% end %>
+          </ol>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  defp lifer_id(_prefix, :taxonomy, _rank), do: nil
+  defp lifer_id(prefix, :date, rank), do: "#{prefix}lifer-#{rank}"
+
+  attr :header, :any, required: true
+  attr :anchor_prefix, :string, default: ""
+  attr :class, :any, default: nil
+
+  defp group_header(%{header: {:taxonomy, order, family}} = assigns) do
+    assigns = assign(assigns, order: order, family: family)
+
+    ~H"""
+    <.group_header_box
+      anchor_id={@family && "#{@anchor_prefix}#{@family}"}
+      class={@class}
     >
-      <%= for {lifer, i} <- Enum.with_index(@lifelist.list) do %>
-        <.lifer_row
-          id={"lifer-#{@lifelist.total - i}"}
-          value={@lifelist.total - i}
-          lifer={lifer}
-          location_field={@location_field}
-          show_private_details={@show_private_details}
-        />
-      <% end %>
-    </ol>
+      <span :if={@order}>{@order}</span>
+      <span :if={@order && @family} class="text-stone-300 mx-1">&middot;</span>
+      <span :if={@family} class="text-stone-700">{@family}</span>
+    </.group_header_box>
+    """
+  end
+
+  defp group_header(%{header: {:year, year}} = assigns) do
+    assigns = assign(assigns, :year, year)
+
+    ~H"""
+    <.group_header_box
+      anchor_id={"#{@anchor_prefix}first-record-#{@year}"}
+      class={@class}
+    >
+      First recorded in <span class="text-stone-700">{@year}</span>
+    </.group_header_box>
+    """
+  end
+
+  attr :anchor_id, :string, default: nil
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  defp group_header_box(assigns) do
+    ~H"""
+    <h3
+      id={@anchor_id}
+      class={[
+        "scroll-mt-4 mt-8 mb-0! py-3 bg-stone-50/50",
+        "px-2 text-sm font-header font-semibold tracking-wide uppercase text-stone-500",
+        @class
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </h3>
     """
   end
 
@@ -71,7 +107,12 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       value={@value}
       class="py-4 border-b border-stone-100 grid grid-cols-[3.5ch_2fr_auto_3fr] gap-x-2 md:gap-x-6 gap-y-1 items-top md:items-center"
     >
-      <span class="counter text-stone-400 text-sm col-span-1 justify-self-end tabular-nums"></span>
+      <span
+        class="lifer-counter text-stone-400 text-sm col-span-1 justify-self-end tabular-nums"
+        aria-hidden="true"
+        data-value={@value}
+      >
+      </span>
       <div class="mb-1 col-span-3 md:col-span-1">
         <.species_link species={@lifer.species_page} />
       </div>
@@ -100,16 +141,6 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       </div>
     </li>
     """
-  end
-
-  defp group_by_taxonomy(lifers) do
-    lifers
-    |> Enum.chunk_by(fn lifer ->
-      {lifer.species_page.order, lifer.species_page.family}
-    end)
-    |> Enum.map(fn [first | _] = chunk ->
-      {{first.species_page.order, first.species_page.family}, chunk}
-    end)
   end
 
   attr :current_sort, :atom, required: true
@@ -186,7 +217,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
     >
       <span
         class={[
-          "relative inline-block w-9 h-5 lg:w-8 lg:h-[1.125rem] rounded-full transition-colors",
+          "relative inline-block w-9 h-5 lg:w-8 lg:h-4.5 rounded-full transition-colors",
           if(@enabled, do: "bg-forest-500", else: "bg-slate-300 group-hover:bg-slate-400")
         ]}
         aria-hidden="true"

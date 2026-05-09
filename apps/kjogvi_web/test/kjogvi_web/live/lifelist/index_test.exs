@@ -7,7 +7,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   def get_number_of_species(html) do
     {:ok, doc} = Floki.parse_document(html)
 
-    Floki.find(doc, "#lifelist-table li")
+    Floki.find(doc, "#lifelist-table li[id^=lifer-]")
     |> length()
   end
 
@@ -272,6 +272,51 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     {:ok, _view, date_html} = live(conn, ~p"/lifelist")
     # Date desc: taxon2 (more recent) first
     assert pos.(date_html, taxon2) < pos.(date_html, taxon1)
+  end
+
+  test "date sort groups lifers by year of first encounter", %{conn: conn} do
+    {taxon1, _} = Factory.create_species_taxon_with_page()
+    {taxon2, _} = Factory.create_species_taxon_with_page()
+    {taxon3, _} = Factory.create_species_taxon_with_page()
+
+    card1 = insert(:main_user_card, observ_date: ~D"2021-05-01")
+    insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    card2 = insert(:main_user_card, observ_date: ~D"2023-04-01")
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    card3 = insert(:main_user_card, observ_date: ~D"2023-09-01")
+    insert(:observation, card: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+
+    {:ok, view, _html} = live(conn, ~p"/lifelist")
+
+    assert has_element?(view, "#first-record-2023")
+    assert has_element?(view, "#first-record-2021")
+    assert has_element?(view, "#lifelist-table h3", "First recorded in")
+  end
+
+  test "year header is omitted when filtered by year", %{conn: conn} do
+    {taxon, _} = Factory.create_species_taxon_with_page()
+    card = insert(:main_user_card, observ_date: ~D"2023-05-01")
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, view, _html} = live(conn, ~p"/lifelist/2023")
+
+    refute has_element?(view, "#first-record-2023")
+    refute has_element?(view, "#lifelist-table h3", "First recorded in")
+  end
+
+  test "year header is omitted when sorting taxonomically", %{conn: conn} do
+    {taxon1, _} = Factory.create_species_taxon_with_page()
+    {taxon2, _} = Factory.create_species_taxon_with_page()
+
+    card1 = insert(:main_user_card, observ_date: ~D"2021-05-01")
+    insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    card2 = insert(:main_user_card, observ_date: ~D"2023-04-01")
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+    {:ok, view, _html} = live(conn, ~p"/lifelist?sort=taxonomy")
+
+    refute has_element?(view, "#first-record-2023")
+    refute has_element?(view, "#lifelist-table h3", "First recorded in")
   end
 
   test "sort selector links toggle between date and taxonomy", %{conn: conn} do

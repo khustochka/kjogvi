@@ -7,6 +7,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   alias Kjogvi.Birding.Lifelist
 
   alias KjogviWeb.DateHelper
+  alias KjogviWeb.Live.Lifelist.Grouping
   alias KjogviWeb.Live.Lifelist.Presenter
 
   import KjogviWeb.Live.Lifelist.Components
@@ -24,7 +25,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       |> assign(:lifelist_scope, lifelist_scope)
       |> assign(:all_years, all_years)
       |> assign(:container_class, "max-w-7xl"),
-      temporary_assigns: [lifelist: []]
+      temporary_assigns: [lifelist: [], lifer_groups: [], heard_only_groups: []]
     }
   end
 
@@ -65,11 +66,20 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       location_context.children
       |> Enum.map(fn loc -> {loc, loc.id in active_location_ids} end)
 
+    lifer_groups = group_lifelist(lifelist)
+
+    heard_only_groups =
+      if heard_only = get_in(lifelist.extras, [:heard_only]),
+        do: group_lifelist(heard_only),
+        else: []
+
     {
       :noreply,
       socket
       |> assign(
         lifelist: lifelist,
+        lifer_groups: lifer_groups,
+        heard_only_groups: heard_only_groups,
         filter: filter,
         years: years,
         months: months,
@@ -83,6 +93,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       |> derive_robots()
     }
   end
+
+  defp group_lifelist(%{filter: %{sort: :taxonomy}} = lifelist),
+    do: Grouping.by_taxonomy(lifelist)
+
+  defp group_lifelist(lifelist), do: Grouping.by_year(lifelist)
 
   @impl true
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
@@ -294,7 +309,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <.lifers_list
             id="lifelist-table"
             show_private_details={@current_scope.private_view}
-            lifelist={@lifelist}
+            groups={@lifer_groups}
             location_field={@location_field}
             sort={@filter.sort}
           />
@@ -308,9 +323,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           <.lifers_list
             id="lifelist-heard-only-table"
             show_private_details={@current_scope.private_view}
-            lifelist={@lifelist.extras.heard_only}
+            groups={@heard_only_groups}
             location_field={@location_field}
             sort={@filter.sort}
+            anchor_prefix="heard-only-"
           />
         <% end %>
 

@@ -1,19 +1,8 @@
-.lifers-list {
-  counter-reset: lifers var(--lifersTotal, 0);
-}
-
-.lifers-list li .counter::before {
-  content: counter(lifers) ".";
-  counter-increment: lifers -1;
-}
-
-.lifers-list-asc {
-  counter-reset: lifers 0;
-}
-
-.lifers-list-asc li .counter::before {
-  content: counter(lifers) ".";
-  counter-increment: lifers 1;
+/* Lifer counter: graphical browsers paint the rank via CSS ::before from
+   the data-value attribute. Text browsers (e.g. lynx) ignore CSS and rely on
+   the native <ol> marker driven by the li[value] attribute. */
+.lifer-counter::before {
+  content: attr(data-value) ".";
 }
 
 /* Sidebar filter styles */
