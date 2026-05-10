@@ -17,7 +17,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   @impl true
   def mount(_params, _session, %{assigns: assigns} = socket) do
     lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
-    all_years = Lifelist.years(lifelist_scope)
+
+    all_years =
+      Lifelist.years(lifelist_scope)
+      |> Enum.reverse()
 
     {
       :ok,
@@ -39,6 +42,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     years =
       Lifelist.years(lifelist_scope, Map.put(filter, :year, nil))
+      |> Enum.reverse()
       |> then(&Util.Enum.zip_inclusion(assigns.all_years, &1))
 
     months =
