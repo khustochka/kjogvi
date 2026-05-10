@@ -1,12 +1,12 @@
-defmodule KjogviWeb.Live.My.Log.Index do
+defmodule KjogviWeb.Live.My.Logbook.Index do
   @moduledoc false
 
   use KjogviWeb, :live_view
 
-  alias Kjogvi.Birding.Log
+  alias Kjogvi.Birding.Logbook
   alias Kjogvi.Birding.Lifelist
 
-  import KjogviWeb.LogComponents
+  import KjogviWeb.LogbookComponents
 
   @default_opts [limit: 366, cutoff_days: 366]
 
@@ -14,14 +14,14 @@ defmodule KjogviWeb.Live.My.Log.Index do
   def mount(_params, _session, %{assigns: assigns} = socket) do
     lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
     all_years = Lifelist.years(lifelist_scope)
-    log_enabled? = Log.any_enabled?(lifelist_scope)
+    logbook_enabled? = Logbook.any_enabled?(lifelist_scope)
 
     {
       :ok,
       socket
       |> assign(:lifelist_scope, lifelist_scope)
       |> assign(:all_years, all_years)
-      |> assign(:log_enabled?, log_enabled?)
+      |> assign(:logbook_enabled?, logbook_enabled?)
     }
   end
 
@@ -37,14 +37,14 @@ defmodule KjogviWeb.Live.My.Log.Index do
         {nil, @default_opts}
       end
 
-    log_entries = Log.recent_entries(assigns.lifelist_scope, opts)
+    logbook_entries = Logbook.recent_entries(assigns.lifelist_scope, opts)
 
     {
       :noreply,
       socket
-      |> assign(:page_title, "Birding log#{if year, do: " – #{year}"}")
+      |> assign(:page_title, "Birding logbook#{if year, do: " – #{year}"}")
       |> assign(:year, year)
-      |> assign(:log_entries, log_entries)
+      |> assign(:logbook_entries, logbook_entries)
     }
   end
 
@@ -57,21 +57,21 @@ defmodule KjogviWeb.Live.My.Log.Index do
 
     <div class="mt-2 mb-4 text-sm">
       <.link
-        navigate={~p"/my/account/settings#log-settings"}
+        navigate={~p"/my/account/settings#logbook-settings"}
         class="text-forest-700 underline hover:text-forest-900"
       >
-        Log settings
+        Logbook settings
       </.link>
     </div>
 
     <ul class="my-6 flex flex-wrap gap-1.5" aria-label="Year">
-      <.inline_filter_pill href={~p"/my/log"} selected={is_nil(@year)}>
+      <.inline_filter_pill href={~p"/my/logbook"} selected={is_nil(@year)}>
         Latest
       </.inline_filter_pill>
 
       <.inline_filter_pill
         :for={year <- @all_years}
-        href={~p"/my/log?year=#{year}"}
+        href={~p"/my/logbook?year=#{year}"}
         selected={@year == year}
       >
         {year}
@@ -79,13 +79,13 @@ defmodule KjogviWeb.Live.My.Log.Index do
     </ul>
 
     <div
-      :if={@log_entries == [] and not @log_enabled?}
-      id="log-empty-no-settings"
+      :if={@logbook_entries == [] and not @logbook_enabled?}
+      id="logbook-empty-no-settings"
       class="my-6 p-4 rounded border border-amber-300 bg-amber-50 text-sm text-stone-700"
     >
-      No lists are selected for the log.
+      No lists are selected for the logbook.
       <.link
-        navigate={~p"/my/account/settings#log-settings"}
+        navigate={~p"/my/account/settings#logbook-settings"}
         class="text-forest-700 underline hover:text-forest-900"
       >
         Enable some in Settings
@@ -93,7 +93,7 @@ defmodule KjogviWeb.Live.My.Log.Index do
       to start seeing recent additions.
     </div>
 
-    <.log log_entries={@log_entries} current_scope={@current_scope} />
+    <.logbook logbook_entries={@logbook_entries} current_scope={@current_scope} />
     """
   end
 end

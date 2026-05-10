@@ -59,7 +59,7 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "get_log_settings_locations/0" do
+  describe "get_logbook_settings_locations/0" do
     test "includes countries and regions regardless of public_index" do
       country =
         insert(:location, location_type: "country", name_en: "Poland", public_index: nil)
@@ -73,7 +73,7 @@ defmodule Kjogvi.GeoTest do
           public_index: nil
         )
 
-      result = Geo.get_log_settings_locations()
+      result = Geo.get_logbook_settings_locations()
       ids = Enum.map(result, & &1.id)
 
       assert country.id in ids
@@ -84,14 +84,14 @@ defmodule Kjogvi.GeoTest do
       continent =
         insert(:location, location_type: "continent", name_en: "Europe", public_index: 1)
 
-      result = Geo.get_log_settings_locations()
+      result = Geo.get_logbook_settings_locations()
       assert continent.id in Enum.map(result, & &1.id)
     end
 
     test "excludes sites and other non-lifelist-filter locations" do
       site = insert(:location, location_type: "site", name_en: "Backyard", public_index: nil)
 
-      result = Geo.get_log_settings_locations()
+      result = Geo.get_logbook_settings_locations()
       refute site.id in Enum.map(result, & &1.id)
     end
 
@@ -99,7 +99,7 @@ defmodule Kjogvi.GeoTest do
       country =
         insert(:location, location_type: "country", name_en: "Canada", public_index: 1)
 
-      result = Geo.get_log_settings_locations()
+      result = Geo.get_logbook_settings_locations()
       assert Enum.count(result, &(&1.id == country.id)) == 1
     end
   end

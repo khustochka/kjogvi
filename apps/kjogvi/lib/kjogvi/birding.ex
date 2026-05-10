@@ -87,7 +87,7 @@ defmodule Kjogvi.Birding do
   end
 
   defp tap_invalidate_log_cache({:ok, _} = result, user_id) do
-    Kjogvi.Birding.Log.Cache.invalidate(user_id)
+    Kjogvi.Birding.Logbook.Cache.invalidate(user_id)
     result
   end
 

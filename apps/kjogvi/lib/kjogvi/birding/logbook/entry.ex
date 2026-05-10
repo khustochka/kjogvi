@@ -1,6 +1,6 @@
-defmodule Kjogvi.Birding.Log.Entry do
+defmodule Kjogvi.Birding.Logbook.Entry do
   @moduledoc """
-  A single log entry: a species (or multiple species) added to a specific list
+  A single logbook entry: a species (or multiple species) added to a specific list
   on a given date.
 
   - `type` is `:life` (first ever for this area) or `:year` (first in calendar year).

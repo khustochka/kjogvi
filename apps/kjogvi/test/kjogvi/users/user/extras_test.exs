@@ -4,19 +4,19 @@ defmodule Kjogvi.Users.User.ExtrasTest do
   alias Kjogvi.Users.User.Extras
 
   describe "changeset/2" do
-    test "casts log_settings" do
+    test "casts logbook_settings" do
       extras = %Extras{}
 
       changeset =
         Extras.changeset(extras, %{
-          "log_settings" => %{
+          "logbook_settings" => %{
             "0" => %{"location_id" => "", "life" => "true", "year" => "false"},
             "1" => %{"location_id" => "42", "life" => "true", "year" => "true"}
           }
         })
 
       assert changeset.valid?
-      settings = Ecto.Changeset.apply_changes(changeset).log_settings
+      settings = Ecto.Changeset.apply_changes(changeset).logbook_settings
       assert length(settings) == 2
 
       world = Enum.find(settings, &is_nil(&1.location_id))
@@ -28,12 +28,12 @@ defmodule Kjogvi.Users.User.ExtrasTest do
       assert loc.year == true
     end
 
-    test "preserves ebird when only log_settings are provided" do
+    test "preserves ebird when only logbook_settings are provided" do
       extras = %Extras{ebird: %Extras.Ebird{username: "testuser"}}
 
       changeset =
         Extras.changeset(extras, %{
-          "log_settings" => %{
+          "logbook_settings" => %{
             "0" => %{"location_id" => "", "life" => "true", "year" => "true"}
           }
         })

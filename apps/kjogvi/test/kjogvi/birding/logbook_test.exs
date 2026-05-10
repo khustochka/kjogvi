@@ -1,9 +1,9 @@
-defmodule Kjogvi.Birding.LogTest do
+defmodule Kjogvi.Birding.LogbookTest do
   use Kjogvi.DataCase, async: true
 
   import Kjogvi.UsersFixtures
 
-  alias Kjogvi.Birding.Log
+  alias Kjogvi.Birding.Logbook
   alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Factory
   alias Kjogvi.GeoFixtures
@@ -11,15 +11,15 @@ defmodule Kjogvi.Birding.LogTest do
   # Build a scope for a given user
   defp scope(user), do: %Lifelist.Scope{user: user, include_private: false}
 
-  # Persist log_settings on the user through the real changeset path.
-  defp put_log_settings(user, settings) do
+  # Persist logbook_settings on the user through the real changeset path.
+  defp put_logbook_settings(user, settings) do
     {:ok, user} =
-      Kjogvi.Users.update_user_settings(user, %{extras: %{log_settings: settings}})
+      Kjogvi.Users.update_user_settings(user, %{extras: %{logbook_settings: settings}})
 
     user
   end
 
-  # Build log_settings attrs that enable life+year for World and a list of locations
+  # Build logbook_settings attrs that enable life+year for World and a list of locations
   defp all_enabled_settings(locations) do
     world = %{location_id: nil, life: true, year: true}
     location_settings = Enum.map(locations, &%{location_id: &1.id, life: true, year: true})
@@ -68,7 +68,7 @@ defmodule Kjogvi.Birding.LogTest do
   describe "recent_entries/2" do
     test "returns empty list when no observations" do
       user = user_fixture()
-      assert Log.recent_entries(scope(user)) == []
+      assert Logbook.recent_entries(scope(user)) == []
     end
 
     test "returns a lifer entry for a new world species" do
@@ -81,7 +81,7 @@ defmodule Kjogvi.Birding.LogTest do
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       assert length(entries) == 1
 
       {date, day_entries} = hd(entries)
@@ -103,7 +103,7 @@ defmodule Kjogvi.Birding.LogTest do
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
       # Only the world lifer entry should appear (total for nil area)
@@ -124,7 +124,7 @@ defmodule Kjogvi.Birding.LogTest do
 
       user =
         user_fixture()
-        |> put_log_settings(all_enabled_settings([country_ca, country_ua]))
+        |> put_logbook_settings(all_enabled_settings([country_ca, country_ua]))
 
       # Saw species in Ukraine first (so not a world lifer when seeing in Canada)
       yesterday = Date.add(Date.utc_today(), -1)
@@ -136,7 +136,7 @@ defmodule Kjogvi.Birding.LogTest do
       c2 = card(user, today, site_ca)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       today_entry = Enum.find(entries, fn {date, _} -> date == today end)
       assert today_entry != nil
 
@@ -169,7 +169,7 @@ defmodule Kjogvi.Birding.LogTest do
       c2 = card(user, this_year_date, site)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       today_entry = Enum.find(entries, fn {date, _} -> date == this_year_date end)
       assert today_entry != nil
 
@@ -197,7 +197,7 @@ defmodule Kjogvi.Birding.LogTest do
       obs(c, Ornitho.Schema.Taxon.key(taxon1))
       obs(c, Ornitho.Schema.Taxon.key(taxon2))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
       lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
@@ -219,7 +219,7 @@ defmodule Kjogvi.Birding.LogTest do
         obs(c, Ornitho.Schema.Taxon.key(taxon))
       end
 
-      entries = Log.recent_entries(scope(user), limit: 2)
+      entries = Logbook.recent_entries(scope(user), limit: 2)
       assert length(entries) == 2
     end
 
@@ -241,7 +241,7 @@ defmodule Kjogvi.Birding.LogTest do
       c2 = card(user, today, site)
       obs(c2, Ornitho.Schema.Taxon.key(taxon2))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
 
       # Today's world lifer entry should show list_total = 2
       {_date, today_entries} =
@@ -269,11 +269,11 @@ defmodule Kjogvi.Birding.LogTest do
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       # Only look back 5 days — should find nothing
-      entries = Log.recent_entries(scope(user), cutoff_days: 5)
+      entries = Logbook.recent_entries(scope(user), cutoff_days: 5)
       assert entries == []
     end
 
-    test "log_settings can disable world life entries" do
+    test "logbook_settings can disable world life entries" do
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country_ca = insert_country("Canada", 1)
       country_ua = insert_country("Ukraine", 2)
@@ -287,7 +287,7 @@ defmodule Kjogvi.Birding.LogTest do
         %{location_id: country_ua.id, life: true, year: true}
       ]
 
-      user = user_fixture() |> put_log_settings(settings)
+      user = user_fixture() |> put_logbook_settings(settings)
 
       # Saw species in Ukraine first (world lifer yesterday)
       yesterday = Date.add(Date.utc_today(), -1)
@@ -300,7 +300,7 @@ defmodule Kjogvi.Birding.LogTest do
       c2 = card(user, today, site_ca)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
 
       # Yesterday's world lifer should be filtered out
       yesterday_entry = Enum.find(entries, fn {date, _} -> date == yesterday end)
@@ -321,7 +321,7 @@ defmodule Kjogvi.Birding.LogTest do
              )
     end
 
-    test "log_settings can disable a specific location" do
+    test "logbook_settings can disable a specific location" do
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country_ca = insert_country("Canada", 1)
       country_ua = insert_country("Ukraine", 2)
@@ -330,7 +330,7 @@ defmodule Kjogvi.Birding.LogTest do
 
       # Disable Canada entries
       settings = [%{location_id: country_ca.id, life: false, year: false}]
-      user = user_fixture() |> put_log_settings(settings)
+      user = user_fixture() |> put_logbook_settings(settings)
 
       yesterday = Date.add(Date.utc_today(), -1)
       today = Date.utc_today()
@@ -341,7 +341,7 @@ defmodule Kjogvi.Birding.LogTest do
       c2 = card(user, today, site_ca)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       today_entry = Enum.find(entries, fn {date, _} -> date == today end)
 
       # Canada entry should not appear
@@ -359,13 +359,13 @@ defmodule Kjogvi.Birding.LogTest do
 
       user =
         user_fixture()
-        |> put_log_settings(all_enabled_settings([country, subdivision]))
+        |> put_logbook_settings(all_enabled_settings([country, subdivision]))
 
       today = Date.utc_today()
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
       lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
@@ -389,7 +389,7 @@ defmodule Kjogvi.Birding.LogTest do
              )
     end
 
-    test "covered_areas is empty when area is not enabled in log_settings" do
+    test "covered_areas is empty when area is not enabled in logbook_settings" do
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country = insert_country("Canada")
       subdivision = insert_subdivision("Manitoba", country)
@@ -398,13 +398,13 @@ defmodule Kjogvi.Birding.LogTest do
       # Only World enabled; Canada/Manitoba not in settings
       user =
         user_fixture()
-        |> put_log_settings([%{location_id: nil, life: true, year: true}])
+        |> put_logbook_settings([%{location_id: nil, life: true, year: true}])
 
       today = Date.utc_today()
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
       lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
@@ -422,13 +422,13 @@ defmodule Kjogvi.Birding.LogTest do
         %{location_id: country.id, life: false, year: true}
       ]
 
-      user = user_fixture() |> put_log_settings(settings)
+      user = user_fixture() |> put_logbook_settings(settings)
 
       today = Date.utc_today()
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
       lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
@@ -443,14 +443,14 @@ defmodule Kjogvi.Birding.LogTest do
 
       user =
         user_fixture()
-        |> put_log_settings(all_enabled_settings([country]))
+        |> put_logbook_settings(all_enabled_settings([country]))
 
       today = Date.utc_today()
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(t1))
       obs(c, Ornitho.Schema.Taxon.key(t2))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
       lifer_entries = Enum.filter(day_entries, &(&1.type == :life && is_nil(&1.area)))
@@ -476,7 +476,7 @@ defmodule Kjogvi.Birding.LogTest do
 
       user =
         user_fixture()
-        |> put_log_settings(all_enabled_settings([country_ca, country_ua]))
+        |> put_logbook_settings(all_enabled_settings([country_ca, country_ua]))
 
       # t2 was seen long ago in Ukraine (already a world lifer)
       long_ago = Date.add(Date.utc_today(), -30)
@@ -489,7 +489,7 @@ defmodule Kjogvi.Birding.LogTest do
       obs(c, Ornitho.Schema.Taxon.key(t1))
       obs(c, Ornitho.Schema.Taxon.key(t2))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       today_entry = Enum.find(entries, fn {d, _} -> d == today end)
       {_date, day_entries} = today_entry
 
@@ -518,7 +518,7 @@ defmodule Kjogvi.Birding.LogTest do
 
       user =
         user_fixture()
-        |> put_log_settings(all_enabled_settings([country_ca, country_ua, subdivision]))
+        |> put_logbook_settings(all_enabled_settings([country_ca, country_ua, subdivision]))
 
       # Seen in Ukraine last year — already world lifer and on the 2024 year list
       last_year = ~D[2024-06-15]
@@ -531,7 +531,7 @@ defmodule Kjogvi.Birding.LogTest do
       c = card(user, today, site_ca)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       today_entry = Enum.find(entries, fn {d, _} -> d == today end)
       {_date, day_entries} = today_entry
 
@@ -568,19 +568,19 @@ defmodule Kjogvi.Birding.LogTest do
       obs(c2, Ornitho.Schema.Taxon.key(taxon_2025))
 
       # cutoff_days would exclude 2020 data, but year filter finds it
-      assert Log.recent_entries(scope(user), cutoff_days: 5) == []
+      assert Logbook.recent_entries(scope(user), cutoff_days: 5) == []
 
-      entries_2020 = Log.recent_entries(scope(user), year: 2020)
+      entries_2020 = Logbook.recent_entries(scope(user), year: 2020)
       assert [{~D[2020-06-15], _}] = entries_2020
 
       # Only 2025 entries returned, 2020 excluded
-      entries_2025 = Log.recent_entries(scope(user), year: 2025)
+      entries_2025 = Logbook.recent_entries(scope(user), year: 2025)
       dates = Enum.map(entries_2025, fn {date, _} -> date end)
       assert ~D[2025-03-15] in dates
       refute Enum.any?(dates, &(&1.year == 2020))
 
       # Year with no observations returns empty
-      assert Log.recent_entries(scope(user), year: 2023) == []
+      assert Logbook.recent_entries(scope(user), year: 2023) == []
     end
 
     test "year filter returns all entries without limit, in ascending date order" do
@@ -597,7 +597,7 @@ defmodule Kjogvi.Birding.LogTest do
 
       # With year filter, all 5 dates should appear (no limit applied),
       # ordered chronologically ascending.
-      entries = Log.recent_entries(scope(user), year: 2025)
+      entries = Logbook.recent_entries(scope(user), year: 2025)
       dates = Enum.map(entries, fn {date, _} -> date end)
 
       assert length(entries) == 5
@@ -617,13 +617,13 @@ defmodule Kjogvi.Birding.LogTest do
         obs(c, Ornitho.Schema.Taxon.key(taxon))
       end
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       dates = Enum.map(entries, fn {date, _} -> date end)
 
       assert dates == Enum.sort(dates, {:desc, Date})
     end
 
-    test "log_settings with all disabled returns empty" do
+    test "logbook_settings with all disabled returns empty" do
       {taxon, _page} = Factory.create_species_taxon_with_page()
       country = insert_country("Canada")
       site = insert_site(country)
@@ -633,28 +633,28 @@ defmodule Kjogvi.Birding.LogTest do
         %{location_id: country.id, life: false, year: false}
       ]
 
-      user = user_fixture() |> put_log_settings(settings)
+      user = user_fixture() |> put_logbook_settings(settings)
 
       today = Date.utc_today()
       c = card(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
-      entries = Log.recent_entries(scope(user))
+      entries = Logbook.recent_entries(scope(user))
       assert entries == []
     end
   end
 
   describe "any_enabled?/1" do
-    test "returns false for empty log_settings" do
+    test "returns false for empty logbook_settings" do
       user = user_fixture()
-      assert Log.any_enabled?(scope(user)) == false
+      assert Logbook.any_enabled?(scope(user)) == false
     end
 
     test "returns true when at least one setting has life or year enabled" do
       settings = [%{location_id: nil, life: false, year: true}]
-      user = user_fixture() |> put_log_settings(settings)
+      user = user_fixture() |> put_logbook_settings(settings)
 
-      assert Log.any_enabled?(scope(user)) == true
+      assert Logbook.any_enabled?(scope(user)) == true
     end
 
     test "returns false when all settings have life and year disabled" do
@@ -663,9 +663,9 @@ defmodule Kjogvi.Birding.LogTest do
         %{location_id: 1, life: false, year: false}
       ]
 
-      user = user_fixture() |> put_log_settings(settings)
+      user = user_fixture() |> put_logbook_settings(settings)
 
-      assert Log.any_enabled?(scope(user)) == false
+      assert Logbook.any_enabled?(scope(user)) == false
     end
   end
 end

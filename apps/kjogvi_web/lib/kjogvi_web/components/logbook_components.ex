@@ -1,6 +1,6 @@
-defmodule KjogviWeb.LogComponents do
+defmodule KjogviWeb.LogbookComponents do
   @moduledoc """
-  Component to render a log (recent additions list).
+  Component to render a logbook (recent additions list).
   """
 
   use KjogviWeb, :html
@@ -8,18 +8,18 @@ defmodule KjogviWeb.LogComponents do
   import KjogviWeb.BirdingComponents
   import KjogviWeb.FormatComponents
 
-  attr :log_entries, :list, doc: "List of log entries", required: true
+  attr :logbook_entries, :list, doc: "List of logbook entries", required: true
   attr :current_scope, :any, required: true
 
-  def log(assigns) do
+  def logbook(assigns) do
     ~H"""
     <div class="mt-2">
-      <div :if={@log_entries == []} class="flex gap-2 items-center text-zinc-500 italic">
+      <div :if={@logbook_entries == []} class="flex gap-2 items-center text-zinc-500 italic">
         No recent additions.
       </div>
 
-      <dl :if={@log_entries != []} class="md:grid md:grid-cols-[auto_1fr] md:gap-x-8">
-        <%= for {date, entries} <- @log_entries do %>
+      <dl :if={@logbook_entries != []} class="md:grid md:grid-cols-[auto_1fr] md:gap-x-8">
+        <%= for {date, entries} <- @logbook_entries do %>
           <dt class="mb-2 md:mb-0 md:pt-0.5 text-sm font-semibold text-stone-400 md:text-right whitespace-nowrap">
             <time datetime={Date.to_iso8601(date)}>{format_date(date)}</time>
           </dt>
@@ -51,7 +51,7 @@ defmodule KjogviWeb.LogComponents do
     """
   end
 
-  # Label for a log entry. Renders the appropriate phrasing depending on
+  # Label for a logbook entry. Renders the appropriate phrasing depending on
   # whether this entry covers a single species or many, and whether it has
   # any secondary covered areas (e.g. a world lifer that is also a new
   # species for Manitoba). list_totals are rendered as links to the

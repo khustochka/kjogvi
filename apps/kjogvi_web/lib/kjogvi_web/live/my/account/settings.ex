@@ -120,13 +120,13 @@ defmodule KjogviWeb.Live.My.Account.Settings do
               </.inputs_for>
             </.inputs_for>
             <h3
-              id="log-settings"
+              id="logbook-settings"
               class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6 scroll-mt-4"
             >
-              Log settings
+              Logbook settings
             </h3>
             <p class="text-sm text-zinc-500 mb-2">
-              Choose which lists to include in the recent additions log.
+              Choose which lists to include in the recent additions logbook.
             </p>
 
             <table class="w-full md:max-w-lg text-sm">
@@ -143,7 +143,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                     <td class="py-2">
                       <input
                         type="hidden"
-                        name={"user[extras][log_settings][#{i}][location_id]"}
+                        name={"user[extras][logbook_settings][#{i}][location_id]"}
                         value={row.location_id || ""}
                       />
                       <span :if={row.location_id == nil} class="inline-flex items-center gap-1">
@@ -165,12 +165,12 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                     <td class="text-center py-2">
                       <input
                         type="hidden"
-                        name={"user[extras][log_settings][#{i}][life]"}
+                        name={"user[extras][logbook_settings][#{i}][life]"}
                         value="false"
                       />
                       <input
                         type="checkbox"
-                        name={"user[extras][log_settings][#{i}][life]"}
+                        name={"user[extras][logbook_settings][#{i}][life]"}
                         value="true"
                         checked={row.life}
                         class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
@@ -179,12 +179,12 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                     <td class="text-center py-2">
                       <input
                         type="hidden"
-                        name={"user[extras][log_settings][#{i}][year]"}
+                        name={"user[extras][logbook_settings][#{i}][year]"}
                         value="false"
                       />
                       <input
                         type="checkbox"
-                        name={"user[extras][log_settings][#{i}][year]"}
+                        name={"user[extras][logbook_settings][#{i}][year]"}
                         value="true"
                         checked={row.year}
                         class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
@@ -315,10 +315,10 @@ defmodule KjogviWeb.Live.My.Account.Settings do
   # World + all countries/regions/lifelist filters + any locations that already
   # have settings but aren't otherwise in the list (e.g. private ones).
   defp build_log_location_rows(user) do
-    log_settings = user.extras.log_settings
-    existing_settings = Map.new(log_settings, &{&1.location_id, &1})
+    logbook_settings = user.extras.logbook_settings
+    existing_settings = Map.new(logbook_settings, &{&1.location_id, &1})
 
-    offered_locations = Geo.get_log_settings_locations()
+    offered_locations = Geo.get_logbook_settings_locations()
     offered_ids = MapSet.new(offered_locations, & &1.id)
 
     # Locations that already have settings but aren't in the offered set

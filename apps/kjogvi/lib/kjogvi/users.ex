@@ -249,9 +249,9 @@ defmodule Kjogvi.Users do
         # The main user projection (Kjogvi.Settings.main_user/0) includes
         # settings fields; evict so the next read reflects the update.
         if admin?(user), do: Kjogvi.Settings.invalidate_main_user()
-        # log_settings drives Log.recent_entries/2; evict cached log feed
+        # logbook_settings drives Logbook.recent_entries/2; evict cached logbook feed
         # so it's recomputed against the new settings on next read.
-        Kjogvi.Birding.Log.Cache.invalidate(user.id)
+        Kjogvi.Birding.Logbook.Cache.invalidate(user.id)
         {:ok, user}
 
       {:error, :user, changeset} ->

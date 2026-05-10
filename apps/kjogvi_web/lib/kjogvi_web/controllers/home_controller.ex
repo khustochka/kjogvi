@@ -5,7 +5,7 @@ defmodule KjogviWeb.HomeController do
   @default_countries ["canada", "ukraine"]
 
   alias Kjogvi.Birding
-  alias Kjogvi.Birding.Log
+  alias Kjogvi.Birding.Logbook
   alias Kjogvi.Birding.Lifelist
   alias KjogviWeb.Live
 
@@ -42,12 +42,12 @@ defmodule KjogviWeb.HomeController do
         end
       end)
 
-    log_entries = Log.recent_entries(lifelist_scope)
+    logbook_entries = Logbook.recent_entries(lifelist_scope)
 
     conn
     |> assign(:page_title, "Birding highlights")
     |> assign(:lists, primary_lists ++ country_lists)
-    |> assign(:log_entries, log_entries)
+    |> assign(:logbook_entries, logbook_entries)
     |> render(:home)
   end
 end

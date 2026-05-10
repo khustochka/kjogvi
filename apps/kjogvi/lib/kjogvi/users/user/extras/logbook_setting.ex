@@ -1,7 +1,7 @@
-defmodule Kjogvi.Users.User.Extras.LogSetting do
+defmodule Kjogvi.Users.User.Extras.LogbookSetting do
   @moduledoc """
-  A single log setting entry: controls whether life and/or year list entries
-  are shown for a given location in the log.
+  A single logbook setting entry: controls whether life and/or year list entries
+  are shown for a given location in the logbook.
 
   A `location_id` of `nil` represents the World scope.
   """
@@ -16,8 +16,8 @@ defmodule Kjogvi.Users.User.Extras.LogSetting do
     field :year, :boolean, default: true
   end
 
-  def changeset(log_setting, attrs) do
-    log_setting
+  def changeset(logbook_setting, attrs) do
+    logbook_setting
     |> cast(attrs, [:location_id, :life, :year])
   end
 end

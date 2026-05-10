@@ -30,7 +30,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
     # single-user site owner.
     case Kjogvi.Settings.main_user() do
       nil -> :ok
-      user -> Kjogvi.Birding.Log.Cache.invalidate(user.id)
+      user -> Kjogvi.Birding.Logbook.Cache.invalidate(user.id)
     end
   end
 

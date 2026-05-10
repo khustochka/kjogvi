@@ -33,7 +33,7 @@ defmodule Kjogvi.Settings do
     Users.main_user_query()
     |> select([u], %{
       id: u.id,
-      extras: fragment("jsonb_build_object('log_settings', ?->'log_settings')", u.extras)
+      extras: fragment("jsonb_build_object('logbook_settings', ?->'logbook_settings')", u.extras)
     })
     |> Repo.one()
     |> case do

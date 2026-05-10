@@ -6,7 +6,7 @@ defmodule Kjogvi.Users.User.Extras do
   use Kjogvi.Schema
   import Ecto.Changeset
 
-  alias Kjogvi.Users.User.Extras.LogSetting
+  alias Kjogvi.Users.User.Extras.LogbookSetting
 
   @primary_key false
   embedded_schema do
@@ -15,14 +15,14 @@ defmodule Kjogvi.Users.User.Extras do
       field :password, :string, redact: true
     end
 
-    embeds_many :log_settings, LogSetting, on_replace: :delete
+    embeds_many :logbook_settings, LogbookSetting, on_replace: :delete
   end
 
   def changeset(extras, attrs) do
     extras
     |> cast(attrs, [])
     |> cast_embed(:ebird, with: &ebird_changeset/2)
-    |> cast_embed(:log_settings)
+    |> cast_embed(:logbook_settings)
   end
 
   defp ebird_changeset(schema, params) do

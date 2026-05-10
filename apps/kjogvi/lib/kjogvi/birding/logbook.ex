@@ -1,6 +1,6 @@
-defmodule Kjogvi.Birding.Log do
+defmodule Kjogvi.Birding.Logbook do
   @moduledoc """
-  Log: generates a feed of notable birding entries (species added to lists).
+  Logbook: generates a feed of notable birding entries (species added to lists).
 
   For each date in the recent past, we compute which species were "added" to
   which lists (World total, Country total, Subdivision total, World year,
@@ -17,9 +17,9 @@ defmodule Kjogvi.Birding.Log do
   Priority within a type: world > country > subdivision (by ancestry depth).
   """
 
-  alias Kjogvi.Birding.Log.Cache
-  alias Kjogvi.Birding.Log.Entry
-  alias Kjogvi.Birding.Log.Query
+  alias Kjogvi.Birding.Logbook.Cache
+  alias Kjogvi.Birding.Logbook.Entry
+  alias Kjogvi.Birding.Logbook.Query
   alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Geo
 
@@ -27,13 +27,13 @@ defmodule Kjogvi.Birding.Log do
   @cutoff_days 93
 
   @doc """
-  Returns log entries for the most recent days that have entries.
+  Returns logbook entries for the most recent days that have entries.
 
-  Log settings are read from `scope.user.extras.log_settings`. Results for
+  Logbook settings are read from `scope.user.extras.logbook_settings`. Results for
   the public feed (`include_private: false`) are cached per
   `(user_id, limit, cutoff_days)` and the current date; cache entries are
-  evicted when observations or `log_settings` change (see
-  `Kjogvi.Birding.Log.Cache`). The private view bypasses the cache.
+  evicted when observations or `logbook_settings` change (see
+  `Kjogvi.Birding.Logbook.Cache`). The private view bypasses the cache.
 
   Options:
   - `:limit` — max number of distinct dates to return (default #{@default_limit})
@@ -80,10 +80,10 @@ defmodule Kjogvi.Birding.Log do
         {Date.add(Date.utc_today(), -Keyword.get(filter, :cutoff_days)), nil}
       end
 
-    log_settings = scope.user.extras.log_settings
+    logbook_settings = scope.user.extras.logbook_settings
 
     location_ids =
-      log_settings
+      logbook_settings
       |> Enum.filter(&(&1.location_id && (&1.life || &1.year)))
       |> Enum.map(& &1.location_id)
 
@@ -100,8 +100,8 @@ defmodule Kjogvi.Birding.Log do
     else
       rows
       |> Query.preload_life_observations()
-      |> build_entries(location_map, log_settings, date_order)
-      |> filter_entries_by_settings(log_settings)
+      |> build_entries(location_map, logbook_settings, date_order)
+      |> filter_entries_by_settings(logbook_settings)
       |> then(fn entries ->
         if limit do
           Enum.take(entries, limit)
@@ -113,23 +113,23 @@ defmodule Kjogvi.Birding.Log do
   end
 
   @doc """
-  Returns true if the user has any log entries enabled based on their settings.
-  When no settings are configured, the log is disabled.
+  Returns true if the user has any logbook entries enabled based on their settings.
+  When no settings are configured, the logbook is disabled.
   """
   @spec any_enabled?(Lifelist.scope()) :: boolean()
-  def any_enabled?(%{user: %{extras: %{log_settings: []}}}), do: false
+  def any_enabled?(%{user: %{extras: %{logbook_settings: []}}}), do: false
 
-  def any_enabled?(%{user: %{extras: %{log_settings: log_settings}}}) do
-    Enum.any?(log_settings, fn setting ->
+  def any_enabled?(%{user: %{extras: %{logbook_settings: logbook_settings}}}) do
+    Enum.any?(logbook_settings, fn setting ->
       setting.life || setting.year
     end)
   end
 
-  # Filter built entries based on log_settings (removing specific type entries)
+  # Filter built entries based on logbook_settings (removing specific type entries)
   defp filter_entries_by_settings(date_entries, []), do: date_entries
 
-  defp filter_entries_by_settings(date_entries, log_settings) do
-    settings_map = Map.new(log_settings, &{&1.location_id, &1})
+  defp filter_entries_by_settings(date_entries, logbook_settings) do
+    settings_map = Map.new(logbook_settings, &{&1.location_id, &1})
 
     date_entries
     |> Enum.map(fn {date, entries} ->
@@ -155,8 +155,8 @@ defmodule Kjogvi.Birding.Log do
   end
 
   # Group raw rows into {date, [entry]} tuples, applying deduplication.
-  defp build_entries(rows, location_map, log_settings, date_order) do
-    life_enabled_ids = life_enabled_area_ids(log_settings)
+  defp build_entries(rows, location_map, logbook_settings, date_order) do
+    life_enabled_ids = life_enabled_area_ids(logbook_settings)
 
     rows
     |> Enum.group_by(& &1.observ_date)
@@ -175,9 +175,9 @@ defmodule Kjogvi.Birding.Log do
     |> Enum.reject(fn {_date, entries} -> entries == [] end)
   end
 
-  # log_settings area_ids where :life is enabled. nil represents World.
-  defp life_enabled_area_ids(log_settings) do
-    log_settings
+  # logbook_settings area_ids where :life is enabled. nil represents World.
+  defp life_enabled_area_ids(logbook_settings) do
+    logbook_settings
     |> Enum.filter(& &1.life)
     |> Enum.map(& &1.location_id)
     |> MapSet.new()
@@ -197,7 +197,7 @@ defmodule Kjogvi.Birding.Log do
     {primaries, covered} = partition_candidates(candidates)
 
     # Only :life covered candidates become secondary annotations, and only
-    # when the area is enabled for :life in log_settings.
+    # when the area is enabled for :life in logbook_settings.
     covered_life =
       covered
       |> Enum.filter(fn {area, type, _year, _obs, _total} ->

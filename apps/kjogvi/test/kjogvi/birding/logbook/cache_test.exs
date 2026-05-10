@@ -1,9 +1,9 @@
-defmodule Kjogvi.Birding.Log.CacheTest do
+defmodule Kjogvi.Birding.Logbook.CacheTest do
   # Not async: this test flips the global :cache adapter setting and starts
   # a Cachex instance, so it must run in isolation from other suites.
   use ExUnit.Case, async: false
 
-  alias Kjogvi.Birding.Log.Cache
+  alias Kjogvi.Birding.Logbook.Cache
 
   setup do
     # The default test env runs with the no-op cache adapter, which can't

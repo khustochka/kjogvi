@@ -1,10 +1,10 @@
-defmodule Kjogvi.Birding.Log.Cache do
+defmodule Kjogvi.Birding.Logbook.Cache do
   @moduledoc """
-  Cache layer for `Kjogvi.Birding.Log.recent_entries/2`.
+  Cache layer for `Kjogvi.Birding.Logbook.recent_entries/2`.
 
   Recomputing the recent-additions feed is expensive (it scans every
   observation a user has), but the result only changes when an observation
-  or the user's `log_settings` changes. We cache one entry per
+  or the user's `logbook_settings` changes. We cache one entry per
   `(user_id, limit, cutoff_days, today)` tuple. Including the current
   date in the key ensures stale results don't survive day boundaries.
 
@@ -17,7 +17,7 @@ defmodule Kjogvi.Birding.Log.Cache do
   tuple) and is listed explicitly in `cache_keys_for_user/1`.
   """
 
-  @prefix "birding:log:user:"
+  @prefix "birding:logbook:user:"
 
   # 24h backstop so abandoned keys (e.g. previous days) eventually evict
   # themselves even if invalidation is missed.
@@ -40,8 +40,8 @@ defmodule Kjogvi.Birding.Log.Cache do
 
   @doc """
   Evicts every known cache entry for the given user. Call this from any
-  write path that could change what `Log.recent_entries/2` would return:
-  observation/card writes and `log_settings` updates.
+  write path that could change what `Logbook.recent_entries/2` would return:
+  observation/card writes and `logbook_settings` updates.
   """
   def invalidate(user_id) do
     for key <- cache_keys_for_user(user_id) do
@@ -51,7 +51,7 @@ defmodule Kjogvi.Birding.Log.Cache do
     :ok
   end
 
-  # Each call site of Log.recent_entries/2 uses a fixed (limit, cutoff_days)
+  # Each call site of Logbook.recent_entries/2 uses a fixed (limit, cutoff_days)
   # tuple. Listing them here lets us evict by enumeration without having to
   # store a per-user version counter or scan the cache for matching keys.
   defp cache_keys_for_user(user_id) do
@@ -62,14 +62,14 @@ defmodule Kjogvi.Birding.Log.Cache do
     end
   end
 
-  # When adding a new call site of Log.recent_entries/2 with different
+  # When adding a new call site of Logbook.recent_entries/2 with different
   # options, add the (limit, cutoff_days) tuple here so its cache entries
   # get invalidated alongside the others.
   defp known_variants do
     [
       # Home page (KjogviWeb.HomeController)
       {5, 93},
-      # /my/log (KjogviWeb.My.Log.Index)
+      # /my/logbook (KjogviWeb.Live.My.Logbook.Index)
       {366, 366}
     ]
   end

@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.My.Log.IndexTest do
+defmodule KjogviWeb.Live.My.Logbook.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -12,23 +12,23 @@ defmodule KjogviWeb.Live.My.Log.IndexTest do
     %{conn: log_in_user(conn, user), user: user}
   end
 
-  test "renders the log page", %{conn: conn} do
-    conn = get(conn, ~p"/my/log")
-    assert html_response(conn, 200) =~ "Birding log"
+  test "renders the logbook page", %{conn: conn} do
+    conn = get(conn, ~p"/my/logbook")
+    assert html_response(conn, 200) =~ "Birding logbook"
   end
 
-  test "always shows a link to log settings", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/my/log")
+  test "always shows a link to logbook settings", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/my/logbook")
 
     assert lv
-           |> element("a[href='/my/account/settings#log-settings']", "Log settings")
+           |> element("a[href='/my/account/settings#logbook-settings']", "Logbook settings")
            |> has_element?()
   end
 
-  test "when no lists are enabled and log is empty, shows enable-lists callout", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/my/log")
+  test "when no lists are enabled and logbook is empty, shows enable-lists callout", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/my/logbook")
 
-    assert has_element?(lv, "#log-empty-no-settings")
+    assert has_element?(lv, "#logbook-empty-no-settings")
   end
 
   test "when at least one list is enabled, the enable-lists callout is hidden", %{
@@ -38,7 +38,7 @@ defmodule KjogviWeb.Live.My.Log.IndexTest do
     post(conn, "/my/account/settings", %{
       "user" => %{
         "extras" => %{
-          "log_settings" => %{
+          "logbook_settings" => %{
             "0" => %{"location_id" => "", "life" => "true", "year" => "false"}
           }
         }
@@ -48,9 +48,9 @@ defmodule KjogviWeb.Live.My.Log.IndexTest do
     # Re-login the (unchanged) user to pick up updated extras in scope.
     conn = log_in_user(build_conn(), Kjogvi.Repo.get!(Kjogvi.Users.User, user.id))
 
-    {:ok, lv, _html} = live(conn, ~p"/my/log")
+    {:ok, lv, _html} = live(conn, ~p"/my/logbook")
 
-    refute has_element?(lv, "#log-empty-no-settings")
+    refute has_element?(lv, "#logbook-empty-no-settings")
   end
 
   test "list_total links to the correct lifelist anchor", %{conn: conn, user: user} do
@@ -73,7 +73,7 @@ defmodule KjogviWeb.Live.My.Log.IndexTest do
     card = insert(:card, observ_date: Date.utc_today(), user: user, location: site)
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    conn = get(conn, ~p"/my/log")
+    conn = get(conn, ~p"/my/logbook")
     html = html_response(conn, 200)
 
     {:ok, doc} = Floki.parse_document(html)

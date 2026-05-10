@@ -1,6 +1,6 @@
-defmodule Kjogvi.Birding.Log.Query do
+defmodule Kjogvi.Birding.Logbook.Query do
   @moduledoc """
-  Queries to build the log entry feed.
+  Queries to build the logbook entry feed.
 
   For each (location, year_scope) combination we find the first-ever observation
   date per species — i.e., the date that species was "added" to that list.
