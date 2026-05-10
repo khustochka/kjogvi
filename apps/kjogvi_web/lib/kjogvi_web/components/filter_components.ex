@@ -85,7 +85,7 @@ defmodule KjogviWeb.FilterComponents do
   def filter_pill(%{state: :inactive} = assigns) do
     ~H"""
     <span class={[
-      "text-stone-300 border border-stone-100 rounded bg-transparent",
+      "text-stone-400 border border-stone-200 rounded bg-transparent",
       @class
     ]}>
       {render_slot(@inner_block)}
@@ -98,7 +98,7 @@ defmodule KjogviWeb.FilterComponents do
     <.link
       patch={@href}
       class={[
-        "text-forest-600 bg-white border border-stone-300 rounded hover:bg-forest-50 active:bg-forest-100 active:border-forest-300 phx-click-loading:bg-forest-50 phx-click-loading:border-forest-200 transition-colors no-underline",
+        "text-forest-600 bg-white border border-stone-400 rounded hover:bg-forest-50 active:bg-forest-100 active:border-forest-300 phx-click-loading:bg-forest-50 phx-click-loading:border-forest-200 transition-colors no-underline",
         @class
       ]}
     >
