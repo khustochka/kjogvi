@@ -201,8 +201,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
           slug: "no-parent-spot",
           name_en: "No Parent Spot",
           iso_code: "",
-          is_private: "false",
-          is_patch: "false"
+          is_private: "false"
         }
       )
       |> render_change()
