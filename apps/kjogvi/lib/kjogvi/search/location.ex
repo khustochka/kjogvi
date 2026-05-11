@@ -1,8 +1,18 @@
 defmodule Kjogvi.Search.Location do
   @moduledoc """
-  Location search functionality with full name matching.
-  Searches by word components with priority on word beginnings.
-  Searches all locations including hidden ones by English name.
+  Location search with priority ordering.
+
+  Matches against `name_en`, `slug`, and `iso_code` (case-insensitive contains).
+  Results are sorted by:
+
+  1. Exact match on `iso_code`, `name_en`, or `slug`
+  2. `name_en` or `slug` starts with the term
+  3. A word in `name_en` or `slug` starts with the term
+  4. Term appears anywhere
+
+  Returns full `Location` structs with `cached_parent`, `cached_city`,
+  `cached_subdivision`, and `cached_country` preloaded so callers can
+  derive display names (e.g. `Location.long_name/1`).
   """
 
   import Ecto.Query
@@ -10,72 +20,60 @@ defmodule Kjogvi.Search.Location do
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
 
-  @limit 10
+  @default_limit 20
+  @word_split ~r/[\s\-\[\]\(\),'"]+/
 
-  @doc """
-  Search for locations by name.
+  def search_locations(term, opts \\ [])
 
-  Searches all locations (including hidden) by their full English name (hierarchical).
-  Results are prioritized by:
-  1. Full match of English name
-  2. Name starts with query
-  3. Name starts with a word in the name
-  4. Name contains query (words separated by space, dash, brackets, commas, quotes)
+  def search_locations(term, opts) when is_binary(term) do
+    case String.trim(term) do
+      "" ->
+        []
 
-  ## Examples
-
-      iex> search_locations("park")
-      [%{id: 1, name: "Central Park, New York, USA"}, ...]
-
-      iex> search_locations("Central")
-      [%{id: 1, name: "Central Park, New York, USA"}, ...]
-  """
-  def search_locations(query_text) when is_binary(query_text) and byte_size(query_text) > 0 do
-    query_text = String.downcase(String.trim(query_text))
-
-    Location
-    |> preload([:cached_parent, :cached_city, :cached_subdivision, :cached_country])
-    |> Repo.all()
-    |> Enum.filter(&matches_query?(&1, query_text))
-    |> Enum.sort_by(&sort_priority(&1, query_text))
-    |> Enum.take(@limit)
-    |> Enum.map(fn loc ->
-      %{id: loc.id, name_en: loc.name_en, long_name: Location.long_name(loc)}
-    end)
-  end
-
-  def search_locations(_), do: []
-
-  defp matches_query?(location, query_text) do
-    name_lower = String.downcase(Location.full_name(location) || "")
-
-    String.contains?(name_lower, query_text)
-  end
-
-  defp sort_priority(location, query_text) do
-    name_lower = String.downcase(Location.full_name(location) || "")
-
-    cond do
-      # Exact match has highest priority
-      name_lower == query_text ->
-        {0, ""}
-
-      # Starts with query has second priority
-      String.starts_with?(name_lower, query_text) ->
-        {1, name_lower}
-
-      # Word-start matches have third priority
-      starts_with_word?(name_lower, query_text) ->
-        {2, name_lower}
-
-      # Contains anywhere has lowest priority
-      true ->
-        {3, name_lower}
+      trimmed ->
+        do_search(trimmed, opts)
     end
   end
 
-  defp starts_with_word?(text, query) do
-    words = String.split(text, ~r/[\s\-\[\]\(\),'"]+/)
-    Enum.any?(words, &String.starts_with?(&1, query))
+  def search_locations(_, _), do: []
+
+  defp do_search(term, opts) do
+    limit = Keyword.get(opts, :limit, @default_limit)
+    ilike_term = "%#{term}%"
+    term_lower = String.downcase(term)
+
+    Location
+    |> where(
+      [l],
+      ilike(l.name_en, ^ilike_term) or
+        ilike(l.slug, ^ilike_term) or
+        ilike(l.iso_code, ^ilike_term)
+    )
+    |> preload([:cached_parent, :cached_city, :cached_subdivision, :cached_country])
+    |> Repo.all()
+    |> Enum.sort_by(&sort_priority(&1, term_lower))
+    |> Enum.take(limit)
+  end
+
+  defp sort_priority(location, term) do
+    name = location.name_en |> to_string() |> String.downcase()
+    slug = location.slug |> to_string() |> String.downcase()
+    iso = location.iso_code |> to_string() |> String.downcase()
+
+    bucket =
+      cond do
+        iso == term or name == term or slug == term -> 0
+        String.starts_with?(name, term) or String.starts_with?(slug, term) -> 1
+        word_start_match?(name, term) or word_start_match?(slug, term) -> 2
+        true -> 3
+      end
+
+    {bucket, name}
+  end
+
+  defp word_start_match?(text, term) do
+    text
+    |> String.split(@word_split, trim: true)
+    |> Enum.any?(&String.starts_with?(&1, term))
   end
 end

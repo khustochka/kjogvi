@@ -33,6 +33,7 @@ defmodule Kjogvi.GeoFixtures do
         :location_type,
         :ancestry,
         :is_private,
+        :iso_code,
         :public_index,
         :cached_country_id,
         :cached_subdivision_id

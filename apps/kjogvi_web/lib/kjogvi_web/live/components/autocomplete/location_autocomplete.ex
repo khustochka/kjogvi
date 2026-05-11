@@ -12,6 +12,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocomplete do
 
   use KjogviWeb, :html
 
+  alias Kjogvi.Geo.Location
   alias Kjogvi.Search
   alias KjogviWeb.Live.Components.Autocomplete
   alias KjogviWeb.Live.Components.Autocomplete.Highlight
@@ -45,7 +46,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocomplete do
       errors={@errors}
     >
       <:result :let={%{result: result, term: term}}>
-        <Highlight.highlighted_text text={result.long_name} term={term} />
+        <Highlight.highlighted_text text={Location.long_name(result)} term={term} />
       </:result>
     </.live_component>
     """

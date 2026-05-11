@@ -4,6 +4,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Geo
+  alias Kjogvi.Search
   alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
   @impl true
@@ -42,7 +43,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
     search_results =
       if String.length(search_term) >= 2 do
-        Geo.search_locations(search_term)
+        Search.Location.search_locations(search_term)
       else
         []
       end

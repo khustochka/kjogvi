@@ -321,53 +321,6 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "search_locations/2" do
-    test "finds locations by name" do
-      insert(:location, name_en: "Assiniboine Park")
-      insert(:location, name_en: "Fort Whyte")
-
-      results = Geo.search_locations("Assiniboine")
-      assert length(results) == 1
-      assert hd(results).name_en == "Assiniboine Park"
-    end
-
-    test "finds locations by slug" do
-      insert(:location, slug: "assiniboine-park", name_en: "Assiniboine Park")
-
-      results = Geo.search_locations("assiniboine-park")
-      assert length(results) == 1
-    end
-
-    test "finds locations by iso_code" do
-      insert(:location, iso_code: "CA", name_en: "Canada", location_type: "country")
-
-      results = Geo.search_locations("CA")
-      assert length(results) == 1
-    end
-
-    test "search is case-insensitive" do
-      insert(:location, name_en: "Assiniboine Park")
-
-      results = Geo.search_locations("assiniboine")
-      assert length(results) == 1
-    end
-
-    test "respects limit option" do
-      for i <- 1..5 do
-        insert(:location, name_en: "Park #{i}")
-      end
-
-      results = Geo.search_locations("Park", limit: 3)
-      assert length(results) == 3
-    end
-
-    test "returns empty list for no matches" do
-      insert(:location, name_en: "Assiniboine Park")
-
-      assert Geo.search_locations("Nonexistent") == []
-    end
-  end
-
   describe "get_locations/0" do
     test "returns all locations with card counts" do
       location = insert(:location)

@@ -198,12 +198,6 @@ defmodule Kjogvi.Geo do
     |> Repo.one()
   end
 
-  def search_locations(term, opts \\ []) do
-    Location
-    |> Location.Query.search(term, opts)
-    |> Repo.all()
-  end
-
   def cards_count(location_id) do
     from(c in Kjogvi.Birding.Card,
       where: c.location_id == ^location_id,

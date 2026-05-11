@@ -278,18 +278,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   # Display helpers - get names from nested structs
 
-  # On edit load, the location is a full struct with preloaded associations,
-  # so we compute long_name from them. After select_location, it's a minimal
-  # struct where name_en already holds the long name from search results.
-  defp location_display(%{location: %Geo.Location{} = loc}) do
-    if Ecto.assoc_loaded?(loc.cached_city) do
-      Geo.Location.long_name(loc)
-    else
-      # Name_en here is actually the long name from search results
-      loc.name_en || ""
-    end
-  end
-
+  defp location_display(%{location: %Geo.Location{} = loc}), do: Geo.Location.long_name(loc)
   defp location_display(_), do: ""
 
   # Callbacks for AutocompleteSearch components
@@ -303,13 +292,8 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   end
 
   def handle_info({:autocomplete_select, "location_selected", %{"result" => result}}, socket) do
-    location_struct = %Geo.Location{
-      id: result.id,
-      name_en: result.long_name
-    }
-
     card = socket.assigns.card
-    updated_card = %{card | location_id: result.id, location: location_struct}
+    updated_card = %{card | location_id: result.id, location: result}
 
     {:noreply, assign_card(socket, updated_card)}
   end
