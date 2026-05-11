@@ -22,7 +22,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocomplete do
   attr :current_value, :string, default: ""
 
   attr :label, :string, default: nil
-  attr :placeholder, :string, default: "Search and select location..."
+  attr :placeholder, :string, default: nil
   attr :on_select_event, :string, required: true
   attr :on_select_params, :map, default: %{}
   attr :compact, :boolean, default: false

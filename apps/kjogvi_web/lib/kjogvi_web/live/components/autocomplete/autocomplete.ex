@@ -80,8 +80,7 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
      |> assign(:search_results, [])
      |> assign(:search_term, nil)
      |> assign(:is_open, false)
-     |> assign(:highlighted_index, 0)
-     |> assign(:ignore_next_search, false)}
+     |> assign(:highlighted_index, 0)}
   end
 
   @impl true
@@ -103,27 +102,22 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
 
   @impl true
   def handle_event("search", %{"value" => query}, socket) do
-    cond do
-      socket.assigns.ignore_next_search ->
-        {:noreply, assign(socket, :ignore_next_search, false)}
+    if query == socket.assigns.search_term do
+      {:noreply, socket}
+    else
+      results =
+        if String.length(query) >= socket.assigns.min_length do
+          execute_search(socket.assigns.search_fn, query)
+        else
+          []
+        end
 
-      query == socket.assigns.search_term ->
-        {:noreply, socket}
-
-      true ->
-        results =
-          if String.length(query) >= socket.assigns.min_length do
-            execute_search(socket.assigns.search_fn, query)
-          else
-            []
-          end
-
-        {:noreply,
-         socket
-         |> assign(:search_term, query)
-         |> assign(:search_results, results)
-         |> assign(:is_open, results != [])
-         |> assign(:highlighted_index, 0)}
+      {:noreply,
+       socket
+       |> assign(:search_term, query)
+       |> assign(:search_results, results)
+       |> assign(:is_open, results != [])
+       |> assign(:highlighted_index, 0)}
     end
   end
 
@@ -135,13 +129,17 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
   # but if the user had emptied the field first the gesture is treated
   # as a deselect.
   def handle_event("abandon", _params, socket) do
-    {:noreply, socket |> notify_clear_if_emptied() |> reset_search()}
+    cleared? = socket.assigns.search_term == "" and has_selection?(socket)
+    if cleared?, do: send_clear(socket)
+    {:noreply, reset_search(socket, cleared?)}
   end
 
   # Explicit × button (or any phx-click pushing the on_clear event).
   # Always notifies the parent if there was a committed selection.
   def handle_event("clear", _params, socket) do
-    {:noreply, socket |> notify_clear_if_selected() |> reset_search()}
+    cleared? = has_selection?(socket)
+    if cleared?, do: send_clear(socket)
+    {:noreply, reset_search(socket, cleared?)}
   end
 
   def handle_event("select_result", %{"index" => index_str}, socket) do
@@ -174,39 +172,20 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
     event_params = Map.put(socket.assigns.on_select_params, "result", result)
     send(self(), {:autocomplete_select, socket.assigns.on_select_event, event_params})
 
-    # Tab/Enter blur the input, which flushes any pending debounced
-    # phx-keyup="search" with the still-typed query. If a search was
-    # active when the user committed, skip exactly one such event so it
-    # doesn't reopen the dropdown right after we've selected. The flag
-    # is consumed by the next "search" event.
-    expecting_flush = socket.assigns.search_term != nil
-
-    {:noreply,
-     socket
-     |> reset_search()
-     |> assign(:ignore_next_search, expecting_flush)}
+    {:noreply, reset_search(socket)}
   end
 
-  defp reset_search(socket) do
+  # When `cleared?` is true, keep `search_term` as `""` instead of
+  # `nil` so the field renders empty until the parent's re-render with
+  # the cleared `input_value` arrives. Otherwise `display_value` would
+  # briefly show the stale committed value between abandon and the
+  # async `:autocomplete_clear` message.
+  defp reset_search(socket, cleared? \\ false) do
     socket
-    |> assign(:search_term, nil)
+    |> assign(:search_term, if(cleared?, do: "", else: nil))
     |> assign(:search_results, [])
     |> assign(:is_open, false)
     |> assign(:highlighted_index, 0)
-  end
-
-  # Notifies parent only when the user *emptied* the field while a
-  # selection existed. Used by abandon (Escape, click-away).
-  defp notify_clear_if_emptied(socket) do
-    user_emptied = socket.assigns.search_term == ""
-    if user_emptied and has_selection?(socket), do: send_clear(socket)
-    socket
-  end
-
-  # Notifies parent whenever a selection exists. Used by clear (× button).
-  defp notify_clear_if_selected(socket) do
-    if has_selection?(socket), do: send_clear(socket)
-    socket
   end
 
   defp has_selection?(socket) do
@@ -255,6 +234,7 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
         <div
           :if={@is_open and @search_results != []}
           id={"#{@id}-results"}
+          tabindex="-1"
           class="absolute top-full left-0 right-0 z-10 mt-1 border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto bg-white divide-y divide-gray-200"
         >
           <div

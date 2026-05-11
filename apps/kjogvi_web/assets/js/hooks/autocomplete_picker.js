@@ -18,12 +18,35 @@
 // the server's `search`/`clear` handlers — this hook does not push
 // `clear` itself.
 //
+// Blur swallows the next keyup: Phoenix flushes pending debounced
+// `phx-keyup` events on blur, which would otherwise re-run the search
+// with the still-typed query and reopen the dropdown under a field the
+// user has already left. A capture-phase listener consumes exactly one
+// post-blur keyup before LiveView sees it.
+//
 // Also listens for a server-pushed event named `${id}:highlight` and
 // scrolls the matching result into view.
 const navKeys = new Set(["ArrowDown", "ArrowUp", "Enter", "Escape", "Tab"])
 
 export default {
   mounted() {
+    this.swallowNextKeyup = false
+
+    this.el.addEventListener("blur", () => {
+      this.swallowNextKeyup = true
+    })
+
+    this.el.addEventListener(
+      "keyup",
+      (e) => {
+        if (this.swallowNextKeyup) {
+          this.swallowNextKeyup = false
+          e.stopImmediatePropagation()
+        }
+      },
+      true,
+    )
+
     this.el.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         // Suppress the browser's native "clear input on Escape" for

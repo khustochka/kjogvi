@@ -16,6 +16,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocompleteTest do
         hidden_value=""
         current_value="Currently selected location"
         label="Location"
+        placeholder="Pick a location"
         on_select_event="location_selected"
       />
       """
@@ -30,7 +31,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocompleteTest do
     {:ok, _lv, html} = live_isolated(conn, TestLive)
 
     assert html =~ "Location"
-    assert html =~ "Search and select location..."
+    assert html =~ "Pick a location"
     assert html =~ "Currently selected location"
     assert html =~ ~s(name="card[location_id]")
   end

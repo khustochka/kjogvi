@@ -89,6 +89,7 @@ defmodule KjogviWeb.Live.Components.Autocomplete.SearchInput do
       <button
         :if={@value != ""}
         type="button"
+        tabindex="-1"
         phx-target={@target}
         phx-click={@on_clear}
         aria-label="Clear"
