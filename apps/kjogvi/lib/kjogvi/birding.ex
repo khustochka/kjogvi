@@ -76,22 +76,22 @@ defmodule Kjogvi.Birding do
     %Card{}
     |> Card.changeset(attrs)
     |> Repo.insert()
-    |> tap_invalidate_log_cache(user.id)
+    |> tap_invalidate_logbook_cache(user.id)
   end
 
   def update_card(card, attrs) do
     card
     |> Card.changeset(attrs)
     |> Repo.update()
-    |> tap_invalidate_log_cache(card.user_id)
+    |> tap_invalidate_logbook_cache(card.user_id)
   end
 
-  defp tap_invalidate_log_cache({:ok, _} = result, user_id) do
+  defp tap_invalidate_logbook_cache({:ok, _} = result, user_id) do
     Kjogvi.Birding.Logbook.Cache.invalidate(user_id)
     result
   end
 
-  defp tap_invalidate_log_cache(other, _user_id), do: other
+  defp tap_invalidate_logbook_cache(other, _user_id), do: other
 
   def new_card(user) do
     %Card{

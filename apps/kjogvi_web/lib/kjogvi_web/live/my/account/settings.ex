@@ -138,7 +138,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                 </tr>
               </thead>
               <tbody>
-                <%= for {row, i} <- Enum.with_index(@log_location_rows) do %>
+                <%= for {row, i} <- Enum.with_index(@logbook_location_rows) do %>
                   <tr class="border-b border-zinc-300">
                     <td class="py-2">
                       <input
@@ -231,7 +231,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     book_options =
       Enum.map(books, fn b -> {"#{b.name} (#{b.slug}/#{b.version})", "#{b.slug}/#{b.version}"} end)
 
-    log_location_rows = build_log_location_rows(user)
+    logbook_location_rows = build_logbook_location_rows(user)
 
     socket =
       socket
@@ -244,7 +244,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
       |> assign(:settings_form, to_form(settings_changeset))
       |> assign(:ebird_password_show, false)
       |> assign(:book_options, book_options)
-      |> assign(:log_location_rows, log_location_rows)
+      |> assign(:logbook_location_rows, logbook_location_rows)
 
     {:ok, socket}
   end
@@ -311,10 +311,10 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     end
   end
 
-  # Build the list of rows for the log settings table.
+  # Build the list of rows for the logbook settings table.
   # World + all countries/regions/lifelist filters + any locations that already
   # have settings but aren't otherwise in the list (e.g. private ones).
-  defp build_log_location_rows(user) do
+  defp build_logbook_location_rows(user) do
     logbook_settings = user.extras.logbook_settings
     existing_settings = Map.new(logbook_settings, &{&1.location_id, &1})
 
@@ -335,7 +335,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
         []
       end
 
-    sorted_locations = sort_log_locations(offered_locations ++ extra_locations)
+    sorted_locations = sort_logbook_locations(offered_locations ++ extra_locations)
 
     # World row first
     world_setting = Map.get(existing_settings, nil)
@@ -365,7 +365,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
   # (alphabetical), each country immediately followed by its children. Inside
   # each country block, regions come first (alphabetical), then any other
   # sub-country locations (specials, etc.) alphabetical.
-  defp sort_log_locations(locations) do
+  defp sort_logbook_locations(locations) do
     {countries, others} = Enum.split_with(locations, &(&1.location_type == "country"))
     country_ids = MapSet.new(countries, & &1.id)
 

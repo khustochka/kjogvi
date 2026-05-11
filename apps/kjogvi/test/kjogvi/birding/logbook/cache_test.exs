@@ -46,17 +46,17 @@ defmodule Kjogvi.Birding.Logbook.CacheTest do
 
     test "different key parts produce independent cache entries" do
       Cache.fetch({3, 5, 93}, fn -> :home end)
-      Cache.fetch({3, 366, 366}, fn -> :log_page end)
+      Cache.fetch({3, 366, 366}, fn -> :logbook_page end)
 
       assert Cache.fetch({3, 5, 93}, fn -> :recomputed end) == :home
-      assert Cache.fetch({3, 366, 366}, fn -> :recomputed end) == :log_page
+      assert Cache.fetch({3, 366, 366}, fn -> :recomputed end) == :logbook_page
     end
   end
 
   describe "invalidate/1" do
     test "evicts every known variant for the given user so the next fetch recomputes" do
       Cache.fetch({4, 5, 93}, fn -> :home end)
-      Cache.fetch({4, 366, 366}, fn -> :log_page end)
+      Cache.fetch({4, 366, 366}, fn -> :logbook_page end)
 
       :ok = Cache.invalidate(4)
 
