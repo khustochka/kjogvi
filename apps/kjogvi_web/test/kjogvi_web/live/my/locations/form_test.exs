@@ -70,45 +70,53 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     test "leaves cached_parent empty when parent is a country", %{conn: conn} do
       country = insert(:location, name_en: "Canada", location_type: "country")
 
-      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{country.id}")
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{country.id}")
 
-      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
-      assert html =~ ~s|name="location[cached_parent_id]" value=""|
-      assert html =~ ~s|name="location[cached_city_id]" value=""|
-      assert html =~ ~s|name="location[cached_subdivision_id]" value=""|
+      assert view |> element("#location_cached_country_value") |> render() =~ "Canada"
+
+      assert view |> element("#location_cached_subdivision_value span") |> render() =~
+               ~r/>\s*<\/span>/
+
+      assert render(view) =~ ~s|name="location[cached_parent_id]" value=""|
+      assert render(view) =~ ~s|name="location[cached_city_id]" value=""|
     end
 
     test "leaves cached_parent empty when parent is a region", %{conn: conn} do
-      %{country: country, region: region} = build_chain()
+      %{region: region} = build_chain()
 
-      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{region.id}")
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{region.id}")
 
-      assert html =~ ~s|name="location[cached_subdivision_id]" value="#{region.id}"|
-      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
-      assert html =~ ~s|name="location[cached_parent_id]" value=""|
-      assert html =~ ~s|name="location[cached_city_id]" value=""|
+      assert view |> element("#location_cached_subdivision_value") |> render() =~ "Manitoba"
+      assert view |> element("#location_cached_country_value") |> render() =~ "Canada"
+      assert render(view) =~ ~s|name="location[cached_parent_id]" value=""|
+      assert render(view) =~ ~s|name="location[cached_city_id]" value=""|
     end
 
     test "leaves cached_parent empty when parent is a city", %{conn: conn} do
-      %{country: country, region: region, city: city} = build_chain()
+      %{city: city} = build_chain()
 
-      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
 
-      assert html =~ ~s|name="location[cached_city_id]" value="#{city.id}"|
-      assert html =~ ~s|name="location[cached_subdivision_id]" value="#{region.id}"|
-      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
-      assert html =~ ~s|name="location[cached_parent_id]" value=""|
+      assert render(view) =~ ~s|name="location[cached_city_id]" value="#{city.id}"|
+      assert view |> element("#location_cached_subdivision_value") |> render() =~ "Manitoba"
+      assert view |> element("#location_cached_country_value") |> render() =~ "Canada"
+      assert render(view) =~ ~s|name="location[cached_parent_id]" value=""|
     end
 
     test "sets cached_parent to direct parent when parent is a continent", %{conn: conn} do
       continent = insert(:location, name_en: "Europe", location_type: "continent")
 
-      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{continent.id}")
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{continent.id}")
 
-      assert html =~ ~s|name="location[cached_parent_id]" value="#{continent.id}"|
-      assert html =~ ~s|name="location[cached_country_id]" value=""|
-      assert html =~ ~s|name="location[cached_city_id]" value=""|
-      assert html =~ ~s|name="location[cached_subdivision_id]" value=""|
+      assert render(view) =~ ~s|name="location[cached_parent_id]" value="#{continent.id}"|
+
+      assert view |> element("#location_cached_country_value span") |> render() =~
+               ~r/>\s*<\/span>/
+
+      assert view |> element("#location_cached_subdivision_value span") |> render() =~
+               ~r/>\s*<\/span>/
+
+      assert render(view) =~ ~s|name="location[cached_city_id]" value=""|
     end
 
     test "auto-fills cached_parent when parent has unclassified type", %{conn: conn} do
@@ -121,12 +129,12 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
           ancestry: [country.id, region.id, city.id]
         )
 
-      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{yard.id}")
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{yard.id}")
 
-      assert html =~ ~s|name="location[cached_parent_id]" value="#{yard.id}"|
-      assert html =~ ~s|name="location[cached_city_id]" value="#{city.id}"|
-      assert html =~ ~s|name="location[cached_subdivision_id]" value="#{region.id}"|
-      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
+      assert render(view) =~ ~s|name="location[cached_parent_id]" value="#{yard.id}"|
+      assert render(view) =~ ~s|name="location[cached_city_id]" value="#{city.id}"|
+      assert view |> element("#location_cached_subdivision_value") |> render() =~ "Manitoba"
+      assert view |> element("#location_cached_country_value") |> render() =~ "Canada"
     end
   end
 
@@ -144,10 +152,10 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
           ancestry: [country.id, yard.id]
         )
 
-      {:ok, _view, html} = live(conn, ~p"/my/locations/new?parent_id=#{feeder.id}")
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{feeder.id}")
 
-      assert html =~ ~s|name="location[cached_country_id]" value="#{country.id}"|
-      assert html =~ ~s|name="location[cached_parent_id]" value="#{feeder.id}"|
+      assert view |> element("#location_cached_country_value") |> render() =~ "Canada"
+      assert render(view) =~ ~s|name="location[cached_parent_id]" value="#{feeder.id}"|
     end
   end
 
@@ -177,8 +185,13 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
 
       assert html =~ ~s|name="location[parent_id]" value=""|
       assert html =~ ~s|name="location[cached_city_id]" value=""|
-      assert html =~ ~s|name="location[cached_subdivision_id]" value=""|
-      assert html =~ ~s|name="location[cached_country_id]" value=""|
+
+      assert view |> element("#location_cached_subdivision_value span") |> render() =~
+               ~r/>\s*<\/span>/
+
+      assert view |> element("#location_cached_country_value span") |> render() =~
+               ~r/>\s*<\/span>/
+
       assert html =~ ~s|name="location[cached_parent_id]" value=""|
 
       slug_input = view |> element("#location_slug") |> render()
@@ -223,80 +236,87 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert saved.cached_country_id == nil
     end
 
-    test "editing: manually changing a cached_* autocomplete persists on save", %{conn: conn} do
-      %{country: country} = build_chain()
-      other_country = insert(:location, name_en: "France", location_type: "country")
-      existing = insert(:location, name_en: "Existing", cached_country_id: country.id)
-
-      {:ok, view, _html} = live(conn, ~p"/my/locations/#{existing.slug}/edit")
-
-      assert render(view) =~
-               ~s|name="location[cached_country_id]" value="#{country.id}"|
-
-      send(
-        view.pid,
-        {:autocomplete_select, "cached_selected",
-         %{
-           "field" => "cached_country",
-           "result" => %{id: other_country.id, name_en: other_country.name_en}
-         }}
-      )
-
-      _ = render(view)
-
-      assert render(view) =~
-               ~s|name="location[cached_country_id]" value="#{other_country.id}"|
-
-      view
-      |> form("#location-form")
-      |> render_submit()
-
-      saved = Kjogvi.Repo.get!(Kjogvi.Geo.Location, existing.id)
-      assert saved.cached_country_id == other_country.id
-    end
-
-    test "manually changing a cached_* autocomplete persists on save", %{conn: conn} do
-      %{country: country} = build_chain()
-      other_country = insert(:location, name_en: "France", location_type: "country")
+    test "manually changing cached_city autocomplete persists on save", %{conn: conn} do
+      %{country: country, city: city} = build_chain()
+      other_city = insert(:location, name_en: "Brandon", location_type: "city")
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{country.id}")
-
-      # Sanity: cached_country_id is currently the original country.
-      assert render(view) =~
-               ~s|name="location[cached_country_id]" value="#{country.id}"|
 
       view
       |> form("#location-form",
         location: %{
-          slug: "manual-cached-spot",
-          name_en: "Manual Cached Spot"
+          slug: "manual-city-spot",
+          name_en: "Manual City Spot"
         }
       )
       |> render_change()
 
-      # User manually picks a different cached_country via the autocomplete.
       send(
         view.pid,
         {:autocomplete_select, "cached_selected",
          %{
-           "field" => "cached_country",
-           "result" => %{id: other_country.id, name_en: other_country.name_en}
+           "field" => "cached_city",
+           "result" => %{id: other_city.id, name_en: other_city.name_en}
          }}
       )
 
-      # Force a render to flush the message.
       _ = render(view)
 
       assert render(view) =~
-               ~s|name="location[cached_country_id]" value="#{other_country.id}"|
+               ~s|name="location[cached_city_id]" value="#{other_city.id}"|
 
       view
       |> form("#location-form")
       |> render_submit()
 
-      saved = Geo.location_by_slug("manual-cached-spot")
+      saved = Geo.location_by_slug("manual-city-spot")
       assert saved
-      assert saved.cached_country_id == other_country.id
+      assert saved.cached_city_id == other_city.id
+      # Country is derived from ancestry, unaffected by cached_city change.
+      assert saved.cached_country_id == country.id
+      refute saved.cached_city_id == city.id
+    end
+  end
+
+  describe "auto-derived cached country/subdivision on save" do
+    test "saving with a parent populates cached_country and cached_subdivision", %{conn: conn} do
+      %{country: country, region: region, city: city} = build_chain()
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "derived-spot",
+          name_en: "Derived Spot",
+          is_private: "false"
+        }
+      )
+      |> render_submit()
+
+      saved = Geo.location_by_slug("derived-spot")
+      assert saved
+      assert saved.cached_country_id == country.id
+      assert saved.cached_subdivision_id == region.id
+    end
+
+    test "labels update live when parent is changed via autocomplete", %{conn: conn} do
+      %{country: canada} = build_chain()
+      france = insert(:location, name_en: "France", location_type: "country")
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{canada.id}")
+
+      assert view |> element("#location_cached_country_value") |> render() =~ "Canada"
+
+      send(
+        view.pid,
+        {:autocomplete_select, "parent_selected",
+         %{"result" => %{id: france.id, name_en: "France"}}}
+      )
+
+      _ = render(view)
+
+      assert view |> element("#location_cached_country_value") |> render() =~ "France"
     end
   end
 

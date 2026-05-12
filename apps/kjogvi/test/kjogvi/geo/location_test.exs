@@ -54,6 +54,73 @@ defmodule Kjogvi.Geo.LocationTest do
       assert errors[:slug]
       assert errors[:name_en]
     end
+
+    test "derives cached_country_id and cached_subdivision_id from ancestry" do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+
+      region =
+        insert(:location, name_en: "Manitoba", location_type: "region", ancestry: [country.id])
+
+      changeset =
+        Location.changeset(
+          %Location{slug: "spot", name_en: "Spot", is_private: false},
+          %{"parent_id" => region.id}
+        )
+
+      assert get_change(changeset, :cached_country_id) == country.id
+      assert get_change(changeset, :cached_subdivision_id) == region.id
+    end
+
+    test "leaves cached_country_id nil when ancestry has no country" do
+      continent = insert(:location, name_en: "Europe", location_type: "continent")
+
+      changeset =
+        Location.changeset(
+          %Location{slug: "spot", name_en: "Spot", is_private: false},
+          %{"parent_id" => continent.id}
+        )
+
+      refute get_change(changeset, :cached_country_id)
+      refute get_change(changeset, :cached_subdivision_id)
+    end
+
+    test "clears cached_country_id and cached_subdivision_id when parent removed" do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+
+      region =
+        insert(:location, name_en: "Manitoba", location_type: "region", ancestry: [country.id])
+
+      existing =
+        insert(:location,
+          name_en: "Spot",
+          ancestry: [country.id, region.id],
+          cached_country_id: country.id,
+          cached_subdivision_id: region.id
+        )
+
+      changeset = Location.changeset(existing, %{"parent_id" => nil})
+
+      assert get_change(changeset, :cached_country_id) == nil
+      assert get_change(changeset, :cached_subdivision_id) == nil
+    end
+
+    test "ignores user-supplied cached_country_id and cached_subdivision_id" do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+      other_country = insert(:location, name_en: "France", location_type: "country")
+
+      changeset =
+        Location.changeset(
+          %Location{slug: "spot", name_en: "Spot", is_private: false},
+          %{
+            "parent_id" => country.id,
+            "cached_country_id" => other_country.id,
+            "cached_subdivision_id" => 999_999
+          }
+        )
+
+      assert get_change(changeset, :cached_country_id) == country.id
+      refute get_change(changeset, :cached_subdivision_id)
+    end
   end
 
   describe "full_name/1" do

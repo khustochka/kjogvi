@@ -77,8 +77,6 @@ defmodule Kjogvi.Geo.Location do
     parent_id
     cached_parent_id
     cached_city_id
-    cached_subdivision_id
-    cached_country_id
   )a
 
   @location_types ~w(continent country region city raion special)
@@ -97,7 +95,42 @@ defmodule Kjogvi.Geo.Location do
     |> validate_inclusion(:location_type, @location_types)
     |> unique_constraint(:slug)
     |> put_ancestry()
+    |> put_cached_admin()
     |> put_cached_public_location()
+  end
+
+  defp put_cached_admin(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+
+  defp put_cached_admin(changeset) do
+    ancestry = get_field(changeset, :ancestry) || []
+
+    {country_id, subdivision_id} = derive_admin_ids(ancestry)
+
+    changeset
+    |> put_change(:cached_country_id, country_id)
+    |> put_change(:cached_subdivision_id, subdivision_id)
+  end
+
+  defp derive_admin_ids([]), do: {nil, nil}
+
+  defp derive_admin_ids(ancestry) do
+    by_id =
+      from(l in __MODULE__,
+        where: l.id in ^ancestry,
+        select: {l.id, l.location_type}
+      )
+      |> Repo.all()
+      |> Map.new()
+
+    ancestry
+    |> Enum.reverse()
+    |> Enum.reduce({nil, nil}, fn id, {country, subdivision} ->
+      case {by_id[id], country, subdivision} do
+        {"country", nil, _} -> {id, subdivision}
+        {"region", _, nil} -> {country, id}
+        _ -> {country, subdivision}
+      end
+    end)
   end
 
   defp put_ancestry(changeset) do

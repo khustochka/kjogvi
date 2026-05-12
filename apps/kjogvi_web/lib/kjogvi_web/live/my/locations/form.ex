@@ -252,7 +252,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       </div>
 
       <p class="text-stone-500 text-sm pt-2">
-        These fields are presentational, they should be modified separately from ancestry
+        These fields determine the segments of the location's full display name.
       </p>
 
       <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -270,19 +270,15 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           on_select_event="cached_selected"
           on_select_params={%{"field" => "cached_city"}}
         />
-        <.autocomplete_row
-          field="cached_subdivision"
+        <.cached_label
+          id="location_cached_subdivision"
           label="Cached subdivision"
           current={@location.cached_subdivision}
-          on_select_event="cached_selected"
-          on_select_params={%{"field" => "cached_subdivision"}}
         />
-        <.autocomplete_row
-          field="cached_country"
+        <.cached_label
+          id="location_cached_country"
           label="Cached country"
           current={@location.cached_country}
-          on_select_event="cached_selected"
-          on_select_params={%{"field" => "cached_country"}}
         />
       </div>
 
@@ -358,6 +354,25 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       on_select_event={@on_select_event}
       on_select_params={@on_select_params}
     />
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :label, :string, required: true
+  attr :current, :any, default: nil
+
+  defp cached_label(assigns) do
+    ~H"""
+    <div id={@id}>
+      <span class="block text-sm font-semibold leading-6 text-zinc-800">{@label}</span>
+      <div
+        id={"#{@id}_value"}
+        aria-disabled="true"
+        class="mt-2 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-500 sm:text-sm sm:leading-6"
+      >
+        <span class="block min-h-6">{@current && @current.name_en}</span>
+      </div>
+    </div>
     """
   end
 
@@ -468,7 +483,5 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     |> Map.put("parent_id", location.parent_id)
     |> Map.put("cached_parent_id", location.cached_parent_id)
     |> Map.put("cached_city_id", location.cached_city_id)
-    |> Map.put("cached_subdivision_id", location.cached_subdivision_id)
-    |> Map.put("cached_country_id", location.cached_country_id)
   end
 end
