@@ -42,4 +42,9 @@
    mix test
    ```
 
+## Credits
+
+The bicycle icon is from [Font Awesome Free](https://fontawesome.com/) 6.x
+(`solid/bicycle`), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 [^1]: Pronounced [ˈtʃɛkvɪ].

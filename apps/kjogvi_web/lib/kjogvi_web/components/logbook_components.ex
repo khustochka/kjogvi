@@ -64,7 +64,7 @@ defmodule KjogviWeb.LogbookComponents do
     ~H"""
     <.icon
       :if={@entry.type == :life and is_nil(@entry.area)}
-      name="fa-solid-star"
+      name="hero-star-solid"
       class="w-4 h-4 text-amber-300 mr-px"
     />
     <span phx-no-format>{singular_prefix(@entry)} <.total_badge
@@ -86,7 +86,7 @@ defmodule KjogviWeb.LogbookComponents do
     ~H"""
     <.icon
       :if={@entry.type == :life and is_nil(@entry.area)}
-      name="fa-solid-star"
+      name="hero-star-solid"
       class="w-4 h-4 text-amber-300 mr-px"
     />
     <span phx-no-format>{plural_prefix(@entry)} <.total_badge

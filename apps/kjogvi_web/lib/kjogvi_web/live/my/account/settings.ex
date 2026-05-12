@@ -147,7 +147,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                         value={row.location_id || ""}
                       />
                       <span :if={row.location_id == nil} class="inline-flex items-center gap-1">
-                        <.icon name="fa-solid-earth-americas" class="h-4 w-4 text-gray-500" /> {row.name}
+                        <.icon name="hero-globe-americas-solid" class="h-4 w-4 text-gray-500" /> {row.name}
                       </span>
                       <span
                         :if={row.location_id != nil && !row.nested && row.flag}
