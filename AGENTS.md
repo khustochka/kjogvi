@@ -40,7 +40,7 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 - **Router**: Routes in `:require_authenticated_user` pipeline; use `:as` option for scopes. Single-user mode via `Kjogvi.Config.with_single_user/1`
 - **Forms**: Use `to_form(changeset)` in LiveView, access via `@form[:field]` in templates. Never pass `@changeset` to templates
 - **Components**: Use `<.icon>`, `<.input>`, `<.link>` components
-- **Icons**: there are both Heroicons and FontAwesome icons
+- **Icons**: Heroicons via the `<.icon>` component (e.g. `name="hero-star-solid"`); the bicycle is a bundled inline-SVG variant: `<.icon name="bicycle" />`
 - **Birding Data** ([kjogvi/lib/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex)): `Kjogvi.Birding` context, `Card`/`Location` models with privacy settings (`is_private`)
 - **Taxonomy** ([ornithologue](./apps/ornithologue/)): Use `Kjogvi.OrnithoRepo`. Mounted at `/taxonomy` with `ornitho_web` macro
 - **Streams**: Use `stream(socket, :items, list)` + `phx-update="stream"`. Not enumerable—refetch and reset to filter. Track counts separately
@@ -70,7 +70,7 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 1. Missing `@current_scope` in routes—use correct `:require_authenticated_user` pipeline
 2. Passing `@changeset` to templates—use `@form` from `to_form/2`
 3. Using lists instead of streams—causes memory bloat
-4. Raw Heroicons/FontAwesome icons instead of `<.icon>` component  
+4. Raw Heroicons instead of `<.icon>` component  
 5. Mixing `Kjogvi.Repo` vs `Kjogvi.OrnithoRepo` — migrations run separately
 
 ## Notes for AI Agents
