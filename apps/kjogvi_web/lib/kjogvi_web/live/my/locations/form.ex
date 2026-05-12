@@ -295,7 +295,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         </div>
       </div>
 
-      <.map_picker location={@location} />
+      <.map_picker lat={@form[:lat]} lon={@form[:lon]} parent={@location.parent} />
 
       <div class="flex flex-wrap items-end gap-4 pt-2">
         <div class="w-40">
@@ -310,7 +310,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           />
         </div>
         <button
-          :if={@location.lat && @location.lon}
+          :if={@form[:lat].value && @form[:lon].value}
           type="button"
           phx-click="map_cleared"
           class="mb-1 inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 rounded"
@@ -376,15 +376,15 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     """
   end
 
-  attr :location, :map, required: true
+  attr :lat, Phoenix.HTML.FormField, required: true
+  attr :lon, Phoenix.HTML.FormField, required: true
+  attr :parent, :any, default: nil
 
   defp map_picker(assigns) do
-    parent = Map.get(assigns.location, :parent)
-
     assigns =
       assigns
-      |> assign(:parent_lat, parent && parent.lat)
-      |> assign(:parent_lon, parent && parent.lon)
+      |> assign(:parent_lat, assigns.parent && assigns.parent.lat)
+      |> assign(:parent_lon, assigns.parent && assigns.parent.lon)
 
     ~H"""
     <div class="pt-2">
@@ -395,8 +395,8 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       <div
         id="location-map-picker"
         phx-hook="LocationMapPicker"
-        data-lat={@location.lat && to_string(@location.lat)}
-        data-lon={@location.lon && to_string(@location.lon)}
+        data-lat={@lat.value && to_string(@lat.value)}
+        data-lon={@lon.value && to_string(@lon.value)}
         data-parent-lat={@parent_lat && to_string(@parent_lat)}
         data-parent-lon={@parent_lon && to_string(@parent_lon)}
         class="w-full h-80 rounded-lg border border-stone-200 overflow-hidden bg-stone-100"
