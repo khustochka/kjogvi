@@ -62,7 +62,7 @@ defmodule Kjogvi.MixProject do
       {:postgrex, "~> 0.22"},
       {:cachex, "~> 4.0"},
       {:jason, "~> 1.2"},
-      {:swoosh, "~> 1.18"},
+      {:swoosh, "~> 1.25"},
       {:req, "~> 0.5"},
       {:http_cookie, "~> 0.9"},
       {:floki, ">= 0.30.0"},
