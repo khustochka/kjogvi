@@ -219,7 +219,7 @@ end
 ## Form
 
 ```elixir
-# 1. A form for users to enter a GitHub repository name
+# 1. A form
 form =
   Kino.Control.form(
     [
@@ -241,7 +241,8 @@ form =
         {12, "Top 12"}, 
         {25, "Top 25"}, 
         {50, "Top 50"}, 
-        {100, "Top 100"}
+        {100, "Top 100"},
+        {nil, "All (by taxonomy)"}
       ])
     ],
     submit: "Submit"
@@ -256,6 +257,8 @@ output_frame = Kino.Frame.new()
 layout_frame = Kino.Layout.grid([form, clear_button, output_frame], boxed: true)
 ```
 
+<!-- livebook:{"output_size":"full"} -->
+
 ```elixir
 # 1. Listen for form submissions
 Kino.listen(form, fn form_submission ->
@@ -267,9 +270,17 @@ Kino.listen(form, fn form_submission ->
       num_species: num_species}} = form_submission
 
   Kino.Frame.clear(output_frame)
-  
-  counts
-  |> Enum.take(num_species)
+
+  base = 
+    if is_nil(num_species) do 
+      counts
+      |> Enum.sort_by(fn {sp_id, _} -> species[sp_id].sort_order end)
+    else  
+      counts
+      |> Enum.take(num_species)
+    end
+
+  base  
   |> Enum.each(fn {sp_id, _} -> 
     chart = ObsBarChart.new(
       species[sp_id], 
@@ -278,6 +289,7 @@ Kino.listen(form, fn form_submission ->
       time_frame)
     Kino.Frame.append(output_frame, chart)
   end)
+
   
   # Kino.Layout.grid([output_frame], boxed: true)
 
@@ -290,4 +302,4 @@ end)
 Kino.Frame.clear(output_frame)
 ```
 
-<!-- livebook:{"offset":7142,"stamp":{"token":"XCP.9ANkigbPleHepMfET-Eu-QKJu0ocEqV6GZDNdjuU7o0AySFr_ehQ7F6xA2QJEDIjzdQ0SNlwJ1QIxgTozb1tXgzDxkyB1eDahDZKTmuaGjXvNwh___SOM_LmekOx","version":2}} -->
+<!-- livebook:{"offset":7336,"stamp":{"token":"XCP.I18wB6K45b-KTCDR4ee-rg-KVyATzRS7JyGGXTJfNv9tLnKxH4keLZpVvEBtK73cgM1t7RFSpoQTsd4rb8q4S4mmWXC2D6b-N9i_rVhiFl0ZxpGlG2hmY44HCMzs","version":2}} -->
