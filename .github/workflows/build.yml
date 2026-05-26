@@ -10,9 +10,7 @@ on:
         type: string
         default: public.ecr.aws
     secrets:
-      DOCKER_AWS_ACCESS_KEY_ID:
-        required: true
-      DOCKER_AWS_SECRET_ACCESS_KEY:
+      AWS_ROLE_ARN:
         required: true
     outputs:
       image_tag:
@@ -34,6 +32,9 @@ on:
           - ghcr.io
 env:
   REGISTRY_IMAGE: ${{ inputs.image_registry == 'ghcr.io' &&  'ghcr.io/khustochka/kjogvi' || 'public.ecr.aws/m7x1i1o0/kjogvi' }}
+permissions:
+  contents: read
+  id-token: write
 jobs:
   build:
     name: "Build and push"
@@ -50,10 +51,10 @@ jobs:
     runs-on: ${{ matrix.arch.runner }}
     permissions:
       packages: write
-      contents: read
       attestations: write
-      id-token: write
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
       - name: Prepare
         run: |
           platform=${{ matrix.arch.platform }}
@@ -64,19 +65,19 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY_IMAGE }}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+      - name: Configure AWS credentials
+        if: ${{ inputs.image_registry == 'public.ecr.aws' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
       - name: Login to AWS ECR Registry
         if: ${{ inputs.image_registry == 'public.ecr.aws' }}
-        uses: docker/login-action@v4
+        uses: aws-actions/amazon-ecr-login@v2
         with:
-          registry: public.ecr.aws
-          username: ${{ secrets.DOCKER_AWS_ACCESS_KEY_ID }}
-          password: ${{ secrets.DOCKER_AWS_SECRET_ACCESS_KEY }}
-        env:
-          AWS_REGION: us-east-1
+          registry-type: public
       - name: Login to Github Package Registry
         if: ${{ inputs.image_registry == 'ghcr.io' }}
         uses: docker/login-action@v4
@@ -84,8 +85,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Checkout code
-        uses: actions/checkout@v6
       - name: Build and push
         id: push
         uses: docker/build-push-action@v7
@@ -134,15 +133,17 @@ jobs:
           merge-multiple: true
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+      - name: Configure AWS credentials
+        if: ${{ inputs.image_registry == 'public.ecr.aws' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
       - name: Login to AWS ECR Registry
         if: ${{ inputs.image_registry == 'public.ecr.aws' }}
-        uses: docker/login-action@v4
+        uses: aws-actions/amazon-ecr-login@v2
         with:
-          registry: public.ecr.aws
-          username: ${{ secrets.DOCKER_AWS_ACCESS_KEY_ID }}
-          password: ${{ secrets.DOCKER_AWS_SECRET_ACCESS_KEY }}
-        env:
-          AWS_REGION: us-east-1
+          registry-type: public
       - name: Login to Github Package Registry
         if: ${{ inputs.image_registry == 'ghcr.io' }}
         uses: docker/login-action@v4
