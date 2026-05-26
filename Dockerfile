@@ -1,43 +1,24 @@
-# Find eligible builder and runner images on Docker Hub. We use Ubuntu/Debian
-# instead of Alpine to avoid DNS resolution issues in production.
-#
-# https://hub.docker.com/r/hexpm/elixir/tags?page=1&name=ubuntu
-# https://hub.docker.com/_/ubuntu?tab=tags
-#
-# This file is based on these images:
-#
-#   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
-#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20231009-slim - for the release image
-#   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: hexpm/elixir:1.16.0-erlang-27.0-debian-bullseye-20231009-slim
-#
-ARG ELIXIR_VERSION=1.19.5
-ARG OTP_VERSION=28.3.1
-ARG DEBIAN_VERSION=trixie-20260112
-ARG DISTRO_VERSION=debian-${DEBIAN_VERSION}
+# syntax=docker/dockerfile:1
 
-ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-${DISTRO_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+# Dockerfile used to build a deployable image for the kjogvi Elixir/Phoenix app.
+#
+# Toolchain and OS packages live in prebuilt images:
+#   public.ecr.aws/m7x1i1o0/kjogvi-base   - debian + runtime packages
+#   public.ecr.aws/m7x1i1o0/kjogvi-build  - hexpm/elixir on the same debian + build toolchain + node
+# Built from https://github.com/khustochka/vk-build-images
+# To bump Elixir/OTP/Debian/Node, rebuild those images and update the tags below.
 
-FROM ${BUILDER_IMAGE} AS builder
+#######################################################################
 
-# install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git curl \
-    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+ARG BASE_IMAGE=public.ecr.aws/m7x1i1o0/kjogvi-base:debiantrixie-20260112-20260526-172312
+ARG BUILD_IMAGE=public.ecr.aws/m7x1i1o0/kjogvi-build:elixir1.19.5-otp28.3.1-debiantrixie-20260112-node24.15.0-20260526-172312
 
-# install node    
-RUN  --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
-    --mount=type=cache,id=dev-apt-lib,sharing=locked,target=/var/lib/apt \
-    curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
-    apt-get install --no-install-recommends -y  nodejs \
-    && rm -rf /var/lib/apt/lists /var/cache/apt/archives    
+#######################################################################
+
+FROM ${BUILD_IMAGE} AS builder
 
 # prepare build dir
 WORKDIR /app
-
-# install hex + rebar
-RUN mix local.hex --force && \
-    mix local.rebar --force
 
 # set build ENV
 ENV MIX_ENV="prod"
@@ -86,11 +67,12 @@ COPY config/runtime.exs config/
 COPY rel rel
 RUN mix release
 
-# start a new build stage so that the final image will only contain
-# the compiled release and other runtime necessities
-FROM ${RUNNER_IMAGE}
+#######################################################################
 
-# Labels 
+# Deployable image
+FROM ${BASE_IMAGE}
+
+# Labels
 ARG GIT_REVISION=unspecified
 ARG GIT_REPOSITORY_URL=unspecified
 LABEL org.opencontainers.image.title="kjogvi"
@@ -102,14 +84,6 @@ ENV GIT_REPOSITORY_URL=${GIT_REPOSITORY_URL}
 # ENV DD_CONTAINER_LABELS_AS_TAGS='{"org.opencontainers.image.source":"git.repository_url","org.opencontainers.image.revision":"git.commit.sha"}'
 # Datadog expects repo URL without protocol.
 ENV DD_TAGS="git.repository_url:github.com/khustochka/kjogvi git.commit.sha:${GIT_REVISION}"
-
-RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses6 locales ca-certificates \
-  postgresql-client file curl gzip bzip2 net-tools netcat-openbsd bind9-dnsutils procps \
-  && apt-get clean && rm -f /var/lib/apt/lists/*_*
-
-# Set the locale
-RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
