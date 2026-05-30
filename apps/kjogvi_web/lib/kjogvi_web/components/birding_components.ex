@@ -41,10 +41,14 @@ defmodule KjogviWeb.BirdingComponents do
   attr :id, :string, required: true
   attr :cards, :list, required: true
 
+  attr :on_delete, :string,
+    default: nil,
+    doc: "phx event name to trigger card deletion; passed through to each panel"
+
   def card_list(assigns) do
     ~H"""
     <ul id={@id} role="list" class="flex flex-col gap-3">
-      <.card_panel :for={card <- @cards} card={card} />
+      <.card_panel :for={card <- @cards} card={card} on_delete={@on_delete} />
     </ul>
     """
   end
@@ -57,6 +61,10 @@ defmodule KjogviWeb.BirdingComponents do
   Provides links to view, edit and (when present) the eBird checklist.
   """
   attr :card, :map, required: true
+
+  attr :on_delete, :string,
+    default: nil,
+    doc: "phx event name to trigger card deletion; when set, a delete control is rendered"
 
   def card_panel(assigns) do
     ~H"""
@@ -163,9 +171,49 @@ defmodule KjogviWeb.BirdingComponents do
             <.icon name="hero-pencil-square" class="h-3.5 w-3.5" />
             Edit<span class="sr-only"> card #{@card.id}</span>
           </.link>
+          <.delete_card_button :if={@on_delete} card={@card} on_delete={@on_delete} />
         </div>
       </div>
     </li>
+    """
+  end
+
+  @doc """
+  Renders the card delete control.
+
+  When the card can be deleted, renders a pale-red trash button that triggers
+  the `on_delete` event (with a confirmation). When it cannot (it still has
+  observations), renders an inert, plainly-disabled placeholder carrying none
+  of the action wiring (`phx-click`, `data-confirm`, …).
+  """
+  attr :card, :map, required: true
+  attr :on_delete, :string, required: true
+
+  def delete_card_button(%{card: card} = assigns) do
+    assigns = assign(assigns, :deletable, card_deletable?(card))
+
+    ~H"""
+    <button
+      :if={@deletable}
+      type="button"
+      id={"delete-card-#{@card.id}"}
+      phx-click={@on_delete}
+      phx-value-id={@card.id}
+      data-confirm={"Delete card ##{@card.id}? This cannot be undone."}
+      title="Delete card"
+      aria-label={"Delete card ##{@card.id}"}
+      class="inline-flex cursor-pointer items-center rounded-md border border-stone-300 bg-white p-1 text-red-300 hover:border-red-400 hover:text-red-600"
+    >
+      <.icon name="hero-trash" class="h-3.5 w-3.5" />
+    </button>
+    <span
+      :if={!@deletable}
+      id={"delete-card-#{@card.id}"}
+      title="Cards with observations cannot be deleted"
+      class="inline-flex cursor-not-allowed items-center rounded-md border border-stone-200 bg-white p-1 text-stone-300"
+    >
+      <.icon name="hero-trash" class="h-3.5 w-3.5" />
+    </span>
     """
   end
 
@@ -228,6 +276,8 @@ defmodule KjogviWeb.BirdingComponents do
   defp ebird_checklist_url(ebird_id) do
     @ebird_checklist_base <> ebird_id
   end
+
+  defp card_deletable?(card), do: Kjogvi.Birding.card_deletable?(card)
 
   @doc "Human-readable label for a card's effort type."
   def effort_label(type) do

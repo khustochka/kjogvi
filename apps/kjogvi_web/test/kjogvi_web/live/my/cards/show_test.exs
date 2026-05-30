@@ -57,6 +57,31 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
     assert has_element?(show_live, "#observation")
   end
 
+  test "deletes a card with no observations and navigates to index", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    assert {:error, {:live_redirect, %{to: "/my/cards"}}} =
+             show_live
+             |> element("#delete-card")
+             |> render_click()
+
+    refute Kjogvi.Repo.get(Kjogvi.Birding.Card, card.id)
+  end
+
+  test "delete control is inert when card has observations", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+    taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    # Rendered as a plain <span>, not a clickable button: no phx-click wiring.
+    assert has_element?(show_live, "span#delete-card")
+    refute has_element?(show_live, "#delete-card[phx-click]")
+  end
+
   test "does not render for wrong user", %{conn: conn} do
     card = insert(:card, user: user_fixture())
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")

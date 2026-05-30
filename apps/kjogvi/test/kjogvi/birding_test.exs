@@ -352,4 +352,51 @@ defmodule Kjogvi.BirdingTest do
       end
     end
   end
+
+  describe "card_deletable?/1" do
+    test "true when observation_count virtual field is zero" do
+      assert Birding.card_deletable?(%Card{observation_count: 0})
+    end
+
+    test "false when observation_count virtual field is positive" do
+      refute Birding.card_deletable?(%Card{observation_count: 2})
+    end
+
+    test "true when preloaded observations are empty" do
+      assert Birding.card_deletable?(%Card{observations: []})
+    end
+
+    test "false when preloaded observations are present" do
+      refute Birding.card_deletable?(%Card{observations: [%Birding.Observation{}]})
+    end
+
+    test "queries the database when neither is loaded" do
+      user = user_fixture()
+      card = insert(:card, user: user)
+
+      assert Birding.card_deletable?(%Card{id: card.id})
+
+      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
+      refute Birding.card_deletable?(%Card{id: card.id})
+    end
+  end
+
+  describe "delete_card/1" do
+    test "deletes a card that has no observations" do
+      user = user_fixture()
+      card = insert(:card, user: user)
+
+      assert {:ok, _card} = Birding.delete_card(card)
+      refute Kjogvi.Repo.get(Card, card.id)
+    end
+
+    test "refuses to delete a card with observations" do
+      user = user_fixture()
+      card = insert(:card, user: user)
+      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
+
+      assert {:error, :has_observations} = Birding.delete_card(card)
+      assert Kjogvi.Repo.get(Card, card.id)
+    end
+  end
 end

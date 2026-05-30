@@ -30,6 +30,25 @@ defmodule KjogviWeb.Live.My.Cards.Show do
   end
 
   @impl true
+  def handle_event("delete", _params, %{assigns: %{card: card}} = socket) do
+    case Birding.delete_card(card) do
+      {:ok, _card} ->
+        {
+          :noreply,
+          socket
+          |> put_flash(:info, "Card ##{card.id} deleted.")
+          |> push_navigate(to: ~p"/my/cards")
+        }
+
+      {:error, :has_observations} ->
+        {
+          :noreply,
+          put_flash(socket, :error, "Card ##{card.id} has observations and cannot be deleted.")
+        }
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <nav id="card-breadcrumbs" class="text-sm text-stone-500 mb-4">
@@ -62,6 +81,25 @@ defmodule KjogviWeb.Live.My.Cards.Show do
         <.action_button navigate={~p"/my/cards/#{@card.id}/edit"} icon="hero-pencil-square">
           Edit
         </.action_button>
+        <button
+          :if={Birding.card_deletable?(@card)}
+          type="button"
+          id="delete-card"
+          phx-click="delete"
+          data-confirm={"Delete card ##{@card.id}? This cannot be undone."}
+          title="Delete card"
+          class="inline-flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-red-700 ring-1 ring-inset ring-red-300 hover:bg-red-50"
+        >
+          <.icon name="hero-trash" class="h-4 w-4" /> Delete
+        </button>
+        <span
+          :if={not Birding.card_deletable?(@card)}
+          id="delete-card"
+          title="Cards with observations cannot be deleted"
+          class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-stone-400 ring-1 ring-inset ring-stone-200"
+        >
+          <.icon name="hero-trash" class="h-4 w-4" /> Delete
+        </span>
       </div>
     </header>
 

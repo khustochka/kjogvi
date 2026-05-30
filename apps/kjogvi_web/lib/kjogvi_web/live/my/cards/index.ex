@@ -19,19 +19,48 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   end
 
   @impl true
-  def handle_params(params, _url, %{assigns: assigns} = socket) do
+  def handle_params(params, _url, socket) do
     page =
       Map.get(params, "page", "1")
       |> String.to_integer()
 
-    cards =
-      Birding.get_cards(assigns.current_scope.user, %{page: page, page_size: @cards_per_page})
-
     {
       :noreply,
       socket
-      |> assign(:cards, cards)
+      |> assign(:page, page)
+      |> load_cards()
     }
+  end
+
+  @impl true
+  def handle_event("delete", %{"id" => id}, %{assigns: assigns} = socket) do
+    card = Birding.fetch_card_for_edit(assigns.current_scope.user, id)
+
+    case Birding.delete_card(card) do
+      {:ok, _card} ->
+        {
+          :noreply,
+          socket
+          |> put_flash(:info, "Card ##{card.id} deleted.")
+          |> load_cards()
+        }
+
+      {:error, :has_observations} ->
+        {
+          :noreply,
+          put_flash(socket, :error, "Card ##{card.id} has observations and cannot be deleted.")
+        }
+    end
+  end
+
+  defp load_cards(%{assigns: assigns} = socket) do
+    cards =
+      Birding.get_cards(assigns.current_scope.user, %{
+        page: assigns.page,
+        page_size: @cards_per_page
+      })
+
+    assign(socket, :cards, cards)
   end
 
   @impl true
@@ -49,7 +78,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       No cards yet.
     </p>
 
-    <.card_list id="cards" cards={@cards} />
+    <.card_list id="cards" cards={@cards} on_delete="delete" />
 
     <div class="mt-6">
       {paginate(@socket, @cards, &paginated_card_path/4, [:index], live: true)}

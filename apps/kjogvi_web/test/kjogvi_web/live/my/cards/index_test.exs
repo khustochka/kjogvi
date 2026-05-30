@@ -72,6 +72,30 @@ defmodule KjogviWeb.Live.My.Cards.IndexTest do
     refute has_element?(index_live, ~s{#card-#{card.id} a[href^="https://ebird.org/checklist/"]})
   end
 
+  test "deletes a card with no observations", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+    assert index_live
+           |> element("#delete-card-#{card.id}")
+           |> render_click()
+
+    refute has_element?(index_live, "#card-#{card.id}")
+    refute Kjogvi.Repo.get(Kjogvi.Birding.Card, card.id)
+  end
+
+  test "delete control is inert for a card with observations", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+    insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+    # Rendered as a plain <span>, not a clickable button: no phx-click wiring.
+    assert has_element?(index_live, "span#delete-card-#{card.id}")
+    refute has_element?(index_live, "#delete-card-#{card.id}[phx-click]")
+  end
+
   test "pagination with multiple cards", %{conn: conn, user: user} do
     location = insert(:location)
     insert_list(21, :card, location: location, user: user)

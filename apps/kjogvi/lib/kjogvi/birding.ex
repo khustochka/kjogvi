@@ -86,6 +86,41 @@ defmodule Kjogvi.Birding do
     |> tap_invalidate_logbook_cache(card.user_id)
   end
 
+  @doc """
+  Deletes a card, but only when it has no observations.
+
+  Returns `{:ok, card}` on success, or `{:error, :has_observations}` when the
+  card still has observations and therefore must not be deleted.
+  """
+  def delete_card(%Card{} = card) do
+    if card_deletable?(card) do
+      card
+      |> Repo.delete()
+      |> tap_invalidate_logbook_cache(card.user_id)
+    else
+      {:error, :has_observations}
+    end
+  end
+
+  @doc """
+  Returns `true` when a card may be deleted, i.e. it has no observations.
+
+  Relies on the card's `observation_count` virtual field when loaded (see
+  `Card.Query.load_observation_count/1`), otherwise falls back to counting
+  observations in the database.
+  """
+  def card_deletable?(%Card{observation_count: count}) when is_integer(count) do
+    count == 0
+  end
+
+  def card_deletable?(%Card{observations: observations}) when is_list(observations) do
+    observations == []
+  end
+
+  def card_deletable?(%Card{id: id}) do
+    not Repo.exists?(from(obs in Observation, where: obs.card_id == ^id))
+  end
+
   defp tap_invalidate_logbook_cache({:ok, _} = result, user_id) do
     Kjogvi.Birding.Logbook.Cache.invalidate(user_id)
     result
