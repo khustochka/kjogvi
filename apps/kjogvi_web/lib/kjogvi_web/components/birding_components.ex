@@ -8,6 +8,7 @@ defmodule KjogviWeb.BirdingComponents do
 
   import KjogviWeb.IconComponents
   import KjogviWeb.FormatComponents
+  import Kjogvi.Util.Presence
 
   alias Kjogvi.Geo
   alias Kjogvi.Pages.Species
@@ -113,16 +114,7 @@ defmodule KjogviWeb.BirdingComponents do
             </.link>
           </li>
           <li title="Effort type">
-            <span class={[
-              "inline-flex items-center rounded-md px-1.5 py-0.5 text-sm font-medium ring-1 ring-inset",
-              effort_badge_class(@card.effort_type)
-            ]}>
-              {effort_label(@card.effort_type)}
-            </span>
-          </li>
-          <li :if={@card.motorless} title="Motorless" class="flex items-center text-forest-600">
-            <.icon name="bicycle" class="h-4 w-4" />
-            <span class="sr-only">Motorless</span>
+            <.effort_badge effort_type={@card.effort_type} class="text-sm" />
           </li>
           <li :if={@card.start_time} title="Start time" class="tabular-nums">
             <span class="sr-only">Start time:</span>
@@ -154,19 +146,16 @@ defmodule KjogviWeb.BirdingComponents do
             <span class="sr-only">Observers:</span>
             {@card.observers}
           </li>
+          <li :if={@card.motorless} title="Motorless">
+            <span class="inline-flex items-center gap-1 rounded-md bg-forest-50 px-1.5 py-0.5 text-sm font-medium text-forest-600">
+              <.icon name="bicycle" class="h-4 w-4" /> Motorless
+            </span>
+          </li>
         </ul>
 
         <%!-- Actions --%>
-        <div class="flex shrink-0 items-center gap-3">
-          <.link
-            :if={@card.ebird_id}
-            href={ebird_checklist_url(@card.ebird_id)}
-            target="_blank"
-            rel="noopener"
-            class="rounded-md bg-[#36834c] px-1.5 py-0.5 text-sm font-medium text-white no-underline hover:bg-forest-600"
-          >
-            eBird<span class="sr-only"> checklist (opens in new tab)</span>
-          </.link>
+        <div class="flex shrink-0 items-center gap-4">
+          <.ebird_link :if={@card.ebird_id} ebird_id={@card.ebird_id} class="text-base" />
           <.link
             navigate={~p"/my/cards/#{@card.id}/edit"}
             class="inline-flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-0.5 text-sm font-medium text-stone-700 no-underline hover:border-forest-400 hover:text-forest-700"
@@ -180,11 +169,68 @@ defmodule KjogviWeb.BirdingComponents do
     """
   end
 
+  @doc """
+  Renders the effort type of a card as a coloured badge.
+  """
+  attr :effort_type, :string, required: true
+  attr :class, :string, default: nil
+
+  def effort_badge(assigns) do
+    ~H"""
+    <span class={[
+      "inline-flex items-center rounded-md px-2 py-0.5 font-medium ring-1 ring-inset",
+      effort_badge_class(@effort_type),
+      @class
+    ]}>
+      {effort_label(@effort_type)}
+    </span>
+    """
+  end
+
+  @doc """
+  Renders a link to a card's eBird checklist (opens in a new tab).
+  """
+  attr :ebird_id, :string, required: true
+  attr :class, :string, default: nil
+
+  def ebird_link(assigns) do
+    ~H"""
+    <.link
+      href={ebird_checklist_url(@ebird_id)}
+      target="_blank"
+      rel="noopener"
+      title="eBird checklist"
+      class={[
+        "inline-block border-b-2 border-transparent no-underline hover:border-forest-500",
+        @class
+      ]}
+    >
+      <.ebird_wordmark /><span class="sr-only"> checklist (opens in new tab)</span>
+    </.link>
+    """
+  end
+
+  @doc """
+  Renders the eBird wordmark as text: a green lowercase "e" and a dark "Bird".
+
+  Inherits its size from the surrounding text; pass extra classes via `class`.
+  """
+  attr :class, :string, default: nil
+
+  def ebird_wordmark(assigns) do
+    ~H"""
+    <span class={["font-bold tracking-tight", @class]}>
+      <span class="text-forest-600">e</span><span class="text-stone-800">Bird</span>
+    </span>
+    """
+  end
+
   defp ebird_checklist_url(ebird_id) do
     @ebird_checklist_base <> ebird_id
   end
 
-  defp effort_label(type) do
+  @doc "Human-readable label for a card's effort type."
+  def effort_label(type) do
     Map.get(@effort_labels, type, type)
   end
 
@@ -192,7 +238,8 @@ defmodule KjogviWeb.BirdingComponents do
     Map.get(@effort_badge_classes, type, "bg-stone-100 text-stone-600 ring-stone-200")
   end
 
-  defp format_duration(minutes) when minutes >= 60 do
+  @doc "Formats a duration in minutes as a human-readable string, e.g. `1 h 35 min`."
+  def format_duration(minutes) when minutes >= 60 do
     hours = div(minutes, 60)
     rest = rem(minutes, 60)
 
@@ -203,10 +250,10 @@ defmodule KjogviWeb.BirdingComponents do
     end
   end
 
-  defp format_duration(minutes), do: "#{minutes} min"
+  def format_duration(minutes), do: "#{minutes} min"
 
-  # Drop a trailing ".0" so whole numbers read cleanly.
-  defp format_number(number) do
+  @doc "Formats a number, dropping a trailing `.0` so whole numbers read cleanly."
+  def format_number(number) do
     rounded = Float.round(number * 1.0, 2)
 
     if rounded == Float.round(rounded, 0) do
@@ -215,10 +262,6 @@ defmodule KjogviWeb.BirdingComponents do
       :erlang.float_to_binary(rounded, [:short])
     end
   end
-
-  defp present?(nil), do: false
-  defp present?(value) when is_binary(value), do: String.trim(value) != ""
-  defp present?(_), do: true
 
   attr :species, Species, required: true
 

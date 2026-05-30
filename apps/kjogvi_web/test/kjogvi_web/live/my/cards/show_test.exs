@@ -27,14 +27,34 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
     assert html =~ "This card has no observations."
   end
 
+  test "renders an edit link", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    assert has_element?(show_live, ~s{a[href="/my/cards/#{card.id}/edit"]})
+  end
+
+  test "renders an eBird link when ebird_id is present", %{conn: conn, user: user} do
+    card = insert(:card, user: user, ebird_id: "S100803884")
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    assert has_element?(
+             show_live,
+             ~s{a[href="https://ebird.org/checklist/S100803884"]}
+           )
+  end
+
   test "renders with observations present", %{conn: conn, user: user} do
     card = insert(:card, user: user)
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, _show_live, html} = live(conn, ~p"/my/cards/#{card.id}")
+    {:ok, show_live, html} = live(conn, ~p"/my/cards/#{card.id}")
 
     assert html =~ "Card ##{card.id}"
+    assert has_element?(show_live, "#observation")
   end
 
   test "does not render for wrong user", %{conn: conn} do
