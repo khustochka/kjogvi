@@ -49,6 +49,8 @@ defmodule Kjogvi.Birding.Card do
     timestamps()
 
     field :observation_count, :integer, virtual: true
+    field :taxa_count, :integer, virtual: true
+    field :species_count, :integer, virtual: true
   end
 
   @doc false

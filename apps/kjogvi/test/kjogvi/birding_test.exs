@@ -231,6 +231,62 @@ defmodule Kjogvi.BirdingTest do
       assert hd(page.entries).observation_count == 2
     end
 
+    test "includes distinct taxa count" do
+      user = user_fixture()
+      card = insert(:card, user: user)
+      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
+      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
+      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
+
+      page = Birding.get_cards(user, %{page: 1, page_size: 10})
+      entry = hd(page.entries)
+      assert entry.observation_count == 3
+      assert entry.taxa_count == 2
+    end
+
+    test "includes countable species count from species/taxa mapping" do
+      user = user_fixture()
+      {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
+      key = Ornitho.Schema.Taxon.key(taxon)
+
+      card = insert(:card, user: user)
+      insert(:observation, card: card, taxon_key: key)
+      # Same taxon again — counts once as a species.
+      insert(:observation, card: card, taxon_key: key)
+      # A taxon with no species page is not countable.
+      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/unmapped")
+
+      page = Birding.get_cards(user, %{page: 1, page_size: 10})
+      entry = hd(page.entries)
+      assert entry.species_count == 1
+      assert entry.taxa_count == 2
+    end
+
+    test "excludes unreported observations from species count" do
+      user = user_fixture()
+      {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
+      key = Ornitho.Schema.Taxon.key(taxon)
+
+      card = insert(:card, user: user)
+      insert(:observation, card: card, taxon_key: key, unreported: true)
+
+      page = Birding.get_cards(user, %{page: 1, page_size: 10})
+      entry = hd(page.entries)
+      assert entry.species_count == 0
+      assert entry.observation_count == 1
+    end
+
+    test "returns zero counts for a card with no observations" do
+      user = user_fixture()
+      insert(:card, user: user)
+
+      page = Birding.get_cards(user, %{page: 1, page_size: 10})
+      entry = hd(page.entries)
+      assert entry.observation_count == 0
+      assert entry.taxa_count == 0
+      assert entry.species_count == 0
+    end
+
     test "paginates results" do
       user = user_fixture()
 

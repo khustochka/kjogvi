@@ -70,11 +70,30 @@ defmodule Kjogvi.Birding.Card.Query do
   #     where: ^id in l.ancestry or l.id == ^id
   # end
 
+  @doc """
+  Loads per-card aggregates: total number of observations, number of distinct
+  taxa, and number of distinct countable species.
+
+  Countable species are derived from the species/taxa mapping and exclude
+  observations marked as `unreported`.
+  """
   def load_observation_count(query) do
     from(c in query,
       left_join: obs in assoc(c, :observations),
+      left_join: stm in assoc(obs, :species_taxa_mapping),
       group_by: c.id,
-      select_merge: %{observation_count: count(obs.id)}
+      select_merge: %{
+        observation_count: count(obs.id),
+        taxa_count: count(fragment("DISTINCT ?", obs.taxon_key)),
+        species_count:
+          count(
+            fragment(
+              "DISTINCT CASE WHEN ? = false THEN ? END",
+              obs.unreported,
+              stm.species_page_id
+            )
+          )
+      }
     )
   end
 

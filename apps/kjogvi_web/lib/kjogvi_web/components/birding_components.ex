@@ -6,8 +6,219 @@ defmodule KjogviWeb.BirdingComponents do
   use Phoenix.Component
   use KjogviWeb, :verified_routes
 
+  import KjogviWeb.IconComponents
+  import KjogviWeb.FormatComponents
+
+  alias Kjogvi.Geo
   alias Kjogvi.Pages.Species
   alias Ornitho.Schema.Taxon
+
+  @ebird_checklist_base "https://ebird.org/checklist/"
+
+  @effort_labels %{
+    "INCIDENTAL" => "Incidental",
+    "STATIONARY" => "Stationary",
+    "TRAVEL" => "Traveling",
+    "AREA" => "Area",
+    "HISTORICAL" => "Historical"
+  }
+
+  @effort_badge_classes %{
+    "INCIDENTAL" => "bg-stone-100 text-stone-600 ring-stone-200",
+    "STATIONARY" => "bg-sky-100 text-sky-800 ring-sky-200",
+    "TRAVEL" => "bg-forest-100 text-forest-800 ring-forest-200",
+    "AREA" => "bg-amber-100 text-amber-800 ring-amber-200",
+    "HISTORICAL" => "bg-violet-100 text-violet-800 ring-violet-200"
+  }
+
+  @doc """
+  Renders a list of cards as full-width panels.
+
+  Each card is rendered with `card_panel/1` inside a semantic `<ul>`/`<li>`
+  structure. Use this anywhere cards need to be listed.
+  """
+  attr :id, :string, required: true
+  attr :cards, :list, required: true
+
+  def card_list(assigns) do
+    ~H"""
+    <ul id={@id} role="list" class="flex flex-col gap-3">
+      <.card_panel :for={card <- @cards} card={card} />
+    </ul>
+    """
+  end
+
+  @doc """
+  Renders a single card as a panel (`<li>`).
+
+  Shows the card date and location prominently, an inline list of effort-related
+  metadata, and highlighted counts of countable species, taxa and observations.
+  Provides links to view, edit and (when present) the eBird checklist.
+  """
+  attr :card, :map, required: true
+
+  def card_panel(assigns) do
+    ~H"""
+    <li
+      id={"card-#{@card.id}"}
+      class="group rounded-lg border border-stone-200 bg-white px-2.5 py-2.5 shadow-sm transition hover:shadow"
+    >
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[1.05rem]">
+        <%!-- Date + location --%>
+        <.link
+          navigate={~p"/my/cards/#{@card.id}"}
+          class="font-semibold text-stone-900 underline decoration-stone-200 decoration-2 underline-offset-2 hover:decoration-forest-500"
+        >
+          {format_date(@card.observ_date)}
+        </.link>
+        <.link
+          navigate={~p"/my/cards/#{@card.id}"}
+          class="min-w-0 flex-1 truncate text-stone-600 no-underline hover:text-stone-900"
+        >
+          {Geo.Location.long_name(@card.location)}
+        </.link>
+
+        <%!-- Counts --%>
+        <ul class="flex shrink-0 items-baseline gap-2.5 tabular-nums">
+          <li :if={not is_nil(@card.species_count)} title="Countable species">
+            <span class="text-lg font-bold text-forest-700">{@card.species_count}</span>
+            <span class="text-xs text-stone-500">sp.</span>
+            <span class="sr-only">countable species</span>
+          </li>
+          <li :if={not is_nil(@card.taxa_count)} title="Distinct taxa" class="text-stone-600">
+            <span class="font-semibold">{@card.taxa_count}</span>
+            <span class="text-xs text-stone-500">taxa</span>
+          </li>
+          <li
+            :if={not is_nil(@card.observation_count)}
+            title="Observations"
+            class="text-stone-600"
+          >
+            <span class="font-semibold">{@card.observation_count}</span>
+            <span class="text-xs text-stone-500">obs</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.95rem] text-stone-600">
+        <%!-- Effort metadata --%>
+        <ul class="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+          <li>
+            <.link
+              navigate={~p"/my/cards/#{@card.id}"}
+              class="font-mono text-sm text-stone-400 no-underline hover:text-stone-600"
+              title="Card ID"
+            >
+              #{@card.id}
+            </.link>
+          </li>
+          <li title="Effort type">
+            <span class={[
+              "inline-flex items-center rounded-md px-1.5 py-0.5 text-sm font-medium ring-1 ring-inset",
+              effort_badge_class(@card.effort_type)
+            ]}>
+              {effort_label(@card.effort_type)}
+            </span>
+          </li>
+          <li :if={@card.motorless} title="Motorless" class="flex items-center text-forest-600">
+            <.icon name="bicycle" class="h-4 w-4" />
+            <span class="sr-only">Motorless</span>
+          </li>
+          <li :if={@card.start_time} title="Start time" class="tabular-nums">
+            <span class="sr-only">Start time:</span>
+            {format_time(@card.start_time)}
+          </li>
+          <li :if={@card.duration_minutes} title="Duration" class="tabular-nums">
+            <.icon name="hero-clock" class="h-3.5 w-3.5 -mt-0.5 inline-block text-stone-400" />
+            <span class="sr-only">Duration:</span>
+            {format_duration(@card.duration_minutes)}
+          </li>
+          <li :if={@card.distance_kms} title="Distance" class="tabular-nums">
+            <.icon
+              name="hero-arrows-right-left"
+              class="h-3.5 w-3.5 -mt-0.5 inline-block text-stone-400"
+            />
+            <span class="sr-only">Distance:</span>
+            {format_number(@card.distance_kms)} km
+          </li>
+          <li :if={@card.area_acres} title="Area" class="tabular-nums">
+            <.icon
+              name="hero-arrows-pointing-out"
+              class="h-3.5 w-3.5 -mt-0.5 inline-block text-stone-400"
+            />
+            <span class="sr-only">Area:</span>
+            {format_number(@card.area_acres)} acres
+          </li>
+          <li :if={present?(@card.observers)} title="Observers">
+            <.icon name="hero-users" class="h-3.5 w-3.5 -mt-0.5 inline-block text-stone-400" />
+            <span class="sr-only">Observers:</span>
+            {@card.observers}
+          </li>
+        </ul>
+
+        <%!-- Actions --%>
+        <div class="flex shrink-0 items-center gap-3">
+          <.link
+            :if={@card.ebird_id}
+            href={ebird_checklist_url(@card.ebird_id)}
+            target="_blank"
+            rel="noopener"
+            class="rounded-md bg-[#36834c] px-1.5 py-0.5 text-sm font-medium text-white no-underline hover:bg-forest-600"
+          >
+            eBird<span class="sr-only"> checklist (opens in new tab)</span>
+          </.link>
+          <.link
+            navigate={~p"/my/cards/#{@card.id}/edit"}
+            class="inline-flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-0.5 text-sm font-medium text-stone-700 no-underline hover:border-forest-400 hover:text-forest-700"
+          >
+            <.icon name="hero-pencil-square" class="h-3.5 w-3.5" />
+            Edit<span class="sr-only"> card #{@card.id}</span>
+          </.link>
+        </div>
+      </div>
+    </li>
+    """
+  end
+
+  defp ebird_checklist_url(ebird_id) do
+    @ebird_checklist_base <> ebird_id
+  end
+
+  defp effort_label(type) do
+    Map.get(@effort_labels, type, type)
+  end
+
+  defp effort_badge_class(type) do
+    Map.get(@effort_badge_classes, type, "bg-stone-100 text-stone-600 ring-stone-200")
+  end
+
+  defp format_duration(minutes) when minutes >= 60 do
+    hours = div(minutes, 60)
+    rest = rem(minutes, 60)
+
+    if rest == 0 do
+      "#{hours} h"
+    else
+      "#{hours} h #{rest} min"
+    end
+  end
+
+  defp format_duration(minutes), do: "#{minutes} min"
+
+  # Drop a trailing ".0" so whole numbers read cleanly.
+  defp format_number(number) do
+    rounded = Float.round(number * 1.0, 2)
+
+    if rounded == Float.round(rounded, 0) do
+      rounded |> trunc() |> Integer.to_string()
+    else
+      :erlang.float_to_binary(rounded, [:short])
+    end
+  end
+
+  defp present?(nil), do: false
+  defp present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present?(_), do: true
 
   attr :species, Species, required: true
 

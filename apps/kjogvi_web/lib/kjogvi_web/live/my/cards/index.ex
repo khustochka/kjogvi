@@ -6,9 +6,8 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   import Scrivener.PhoenixView
 
   alias Kjogvi.Birding
-  alias Kjogvi.Geo
 
-  @cards_per_page 50
+  @cards_per_page 20
 
   @impl true
   def mount(_params, _session, socket) do
@@ -46,37 +45,15 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       <.action_button navigate={~p"/my/cards/new"} icon="hero-plus">New Card</.action_button>
     </div>
 
-    <CoreComponents.table id="cards" rows={@cards}>
-      <:col :let={card} label="id">
-        <.link navigate={~p"/my/cards/#{card.id}"}>{card.id}</.link>
-      </:col>
-      <:col :let={card} label="Location">
-        {Geo.Location.long_name(card.location)}
-      </:col>
-      <:col :let={card} label="Date">{format_date(card.observ_date)}</:col>
-      <:col :let={card} label="Start time">{format_time(card.start_time)}</:col>
-      <:col :let={card} label="Effort">{card.effort_type}</:col>
-      <:col :let={card} label="M/L">
-        <span :if={card.motorless} title="Motorless">
-          <.icon name="bicycle" class="h-5 w-5 inline-block" />
-        </span>
-      </:col>
-      <:col :let={card} label="Obs">
-        <span class="tabular-nums">
-          {card.observation_count}
-        </span>
-      </:col>
-      <:col :let={card} label="Actions">
-        <.icon_link
-          navigate={~p"/my/cards/#{card.id}/edit"}
-          icon="hero-pencil-square"
-          label="Edit card"
-          class="text-blue-600 hover:text-blue-700"
-        />
-      </:col>
-    </CoreComponents.table>
+    <p :if={Enum.empty?(@cards)} class="text-stone-500">
+      No cards yet.
+    </p>
 
-    {paginate(@socket, @cards, &paginated_card_path/4, [:index], live: true)}
+    <.card_list id="cards" cards={@cards} />
+
+    <div class="mt-6">
+      {paginate(@socket, @cards, &paginated_card_path/4, [:index], live: true)}
+    </div>
     """
   end
 
