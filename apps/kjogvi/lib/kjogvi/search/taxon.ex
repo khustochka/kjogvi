@@ -14,10 +14,21 @@ defmodule Kjogvi.Search.Taxon do
 
   @limit 20
 
+  # Characters that separate words within bird names. Beyond spaces and hyphens,
+  # names use apostrophes (Bonaparte's), periods (St. Lucia), slashes and
+  # bracketing for group annotations. Diacritics (ä ñ ö ü) are NOT separators —
+  # they are letters inside a word.
+  @word_boundary ~r/[\s\-'.\/()\[\]]+/
+
   @doc """
   Search for taxa by name (scientific or English).
 
   Taxa the user has observed are always ranked above taxa they have not.
+
+  A taxon matches when every word of the query is a prefix of some word in its
+  scientific or English name (words split on spaces, hyphens, apostrophes, and
+  similar punctuation). Matching is anchored to word starts, so "great cr" finds
+  Great Crested Grebe but not Great Reed Warbler / Acrocephalus.
 
   Within the observed group, the most frequently observed come first. Within
   the unobserved group, results are ranked by text match quality:
@@ -26,7 +37,6 @@ defmodule Kjogvi.Search.Taxon do
   - Scientific name starts with query
   - English name starts with query
   - A word in either name starts with the query
-  - Contains anywhere in either name
 
   Names break any remaining ties alphabetically.
 
@@ -92,14 +102,16 @@ defmodule Kjogvi.Search.Taxon do
     name_en_lower = String.downcase(taxon.name_en || "")
     name_sci_lower = String.downcase(taxon.name_sci || "")
 
-    query_words = String.split(query_text)
+    # Split the query on the same boundaries as names, so "yellow-rumped"
+    # becomes ["yellow", "rumped"] and matches the hyphenated name word-for-word.
+    query_words = query_text |> String.split(@word_boundary) |> Enum.reject(&(&1 == ""))
 
-    # Every query word must appear in one of the names. Using `all?` (AND)
-    # rather than `any?` (OR) keeps multi-word queries precise: "yellow-rumped
-    # wa" requires both "yellow-rumped" and "wa", so it finds Yellow-rumped
-    # Warbler without dragging in unrelated taxa that merely contain "wa".
+    # Every query word must be a prefix of some word in one of the names (AND
+    # across query words). Word-prefix — not substring-anywhere — keeps results
+    # precise: "great cr" finds Great Crested (cr- starts "crested") but not
+    # Great Reed Warbler / Acrocephalus, where nothing begins with "cr".
     Enum.all?(query_words, fn word ->
-      String.contains?(name_en_lower, word) || String.contains?(name_sci_lower, word)
+      starts_with_word?(name_en_lower, word) || starts_with_word?(name_sci_lower, word)
     end)
   end
 
@@ -133,8 +145,7 @@ defmodule Kjogvi.Search.Taxon do
       match_exact(name_sci, name_en, query_text) ||
         match_starts_with(name_sci, name_en, query_text) ||
         match_word_start(name_sci, name_en, query_text) ||
-        match_contains(name_sci, name_en, query_text) ||
-        {7, name_en}
+        {6, name_en}
 
     {seen_bucket, weight, tier, name}
   end
@@ -168,16 +179,8 @@ defmodule Kjogvi.Search.Taxon do
     end
   end
 
-  defp match_contains(name_sci, name_en, query) do
-    cond do
-      String.contains?(name_sci, query) -> {6, name_sci}
-      String.contains?(name_en, query) -> {6, name_en}
-      true -> nil
-    end
-  end
-
   defp starts_with_word?(text, query) do
-    words = String.split(text, ~r/[\s\-]+/)
+    words = String.split(text, @word_boundary)
     Enum.any?(words, &String.starts_with?(&1, query))
   end
 

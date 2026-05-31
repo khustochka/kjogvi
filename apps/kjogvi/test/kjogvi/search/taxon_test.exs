@@ -138,7 +138,7 @@ defmodule Kjogvi.Search.TaxonTest do
       book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
 
       # eBird's canonical name hyphenates "Wood-Pigeon"; a "wood pigeon" search
-      # must still find it, since each query word is matched as a substring.
+      # must still find it, since the hyphen is treated as a word boundary.
       Ornitho.Factory.insert(:taxon,
         book: book,
         code: "cowpig1",
@@ -157,6 +157,39 @@ defmodule Kjogvi.Search.TaxonTest do
       codes = Enum.map(results, & &1.code)
 
       assert "cowpig1" in codes
+    end
+
+    test "query word matches word starts only, not mid-word substrings", %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "grcgre1",
+        name_en: "Great Crested Grebe",
+        name_sci: "Podiceps cristatus"
+      )
+
+      # "cr" appears mid-word inside "Acrocephalus" but no word starts with it,
+      # so "great cr" must NOT return this taxon.
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "grrwar1",
+        name_en: "Great Reed Warbler",
+        name_sci: "Acrocephalus arundinaceus"
+      )
+
+      user = UsersFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Users.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      results = Taxon.search_taxa("great cr", user)
+      codes = Enum.map(results, & &1.code)
+
+      assert "grcgre1" in codes
+      refute "grrwar1" in codes
     end
 
     test "an observed taxon outranks an unobserved one whose name starts with the query",
