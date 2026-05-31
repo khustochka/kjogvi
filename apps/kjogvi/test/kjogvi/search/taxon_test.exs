@@ -100,5 +100,52 @@ defmodule Kjogvi.Search.TaxonTest do
       tit_idx = Enum.find_index(codes, &(&1 == "gretit1"))
       assert bustard_idx < tit_idx
     end
+
+    test "an observed taxon outranks an unobserved one whose name starts with the query",
+         %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      # "Eurasian Wren" — observed; query "wren" is a later word.
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "eurwre1",
+        name_en: "Eurasian Wren",
+        name_sci: "Troglodytes troglodytes"
+      )
+
+      # "Wren-like Rushbird" — never observed; name starts with "wren".
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "wrlrus1",
+        name_en: "Wren-like Rushbird",
+        name_sci: "Phacellodomus sibilatrix"
+      )
+
+      user = UsersFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Users.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      location = GeoFixtures.location_fixture()
+
+      BirdingFixtures.card_fixture(%{
+        user: user,
+        location_id: location.id,
+        observations: [%{taxon_key: "/ebird/v2024/eurwre1"}]
+      })
+
+      results = Taxon.search_taxa("wren", user)
+      codes = Enum.map(results, & &1.code)
+
+      # The unobserved prefix match is still offered (so it can be recorded)...
+      assert "eurwre1" in codes
+      assert "wrlrus1" in codes
+
+      # ...but the observed taxon ranks first regardless of text-match tier.
+      assert Enum.find_index(codes, &(&1 == "eurwre1")) <
+               Enum.find_index(codes, &(&1 == "wrlrus1"))
+    end
   end
 end

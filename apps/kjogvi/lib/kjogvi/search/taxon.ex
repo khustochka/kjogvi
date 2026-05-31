@@ -2,28 +2,33 @@ defmodule Kjogvi.Search.Taxon do
   @moduledoc """
   Taxon search functionality with support for scientific and English names.
   Searches are scoped by user's default book.
-  Searches by word components with priority on word beginnings.
-  Within each match-quality tier, results are weighted by the user's observation frequency.
+
+  Results are ordered seen-first: every taxon the user has observed ranks above
+  every taxon they have not. Within each group, results are ordered by text
+  match quality and then by how often the user has observed the taxon.
   """
 
   import Ecto.Query
 
   alias Ornitho.Schema.Book
 
-  @limit 10
+  @limit 20
 
   @doc """
   Search for taxa by name (scientific or English).
 
-  Searches are scoped to user's default book and ranked by:
+  Taxa the user has observed are always ranked above taxa they have not.
+
+  Within the observed group, the most frequently observed come first. Within
+  the unobserved group, results are ranked by text match quality:
   - Scientific name exact match (highest priority)
   - English name exact match
   - Scientific name starts with query
   - English name starts with query
-  - Word-start matching in either name
+  - A word in either name starts with the query
   - Contains anywhere in either name
 
-  Within each tier, taxa the user has observed more frequently are ranked higher.
+  Names break any remaining ties alphabetically.
 
   Returns taxa with an additional `:key` field containing the full taxon signature
   (e.g., "/ebird/v2024/houspa") suitable for use as `taxon_key` in observations.
@@ -106,51 +111,63 @@ defmodule Kjogvi.Search.Taxon do
     |> Map.new()
   end
 
+  # Sort key: `{seen_bucket, weight, match_tier, name}`.
+  #
+  # `seen_bucket` is the primary key: every taxon the user has observed (0)
+  # ranks above every taxon they have not (1). Within the seen group, the most
+  # frequently observed come first (`weight`); within the unseen group, where
+  # `weight` is 0 for all, text-match quality (`match_tier`) orders results.
+  # `name` breaks remaining ties alphabetically.
   defp sort_priority(taxon, query_text, counts, book) do
     name_en = String.downcase(taxon.name_en || "")
     name_sci = String.downcase(taxon.name_sci || "")
-    weight = taxon_weight(taxon, counts, book)
+    count = observation_count(taxon, counts, book)
+    seen_bucket = if count > 0, do: 0, else: 1
+    weight = -count
 
-    check_exact_match(name_sci, name_en, weight, query_text) ||
-      check_starts_with(name_sci, name_en, weight, query_text) ||
-      check_word_start(name_sci, name_en, weight, query_text) ||
-      check_contains(name_sci, name_en, weight, query_text) ||
-      {7, 0, name_en}
+    {tier, name} =
+      match_exact(name_sci, name_en, query_text) ||
+        match_starts_with(name_sci, name_en, query_text) ||
+        match_word_start(name_sci, name_en, query_text) ||
+        match_contains(name_sci, name_en, query_text) ||
+        {7, name_en}
+
+    {seen_bucket, weight, tier, name}
   end
 
-  defp taxon_weight(taxon, counts, book) do
+  defp observation_count(taxon, counts, book) do
     key = "/#{book.slug}/#{book.version}/#{taxon.code}"
-    -Map.get(counts, key, 0)
+    Map.get(counts, key, 0)
   end
 
-  defp check_exact_match(name_sci, name_en, weight, query) do
+  defp match_exact(name_sci, name_en, query) do
     cond do
-      name_sci == query -> {0, weight, ""}
-      name_en == query -> {1, weight, ""}
+      name_sci == query -> {0, ""}
+      name_en == query -> {1, ""}
       true -> nil
     end
   end
 
-  defp check_starts_with(name_sci, name_en, weight, query) do
+  defp match_starts_with(name_sci, name_en, query) do
     cond do
-      String.starts_with?(name_sci, query) -> {2, weight, name_sci}
-      String.starts_with?(name_en, query) -> {3, weight, name_en}
+      String.starts_with?(name_sci, query) -> {2, name_sci}
+      String.starts_with?(name_en, query) -> {3, name_en}
       true -> nil
     end
   end
 
-  defp check_word_start(name_sci, name_en, weight, query) do
+  defp match_word_start(name_sci, name_en, query) do
     cond do
-      starts_with_word?(name_sci, query) -> {4, weight, name_sci}
-      starts_with_word?(name_en, query) -> {5, weight, name_en}
+      starts_with_word?(name_sci, query) -> {4, name_sci}
+      starts_with_word?(name_en, query) -> {5, name_en}
       true -> nil
     end
   end
 
-  defp check_contains(name_sci, name_en, weight, query) do
+  defp match_contains(name_sci, name_en, query) do
     cond do
-      String.contains?(name_sci, query) -> {6, weight, name_sci}
-      String.contains?(name_en, query) -> {6, weight, name_en}
+      String.contains?(name_sci, query) -> {6, name_sci}
+      String.contains?(name_en, query) -> {6, name_en}
       true -> nil
     end
   end
