@@ -101,6 +101,64 @@ defmodule Kjogvi.Search.TaxonTest do
       assert bustard_idx < tit_idx
     end
 
+    test "multi-word query requires every word to match, not just one", %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "yerwar1",
+        name_en: "Yellow-rumped Warbler",
+        name_sci: "Setophaga coronata"
+      )
+
+      # Name contains "wa" (delaWArensis) but nothing matching "yellow-rumped";
+      # it must NOT be returned for the query "yellow-rumped wa".
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "rinbil1",
+        name_en: "Ring-billed Gull",
+        name_sci: "Larus delawarensis"
+      )
+
+      user = UsersFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Users.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      results = Taxon.search_taxa("yellow-rumped wa", user)
+      codes = Enum.map(results, & &1.code)
+
+      assert "yerwar1" in codes
+      refute "rinbil1" in codes
+    end
+
+    test "space-separated query matches a hyphenated name", %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      # eBird's canonical name hyphenates "Wood-Pigeon"; a "wood pigeon" search
+      # must still find it, since each query word is matched as a substring.
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "cowpig1",
+        name_en: "Common Wood-Pigeon",
+        name_sci: "Columba palumbus"
+      )
+
+      user = UsersFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Users.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      results = Taxon.search_taxa("wood pigeon", user)
+      codes = Enum.map(results, & &1.code)
+
+      assert "cowpig1" in codes
+    end
+
     test "an observed taxon outranks an unobserved one whose name starts with the query",
          %{user: _user} do
       book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")

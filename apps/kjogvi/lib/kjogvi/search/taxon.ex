@@ -94,7 +94,11 @@ defmodule Kjogvi.Search.Taxon do
 
     query_words = String.split(query_text)
 
-    Enum.any?(query_words, fn word ->
+    # Every query word must appear in one of the names. Using `all?` (AND)
+    # rather than `any?` (OR) keeps multi-word queries precise: "yellow-rumped
+    # wa" requires both "yellow-rumped" and "wa", so it finds Yellow-rumped
+    # Warbler without dragging in unrelated taxa that merely contain "wa".
+    Enum.all?(query_words, fn word ->
       String.contains?(name_en_lower, word) || String.contains?(name_sci_lower, word)
     end)
   end
