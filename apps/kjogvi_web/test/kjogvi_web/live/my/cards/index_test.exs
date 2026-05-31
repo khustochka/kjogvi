@@ -53,6 +53,19 @@ defmodule KjogviWeb.Live.My.Cards.IndexTest do
     assert rendered =~ "obs"
   end
 
+  test "panel does not list observations by default (card mode)", %{conn: conn, user: user} do
+    {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
+    key = Ornitho.Schema.Taxon.key(taxon)
+
+    card = insert(:card, user: user)
+    obs = insert(:observation, card: card, taxon_key: key)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+    assert has_element?(index_live, "#card-#{card.id}")
+    refute has_element?(index_live, "#card-#{card.id}-obs-#{obs.id}")
+  end
+
   test "panel links to eBird checklist when ebird_id present", %{conn: conn, user: user} do
     card = insert(:card, user: user, ebird_id: "S100803884")
 
@@ -103,5 +116,67 @@ defmodule KjogviWeb.Live.My.Cards.IndexTest do
     {:ok, _index_live, html} = live(conn, ~p"/my/cards")
 
     assert html =~ "/cards/page/2"
+  end
+
+  describe "search filter" do
+    test "renders the filter panel", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+      assert has_element?(index_live, "#card-search-filter")
+      assert has_element?(index_live, "#card-search-filter-date")
+    end
+
+    test "a date filter narrows the listed cards", %{conn: conn, user: user} do
+      match = insert(:card, user: user, observ_date: ~D[2024-05-01])
+      other = insert(:card, user: user, observ_date: ~D[2024-05-02])
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+      index_live
+      |> form("#card-search-filter", filter: %{date: "2024-05-01"})
+      |> render_submit()
+
+      assert has_element?(index_live, "#card-#{match.id}")
+      refute has_element?(index_live, "#card-#{other.id}")
+    end
+
+    test "an observation-level filter shows only matching observations", %{
+      conn: conn,
+      user: user
+    } do
+      {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
+      key = Ornitho.Schema.Taxon.key(taxon)
+
+      card = insert(:card, user: user)
+      heard = insert(:observation, card: card, taxon_key: key, voice: true)
+      seen = insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro", voice: false)
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+      index_live
+      |> form("#card-search-filter", filter: %{voice: "heard_only"})
+      |> render_submit()
+
+      assert has_element?(index_live, "#card-#{card.id}-obs-#{heard.id}")
+      refute has_element?(index_live, "#card-#{card.id}-obs-#{seen.id}")
+    end
+
+    test "shows a no-match message and reset clears the filter", %{conn: conn, user: user} do
+      card = insert(:card, user: user, observ_date: ~D[2024-05-01])
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+      html =
+        index_live
+        |> form("#card-search-filter", filter: %{date: "1999-01-01"})
+        |> render_submit()
+
+      assert html =~ "No cards match the current filter."
+      refute has_element?(index_live, "#card-#{card.id}")
+
+      index_live |> element("button", "Reset") |> render_click()
+
+      assert has_element?(index_live, "#card-#{card.id}")
+    end
   end
 end

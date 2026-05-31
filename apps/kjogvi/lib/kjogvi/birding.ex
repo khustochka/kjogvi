@@ -10,6 +10,14 @@ defmodule Kjogvi.Birding do
 
   alias __MODULE__.Observation
   alias __MODULE__.Card
+  alias __MODULE__.CardSearch
+
+  @doc """
+  Searches a user's cards with a `CardSearch.Filter`, paginated.
+
+  See `Kjogvi.Birding.CardSearch.search/3`.
+  """
+  defdelegate search_cards(user, filter, pagination), to: CardSearch, as: :search
 
   def get_cards(user, %{page: page, page_size: page_size}) do
     Card

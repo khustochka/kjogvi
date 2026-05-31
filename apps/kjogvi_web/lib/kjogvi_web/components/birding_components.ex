@@ -174,9 +174,91 @@ defmodule KjogviWeb.BirdingComponents do
           <.delete_card_button :if={@on_delete} card={@card} on_delete={@on_delete} />
         </div>
       </div>
+
+      <.card_observations :if={card_has_loaded_observations?(@card)} card={@card} />
     </li>
     """
   end
+
+  @doc """
+  Renders a card's observations as a compact bottom section of its panel.
+
+  Expects `@card.observations` to be a loaded list, each observation carrying a
+  preloaded `:taxon` (and optionally `:species`). When the list is empty, a
+  muted "No observations" line is shown instead.
+  """
+  attr :card, :map, required: true
+
+  def card_observations(assigns) do
+    ~H"""
+    <div class="mt-3 -mx-2.5 -mb-2.5 rounded-b-lg border-t-2 border-stone-200 bg-stone-50 px-3 py-2.5">
+      <p :if={@card.observations == []} class="text-sm text-stone-400">
+        No observations.
+      </p>
+      <ul
+        :if={@card.observations != []}
+        role="list"
+        class="flex flex-col divide-y divide-stone-200/70 text-[0.95rem]"
+      >
+        <li
+          :for={obs <- @card.observations}
+          id={"card-#{@card.id}-obs-#{obs.id}"}
+          class="flex items-baseline gap-x-2 py-1 first:pt-0 last:pb-0"
+        >
+          <span :if={present?(obs.quantity)} class="shrink-0 tabular-nums text-stone-500">
+            {obs.quantity}
+          </span>
+          <span class="min-w-0 break-words sm:truncate">
+            <.observation_taxon_name obs={obs} />
+          </span>
+          <span
+            :if={obs.voice}
+            title="Heard only"
+            class="inline-flex shrink-0 items-center rounded-full bg-teal-100 p-1 text-teal-700 ring-1 ring-inset ring-teal-300"
+          >
+            <.icon name="hero-musical-note-solid" class="h-4 w-4" />
+            <span class="sr-only">heard only</span>
+          </span>
+          <span
+            :if={obs.hidden}
+            title="Hidden"
+            class="inline-flex shrink-0 items-center rounded-full bg-red-100 p-1 text-red-600 ring-1 ring-inset ring-red-300"
+          >
+            <.icon name="hero-eye-slash-solid" class="h-4 w-4" />
+            <span class="sr-only">hidden</span>
+          </span>
+          <span class="ml-auto shrink-0 pl-2 font-mono text-xs text-stone-400" title="Observation ID">
+            #{obs.id}
+          </span>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
+  attr :obs, :map, required: true
+
+  defp observation_taxon_name(%{obs: %{taxon: nil}} = assigns) do
+    ~H"""
+    <span class="font-mono text-sm text-stone-400" title="Undefined taxon">
+      {@obs.taxon_key}
+    </span>
+    """
+  end
+
+  defp observation_taxon_name(assigns) do
+    ~H"""
+    <span>
+      <span class="font-medium text-stone-800">{@obs.taxon.name_en}</span>
+      <i class="text-stone-400">{@obs.taxon.name_sci}</i>
+    </span>
+    """
+  end
+
+  # Observations are an Ecto association: unloaded it is a %NotLoaded{}, loaded
+  # it is a list. Only render the section when an actual list is present.
+  defp card_has_loaded_observations?(%{observations: obs}) when is_list(obs), do: true
+  defp card_has_loaded_observations?(_card), do: false
 
   @doc """
   Renders the card delete control.

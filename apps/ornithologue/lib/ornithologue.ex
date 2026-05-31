@@ -20,8 +20,13 @@ defmodule Ornithologue do
   end
 
   def get_taxa_and_species(key_list, opts) do
-    by_book = extract_books_and_codes(key_list)
+    case extract_books_and_codes(key_list) do
+      by_book when map_size(by_book) == 0 -> %{}
+      by_book -> fetch_taxa_by_book(by_book, opts)
+    end
+  end
 
+  defp fetch_taxa_by_book(by_book, opts) do
     books =
       from(book in Book,
         where: ^Utils.tuple_in([:slug, :version], Map.keys(by_book))
@@ -62,12 +67,18 @@ defmodule Ornithologue do
   defp extract_books_and_codes(key_list) do
     key_list
     |> Enum.reduce(%{}, fn key, acc ->
-      ["", book_slug, book_version, taxon_code] = String.split(key, "/")
+      # Keys that don't match the canonical "/slug/version/code" shape (e.g.
+      # malformed or legacy values) simply don't resolve to a taxon and are
+      # skipped here, leaving the corresponding lookup result as nil.
+      case String.split(key, "/") do
+        ["", book_slug, book_version, taxon_code] ->
+          book_sig = {book_slug, book_version}
+          list = acc[book_sig] || []
+          Map.put(acc, book_sig, [taxon_code | list])
 
-      book_sig = {book_slug, book_version}
-      list = acc[book_sig] || []
-
-      Map.put(acc, book_sig, [taxon_code | list])
+        _ ->
+          acc
+      end
     end)
   end
 
