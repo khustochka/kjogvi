@@ -49,7 +49,7 @@ defmodule Kjogvi.Search.Location do
         ilike(l.slug, ^ilike_term) or
         ilike(l.iso_code, ^ilike_term)
     )
-    |> preload([:cached_parent, :cached_city, :cached_subdivision, :cached_country])
+    |> preload(^Location.Query.display_assocs())
     |> Repo.all()
     |> Enum.sort_by(&sort_priority(&1, term_lower))
     |> Enum.take(limit)

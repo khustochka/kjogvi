@@ -18,6 +18,7 @@ defmodule Kjogvi.Birding.CardSearch.Query do
   alias Kjogvi.Birding.Card
   alias Kjogvi.Birding.CardSearch.Filter
   alias Kjogvi.Birding.Observation
+  alias Kjogvi.Geo
 
   @doc """
   Cards matching `filter` for `user`, newest first, with per-card counts loaded.
@@ -29,7 +30,7 @@ defmodule Kjogvi.Birding.CardSearch.Query do
     |> apply_card_filters(filter)
     |> maybe_restrict_to_matching_observations(filter)
     |> order_by([card: c], desc: c.observ_date, desc: c.id)
-    |> preload(location: [:cached_parent, :cached_city, :cached_subdivision, :cached_country])
+    |> Geo.Location.Query.preload_display()
     |> Card.Query.load_observation_count()
   end
 

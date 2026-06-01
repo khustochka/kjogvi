@@ -26,6 +26,25 @@ defmodule Kjogvi.Geo.Location.Query do
     :ancestry
   ]
 
+  # The cached ancestor associations needed to render a location's display
+  # name (e.g. `Location.long_name/1`).
+  @display_assocs [:cached_parent, :cached_city, :cached_subdivision, :cached_country]
+
+  @doc """
+  The cached ancestor associations a location needs to render its display name.
+
+  Use `preload_display/1` to attach them to a query's `location`; this list is
+  for the rarer cases that preload on a bare `Location` (or another assoc name).
+  """
+  def display_assocs, do: @display_assocs
+
+  @doc """
+  Preloads the display associations onto each card/observation's `location`.
+  """
+  def preload_display(query) do
+    preload(query, location: ^@display_assocs)
+  end
+
   def minimal_select(query \\ Location) do
     from(query)
     |> select(^@minimal_select)

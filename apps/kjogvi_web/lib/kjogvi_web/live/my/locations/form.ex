@@ -20,7 +20,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   alias Kjogvi.Repo
   alias KjogviWeb.Live.Components.LocationAutocomplete
 
-  @cached_fields [:cached_parent, :cached_city, :cached_subdivision, :cached_country]
+  @cached_fields Location.Query.display_assocs()
 
   @impl true
   def mount(_params, _session, socket) do
