@@ -106,6 +106,21 @@ defmodule Kjogvi.Search.LocationTest do
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
+    test "treats a slash as a word boundary even without surrounding spaces" do
+      loc =
+        GeoFixtures.location_fixture(%{slug: "kildonan-transcona", name_en: "Kildonan/Transcona"})
+
+      results = Search.search_locations("transcona")
+      assert Enum.any?(results, fn r -> r.id == loc.id end)
+    end
+
+    test "matches a word that starts right after an opening quote" do
+      loc = GeoFixtures.location_fixture(%{slug: "park-veselka", name_en: ~s(Park "Veselka")})
+
+      results = Search.search_locations("veselka")
+      assert Enum.any?(results, fn r -> r.id == loc.id end)
+    end
+
     test "respects limit option" do
       for i <- 1..5 do
         GeoFixtures.location_fixture(%{slug: "park-#{i}", name_en: "Park #{i}"})

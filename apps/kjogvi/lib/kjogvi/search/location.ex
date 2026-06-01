@@ -19,9 +19,9 @@ defmodule Kjogvi.Search.Location do
 
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
+  alias Kjogvi.Search.WordMatch
 
   @default_limit 20
-  @word_split ~r/[\s\-\[\]\(\),'"]+/
 
   def search_locations(term, opts \\ [])
 
@@ -64,16 +64,10 @@ defmodule Kjogvi.Search.Location do
       cond do
         iso == term or name == term or slug == term -> 0
         String.starts_with?(name, term) or String.starts_with?(slug, term) -> 1
-        word_start_match?(name, term) or word_start_match?(slug, term) -> 2
+        WordMatch.word_prefix_match?(name, term) or WordMatch.word_prefix_match?(slug, term) -> 2
         true -> 3
       end
 
     {bucket, name}
-  end
-
-  defp word_start_match?(text, term) do
-    text
-    |> String.split(@word_split, trim: true)
-    |> Enum.any?(&String.starts_with?(&1, term))
   end
 end

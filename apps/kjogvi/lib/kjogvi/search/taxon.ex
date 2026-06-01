@@ -11,14 +11,9 @@ defmodule Kjogvi.Search.Taxon do
   import Ecto.Query
 
   alias Ornitho.Schema.Book
+  alias Kjogvi.Search.WordMatch
 
   @limit 20
-
-  # Characters that separate words within bird names. Beyond spaces and hyphens,
-  # names use apostrophes (Bonaparte's), periods (St. Lucia), slashes and
-  # bracketing for group annotations. Diacritics (ä ñ ö ü) are NOT separators —
-  # they are letters inside a word.
-  @word_boundary ~r/[\s\-'.\/()\[\]]+/
 
   @doc """
   Search for taxa by name (scientific or English).
@@ -104,14 +99,15 @@ defmodule Kjogvi.Search.Taxon do
 
     # Split the query on the same boundaries as names, so "yellow-rumped"
     # becomes ["yellow", "rumped"] and matches the hyphenated name word-for-word.
-    query_words = query_text |> String.split(@word_boundary) |> Enum.reject(&(&1 == ""))
+    query_words = WordMatch.split_words(query_text)
 
     # Every query word must be a prefix of some word in one of the names (AND
     # across query words). Word-prefix — not substring-anywhere — keeps results
     # precise: "great cr" finds Great Crested (cr- starts "crested") but not
     # Great Reed Warbler / Acrocephalus, where nothing begins with "cr".
     Enum.all?(query_words, fn word ->
-      starts_with_word?(name_en_lower, word) || starts_with_word?(name_sci_lower, word)
+      WordMatch.word_prefix_match?(name_en_lower, word) ||
+        WordMatch.word_prefix_match?(name_sci_lower, word)
     end)
   end
 
@@ -173,15 +169,10 @@ defmodule Kjogvi.Search.Taxon do
 
   defp match_word_start(name_sci, name_en, query) do
     cond do
-      starts_with_word?(name_sci, query) -> {4, name_sci}
-      starts_with_word?(name_en, query) -> {5, name_en}
+      WordMatch.word_prefix_match?(name_sci, query) -> {4, name_sci}
+      WordMatch.word_prefix_match?(name_en, query) -> {5, name_en}
       true -> nil
     end
-  end
-
-  defp starts_with_word?(text, query) do
-    words = String.split(text, @word_boundary)
-    Enum.any?(words, &String.starts_with?(&1, query))
   end
 
   defp add_taxon_key(taxon, book) do

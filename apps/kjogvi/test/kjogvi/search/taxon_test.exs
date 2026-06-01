@@ -134,6 +134,52 @@ defmodule Kjogvi.Search.TaxonTest do
       refute "rinbil1" in codes
     end
 
+    test "matches a possessive name without treating the apostrophe as a boundary",
+         %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "gamqua1",
+        name_en: "Gambel's Quail",
+        name_sci: "Callipepla gambelii"
+      )
+
+      user = UsersFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Users.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      # "gambel" is a prefix of the word "Gambel's" — the apostrophe stays
+      # inside the word rather than splitting off a "s" fragment.
+      results = Taxon.search_taxa("gambel", user)
+      assert "gamqua1" in Enum.map(results, & &1.code)
+    end
+
+    test "treats a slash in a group name as a word boundary", %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "colpra1",
+        name_en: "Collared/Oriental Pratincole",
+        name_sci: "Glareola pratincola/maldivarum"
+      )
+
+      user = UsersFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Users.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      # "oriental" follows a slash with no space; it must still match.
+      results = Taxon.search_taxa("oriental", user)
+      assert "colpra1" in Enum.map(results, & &1.code)
+    end
+
     test "space-separated query matches a hyphenated name", %{user: _user} do
       book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
 
