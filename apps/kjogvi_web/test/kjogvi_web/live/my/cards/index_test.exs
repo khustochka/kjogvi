@@ -161,6 +161,70 @@ defmodule KjogviWeb.Live.My.Cards.IndexTest do
       refute has_element?(index_live, "#card-#{card.id}-obs-#{seen.id}")
     end
 
+    test "submitting the filter patches the URL with the filter params", %{conn: conn, user: user} do
+      insert(:card, user: user, observ_date: ~D[2024-05-01])
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+      index_live
+      |> form("#card-search-filter", filter: %{date: "2024-05-01"})
+      |> render_submit()
+
+      assert_patch(index_live, ~p"/my/cards?date=2024-05-01")
+    end
+
+    test "a filtered URL renders the filtered view directly", %{conn: conn, user: user} do
+      match = insert(:card, user: user, observ_date: ~D[2024-05-01])
+      other = insert(:card, user: user, observ_date: ~D[2024-05-02])
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards?date=2024-05-01")
+
+      assert has_element?(index_live, "#card-#{match.id}")
+      refute has_element?(index_live, "#card-#{other.id}")
+      assert has_element?(index_live, "#card-search-filter-date[value='2024-05-01']")
+    end
+
+    test "a taxon_key in the URL restores the autocomplete label", %{conn: conn} do
+      {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
+      key = Ornitho.Schema.Taxon.key(taxon)
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards?taxon_key=#{key}")
+
+      assert has_element?(
+               index_live,
+               "#card-search-filter-taxon[value='#{taxon.name_en}']"
+             )
+    end
+
+    test "a location_id in the URL narrows to that location", %{conn: conn, user: user} do
+      location = insert(:location)
+      match = insert(:card, user: user, location: location)
+      other = insert(:card, user: user)
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards?location_id=#{location.id}")
+
+      assert has_element?(index_live, "#card-#{match.id}")
+      refute has_element?(index_live, "#card-#{other.id}")
+    end
+
+    test "reset patches back to the bare cards URL", %{conn: conn, user: user} do
+      insert(:card, user: user, observ_date: ~D[2024-05-01])
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards?date=2024-05-01")
+
+      index_live |> element("button", "Reset") |> render_click()
+
+      assert_patch(index_live, ~p"/my/cards")
+    end
+
+    test "pagination links carry the active filter", %{conn: conn, user: user} do
+      insert_list(21, :card, user: user, observ_date: ~D[2024-05-01])
+
+      {:ok, _index_live, html} = live(conn, ~p"/my/cards?date=2024-05-01")
+
+      assert html =~ "/cards/page/2?date=2024-05-01"
+    end
+
     test "shows a no-match message and reset clears the filter", %{conn: conn, user: user} do
       card = insert(:card, user: user, observ_date: ~D[2024-05-01])
 

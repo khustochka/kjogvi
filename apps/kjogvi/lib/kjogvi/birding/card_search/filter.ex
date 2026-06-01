@@ -100,4 +100,73 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
   def blank?(%__MODULE__{} = filter) do
     is_nil(filter.date) and is_nil(filter.location) and not observation_mode?(filter)
   end
+
+  @doc """
+  Encodes a filter as a string-keyed map suitable for a URL query string.
+
+  Only non-default fields are emitted, so a blank filter yields `%{}` (a clean
+  `/my/cards` URL). The location is encoded as `location_id`; resolving that id
+  back into a `Geo.Location` is the caller's job (see `from_params/1`), since it
+  requires a database lookup.
+  """
+  @spec to_params(t()) :: %{optional(String.t()) => String.t()}
+  def to_params(%__MODULE__{} = filter) do
+    %{}
+    |> put_present("date", filter.date && Date.to_iso8601(filter.date))
+    |> put_present("location_id", filter.location && to_string(filter.location.id))
+    |> put_flag("include_subregions", filter.include_subregions)
+    |> put_present("taxon_key", filter.taxon_key)
+    |> put_flag("exclude_subspecies", filter.exclude_subspecies)
+    |> put_present("voice", filter.voice != :all && to_string(filter.voice))
+    |> put_flag("hidden", filter.hidden)
+  end
+
+  @doc """
+  Decodes URL query params into a filter and the requested `location_id`.
+
+  Returns `{filter, location_id}`. The filter's `location` is left `nil`: the
+  caller resolves `location_id` into a `Geo.Location` and assigns it. Unknown or
+  malformed values fall back to the field default, so any params map is safe.
+  """
+  @spec from_params(map()) :: {t(), String.t() | nil}
+  def from_params(params) when is_map(params) do
+    filter = %__MODULE__{
+      date: parse_date(params["date"]),
+      include_subregions: parse_flag(params["include_subregions"]),
+      taxon_key: presence(params["taxon_key"]),
+      exclude_subspecies: parse_flag(params["exclude_subspecies"]),
+      voice: parse_voice(params["voice"]),
+      hidden: parse_flag(params["hidden"])
+    }
+
+    {filter, presence(params["location_id"])}
+  end
+
+  defp put_present(map, _key, nil), do: map
+  defp put_present(map, _key, false), do: map
+  defp put_present(map, _key, ""), do: map
+  defp put_present(map, key, value), do: Map.put(map, key, value)
+
+  defp put_flag(map, _key, false), do: map
+  defp put_flag(map, key, true), do: Map.put(map, key, "true")
+
+  defp presence(nil), do: nil
+  defp presence(""), do: nil
+  defp presence(value) when is_binary(value), do: value
+
+  defp parse_date(value) when value in [nil, ""], do: nil
+
+  defp parse_date(value) when is_binary(value) do
+    case Date.from_iso8601(value) do
+      {:ok, date} -> date
+      _ -> nil
+    end
+  end
+
+  defp parse_flag("true"), do: true
+  defp parse_flag(_), do: false
+
+  defp parse_voice("seen"), do: :seen
+  defp parse_voice("heard_only"), do: :heard_only
+  defp parse_voice(_), do: :all
 end

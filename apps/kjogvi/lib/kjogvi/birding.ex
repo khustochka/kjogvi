@@ -6,11 +6,13 @@ defmodule Kjogvi.Birding do
   import Ecto.Query
 
   alias Kjogvi.Repo
+  alias Kjogvi.Geo
   alias Kjogvi.Pages.Species
 
   alias __MODULE__.Observation
   alias __MODULE__.Card
   alias __MODULE__.CardSearch
+  alias __MODULE__.CardSearch.Filter
 
   @doc """
   Searches a user's cards with a `CardSearch.Filter`, paginated.
@@ -18,6 +20,46 @@ defmodule Kjogvi.Birding do
   See `Kjogvi.Birding.CardSearch.search/3`.
   """
   defdelegate search_cards(user, filter, pagination), to: CardSearch, as: :search
+
+  @doc """
+  Builds a fully-hydrated `CardSearch.Filter` from URL query params.
+
+  Resolves the `location_id` param into a `Geo.Location` and the `taxon_key`
+  into a display label, returning `{filter, taxon_label}`. The label lets the
+  caller restore the taxon autocomplete's text from a shared/bookmarked URL.
+  """
+  @spec card_filter_from_params(map()) :: {Filter.t(), String.t()}
+  def card_filter_from_params(params) do
+    {filter, location_id} = Filter.from_params(params)
+
+    filter = %{filter | location: resolve_location(location_id)}
+    {filter, taxon_label(filter.taxon_key)}
+  end
+
+  defp resolve_location(nil), do: nil
+
+  defp resolve_location(id) do
+    case Integer.parse(id) do
+      {int_id, ""} ->
+        Geo.get_locations_by_ids([int_id])
+        # Match the preloads the location autocomplete attaches, so the filter
+        # panel can render the location's long name from a shared/bookmarked URL.
+        |> Repo.preload([:cached_parent, :cached_city, :cached_subdivision, :cached_country])
+        |> List.first()
+
+      _ ->
+        nil
+    end
+  end
+
+  defp taxon_label(nil), do: ""
+
+  defp taxon_label(taxon_key) do
+    case Ornithologue.get_taxa_and_species([taxon_key]) do
+      %{^taxon_key => %{name_en: name_en}} when is_binary(name_en) -> name_en
+      _ -> ""
+    end
+  end
 
   def get_cards(user, %{page: page, page_size: page_size}) do
     Card

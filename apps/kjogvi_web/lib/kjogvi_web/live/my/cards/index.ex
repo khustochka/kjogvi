@@ -15,23 +15,27 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   def mount(_params, _session, socket) do
     {
       :ok,
-      socket
-      |> assign(:page_title, "Cards")
-      |> assign(:filter, %Filter{})
-      |> assign(:taxon_label, "")
+      assign(socket, :page_title, "Cards")
     }
   end
 
+  # The URL is the single source of truth for the filter: it carries the filter
+  # as query params (so a filtered view is linkable and survives reload/back),
+  # and `handle_params` rebuilds the filter + taxon label from them on every nav.
   @impl true
   def handle_params(params, _url, socket) do
     page =
       Map.get(params, "page", "1")
       |> String.to_integer()
 
+    {filter, taxon_label} = Birding.card_filter_from_params(params)
+
     {
       :noreply,
       socket
       |> assign(:page, page)
+      |> assign(:filter, filter)
+      |> assign(:taxon_label, taxon_label)
       |> load_cards()
     }
   end
@@ -57,62 +61,43 @@ defmodule KjogviWeb.Live.My.Cards.Index do
     end
   end
 
-  # Form change/submit both re-run the search. Only the form-owned fields
-  # (date, checkboxes, radios) are taken from the params; the taxon and
-  # location are owned by the autocomplete components (via handle_info) and are
-  # preserved from the current filter, so submitting the form never clears them.
+  # Form change/submit both navigate to a new URL carrying the updated filter.
+  # Only the form-owned fields (date, checkboxes, radios) are taken from the
+  # params; the taxon and location are owned by the autocomplete components (via
+  # handle_info) and are preserved from the current filter, so submitting the
+  # form never clears them.
   def handle_event(event, %{"filter" => params}, socket)
       when event in ["filter_change", "filter_search"] do
-    {:noreply, apply_filter(socket, merge_form_fields(socket.assigns.filter, params))}
+    {:noreply, patch_to_filter(socket, merge_form_fields(socket.assigns.filter, params))}
   end
 
   def handle_event("filter_reset", _params, socket) do
-    {
-      :noreply,
-      socket
-      |> assign(:taxon_label, "")
-      |> apply_filter(%Filter{})
-    }
+    {:noreply, patch_to_filter(socket, %Filter{})}
   end
 
-  # Taxon picked: remember its display label and key, then re-search.
+  # Taxon picked: set its key on the filter and navigate. The display label is
+  # re-derived from the key in `handle_params`, so it survives a shared URL too.
   @impl true
   def handle_info({:autocomplete_select, "filter_taxon", %{"result" => taxon}}, socket) do
-    filter = %{socket.assigns.filter | taxon_key: taxon.key}
-
-    {
-      :noreply,
-      socket
-      |> assign(:taxon_label, taxon.name_en)
-      |> apply_filter(filter)
-    }
+    {:noreply, patch_to_filter(socket, %{socket.assigns.filter | taxon_key: taxon.key})}
   end
 
   def handle_info({:autocomplete_clear, "filter_taxon", _params}, socket) do
-    filter = %{socket.assigns.filter | taxon_key: nil}
-
-    {
-      :noreply,
-      socket
-      |> assign(:taxon_label, "")
-      |> apply_filter(filter)
-    }
+    {:noreply, patch_to_filter(socket, %{socket.assigns.filter | taxon_key: nil})}
   end
 
   def handle_info({:autocomplete_select, "filter_location", %{"result" => location}}, socket) do
-    {:noreply, apply_filter(socket, %{socket.assigns.filter | location: location})}
+    {:noreply, patch_to_filter(socket, %{socket.assigns.filter | location: location})}
   end
 
   def handle_info({:autocomplete_clear, "filter_location", _params}, socket) do
-    {:noreply, apply_filter(socket, %{socket.assigns.filter | location: nil})}
+    {:noreply, patch_to_filter(socket, %{socket.assigns.filter | location: nil})}
   end
 
-  # Applying a filter always returns to page 1 of the (new) result set.
-  defp apply_filter(socket, %Filter{} = filter) do
-    socket
-    |> assign(:filter, filter)
-    |> assign(:page, 1)
-    |> load_cards()
+  # Applying a filter always returns to page 1 of the (new) result set, encoded
+  # into the URL so the view is linkable. `handle_params` does the actual search.
+  defp patch_to_filter(socket, %Filter{} = filter) do
+    push_patch(socket, to: ~p"/my/cards?#{Filter.to_params(filter)}")
   end
 
   # Updates only the form-owned fields of `filter` from submitted params,
@@ -181,15 +166,21 @@ defmodule KjogviWeb.Live.My.Cards.Index do
     <.card_list id="cards" cards={@cards} on_delete="delete" />
 
     <div class="mt-6">
-      {paginate(@socket, @cards, &paginated_card_path/4, [:index], live: true)}
+      {paginate(@socket, @cards, paginated_card_path(@filter), [:index], live: true)}
     </div>
     """
   end
 
-  defp paginated_card_path(_conn, _action, page, _params) do
-    case page do
-      1 -> ~p"/my/cards"
-      n -> ~p"/my/cards/page/#{n}"
+  # Page links carry the current filter as query params so paging preserves the
+  # active search (and keeps each page linkable).
+  defp paginated_card_path(%Filter{} = filter) do
+    query = Filter.to_params(filter)
+
+    fn _conn, _action, page, _params ->
+      case page do
+        1 -> ~p"/my/cards?#{query}"
+        n -> ~p"/my/cards/page/#{n}?#{query}"
+      end
     end
   end
 end

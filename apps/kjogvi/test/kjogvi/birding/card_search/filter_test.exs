@@ -46,6 +46,75 @@ defmodule Kjogvi.Birding.CardSearch.FilterTest do
     end
   end
 
+  describe "to_params/1" do
+    test "a blank filter yields an empty map" do
+      assert Filter.to_params(%Filter{}) == %{}
+    end
+
+    test "emits only the non-default fields" do
+      filter = %Filter{
+        date: ~D[2024-05-01],
+        include_subregions: true,
+        taxon_key: "/ebird/v2024/houspa",
+        exclude_subspecies: true,
+        voice: :heard_only,
+        hidden: true
+      }
+
+      assert Filter.to_params(filter) == %{
+               "date" => "2024-05-01",
+               "include_subregions" => "true",
+               "taxon_key" => "/ebird/v2024/houspa",
+               "exclude_subspecies" => "true",
+               "voice" => "heard_only",
+               "hidden" => "true"
+             }
+    end
+
+    test "encodes the location as its id" do
+      filter = %Filter{location: %Kjogvi.Geo.Location{id: 42}}
+
+      assert Filter.to_params(filter) == %{"location_id" => "42"}
+    end
+
+    test "omits voice when it is :all" do
+      refute Map.has_key?(Filter.to_params(%Filter{voice: :all}), "voice")
+    end
+  end
+
+  describe "from_params/1" do
+    test "an empty map decodes to a blank filter with no location_id" do
+      assert {%Filter{} = filter, nil} = Filter.from_params(%{})
+      assert Filter.blank?(filter)
+    end
+
+    test "round-trips a fully-populated filter (location aside)" do
+      original = %Filter{
+        date: ~D[2024-05-01],
+        include_subregions: true,
+        taxon_key: "/ebird/v2024/houspa",
+        exclude_subspecies: true,
+        voice: :seen,
+        hidden: true
+      }
+
+      {decoded, nil} = original |> Filter.to_params() |> Filter.from_params()
+
+      assert decoded == original
+    end
+
+    test "returns the location_id separately for the caller to resolve" do
+      {%Filter{location: nil}, "42"} = Filter.from_params(%{"location_id" => "42"})
+    end
+
+    test "falls back to defaults on malformed values" do
+      {filter, nil} = Filter.from_params(%{"date" => "not-a-date", "voice" => "bogus"})
+
+      assert is_nil(filter.date)
+      assert filter.voice == :all
+    end
+  end
+
   describe "discombo!/1" do
     test "validates and fills defaults" do
       filter = Filter.discombo!(voice: :seen)
