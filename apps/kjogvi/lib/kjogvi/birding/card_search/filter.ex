@@ -54,31 +54,9 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
     ]
   ]
 
-  # Struct defaults mirror the NimbleOptions schema defaults so that a bare
-  # `%Filter{}` (built without going through `discombo!/1`) is already a valid,
-  # blank filter.
-  defstruct Enum.map(@schema, fn {key, opts} -> {key, Keyword.get(opts, :default)} end)
-
-  @doc """
-  Builds a filter from a keyword list / map of options, validating types.
-  Raises on invalid input.
-  """
-  def discombo!(opts) do
-    opts
-    |> Enum.into([])
-    |> NimbleOptions.validate!(@schema)
-    |> then(&struct!(__MODULE__, &1))
-  end
-
-  @doc """
-  Builds a filter, returning `{:ok, filter}` or `{:error, error}`.
-  """
-  def discombo(opts) do
-    case opts |> Enum.into([]) |> NimbleOptions.validate(@schema) do
-      {:ok, result} -> {:ok, struct!(__MODULE__, result)}
-      err -> err
-    end
-  end
+  # Defines the struct (defaults mirror the schema, so a bare `%Filter{}` is
+  # already a valid, blank filter) plus `discombo/1` and `discombo!/1`.
+  use Kjogvi.Filter, schema: @schema
 
   @doc """
   True when at least one observation-level filter is active, meaning the search
