@@ -45,6 +45,16 @@ defmodule Kjogvi.Birding.Observation.Query do
     end
   end
 
+  def only_heard_only(query) do
+    if has_named_binding?(query, :observation) do
+      query
+      |> where([observation: o], o.voice == true)
+    else
+      query
+      |> where([..., o], o.voice == true)
+    end
+  end
+
   def exclude_hidden(query) do
     if has_named_binding?(query, :observation) do
       query

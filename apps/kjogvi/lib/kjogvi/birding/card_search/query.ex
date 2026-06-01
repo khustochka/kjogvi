@@ -120,8 +120,8 @@ defmodule Kjogvi.Birding.CardSearch.Query do
   end
 
   defp filter_by_voice(query, :all), do: query
-  defp filter_by_voice(query, :seen), do: where(query, [o], o.voice == false)
-  defp filter_by_voice(query, :heard_only), do: where(query, [o], o.voice == true)
+  defp filter_by_voice(query, :seen), do: Observation.Query.exclude_heard_only(query)
+  defp filter_by_voice(query, :heard_only), do: Observation.Query.only_heard_only(query)
 
   # `hidden` selects ONLY hidden observations when checked; when unchecked it
   # leaves the default behaviour (hidden ones are included for the owner here,
