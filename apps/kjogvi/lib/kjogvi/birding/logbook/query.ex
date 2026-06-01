@@ -25,30 +25,15 @@ defmodule Kjogvi.Birding.Logbook.Query do
 
   @doc false
   def firsts_in_range(scope, locations, {start_date, end_date}) do
-    %{user: %{id: user_id}, include_private: include_private} = scope
-
     # Scope ids: nil represents the World scope. Each location id represents
     # a per-location scope (matched by ancestry: a card belongs to scope L
     # if its card.location_id == L or L is in card.location.ancestry).
     scope_ids = [nil | Enum.map(locations, & &1.id)]
 
     base_query =
-      from o in Observation,
-        as: :observation,
-        join: c in assoc(o, :card),
-        as: :card,
-        join: stm in assoc(o, :species_taxa_mapping),
-        as: :stm,
+      from [observation: o, card: c] in Observation.Query.base_for_scope(scope),
         join: cl in assoc(c, :location),
-        as: :card_location,
-        where: o.unreported == false and c.user_id == ^user_id
-
-    base_query =
-      if include_private do
-        base_query
-      else
-        Observation.Query.exclude_hidden(base_query)
-      end
+        as: :card_location
 
     scoped_query = scoped_query(base_query, scope_ids)
 

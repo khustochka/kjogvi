@@ -78,7 +78,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   def observations_filtered(scope, filter \\ [])
 
   def observations_filtered(scope, %Filter{} = filter) do
-    base = from([o, c] in observation_base(scope))
+    base = from([o, c] in Observation.Query.base_for_scope(scope))
 
     Map.from_struct(filter)
     |> Enum.reduce(base, fn filter, query ->
@@ -161,23 +161,5 @@ defmodule Kjogvi.Birding.Lifelist.Query do
           ll.id in subquery(special_parent_ids),
       select: ll.id
     )
-  end
-
-  defp observation_base(scope) do
-    %{user: %{id: user_id}, include_private: include_private} = scope
-
-    query =
-      from o in Observation,
-        as: :observation,
-        join: c in assoc(o, :card),
-        as: :card,
-        join: stm in assoc(o, :species_taxa_mapping),
-        where: o.unreported == false and c.user_id == ^user_id
-
-    if include_private do
-      query
-    else
-      Observation.Query.exclude_hidden(query)
-    end
   end
 end
