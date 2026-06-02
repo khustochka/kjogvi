@@ -43,6 +43,12 @@ only when LiveView classes are applied, for example:
   --color-brand: #FD4F00;
   --font-header: 'Rubik', 'sans-serif', 'ui-sans-serif', 'system-ui';
 
+  --color-blue-menu: #407FBF;
+  --color-blue-menu-hover: #306faf;
+  --color-blue-menu-border: rgba(64, 127, 191, 0.6);
+  --color-bg-beige: #f7f7f1;
+  --color-menu-border: #ced4da;
+
   --color-forest-50: #f0f7f1;
   --color-forest-100: #dceedd;
   --color-forest-200: #b8ddb9;
