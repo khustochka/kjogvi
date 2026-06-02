@@ -49,6 +49,12 @@ only when LiveView classes are applied, for example:
   --color-bg-beige: #f7f7f1;
   --color-menu-border: #ced4da;
 
+  /* Private view: sage green-gray page background + admin bar.
+     Distinguishes private from public (beige) view at a glance. */
+  --color-private-bg: #e7ece4;
+  --color-private-bar: #3f4a3a;
+  --color-private-bar-text: #e6ece2;
+
   --color-forest-50: #f0f7f1;
   --color-forest-100: #dceedd;
   --color-forest-200: #b8ddb9;
