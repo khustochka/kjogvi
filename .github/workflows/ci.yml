@@ -19,4 +19,4 @@ jobs:
     needs:
       - tests
       - lint
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/image-bump/')
