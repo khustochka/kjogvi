@@ -182,6 +182,17 @@ if config_env() == :prod do
     bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
     region: System.get_env("ORNITHO_IMPORTER_S3_REGION")
 
+  # IMAGES
+
+  config :waffle,
+    storage: Waffle.Storage.S3,
+    bucket: System.get_env("IMAGES_PROD_S3_BUCKET"),
+    asset_host: System.get_env("IMAGES_PROD_S3_HOST")
+
+  config :ex_aws, :s3, region: System.get_env("IMAGES_PROD_S3_REGION")
+
+  config :kjogvi, :images, storage_backend: "s3_prod"
+
   # KJOGVI Legacy Import
 
   config :kjogvi, Kjogvi.Legacy.Import,

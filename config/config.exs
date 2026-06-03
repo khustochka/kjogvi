@@ -86,6 +86,18 @@ config :scrivener_phoenix,
 config :ex_aws,
   http_client: ExAws.Request.Req
 
+# IMAGES
+
+# Default storage is the local filesystem; prod switches to S3 in runtime.exs.
+# The `storage_backend` string is persisted on each image so URLs keep
+# resolving even when the running environment uses a different backend (e.g.
+# a dev database imported from prod still points its images at prod S3).
+config :waffle,
+  storage: Waffle.Storage.Local,
+  storage_dir_prefix: "apps/kjogvi_web/priv/static"
+
+config :kjogvi, :images, storage_backend: "local"
+
 # ORNITHOLOGUE
 
 config :ornithologue, repo: Kjogvi.OrnithoRepo

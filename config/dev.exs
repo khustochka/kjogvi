@@ -137,3 +137,17 @@ config :phoenix, :stacktrace_depth, 20
 #   adapter: Kjogvi.Legacy.Adapters.Download,
 #   url: System.get_env("LEGACY_URL"),
 #   api_key: System.get_env("LEGACY_API_KEY")
+
+# IMAGES
+#
+# Dev uploads go to the local filesystem by default (see config.exs). To send
+# dev uploads to a dev S3 bucket instead, uncomment below. A dev database
+# imported from prod will still render its prod-stored images, because each
+# image records the backend it was uploaded with.
+#
+# config :waffle,
+#   storage: Waffle.Storage.S3,
+#   bucket: System.get_env("IMAGES_DEV_S3_BUCKET"),
+#   asset_host: System.get_env("IMAGES_DEV_S3_HOST")
+#
+# config :kjogvi, :images, storage_backend: "s3_dev"
