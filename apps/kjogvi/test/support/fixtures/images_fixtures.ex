@@ -21,13 +21,18 @@ defmodule Kjogvi.ImagesFixtures do
 
   @doc """
   Inserts an image without a stored file (for testing metadata and
-  associations).
+  associations). The `:extras` map, if given, is applied directly since it is
+  not user-editable through the regular changeset.
   """
   def image_fixture(attrs \\ %{}) do
+    attrs = valid_image_attributes(attrs)
+    {extras, attrs} = Map.pop(attrs, :extras, %{})
+
     {:ok, image} =
-      attrs
-      |> valid_image_attributes()
-      |> then(&Repo.insert(Image.changeset(%Image{}, &1)))
+      %Image{}
+      |> Image.changeset(attrs)
+      |> Image.metadata_changeset(extras)
+      |> Repo.insert()
 
     image
   end
