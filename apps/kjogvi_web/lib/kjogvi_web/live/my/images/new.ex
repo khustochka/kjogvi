@@ -111,11 +111,11 @@ defmodule KjogviWeb.Live.My.Images.New do
         </div>
 
         <div :if={@uploaded?} class="space-y-4">
-          <.input field={@form[:slug]} label="Slug" required />
-          <.input field={@form[:title]} label="Title" />
-          <.input field={@form[:description]} type="textarea" label="Description" />
+          <CoreComponents.input field={@form[:slug]} label="Slug" required />
+          <CoreComponents.input field={@form[:title]} label="Title" />
+          <CoreComponents.input field={@form[:description]} type="textarea" label="Description" />
           <div class="w-32">
-            <.input field={@form[:sort_order]} type="number" label="Sort order" min="0" />
+            <CoreComponents.input field={@form[:sort_order]} type="number" label="Sort order" min="0" />
           </div>
 
           <div class="flex gap-4 pt-2 border-t border-stone-200">
@@ -152,8 +152,10 @@ defmodule KjogviWeb.Live.My.Images.New do
   end
 
   @impl true
-  def handle_event("validate", %{"image" => params}, socket) do
-    {:noreply, assign_form(socket, params, :validate)}
+  def handle_event("validate", params, socket) do
+    # The file input shares this form, so `validate` also fires on upload
+    # changes — before the metadata fields exist there is no "image" key.
+    {:noreply, assign_form(socket, params["image"] || %{}, :validate)}
   end
 
   @impl true
