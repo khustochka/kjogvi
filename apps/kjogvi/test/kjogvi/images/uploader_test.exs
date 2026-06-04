@@ -16,4 +16,22 @@ defmodule Kjogvi.Images.UploaderTest do
       end
     end
   end
+
+  describe "filename/2" do
+    test "names the original after the uploaded basename, without a version" do
+      assert Uploader.filename(:original, {%{file_name: "pileated.jpg"}, %{}}) == "pileated"
+    end
+
+    test "suffixes variants with the version after the basename" do
+      file = %{file_name: "pileated.jpg"}
+      assert Uploader.filename(:medium, {file, %{}}) == "pileated_medium"
+      assert Uploader.filename(:thumbnail, {file, %{}}) == "pileated_thumbnail"
+    end
+
+    test "ignores the scope's slug, so a later rename leaves filenames frozen" do
+      file = %{file_name: "pileated.jpg"}
+      # Even with a different live slug, the name derives from the upload.
+      assert Uploader.filename(:medium, {file, %{slug: "renamed-later"}}) == "pileated_medium"
+    end
+  end
 end

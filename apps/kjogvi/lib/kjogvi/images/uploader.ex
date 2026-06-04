@@ -71,11 +71,14 @@ defmodule Kjogvi.Images.Uploader do
 
   def storage_dir(_version, _), do: "uploads/images"
 
-  # Files are named after the slug as it was at upload time. The token folders
-  # already guarantee uniqueness, so a later slug rename simply leaves the
-  # filename as a (cosmetic) historical label.
-  def filename(version, {_file, %{slug: slug}}) when is_binary(slug) do
-    "#{slug}_#{version}"
+  # Files are named after the original basename, which waffle freezes into the
+  # `file` column at upload time and replays on every URL build. We deliberately
+  # do NOT read the slug here: the slug can change, but the stored basename must
+  # not, or computed URLs would point at files that no longer exist. Uploading
+  # as `<slug>.jpg` therefore yields `<slug>.jpg` and `<slug>_<version>.jpg`,
+  # frozen regardless of any later rename.
+  def filename(:original, {file, _scope}) do
+    Path.basename(file.file_name, Path.extname(file.file_name))
   end
 
   def filename(version, {file, _scope}) do

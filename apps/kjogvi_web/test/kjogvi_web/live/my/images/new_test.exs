@@ -72,17 +72,18 @@ defmodule KjogviWeb.Live.My.Images.NewTest do
     {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
     slug = "sample-bird-#{System.unique_integer([:positive])}"
+    upload_name = "#{slug}.jpg"
 
     upload =
       file_input(live, "#image-form", :image, [
         %{
-          name: "sample_bird.jpg",
+          name: upload_name,
           content: File.read!(@sample_image),
           type: "image/jpeg"
         }
       ])
 
-    assert render_upload(upload, "sample_bird.jpg") =~ "Replace image"
+    assert render_upload(upload, upload_name) =~ "Replace image"
 
     # In test, waffle stores under a throwaway tmp prefix (see config/test.exs).
     # Stored files live outside the DB sandbox, so clean up the user's whole
@@ -103,10 +104,15 @@ defmodule KjogviWeb.Live.My.Images.NewTest do
     assert image.extras["height"] == 40
     assert image.extras["exif_date"] == "2021-07-15 09:30:00"
 
-    # Files are stored under <user_token>/<image_token>, named by the slug.
+    # Files are stored under <user_token>/<image_token>, named after the
+    # uploaded basename (here the slug). The original keeps its name with no
+    # version suffix; variants are suffixed `_<version>`.
     storage_dir = Path.join(user_dir, image.token)
 
-    for version <- ~w(original thumbnail small medium large) do
+    assert File.exists?(Path.join(storage_dir, "#{slug}.jpg")),
+           "expected stored original at #{Path.join(storage_dir, "#{slug}.jpg")}"
+
+    for version <- ~w(thumbnail small medium large) do
       path = Path.join(storage_dir, "#{slug}_#{version}.jpg")
       assert File.exists?(path), "expected stored variant #{version} at #{path}"
     end
