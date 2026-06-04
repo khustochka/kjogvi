@@ -21,9 +21,31 @@ defmodule Kjogvi.Images.Uploader do
 
   @accepted_extensions ~w(.jpg .jpeg .png .webp .tiff .tif .heic .heif)
 
+  # Storage keys are immutable for a given image (token folders + a frozen
+  # basename), so objects can be cached for a year. A re-upload bumps waffle's
+  # URL timestamp, which busts the cache despite the stable key.
+  @cache_control "public, max-age=31536000, immutable"
+
   # Images are served via public, unsigned URLs, so stored objects must be
   # world-readable. Applies to S3; ignored by local storage.
   def acl(_version, _scope), do: :public_read
+
+  # Headers stored on the S3 object (ignored by local storage):
+  #
+  #   * content_type — waffle does not set one, so S3 would default to
+  #     application/octet-stream and browsers would download rather than
+  #     render. Derive it from the stored filename's extension.
+  #   * cache_control — see @cache_control.
+  #   * content_disposition — render in the page rather than prompting a save.
+  def s3_object_headers(version, {file, scope}) do
+    name = "#{filename(version, {file, scope})}#{extension(version, {file, scope})}"
+
+    [
+      content_type: MIME.from_path(name),
+      cache_control: @cache_control,
+      content_disposition: "inline"
+    ]
+  end
 
   def validate({file, _scope}) do
     ext = file.file_name |> Path.extname() |> String.downcase()

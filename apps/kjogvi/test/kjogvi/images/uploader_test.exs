@@ -34,4 +34,31 @@ defmodule Kjogvi.Images.UploaderTest do
       assert Uploader.filename(:medium, {file, %{slug: "renamed-later"}}) == "pileated_medium"
     end
   end
+
+  describe "s3_object_headers/2" do
+    test "sets an inline, long-lived cache regardless of version" do
+      headers = Uploader.s3_object_headers(:medium, {%{file_name: "pileated.jpg"}, %{}})
+
+      assert headers[:content_disposition] == "inline"
+      assert headers[:cache_control] =~ "max-age=31536000"
+      assert headers[:cache_control] =~ "immutable"
+    end
+
+    test "derives the original's content type from its extension" do
+      assert content_type(:original, "shot.png") == "image/png"
+      assert content_type(:original, "shot.webp") == "image/webp"
+      assert content_type(:original, "shot.JPG") == "image/jpeg"
+    end
+
+    test "always reports JPEG for re-encoded variants" do
+      for version <- ~w(thumbnail small medium large)a do
+        # Even a PNG upload yields JPEG variants.
+        assert content_type(version, "shot.png") == "image/jpeg"
+      end
+    end
+  end
+
+  defp content_type(version, file_name) do
+    Uploader.s3_object_headers(version, {%{file_name: file_name}, %{}})[:content_type]
+  end
 end
