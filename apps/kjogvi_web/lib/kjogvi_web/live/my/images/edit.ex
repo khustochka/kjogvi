@@ -57,21 +57,26 @@ defmodule KjogviWeb.Live.My.Images.Edit do
     <.h1>Edit Image</.h1>
 
     <div class="mt-6 mb-6 space-y-4">
-      <img
-        src={Images.url(@image, :thumbnail)}
-        alt={@image.title || @image.slug}
-        class="max-h-40 rounded-lg object-contain bg-stone-100"
-      />
-
-      <button
+      <div
         :if={not @replacing?}
-        id="replace-file-button"
-        type="button"
-        phx-click="start_replace"
-        class="inline-flex items-center gap-2 text-sm text-forest-600 hover:underline"
+        id="current-image-panel"
+        class="flex flex-col items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 p-6"
       >
-        <.icon name="hero-arrow-path" class="w-4 h-4" /> Replace file
-      </button>
+        <img
+          src={Images.url(@image, :medium)}
+          alt={@image.title || @image.slug}
+          class="max-h-72 max-w-full rounded-lg object-contain shadow"
+        />
+
+        <button
+          id="replace-file-button"
+          type="button"
+          phx-click="start_replace"
+          class="inline-flex items-center gap-2 text-sm text-forest-600 hover:underline"
+        >
+          <.icon name="hero-arrow-path" class="w-4 h-4" /> Replace file
+        </button>
+      </div>
 
       <form
         :if={@replacing?}
