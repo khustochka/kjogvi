@@ -21,6 +21,10 @@ defmodule Kjogvi.Images.Uploader do
 
   @accepted_extensions ~w(.jpg .jpeg .png .webp .tiff .tif .heic .heif)
 
+  # Images are served via public, unsigned URLs, so stored objects must be
+  # world-readable. Applies to S3; ignored by local storage.
+  def acl(_version, _scope), do: :public_read
+
   def validate({file, _scope}) do
     ext = file.file_name |> Path.extname() |> String.downcase()
 
