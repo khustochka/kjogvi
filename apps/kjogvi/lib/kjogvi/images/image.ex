@@ -42,7 +42,7 @@ defmodule Kjogvi.Images.Image do
     |> validate_required([:slug, :user_id, :storage_backend])
     |> validate_length(:slug, min: 1, max: 255)
     |> validate_number(:sort_order, greater_than_or_equal_to: 0)
-    |> unique_constraint(:slug)
+    |> unique_constraint(:slug, name: :images_user_id_slug_index)
   end
 
   @doc false

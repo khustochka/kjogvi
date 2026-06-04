@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict E1kFfazWa2LGy01jjnOKZufi7Xb8WJDf5Ks0bB8e618guo7aL9gTaVQcatggCr0
+\restrict SeQUCSMrfw5bITkPCdojiolpUw98O2Wweuno44jIY9lAAnas7SwGY8hRXJLPVdf
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -633,17 +633,10 @@ CREATE INDEX image_observations_observation_id_index ON public.image_observation
 
 
 --
--- Name: images_slug_index; Type: INDEX; Schema: public; Owner: -
+-- Name: images_user_id_slug_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX images_slug_index ON public.images USING btree (slug);
-
-
---
--- Name: images_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX images_user_id_index ON public.images USING btree (user_id);
+CREATE UNIQUE INDEX images_user_id_slug_index ON public.images USING btree (user_id, slug);
 
 
 --
@@ -882,7 +875,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict E1kFfazWa2LGy01jjnOKZufi7Xb8WJDf5Ks0bB8e618guo7aL9gTaVQcatggCr0
+\unrestrict SeQUCSMrfw5bITkPCdojiolpUw98O2Wweuno44jIY9lAAnas7SwGY8hRXJLPVdf
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);

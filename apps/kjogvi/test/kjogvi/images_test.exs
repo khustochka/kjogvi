@@ -68,6 +68,25 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
+  describe "slug uniqueness" do
+    test "rejects a duplicate slug for the same user" do
+      user = UsersFixtures.user_fixture()
+      ImagesFixtures.image_fixture(user: user, slug: "shared-slug")
+
+      attrs = ImagesFixtures.valid_image_attributes(user: user, slug: "shared-slug")
+
+      assert {:error, changeset} = Repo.insert(Image.changeset(%Image{}, attrs))
+      assert "has already been taken" in errors_on(changeset).slug
+    end
+
+    test "allows the same slug for different users" do
+      ImagesFixtures.image_fixture(user: UsersFixtures.user_fixture(), slug: "shared-slug")
+      other = UsersFixtures.user_fixture()
+
+      assert %Image{} = ImagesFixtures.image_fixture(user: other, slug: "shared-slug")
+    end
+  end
+
   describe "delete_image/1" do
     test "removes the image" do
       image = ImagesFixtures.image_fixture()

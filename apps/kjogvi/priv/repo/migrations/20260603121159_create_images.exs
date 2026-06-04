@@ -20,8 +20,7 @@ defmodule Kjogvi.Repo.Migrations.CreateImages do
       timestamps()
     end
 
-    create unique_index(:images, [:slug])
-    create index(:images, [:user_id])
+    create unique_index(:images, [:user_id, :slug])
 
     create table(:image_observations) do
       add :image_id, references(:images, on_delete: :delete_all), null: false

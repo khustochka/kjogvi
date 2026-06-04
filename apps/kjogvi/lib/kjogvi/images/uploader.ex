@@ -52,6 +52,10 @@ defmodule Kjogvi.Images.Uploader do
   # uploader from depending on Kjogvi.Images.Image, which would form a
   # compile-time cycle (Image -> Uploader.Type via `field :file`, Uploader ->
   # Image via this match).
+  #
+  # TODO: scope the path by opaque user and image tokens once those land, so
+  # the path doesn't expose the user id and survives slug changes:
+  # uploads/images/<user_token>/<image_token>/<initial_slug>_<version>.<ext>.
   def storage_dir(_version, {_file, %{slug: slug}}) when is_binary(slug) do
     "uploads/images/#{slug}"
   end
