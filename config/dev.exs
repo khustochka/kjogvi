@@ -144,7 +144,11 @@ config :ex_aws,
 # config :ornithologue, Ornitho.StreamImporter,
 #   adapter: Ornitho.StreamImporter.S3Adapter,
 #   bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
-#   region: System.get_env("ORNITHO_IMPORTER_S3_REGION")
+#   region: System.get_env("ORNITHO_IMPORTER_S3_REGION"),
+#   # Optional: taxonomy's own S3 credentials. Omit to fall back to the global
+#   # ex_aws chain (the image profile / awscli / instance role).
+#   access_key_id: System.get_env("ORNITHO_IMPORTER_S3_ACCESS_KEY_ID"),
+#   secret_access_key: System.get_env("ORNITHO_IMPORTER_S3_SECRET_ACCESS_KEY")
 
 # KJOGVI
 

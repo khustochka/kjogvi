@@ -177,10 +177,16 @@ if config_env() == :prod do
   config :ornithologue, Ornitho.Importer,
     import_timeout: String.to_integer(System.get_env("ORNITHO_IMPORTER_TIMEOUT", "30000"))
 
+  # Taxonomy downloads use their own S3 profile, passed as a per-request ex_aws
+  # override (the global ex_aws config is the image storage profile). Credentials
+  # are optional: when unset, ex_aws falls back to the global chain / instance
+  # role.
   config :ornithologue, Ornitho.StreamImporter,
     adapter: Ornitho.StreamImporter.S3Adapter,
     bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
-    region: System.get_env("ORNITHO_IMPORTER_S3_REGION")
+    region: System.get_env("ORNITHO_IMPORTER_S3_REGION"),
+    access_key_id: System.get_env("ORNITHO_IMPORTER_S3_ACCESS_KEY_ID"),
+    secret_access_key: System.get_env("ORNITHO_IMPORTER_S3_SECRET_ACCESS_KEY")
 
   # IMAGES
 
