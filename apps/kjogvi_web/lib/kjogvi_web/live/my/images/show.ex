@@ -37,12 +37,20 @@ defmodule KjogviWeb.Live.My.Images.Show do
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
       <div class="md:col-span-2">
         <div class="rounded-xl overflow-hidden bg-stone-100">
-          <img src={Images.url(@image, :medium)} alt={@image.title || @image.slug} class="w-full h-auto" />
+          <img
+            src={Images.url(@image, :medium)}
+            alt={@image.title || @image.slug}
+            class="w-full h-auto"
+          />
         </div>
 
         <div class="mt-2 flex flex-wrap gap-3 text-xs text-stone-500" aria-label="Download sizes">
           <span>Download:</span>
-          <.link :for={v <- ~w(original large medium small)a} href={Images.url(@image, v)} class="text-forest-600 hover:underline">
+          <.link
+            :for={v <- ~w(original large medium small)a}
+            href={Images.url(@image, v)}
+            class="text-forest-600 hover:underline"
+          >
             {String.capitalize(to_string(v))}
           </.link>
         </div>
@@ -95,7 +103,11 @@ defmodule KjogviWeb.Live.My.Images.Show do
         </div>
 
         <div class="flex flex-wrap gap-3 pt-2 border-t border-stone-200">
-          <.action_button navigate={~p"/my/images/#{@image.id}/edit"} icon="hero-pencil" variant="secondary">
+          <.action_button
+            navigate={~p"/my/images/#{@image.id}/edit"}
+            icon="hero-pencil"
+            variant="secondary"
+          >
             Edit
           </.action_button>
           <button

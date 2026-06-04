@@ -105,7 +105,13 @@ defmodule KjogviWeb.Live.My.Images.NewTest do
 
     # The original and every resized variant were written to local storage.
     for version <- ~w(original thumbnail small medium large) do
-      path = Path.join(["apps/kjogvi_web/priv/static", "uploads/images/#{slug}", "sample_bird_#{version}.jpg"])
+      path =
+        Path.join([
+          "apps/kjogvi_web/priv/static",
+          "uploads/images/#{slug}",
+          "sample_bird_#{version}.jpg"
+        ])
+
       assert File.exists?(path), "expected stored variant #{version} at #{path}"
     end
   end
