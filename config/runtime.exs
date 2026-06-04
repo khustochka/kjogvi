@@ -188,6 +188,14 @@ if config_env() == :prod do
     storage: Waffle.Storage.S3,
     bucket: System.get_env("IMAGES_PROD_S3_BUCKET")
 
+  # Global ex_aws config = the IMAGE storage profile. Waffle reads only the
+  # global ex_aws env (no per-call credentials/region), so the image profile
+  # lives here. Other consumers (e.g. the taxonomy importer) override per
+  # request and don't depend on this.
+  config :ex_aws,
+    access_key_id: [{:system, "IMAGES_PROD_S3_ACCESS_KEY_ID"}, :instance_role],
+    secret_access_key: [{:system, "IMAGES_PROD_S3_SECRET_ACCESS_KEY"}, :instance_role]
+
   config :ex_aws, :s3, region: System.get_env("IMAGES_PROD_S3_REGION")
 
   # New prod uploads go to the prod S3 bucket. Image URLs are built per-image

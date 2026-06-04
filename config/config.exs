@@ -83,6 +83,13 @@ config :scrivener_phoenix,
   window: 2,
   template: KjogviWeb.Scrivener.Phoenix.Template
 
+# ex_aws S3 — IMAGES.
+#
+# The global ex_aws config is the IMAGE storage profile: waffle reads only the
+# global ex_aws env (it accepts no per-call credentials/region), so whatever
+# images need must live here. Other S3 consumers that call ExAws.request/2
+# directly (e.g. the taxonomy importer) pass their own profile as a per-request
+# override and do not rely on this global config for credentials.
 config :ex_aws,
   http_client: ExAws.Request.Req
 
