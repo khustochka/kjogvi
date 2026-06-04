@@ -86,6 +86,14 @@ config :scrivener_phoenix,
 config :ex_aws,
   http_client: ExAws.Request.Req
 
+# Force HTTP/1 for S3: Req's shared Finch pool intermittently raises
+# `:pool_not_available` when several requests negotiate HTTP/2 to S3 at once
+# (e.g. waffle uploading all image variants concurrently). S3 fully supports
+# HTTP/1, and Finch's HTTP/1 pooling handles the concurrency cleanly.
+config :ex_aws, :req_opts,
+  receive_timeout: 30_000,
+  connect_options: [protocols: [:http1]]
+
 # IMAGES
 
 # Default storage is the local filesystem; prod switches to S3 in runtime.exs.
