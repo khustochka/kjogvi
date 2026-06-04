@@ -104,7 +104,20 @@ config :waffle,
   storage: Waffle.Storage.Local,
   storage_dir_prefix: "apps/kjogvi_web/priv/static"
 
-config :kjogvi, :images, storage_backend: "local"
+# `storage_backend` is the backend NEW uploads are written with in this env.
+# `hosts` maps every backend an image might carry to the public host its URL is
+# built against, so a database imported across environments still renders every
+# image: a prod-S3 image opened on a local dev box resolves to the prod host,
+# not the local one. `local` has no host — its files are served as a relative
+# `/uploads/...` path by the endpoint's Plug.Static. The S3 hosts are filled in
+# per environment (dev.exs / runtime.exs) from env vars.
+config :kjogvi, :images,
+  storage_backend: "local",
+  hosts: %{
+    "local" => nil,
+    "s3_dev" => nil,
+    "s3_prod" => nil
+  }
 
 # ORNITHOLOGUE
 

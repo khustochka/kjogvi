@@ -98,6 +98,83 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
+  describe "url/2" do
+    setup do
+      previous = Application.get_env(:kjogvi, :images)
+
+      Application.put_env(:kjogvi, :images,
+        storage_backend: "s3_dev",
+        hosts: %{
+          "local" => nil,
+          "s3_dev" => "https://dev-bucket.s3.example.com",
+          # A trailing slash must not double up in the URL.
+          "s3_prod" => "https://prod-bucket.s3.example.com/"
+        }
+      )
+
+      on_exit(fn -> Application.put_env(:kjogvi, :images, previous) end)
+    end
+
+    # An image carrying a stored file, built without touching storage.
+    defp image_with_file(user, backend) do
+      %Image{
+        token: "imgtok",
+        slug: "pileated",
+        storage_backend: backend,
+        user_id: user.id,
+        user: user,
+        file: %{file_name: "pileated.jpg", updated_at: ~N[2026-06-03 12:00:00]}
+      }
+    end
+
+    test "returns nil when the image has no stored file" do
+      assert Images.url(%Image{file: nil}) == nil
+    end
+
+    test "builds an absolute URL against the image's own backend host" do
+      user = UsersFixtures.user_fixture()
+      url = Images.url(image_with_file(user, "s3_prod"), :medium)
+
+      assert url ==
+               "https://prod-bucket.s3.example.com" <>
+                 "/uploads/images/#{user.public_token}/imgtok/pileated_medium.jpg" <>
+                 "?#{expected_unix()}"
+    end
+
+    test "uses the backend recorded on the image, not the running env's backend" do
+      user = UsersFixtures.user_fixture()
+
+      # The env uploads with s3_dev (see setup), but a prod image still resolves
+      # to the prod host.
+      assert Images.url(image_with_file(user, "s3_prod")) =~ "https://prod-bucket.s3.example.com/"
+      assert Images.url(image_with_file(user, "s3_dev")) =~ "https://dev-bucket.s3.example.com/"
+    end
+
+    test "local images get a host-relative path served by the endpoint" do
+      user = UsersFixtures.user_fixture()
+      url = Images.url(image_with_file(user, "local"), :medium)
+      assert String.starts_with?(url, "/uploads/images/")
+      refute url =~ "://"
+    end
+
+    test "names the original without a version suffix and variants with one" do
+      user = UsersFixtures.user_fixture()
+      assert Images.url(image_with_file(user, "s3_dev"), :original) =~ "/pileated.jpg?"
+      assert Images.url(image_with_file(user, "s3_dev"), :thumbnail) =~ "/pileated_thumbnail.jpg?"
+    end
+
+    test "appends the upload timestamp as a cache-buster" do
+      user = UsersFixtures.user_fixture()
+      assert Images.url(image_with_file(user, "s3_dev")) =~ "?#{expected_unix()}"
+    end
+
+    defp expected_unix do
+      ~N[2026-06-03 12:00:00]
+      |> DateTime.from_naive!("Etc/UTC")
+      |> DateTime.to_unix()
+    end
+  end
+
   describe "delete_image/1" do
     test "removes the image" do
       image = ImagesFixtures.image_fixture()

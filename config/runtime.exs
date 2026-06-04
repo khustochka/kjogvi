@@ -186,12 +186,20 @@ if config_env() == :prod do
 
   config :waffle,
     storage: Waffle.Storage.S3,
-    bucket: System.get_env("IMAGES_PROD_S3_BUCKET"),
-    asset_host: System.get_env("IMAGES_PROD_S3_HOST")
+    bucket: System.get_env("IMAGES_PROD_S3_BUCKET")
 
   config :ex_aws, :s3, region: System.get_env("IMAGES_PROD_S3_REGION")
 
-  config :kjogvi, :images, storage_backend: "s3_prod"
+  # New prod uploads go to the prod S3 bucket. Image URLs are built per-image
+  # from its recorded backend (see Kjogvi.Images.url/2), so the host map carries
+  # the dev host too, letting prod render any dev-uploaded images present.
+  config :kjogvi, :images,
+    storage_backend: "s3_prod",
+    hosts: %{
+      "local" => nil,
+      "s3_dev" => System.get_env("IMAGES_DEV_S3_HOST"),
+      "s3_prod" => System.get_env("IMAGES_PROD_S3_HOST")
+    }
 
   # KJOGVI Legacy Import
 

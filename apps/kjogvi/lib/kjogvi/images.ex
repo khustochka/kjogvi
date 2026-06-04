@@ -123,13 +123,54 @@ defmodule Kjogvi.Images do
   @doc """
   Public URL for the given version of the image (defaults to `:medium`).
 
+  The URL is built from the image's own recorded `storage_backend`, not the
+  backend the running environment uploads with. This keeps every image
+  resolvable when a database is shared across environments — a prod-S3 image
+  renders against the prod host even on a local dev box, and vice versa.
+
   The image's user must be available (it carries the `public_token` segment of
   the path); it is preloaded here if the caller hasn't already done so.
   """
-  def url(%Image{} = image, version \\ :medium) do
-    image = Repo.preload(image, :user)
-    Kjogvi.Images.Uploader.url({image.file, image}, version, signed: false)
+  def url(image, version \\ :medium)
+
+  def url(%Image{file: nil}, _version), do: nil
+
+  def url(%Image{} = image, version) do
+    image = maybe_preload_user(image)
+    key = Kjogvi.Images.Uploader.s3_key(version, {image.file, image})
+
+    [backend_host(image.storage_backend), "/", key, cache_buster(image.file)]
+    |> Enum.join()
   end
+
+  defp maybe_preload_user(%Image{user: %Kjogvi.Users.User{}} = image), do: image
+  defp maybe_preload_user(%Image{} = image), do: Repo.preload(image, :user)
+
+  # The host prefix for the image's backend. `local` has no host: its files are
+  # served by the endpoint at the relative `/uploads/...` path, so the URL is
+  # host-relative (begins with the leading "/" added by the caller).
+  defp backend_host(backend) do
+    :kjogvi
+    |> Application.get_env(:images, [])
+    |> Keyword.get(:hosts, %{})
+    |> Map.get(backend)
+    |> case do
+      nil -> ""
+      host -> String.trim_trailing(host, "/")
+    end
+  end
+
+  # Waffle stamps each upload with an `updated_at`, surfaced in URLs as a
+  # `?<unix>` query string. S3 ignores it when locating the object, but it busts
+  # client/CDN caches when an image's file is replaced (the key is otherwise
+  # stable). Mirror that here since we build the URL ourselves.
+  defp cache_buster(%{updated_at: %{} = updated_at}) do
+    "?#{updated_at |> NaiveDateTime.truncate(:second) |> to_unix()}"
+  end
+
+  defp cache_buster(_), do: ""
+
+  defp to_unix(naive), do: naive |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
 
   defp current_storage_backend do
     :kjogvi

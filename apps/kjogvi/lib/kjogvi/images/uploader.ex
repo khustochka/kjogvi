@@ -47,6 +47,20 @@ defmodule Kjogvi.Images.Uploader do
     ]
   end
 
+  @doc """
+  The storage key (path relative to the backend root) for a version.
+
+  Built from `storage_dir/2` and the resolved file name, independent of the
+  configured storage engine, so URLs can be composed per-image regardless of
+  which backend the running environment uploads with.
+  """
+  def s3_key(version, {file, scope}) do
+    Path.join(
+      storage_dir(version, {file, scope}),
+      Waffle.Definition.Versioning.resolve_file_name(__MODULE__, version, {file, scope})
+    )
+  end
+
   def validate({file, _scope}) do
     ext = file.file_name |> Path.extname() |> String.downcase()
 
