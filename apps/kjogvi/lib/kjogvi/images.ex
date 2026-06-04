@@ -83,6 +83,35 @@ defmodule Kjogvi.Images do
   end
 
   @doc """
+  Replaces an image's stored file with a new upload, keeping the same record.
+
+  Expects a `%Plug.Upload{}` under the `"file"` key. The new file's dimensions
+  and EXIF date are re-extracted into `extras`, and the image is re-stamped with
+  the current storage backend.
+
+  The old stored objects are deliberately *not* removed. The storage key is
+  derived from the uploaded basename, so replacing with a differently-named file
+  stores the new objects under new keys and leaves the previous original and
+  variants in the backend (replacing with the same basename overwrites them in
+  place). Recorded URLs always point at the now-current `file`, so the orphaned
+  objects are simply unreferenced; clean them up out of band if desired.
+  """
+  def replace_image_file(%Image{} = image, attrs) do
+    # The user carries the public_token segment of the storage path; the
+    # uploader needs it as the waffle scope to store the new file.
+    image = maybe_preload_user(image)
+
+    extras = extract_metadata(attrs["file"])
+
+    attrs = Map.put(attrs, "storage_backend", current_storage_backend())
+
+    image
+    |> Image.changeset(attrs)
+    |> Image.metadata_changeset(extras)
+    |> Repo.update()
+  end
+
+  @doc """
   Deletes an image along with its stored files.
   """
   def delete_image(%Image{} = image) do

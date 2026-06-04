@@ -44,71 +44,13 @@ defmodule KjogviWeb.Live.My.Images.New do
       <.h1>Add Image</.h1>
 
       <.form for={@form} id="image-form" phx-submit="save" phx-change="validate" class="space-y-6">
-        <div
+        <.image_drop_zone
           id="upload-drop-zone"
-          phx-drop-target={@uploads.image.ref}
-          class={[
-            "border-2 border-dashed rounded-xl p-8 text-center transition-colors",
-            if(@uploaded?,
-              do: "border-forest-400 bg-forest-50",
-              else: "border-stone-300 bg-stone-50 hover:border-forest-400"
-            )
-          ]}
-        >
-          <.live_file_input upload={@uploads.image} class="sr-only" />
-
-          <div :if={@uploaded?} class="flex flex-col items-center gap-3">
-            <.live_img_preview
-              :for={entry <- @uploads.image.entries}
-              entry={entry}
-              class="max-h-48 max-w-full rounded-lg object-contain shadow"
-            />
-            <div class="text-sm text-stone-600">
-              {@client_name}
-              <span :if={@client_size} class="text-stone-400 ml-1">
-                ({format_bytes(@client_size)})
-              </span>
-            </div>
-            <label
-              for={@uploads.image.ref}
-              class="cursor-pointer text-forest-600 hover:underline text-sm"
-            >
-              Replace image
-            </label>
-          </div>
-
-          <div :if={not @uploaded?} class="flex flex-col items-center gap-3 text-stone-500">
-            <.icon name="hero-photo" class="w-12 h-12 text-stone-400" />
-            <div>
-              <label for={@uploads.image.ref} class="cursor-pointer text-forest-600 hover:underline">
-                Choose a file
-              </label>
-              or drag and drop here
-            </div>
-            <div class="text-xs text-stone-400">JPEG, PNG, WebP, TIFF, HEIC — max 50 MB</div>
-          </div>
-
-          <div :for={entry <- @uploads.image.entries}>
-            <div :if={not entry.done? and entry.progress > 0} class="mt-3">
-              <div class="w-full bg-stone-200 rounded-full h-2">
-                <div
-                  class="bg-forest-500 h-2 rounded-full transition-all"
-                  style={"width: #{entry.progress}%"}
-                >
-                </div>
-              </div>
-              <p class="text-xs text-stone-500 mt-1">{entry.progress}%</p>
-            </div>
-
-            <p :for={err <- upload_errors(@uploads.image, entry)} class="text-rose-600 text-sm mt-2">
-              {upload_error_to_string(err)}
-            </p>
-          </div>
-
-          <p :for={err <- upload_errors(@uploads.image)} class="text-rose-600 text-sm mt-2">
-            {upload_error_to_string(err)}
-          </p>
-        </div>
+          upload={@uploads.image}
+          uploaded?={@uploaded?}
+          client_name={@client_name}
+          client_size={@client_size}
+        />
 
         <div :if={@uploaded?} class="space-y-4">
           <CoreComponents.input field={@form[:slug]} label="Slug" required />
@@ -240,13 +182,4 @@ defmodule KjogviWeb.Live.My.Images.New do
     |> String.replace(~r/[^a-z0-9]+/, "-")
     |> String.trim("-")
   end
-
-  defp format_bytes(bytes) when bytes < 1_024, do: "#{bytes} B"
-  defp format_bytes(bytes) when bytes < 1_024 * 1_024, do: "#{div(bytes, 1_024)} KB"
-  defp format_bytes(bytes), do: "#{Float.round(bytes / (1_024 * 1_024), 1)} MB"
-
-  defp upload_error_to_string(:too_large), do: "File is too large (max 50 MB)"
-  defp upload_error_to_string(:not_accepted), do: "File type not accepted"
-  defp upload_error_to_string(:too_many_files), do: "Only one file allowed"
-  defp upload_error_to_string(_), do: "Upload error"
 end

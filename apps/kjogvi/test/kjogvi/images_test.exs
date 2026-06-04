@@ -175,6 +175,90 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
+  describe "replace_image_file/2" do
+    @sample_image Path.expand(
+                    Path.join([__DIR__, "..", "support", "fixtures", "files", "sample_bird.jpg"])
+                  )
+
+    setup do
+      user = UsersFixtures.user_fixture()
+
+      {:ok, image} =
+        Images.create_image(user, %{
+          "slug" => "original-#{System.unique_integer([:positive])}",
+          "file" => plug_upload("original.jpg")
+        })
+
+      on_exit(fn ->
+        user_dir =
+          Path.join([
+            Application.get_env(:waffle, :storage_dir_prefix, ""),
+            "uploads/images",
+            user.public_token
+          ])
+
+        File.rm_rf!(user_dir)
+      end)
+
+      %{user: user, image: image}
+    end
+
+    test "stores the new file and re-stamps the storage backend", %{image: image} do
+      assert {:ok, replaced} =
+               Images.replace_image_file(image, %{"file" => plug_upload("replacement.jpg")})
+
+      assert replaced.id == image.id
+      assert replaced.file.file_name == "replacement.jpg"
+      assert replaced.storage_backend == "local"
+
+      assert File.exists?(stored_path(replaced, "replacement.jpg"))
+
+      for version <- ~w(thumbnail small medium large) do
+        assert File.exists?(stored_path(replaced, "replacement_#{version}.jpg"))
+      end
+    end
+
+    test "re-extracts dimensions and EXIF date from the new file", %{image: image} do
+      # Wipe extras first so we can prove they come back from the new upload.
+      {:ok, image} = image |> Image.metadata_changeset(%{}) |> Repo.update()
+      assert image.extras == %{}
+
+      assert {:ok, replaced} =
+               Images.replace_image_file(image, %{"file" => plug_upload("replacement.jpg")})
+
+      assert replaced.extras["width"] == 60
+      assert replaced.extras["height"] == 40
+      assert replaced.extras["exif_date"] == "2021-07-15 09:30:00"
+    end
+
+    test "leaves the previous stored objects in place", %{image: image} do
+      original_path = stored_path(image, "original.jpg")
+      assert File.exists?(original_path)
+
+      assert {:ok, _replaced} =
+               Images.replace_image_file(image, %{"file" => plug_upload("replacement.jpg")})
+
+      # The differently-named original is not deleted.
+      assert File.exists?(original_path)
+    end
+
+    defp plug_upload(name) do
+      dest = Waffle.File.generate_temporary_path(".jpg")
+      File.cp!(@sample_image, dest)
+      %Plug.Upload{path: dest, filename: name, content_type: "image/jpeg"}
+    end
+
+    defp stored_path(image, file_name) do
+      Path.join([
+        Application.get_env(:waffle, :storage_dir_prefix, ""),
+        "uploads/images",
+        image.user.public_token,
+        image.token,
+        file_name
+      ])
+    end
+  end
+
   describe "delete_image/1" do
     test "removes the image" do
       image = ImagesFixtures.image_fixture()

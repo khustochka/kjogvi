@@ -111,6 +111,7 @@ defmodule KjogviWeb do
       import KjogviWeb.BirdingComponents
       import KjogviWeb.FilterComponents
       import KjogviWeb.FormatComponents
+      import KjogviWeb.ImageComponents
       import KjogviWeb.LocationComponents
       use Gettext, backend: KjogviWeb.Gettext
 
