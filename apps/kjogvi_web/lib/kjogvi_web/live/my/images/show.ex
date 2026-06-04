@@ -47,7 +47,7 @@ defmodule KjogviWeb.Live.My.Images.Show do
         <div class="mt-2 flex flex-wrap gap-3 text-xs text-stone-500" aria-label="Download sizes">
           <span>Download:</span>
           <.link
-            :for={v <- ~w(original large medium small)a}
+            :for={v <- ~w(original large medium small thumbnail)a}
             href={Images.url(@image, v)}
             class="text-forest-600 hover:underline"
           >
