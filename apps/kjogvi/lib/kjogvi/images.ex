@@ -21,6 +21,7 @@ defmodule Kjogvi.Images do
     Image
     |> where([i], i.user_id == ^user.id)
     |> order_by([i], asc: i.sort_order, asc: i.id)
+    |> preload(:user)
     |> Repo.all()
   end
 
@@ -31,6 +32,7 @@ defmodule Kjogvi.Images do
   def get_image!(user, id) do
     Image
     |> where([i], i.user_id == ^user.id)
+    |> preload(:user)
     |> Repo.get!(id)
   end
 
@@ -63,7 +65,10 @@ defmodule Kjogvi.Images do
       |> Map.put("user_id", user.id)
       |> Map.put("storage_backend", current_storage_backend())
 
-    %Image{extras: extras}
+    # Set the user association on the base struct so it rides along as the
+    # waffle scope: the uploader needs the user's public_token to build the
+    # storage path.
+    %Image{extras: extras, user: user}
     |> Image.changeset(attrs)
     |> Repo.insert()
   end
@@ -117,8 +122,12 @@ defmodule Kjogvi.Images do
 
   @doc """
   Public URL for the given version of the image (defaults to `:medium`).
+
+  The image's user must be available (it carries the `public_token` segment of
+  the path); it is preloaded here if the caller hasn't already done so.
   """
   def url(%Image{} = image, version \\ :medium) do
+    image = Repo.preload(image, :user)
     Kjogvi.Images.Uploader.url({image.file, image}, version, signed: false)
   end
 

@@ -68,6 +68,17 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
+  describe "token" do
+    test "is assigned automatically and differs per image" do
+      image1 = ImagesFixtures.image_fixture()
+      image2 = ImagesFixtures.image_fixture()
+
+      assert is_binary(image1.token)
+      assert image1.token != ""
+      assert image1.token != image2.token
+    end
+  end
+
   describe "slug uniqueness" do
     test "rejects a duplicate slug for the same user" do
       user = UsersFixtures.user_fixture()

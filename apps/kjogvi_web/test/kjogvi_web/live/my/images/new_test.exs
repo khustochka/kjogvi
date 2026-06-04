@@ -85,11 +85,10 @@ defmodule KjogviWeb.Live.My.Images.NewTest do
     assert render_upload(upload, "sample_bird.jpg") =~ "Replace image"
 
     # In test, waffle stores under a throwaway tmp prefix (see config/test.exs).
-    storage_dir = Path.join([waffle_prefix(), "uploads/images", slug])
-
-    # Stored files live outside the DB sandbox, so clean them up directly
-    # rather than via the context (whose Repo connection is gone by on_exit).
-    on_exit(fn -> File.rm_rf!(storage_dir) end)
+    # Stored files live outside the DB sandbox, so clean up the user's whole
+    # token folder directly (the context's Repo connection is gone by on_exit).
+    user_dir = Path.join([waffle_prefix(), "uploads/images", user.public_token])
+    on_exit(fn -> File.rm_rf!(user_dir) end)
 
     render_submit(live, "save", %{"image" => %{"slug" => slug, "title" => "Sample Bird"}})
 
@@ -104,9 +103,11 @@ defmodule KjogviWeb.Live.My.Images.NewTest do
     assert image.extras["height"] == 40
     assert image.extras["exif_date"] == "2021-07-15 09:30:00"
 
-    # The original and every resized variant were written to local storage.
+    # Files are stored under <user_token>/<image_token>, named by the slug.
+    storage_dir = Path.join(user_dir, image.token)
+
     for version <- ~w(original thumbnail small medium large) do
-      path = Path.join(storage_dir, "sample_bird_#{version}.jpg")
+      path = Path.join(storage_dir, "#{slug}_#{version}.jpg")
       assert File.exists?(path), "expected stored variant #{version} at #{path}"
     end
   end

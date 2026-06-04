@@ -48,16 +48,16 @@ defmodule Kjogvi.Images.Uploader do
     end
   end
 
-  # Match on the slug field rather than the Image struct: this keeps the
-  # uploader from depending on Kjogvi.Images.Image, which would form a
-  # compile-time cycle (Image -> Uploader.Type via `field :file`, Uploader ->
-  # Image via this match).
+  # Match on plain fields rather than the %Image{} / %User{} structs: this keeps
+  # the uploader from depending on those modules, which would form a compile-time
+  # cycle (Image -> Uploader.Type via `field :file`, Uploader -> Image).
   #
-  # TODO: scope the path by opaque user and image tokens once those land, so
-  # the path doesn't expose the user id and survives slug changes:
-  # uploads/images/<user_token>/<image_token>/<initial_slug>_<version>.<ext>.
-  def storage_dir(_version, {_file, %{slug: slug}}) when is_binary(slug) do
-    "uploads/images/#{slug}"
+  # The path is scoped by the user's and the image's opaque tokens, so it
+  # neither exposes the numeric user id nor depends on the slug (which can
+  # change): uploads/images/<user_token>/<image_token>/.
+  def storage_dir(_version, {_file, %{token: image_token, user: %{public_token: user_token}}})
+      when is_binary(user_token) and is_binary(image_token) do
+    "uploads/images/#{user_token}/#{image_token}"
   end
 
   # Fallback storage dir (e.g. in tests that pass an explicit scope).
@@ -66,6 +66,13 @@ defmodule Kjogvi.Images.Uploader do
   end
 
   def storage_dir(_version, _), do: "uploads/images"
+
+  # Files are named after the slug as it was at upload time. The token folders
+  # already guarantee uniqueness, so a later slug rename simply leaves the
+  # filename as a (cosmetic) historical label.
+  def filename(version, {_file, %{slug: slug}}) when is_binary(slug) do
+    "#{slug}_#{version}"
+  end
 
   def filename(version, {file, _scope}) do
     base = Path.basename(file.file_name, Path.extname(file.file_name))

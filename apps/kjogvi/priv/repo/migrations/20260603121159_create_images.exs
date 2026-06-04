@@ -3,6 +3,8 @@ defmodule Kjogvi.Repo.Migrations.CreateImages do
 
   def change do
     create table(:images) do
+      # Opaque, stable identifier used in storage paths (survives slug changes).
+      add :token, :string, null: false
       add :slug, :string, null: false
       add :title, :string
       add :description, :text
@@ -21,6 +23,7 @@ defmodule Kjogvi.Repo.Migrations.CreateImages do
     end
 
     create unique_index(:images, [:user_id, :slug])
+    create unique_index(:images, [:token])
 
     create table(:image_observations) do
       add :image_id, references(:images, on_delete: :delete_all), null: false

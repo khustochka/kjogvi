@@ -16,6 +16,8 @@ defmodule Kjogvi.Images.Image do
   import Ecto.Changeset
 
   schema "images" do
+    # Opaque, stable identifier used in the storage path (survives slug changes).
+    field :token, :string
     field :slug, :string
     field :title, :string
     field :description, :string
@@ -38,11 +40,23 @@ defmodule Kjogvi.Images.Image do
   def changeset(image, attrs) do
     image
     |> cast(attrs, [:slug, :title, :description, :sort_order, :storage_backend, :user_id])
+    # Assign the token before cast_attachments, since waffle reads it to build
+    # the storage path during attachment.
+    |> ensure_token()
     |> cast_attachments(attrs, [:file])
-    |> validate_required([:slug, :user_id, :storage_backend])
+    |> validate_required([:slug, :user_id, :storage_backend, :token])
     |> validate_length(:slug, min: 1, max: 255)
     |> validate_number(:sort_order, greater_than_or_equal_to: 0)
     |> unique_constraint(:slug, name: :images_user_id_slug_index)
+    |> unique_constraint(:token)
+  end
+
+  # Assigns a token on first creation, leaving any existing one intact.
+  defp ensure_token(changeset) do
+    case get_field(changeset, :token) do
+      nil -> put_change(changeset, :token, Kjogvi.Util.Token.generate())
+      _ -> changeset
+    end
   end
 
   @doc false

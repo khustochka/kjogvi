@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict wIYbcALT44hWpXag1HTVOaR2vW5FbbCdeWfdiaKoqZUwvY3L4cE7UCfdJwGbIZ6
+\restrict QoRuYdgW2QMxtr2F8NpMqa8cvOaG0dJPIYbYH1tJLLVGqNO0P1IiZypRd4NQyOT
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -133,7 +133,8 @@ CREATE TABLE public.images (
     storage_backend character varying(255) DEFAULT 'local'::character varying NOT NULL,
     user_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    token character varying(255) NOT NULL
 );
 
 
@@ -634,6 +635,13 @@ CREATE INDEX image_observations_observation_id_index ON public.image_observation
 
 
 --
+-- Name: images_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX images_token_index ON public.images USING btree (token);
+
+
+--
 -- Name: images_user_id_slug_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -883,7 +891,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict wIYbcALT44hWpXag1HTVOaR2vW5FbbCdeWfdiaKoqZUwvY3L4cE7UCfdJwGbIZ6
+\unrestrict QoRuYdgW2QMxtr2F8NpMqa8cvOaG0dJPIYbYH1tJLLVGqNO0P1IiZypRd4NQyOT
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
