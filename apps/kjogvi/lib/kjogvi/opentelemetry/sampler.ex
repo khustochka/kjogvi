@@ -3,7 +3,7 @@ defmodule Kjogvi.Telemetry.Sampler do
   Opentelemetry sampler, filtering out low-value traces.
   """
 
-  require OpenTelemetry.Tracer, as: Tracer
+  alias OpenTelemetry.Tracer
   require Logger
 
   @behaviour :otel_sampler
