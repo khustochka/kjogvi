@@ -207,11 +207,27 @@ defmodule KjogviWeb.Live.My.Images.EditTest do
 
       assert has_element?(live, "#image-observations-result-#{obs.id}")
 
+      # The matched term is highlighted (the shared highlighter wraps it in
+      # <strong>, styled here as a yellow background rather than bold).
+      result_html = render(element(live, "#image-observations-result-#{obs.id}"))
+      assert result_html =~ "<strong>Great Tit</strong>"
+
       live
       |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
       |> render_click()
 
       assert has_element?(live, "#image-observations-selected-#{obs.id}")
+    end
+
+    test "does not search on a single letter", %{conn: conn, user: user, obs: obs} do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "g"})
+      refute has_element?(live, "#image-observations-result-#{obs.id}")
+
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "gr"})
+      assert has_element?(live, "#image-observations-result-#{obs.id}")
     end
 
     test "removing a selected observation drops its tile", %{conn: conn, user: user, obs: obs} do

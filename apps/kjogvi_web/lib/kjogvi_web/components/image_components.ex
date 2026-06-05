@@ -10,6 +10,7 @@ defmodule KjogviWeb.ImageComponents do
   import KjogviWeb.IconComponents
 
   alias KjogviWeb.CoreComponents
+  alias KjogviWeb.Live.Components.Autocomplete.Highlight
 
   @doc """
   The editable metadata fields shared by the add-image and edit-image forms:
@@ -36,11 +37,16 @@ defmodule KjogviWeb.ImageComponents do
   the search-result rows in the observation picker. When an `on_remove` event is
   given, an × button is shown that pushes it with `phx-value-observation-id`.
   When an `on_add` event is given (search results), a + button is shown instead.
+
+  Pass `term` (the current search text) to highlight the matched portion of the
+  taxon names with a yellow background. Only a contiguous, case-insensitive
+  substring match is highlighted; a term split across words is rendered plain.
   """
   attr :observation, :map, required: true
   attr :on_remove, :string, default: nil, doc: "event pushed by the × button"
   attr :on_add, :string, default: nil, doc: "event pushed by the + button"
   attr :target, :any, default: nil, doc: "phx-target for the add/remove events"
+  attr :term, :string, default: nil, doc: "search term to highlight in the taxon names"
   attr :rest, :global
 
   def observation_tile(assigns) do
@@ -50,10 +56,16 @@ defmodule KjogviWeb.ImageComponents do
       {@rest}
     >
       <div class="min-w-0">
-        <div class="truncate font-medium text-stone-800">
-          {taxon_name(@observation)}
-          <em :if={sci_name(@observation)} class="font-normal text-stone-500">
-            {sci_name(@observation)}
+        <%!-- The shared highlighter wraps matches in <strong>; here the match is
+              shown as a yellow highlight at the surrounding weight (medium for
+              the English name, normal for the scientific name) rather than
+              bold. --%>
+        <div class="text-stone-800 [&_strong]:rounded-sm [&_strong]:bg-yellow-200">
+          <span class="font-medium [&_strong]:font-medium">
+            <Highlight.highlighted_text text={taxon_name(@observation)} term={@term} />
+          </span>
+          <em :if={sci_name(@observation)} class="font-normal text-stone-500 [&_strong]:font-normal">
+            <Highlight.highlighted_text text={sci_name(@observation)} term={@term} />
           </em>
         </div>
         <div class="text-xs text-stone-500">

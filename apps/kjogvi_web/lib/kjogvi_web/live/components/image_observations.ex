@@ -24,6 +24,23 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   ultimately enforced by `Kjogvi.Images.attach_observations/2`, but this picker
   also surfaces it inline: once one observation is selected, search results from
   other cards are shown disabled, so the user is steered toward same-card picks.
+
+  ## Relationship to `Autocomplete`
+
+  The search box, dropdown, open/close, click-away, and min-length here partly
+  duplicate `KjogviWeb.Live.Components.Autocomplete` (term highlighting reuses
+  the shared `Autocomplete.Highlight`, so that part is not duplicated).
+  This was a deliberate (if regrettable) divergence: `Autocomplete` is built to
+  pick a *single* value into a hidden form input and emits its selection to the
+  *root* LiveView via `send(self(), …)`. This picker instead **appends many**
+  observations to a staged list, renders **disabled rows** (already-added /
+  different-card) with reasons, and carries an adjacent **date** field — and as
+  a LiveComponent it can't receive `Autocomplete`'s root-targeted message
+  cleanly. Reusing only `SearchInput` was the pragmatic middle ground.
+
+  TODO: fold this back onto `Autocomplete` (extending it for multi-select +
+  disabled rows + component-targeted selection), which would also restore the
+  keyboard navigation this hand-rolled dropdown currently lacks.
   """
 
   use KjogviWeb, :live_component
@@ -121,6 +138,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
                 observation={obs}
                 on_add={if selectable?(obs, @selected), do: "add_observation"}
                 target={@myself}
+                term={@search_term}
                 class={[
                   selected?(obs, @selected) && "opacity-50",
                   not selectable?(obs, @selected) && "opacity-50"
@@ -159,6 +177,8 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   end
 
   def handle_event("search", %{"value" => query}, socket) do
+    query = String.trim(query)
+
     {:noreply,
      socket
      |> assign(:search_term, query)
@@ -202,16 +222,16 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
     {:noreply, assign(socket, :selected, selected)}
   end
 
+  # Don't search (or highlight) until the query is at least this long; a single
+  # letter matches too much to be useful.
+  @min_query_length 2
+
   defp rerun_search(socket) do
-    if String.trim(socket.assigns.search_term) == "" do
-      socket
-    else
-      run_search(socket, socket.assigns.search_term)
-    end
+    run_search(socket, socket.assigns.search_term)
   end
 
   defp run_search(socket, query) do
-    if String.trim(query) == "" do
+    if String.length(String.trim(query)) < @min_query_length do
       socket
       |> assign(:search_results, [])
       |> assign(:is_open, false)
