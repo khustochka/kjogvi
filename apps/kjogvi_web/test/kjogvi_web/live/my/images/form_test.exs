@@ -203,6 +203,36 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       assert Images.get_image_by_slug(slug) == nil
     end
 
+    test "a tampered cross-card save leaves no orphan image behind", %{conn: conn, user: user} do
+      # Two observations on different cards — the picker can't stage this, but a
+      # tampered client could push it to the LiveView.
+      %{user: user, obs: obs1} = seed_observation(user)
+      card2 = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
+      obs2 = Kjogvi.Factory.insert(:observation, card: card2, taxon_key: "/ebird/v2024/gretit1")
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/new")
+
+      slug = "tampered-#{System.unique_integer([:positive])}"
+
+      upload =
+        file_input(live, "#image-form", :image, [
+          %{name: "#{slug}.jpg", content: File.read!(@sample_image), type: "image/jpeg"}
+        ])
+
+      render_upload(upload, "#{slug}.jpg")
+
+      user_dir = Path.join([waffle_prefix(), "uploads/images", user.public_token])
+      on_exit(fn -> File.rm_rf!(user_dir) end)
+
+      send(live.pid, {:image_observations_changed, [obs1.id, obs2.id]})
+
+      html = render_submit(live, "save", %{"image" => %{"slug" => slug}})
+
+      assert html =~ "couldn&#39;t be attached"
+      # The image created moments earlier was rolled back, not left orphaned.
+      assert Images.get_image_by_slug(slug) == nil
+    end
+
     test "renders the client-side preview img after upload (entry consumed early)", %{conn: conn} do
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
@@ -792,6 +822,74 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
       result_html = render(element(live, "#image-observations-result-#{obs.id}"))
       assert result_html =~ "Already attached"
+    end
+
+    # The picker UI can't stage cross-card ids (search locks to one card), but a
+    # tampered/buggy client could push them to the LiveView directly. The save
+    # must reject it rather than silently claim success.
+    test "a save with staged cross-card ids is rejected, not silently dropped", %{
+      conn: conn,
+      user: user,
+      obs: obs
+    } do
+      other_card =
+        Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
+
+      other_obs =
+        Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "/ebird/v2024/gretit1")
+
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      # Simulate a tampered client staging observations from two different cards.
+      send(live.pid, {:image_observations_changed, [obs.id, other_obs.id]})
+
+      html =
+        render_submit(live, "save", %{"image" => %{"slug" => image.slug, "sort_order" => "100"}})
+
+      # Stayed on the form with an error; no false success, no redirect.
+      assert html =~ "couldn&#39;t be attached"
+      refute_redirected(live, ~p"/my/images/#{image.id}")
+
+      # The pre-existing single link is untouched.
+      reloaded = Images.get_image!(user, image.id) |> Kjogvi.Repo.preload(:observations)
+      assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
+    end
+
+    test "a save with another user's observation id is rejected", %{
+      conn: conn,
+      user: user,
+      obs: obs
+    } do
+      other_user = user_fixture()
+
+      foreign_card =
+        Kjogvi.Factory.insert(:card,
+          user: other_user,
+          location: Kjogvi.Factory.insert(:location)
+        )
+
+      foreign_obs =
+        Kjogvi.Factory.insert(:observation, card: foreign_card, taxon_key: "/ebird/v2024/gretit1")
+
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      # A tampered client stages only a foreign id.
+      send(live.pid, {:image_observations_changed, [foreign_obs.id]})
+
+      html =
+        render_submit(live, "save", %{"image" => %{"slug" => image.slug, "sort_order" => "100"}})
+
+      assert html =~ "couldn&#39;t be attached"
+
+      # The foreign observation was never linked; the prior link stands.
+      reloaded = Images.get_image!(user, image.id) |> Kjogvi.Repo.preload(:observations)
+      assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
     end
   end
 

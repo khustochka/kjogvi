@@ -308,6 +308,39 @@ defmodule Kjogvi.ImagesTest do
       reloaded = Kjogvi.Repo.preload(image, :observations, force: true)
       assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
     end
+
+    test "ignores observation ids belonging to another user's cards" do
+      user = UsersFixtures.user_fixture()
+      other_user = UsersFixtures.user_fixture()
+      image = ImagesFixtures.image_fixture(user: user)
+
+      mine = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
+      my_obs = Kjogvi.Factory.insert(:observation, card: mine, taxon_key: "mallar1")
+
+      theirs =
+        Kjogvi.Factory.insert(:card, user: other_user, location: Kjogvi.Factory.insert(:location))
+
+      their_obs = Kjogvi.Factory.insert(:observation, card: theirs, taxon_key: "canwoo1")
+
+      # The foreign id is dropped, so only the owner's observation is linked —
+      # and crucially it doesn't trip the same-card check against the foreign one.
+      assert {:ok, updated} = Images.attach_observations(image, [my_obs.id, their_obs.id])
+      assert Enum.map(updated.observations, & &1.id) == [my_obs.id]
+    end
+
+    test "errors when every id belongs to another user (nothing left to link)" do
+      user = UsersFixtures.user_fixture()
+      other_user = UsersFixtures.user_fixture()
+      image = ImagesFixtures.image_fixture(user: user)
+
+      theirs =
+        Kjogvi.Factory.insert(:card, user: other_user, location: Kjogvi.Factory.insert(:location))
+
+      their_obs = Kjogvi.Factory.insert(:observation, card: theirs, taxon_key: "mallar1")
+
+      assert {:error, changeset} = Images.attach_observations(image, [their_obs.id])
+      assert "can't be empty" in errors_on(changeset).observations
+    end
   end
 
   describe "list_images_for_card/1" do

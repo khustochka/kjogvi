@@ -48,6 +48,11 @@ defmodule KjogviWeb.Live.My.Images.Form do
   # standalone images are allowed.
   @no_observations_message "Please attach at least one observation."
 
+  # Shown when staged observations can't be linked at all (foreign ids, or ids
+  # spanning different cards) — normally unreachable through the picker UI, so
+  # this is the backstop for a tampered request.
+  @observations_invalid_message "Those observations couldn't be attached. They must be your own and from a single card."
+
   @impl true
   def mount(params, _session, socket) do
     socket
@@ -387,14 +392,24 @@ defmodule KjogviWeb.Live.My.Images.Form do
 
         case Images.create_image(user, attrs) do
           {:ok, image} ->
-            Images.attach_observations(image, socket.assigns.selected_observation_ids)
-            discard_stash(socket)
+            case Images.attach_observations(image, socket.assigns.selected_observation_ids) do
+              {:ok, _image} ->
+                discard_stash(socket)
 
-            {:noreply,
-             socket
-             |> assign(:upload, nil)
-             |> put_flash(:info, "Image uploaded")
-             |> push_navigate(to: ~p"/my/images/#{image.id}")}
+                {:noreply,
+                 socket
+                 |> assign(:upload, nil)
+                 |> put_flash(:info, "Image uploaded")
+                 |> push_navigate(to: ~p"/my/images/#{image.id}")}
+
+              {:error, %Ecto.Changeset{}} ->
+                # The observations couldn't be linked (e.g. a tampered request
+                # with foreign or cross-card ids). Don't leave an orphan image
+                # behind — it's invalid without observations — and report it.
+                Images.delete_image(image)
+
+                {:noreply, put_flash(socket, :error, @observations_invalid_message)}
+            end
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply, assign(socket, :form, to_form(changeset))}
@@ -408,9 +423,16 @@ defmodule KjogviWeb.Live.My.Images.Form do
     else
       case Images.update_image(socket.assigns.image, params) do
         {:ok, image} ->
-          Images.attach_observations(image, socket.assigns.selected_observation_ids)
+          case Images.attach_observations(image, socket.assigns.selected_observation_ids) do
+            {:ok, _image} ->
+              {:noreply, maybe_replace_then_navigate(socket, image)}
 
-          {:noreply, maybe_replace_then_navigate(socket, image)}
+            {:error, %Ecto.Changeset{}} ->
+              # Metadata was saved, but the observations couldn't be linked (e.g.
+              # a tampered request with foreign or cross-card ids). The existing
+              # links are left untouched; report it and stay on the form.
+              {:noreply, put_flash(socket, :error, @observations_invalid_message)}
+          end
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, assign(socket, :form, to_form(changeset))}

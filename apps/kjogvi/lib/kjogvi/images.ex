@@ -125,12 +125,15 @@ defmodule Kjogvi.Images do
   @doc """
   Replaces the set of observations linked to an image.
 
-  An image must have at least one observation and they must all belong to the
-  same card (both enforced by `Image.observations_changeset/2`), so passing an
-  empty list returns an error changeset.
+  Only the image owner's own observations are linked: any id whose observation
+  belongs to a card of another user is silently dropped before validation (an
+  authorization guard on the write path, not just the picker UI). An image must
+  then have at least one observation and they must all belong to the same card
+  (both enforced by `Image.observations_changeset/2`), so an empty list — or a
+  list of only foreign ids — returns an error changeset.
   """
   def attach_observations(%Image{} = image, observation_ids) when is_list(observation_ids) do
-    observations = load_observations(observation_ids)
+    observations = load_observations(image.user_id, observation_ids)
 
     image
     |> Repo.preload(:observations)
@@ -324,11 +327,14 @@ defmodule Kjogvi.Images do
 
   defp extract_metadata(_), do: %{}
 
-  defp load_observations([]), do: []
+  defp load_observations(_user_id, []), do: []
 
-  defp load_observations(observation_ids) do
+  # Restricts to observations on the user's own cards, so a tampered request
+  # can't link another user's observations to an image.
+  defp load_observations(user_id, observation_ids) do
     Kjogvi.Birding.Observation
-    |> where([obs], obs.id in ^observation_ids)
+    |> join(:inner, [obs], c in assoc(obs, :card))
+    |> where([obs, c], obs.id in ^observation_ids and c.user_id == ^user_id)
     |> Repo.all()
   end
 end
