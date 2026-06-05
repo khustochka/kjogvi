@@ -37,6 +37,10 @@ defmodule KjogviWeb.Live.My.Images.Form do
   alias Kjogvi.Images
   alias Kjogvi.Images.Image
   alias Kjogvi.Repo
+  # CoreComponents.input is used explicitly for the metadata fields: the
+  # ambient <.input> imported into LiveViews is FormComponents.input, which only
+  # handles password inputs and would not render plain text/textarea/number.
+  alias KjogviWeb.CoreComponents
   alias KjogviWeb.Live.Components.ImageObservations
 
   # 50 MB.
@@ -196,7 +200,12 @@ defmodule KjogviWeb.Live.My.Images.Form do
         />
 
         <div :if={@live_action == :edit or @uploaded?} class="space-y-4">
-          <.image_metadata_fields form={@form} />
+          <CoreComponents.input field={@form[:slug]} label="Slug" required />
+          <CoreComponents.input field={@form[:title]} label="Title" />
+          <CoreComponents.input field={@form[:description]} type="textarea" label="Description" />
+          <div class="w-32">
+            <CoreComponents.input field={@form[:sort_order]} type="number" label="Sort order" min="0" />
+          </div>
 
           <.live_component
             module={ImageObservations}

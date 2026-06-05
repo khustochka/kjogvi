@@ -9,26 +9,7 @@ defmodule KjogviWeb.ImageComponents do
 
   import KjogviWeb.IconComponents
 
-  alias KjogviWeb.CoreComponents
   alias KjogviWeb.Live.Components.Autocomplete.Highlight
-
-  @doc """
-  The editable metadata fields shared by the add-image and edit-image forms:
-  slug, title, description, and sort order. The enclosing `<.form>` and submit
-  buttons are the caller's responsibility.
-  """
-  attr :form, Phoenix.HTML.Form, required: true
-
-  def image_metadata_fields(assigns) do
-    ~H"""
-    <CoreComponents.input field={@form[:slug]} label="Slug" required />
-    <CoreComponents.input field={@form[:title]} label="Title" />
-    <CoreComponents.input field={@form[:description]} type="textarea" label="Description" />
-    <div class="w-32">
-      <CoreComponents.input field={@form[:sort_order]} type="number" label="Sort order" min="0" />
-    </div>
-    """
-  end
 
   @doc """
   A single observation rendered as a tile: taxon name, card date, and location.
