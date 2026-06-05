@@ -1,4 +1,4 @@
-/*! tailwindcss v4.2.2 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.3.0 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -243,12 +243,6 @@
   }
   .-inset-y-px {
     inset-block: -1px;
-  }
-  .start {
-    inset-inline-start: var(--spacing);
-  }
-  .end {
-    inset-inline-end: var(--spacing);
   }
   .top-0 {
     top: calc(var(--spacing) * 0);
@@ -538,6 +532,9 @@
   }
   .animate-spin {
     animation: var(--animate-spin);
+  }
+  .\[scrollbar-gutter\:stable\] {
+    scrollbar-gutter: stable;
   }
   .items-center {
     align-items: center;
@@ -947,9 +944,6 @@
   .ease-out {
     --tw-ease: var(--ease-out);
     transition-timing-function: var(--ease-out);
-  }
-  .\[scrollbar-gutter\:stable\] {
-    scrollbar-gutter: stable;
   }
   .group-hover\:bg-zinc-50 {
     &:is(:where(.group):hover *) {
