@@ -328,6 +328,132 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
+  describe "get_observations_for_display/2" do
+    test "hydrates observations with taxon, card, and location, preserving id order" do
+      user = UsersFixtures.user_fixture()
+      location = Kjogvi.Factory.insert(:location)
+      card = Kjogvi.Factory.insert(:card, user: user, location: location)
+      obs1 = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "mallar1")
+      obs2 = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "canwoo1")
+
+      assert [first, second] = Images.get_observations_for_display(user, [obs2.id, obs1.id])
+      assert first.id == obs2.id
+      assert second.id == obs1.id
+      assert first.card.location.id == location.id
+      # taxon/species virtuals are populated (nil taxon when key is unknown)
+      assert Map.has_key?(first, :taxon)
+    end
+
+    test "excludes observations belonging to another user" do
+      user = UsersFixtures.user_fixture()
+      other_card = Kjogvi.Factory.insert(:card, location: Kjogvi.Factory.insert(:location))
+      other_obs = Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "mallar1")
+
+      assert Images.get_observations_for_display(user, [other_obs.id]) == []
+    end
+
+    test "returns an empty list for an empty id list" do
+      user = UsersFixtures.user_fixture()
+      assert Images.get_observations_for_display(user, []) == []
+    end
+  end
+
+  describe "search_observations_for_image/2" do
+    setup do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "gretit1",
+        name_en: "Great Tit",
+        name_sci: "Parus major"
+      )
+
+      {:ok, user} =
+        UsersFixtures.user_fixture()
+        |> Kjogvi.Users.update_user_settings(%{"default_book_signature" => "ebird/v2024"})
+
+      %{user: user}
+    end
+
+    test "returns an empty list for a blank query", %{user: user} do
+      assert Images.search_observations_for_image(user, %{query: ""}) == []
+      assert Images.search_observations_for_image(user, %{query: "  "}) == []
+    end
+
+    test "returns the user's observations of taxa matching the typed text", %{user: user} do
+      location = Kjogvi.Factory.insert(:location)
+      card = Kjogvi.Factory.insert(:card, user: user, location: location)
+
+      obs =
+        Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
+
+      assert [found] = Images.search_observations_for_image(user, %{query: "great tit"})
+      assert found.id == obs.id
+      assert found.card.location.id == location.id
+    end
+
+    test "with a date set, restricts results to observations on that day", %{user: user} do
+      location = Kjogvi.Factory.insert(:location)
+
+      on_date =
+        Kjogvi.Factory.insert(:card,
+          user: user,
+          location: location,
+          observ_date: ~D[2024-05-12]
+        )
+
+      off_date =
+        Kjogvi.Factory.insert(:card,
+          user: user,
+          location: location,
+          observ_date: ~D[2024-05-13]
+        )
+
+      on_obs =
+        Kjogvi.Factory.insert(:observation, card: on_date, taxon_key: "/ebird/v2024/gretit1")
+
+      _off_obs =
+        Kjogvi.Factory.insert(:observation, card: off_date, taxon_key: "/ebird/v2024/gretit1")
+
+      results =
+        Images.search_observations_for_image(user, %{query: "great tit", date: ~D[2024-05-12]})
+
+      assert Enum.map(results, & &1.id) == [on_obs.id]
+    end
+
+    test "excludes another user's observations", %{user: user} do
+      other_user = UsersFixtures.user_fixture()
+
+      card =
+        Kjogvi.Factory.insert(:card, user: other_user, location: Kjogvi.Factory.insert(:location))
+
+      _obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
+
+      assert Images.search_observations_for_image(user, %{query: "great tit"}) == []
+    end
+  end
+
+  describe "exif_date_from_upload/1" do
+    @sample_image Path.expand(
+                    Path.join([__DIR__, "..", "support", "fixtures", "files", "sample_bird.jpg"])
+                  )
+
+    test "returns the capture date of an uploaded file" do
+      upload = %Plug.Upload{
+        path: @sample_image,
+        filename: "sample_bird.jpg",
+        content_type: "image/jpeg"
+      }
+
+      assert Images.exif_date_from_upload(upload) == ~D[2021-07-15]
+    end
+
+    test "returns nil for a non-upload" do
+      assert Images.exif_date_from_upload(nil) == nil
+    end
+  end
+
   describe "Image.dimensions/1 and Image.exif_date/1" do
     test "dimensions reads width and height from extras" do
       assert Image.dimensions(%Image{extras: %{"width" => 1200, "height" => 800}}) == {1200, 800}

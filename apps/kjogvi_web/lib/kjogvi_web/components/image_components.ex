@@ -9,6 +9,89 @@ defmodule KjogviWeb.ImageComponents do
 
   import KjogviWeb.IconComponents
 
+  alias KjogviWeb.CoreComponents
+
+  @doc """
+  The editable metadata fields shared by the add-image and edit-image forms:
+  slug, title, description, and sort order. The enclosing `<.form>` and submit
+  buttons are the caller's responsibility.
+  """
+  attr :form, Phoenix.HTML.Form, required: true
+
+  def image_metadata_fields(assigns) do
+    ~H"""
+    <CoreComponents.input field={@form[:slug]} label="Slug" required />
+    <CoreComponents.input field={@form[:title]} label="Title" />
+    <CoreComponents.input field={@form[:description]} type="textarea" label="Description" />
+    <div class="w-32">
+      <CoreComponents.input field={@form[:sort_order]} type="number" label="Sort order" min="0" />
+    </div>
+    """
+  end
+
+  @doc """
+  A single observation rendered as a tile: taxon name, card date, and location.
+
+  Used both for the observations already attached/selected on an image and for
+  the search-result rows in the observation picker. When an `on_remove` event is
+  given, an × button is shown that pushes it with `phx-value-observation-id`.
+  When an `on_add` event is given (search results), a + button is shown instead.
+  """
+  attr :observation, :map, required: true
+  attr :on_remove, :string, default: nil, doc: "event pushed by the × button"
+  attr :on_add, :string, default: nil, doc: "event pushed by the + button"
+  attr :target, :any, default: nil, doc: "phx-target for the add/remove events"
+  attr :rest, :global
+
+  def observation_tile(assigns) do
+    ~H"""
+    <div
+      class="flex items-center justify-between gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
+      {@rest}
+    >
+      <div class="min-w-0">
+        <div class="truncate font-medium text-stone-800">{taxon_name(@observation)}</div>
+        <div class="text-xs text-stone-500">
+          {@observation.card.observ_date}
+          <span :if={@observation.card.location} class="text-stone-400">
+            · {@observation.card.location.name_en}
+          </span>
+        </div>
+      </div>
+
+      <button
+        :if={@on_add}
+        type="button"
+        phx-click={@on_add}
+        phx-target={@target}
+        phx-value-observation-id={@observation.id}
+        aria-label="Attach observation"
+        title="Attach observation"
+        class="shrink-0 rounded-md bg-green-100 p-1 text-green-700 hover:bg-green-200"
+      >
+        <.icon name="hero-plus" class="w-4 h-4" />
+      </button>
+
+      <button
+        :if={@on_remove}
+        type="button"
+        phx-click={@on_remove}
+        phx-target={@target}
+        phx-value-observation-id={@observation.id}
+        aria-label="Remove observation"
+        title="Remove observation"
+        class="shrink-0 rounded-md bg-rose-100 p-1 text-rose-700 hover:bg-rose-200"
+      >
+        <.icon name="hero-x-mark" class="w-4 h-4" />
+      </button>
+    </div>
+    """
+  end
+
+  defp taxon_name(%{taxon: %{name_en: name_en}}) when is_binary(name_en), do: name_en
+  defp taxon_name(%{taxon_key: key}) when is_binary(key), do: key
+  defp taxon_name(_), do: "Unknown taxon"
+
   @doc """
   A drag-and-drop file upload zone with an inline preview.
 
@@ -28,11 +111,21 @@ defmodule KjogviWeb.ImageComponents do
     default: "Replace image",
     doc: "the label under the preview to pick a different file"
 
+  attr :client_preview?, :boolean,
+    default: false,
+    doc: """
+    when true, the preview is rendered from a browser-held `blob:` URL via the
+    `ImageUploadPreview` JS hook instead of `live_img_preview` — used after the
+    entry has been consumed early (e.g. to read EXIF), which empties
+    `@upload.entries` and removes `live_img_preview`.
+    """
+
   def image_drop_zone(assigns) do
     ~H"""
     <div
       id={@id}
       phx-drop-target={@upload.ref}
+      phx-hook={@client_preview? && "ImageUploadPreview"}
       class={[
         "border-2 border-dashed rounded-xl p-8 text-center transition-colors",
         if(@uploaded?,
@@ -44,8 +137,15 @@ defmodule KjogviWeb.ImageComponents do
       <.live_file_input upload={@upload} class="sr-only" />
 
       <div :if={@uploaded?} class="flex flex-col items-center gap-3">
+        <img
+          :if={@client_preview?}
+          data-role="client-preview"
+          alt={@client_name}
+          class="max-h-48 max-w-full rounded-lg object-contain shadow"
+        />
         <.live_img_preview
           :for={entry <- @upload.entries}
+          :if={not @client_preview?}
           entry={entry}
           class="max-h-48 max-w-full rounded-lg object-contain shadow"
         />

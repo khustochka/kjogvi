@@ -9,13 +9,17 @@ defmodule KjogviWeb.Live.My.Images.Edit do
   re-extracted; the previous stored objects are left in place (see
   `Kjogvi.Images.replace_image_file/2`).
 
-  TODO: add an observation search field so the linked observations can be
-  edited too. Images are standalone for now.
+  The image's linked observations are edited through the shared
+  `ImageObservations` picker; the selection is staged in
+  `selected_observation_ids` and persisted alongside the metadata on save.
   """
 
   use KjogviWeb, :live_view
 
   alias Kjogvi.Images
+  alias Kjogvi.Images.Image
+  alias Kjogvi.Repo
+  alias KjogviWeb.Live.Components.ImageObservations
 
   # 50 MB.
   @max_file_size 50 * 1_024 * 1_024
@@ -23,7 +27,11 @@ defmodule KjogviWeb.Live.My.Images.Edit do
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    image = Images.get_image!(socket.assigns.current_scope.user, id)
+    user = socket.assigns.current_scope.user
+    image = user |> Images.get_image!(id) |> Repo.preload(:observations)
+
+    ids = Enum.map(image.observations, & &1.id)
+    selected = Images.get_observations_for_display(user, ids)
 
     {:ok,
      socket
@@ -33,6 +41,9 @@ defmodule KjogviWeb.Live.My.Images.Edit do
      |> assign(:replace_uploaded?, false)
      |> assign(:replace_name, nil)
      |> assign(:replace_size, nil)
+     |> assign(:selected_observation_ids, Enum.map(selected, & &1.id))
+     |> assign(:selected_observations, selected)
+     |> assign(:observation_date, default_observation_date(user, image, selected))
      |> assign(:form, to_form(Images.change_image(image)))
      |> allow_upload(:image,
        accept: @accept,
@@ -114,12 +125,15 @@ defmodule KjogviWeb.Live.My.Images.Edit do
     </div>
 
     <.form for={@form} id="image-form" phx-submit="save" phx-change="validate" class="space-y-4">
-      <CoreComponents.input field={@form[:slug]} label="Slug" required />
-      <CoreComponents.input field={@form[:title]} label="Title" />
-      <CoreComponents.input field={@form[:description]} type="textarea" label="Description" />
-      <div class="w-32">
-        <CoreComponents.input field={@form[:sort_order]} type="number" label="Sort order" min="0" />
-      </div>
+      <.image_metadata_fields form={@form} />
+
+      <.live_component
+        module={ImageObservations}
+        id="image-observations"
+        current_user={@current_scope.user}
+        date={@observation_date}
+        selected={@selected_observations}
+      />
 
       <div class="flex gap-4 pt-2 border-t border-stone-200">
         <button
@@ -209,10 +223,11 @@ defmodule KjogviWeb.Live.My.Images.Edit do
     {:noreply, assign(socket, :form, to_form(changeset))}
   end
 
-  @impl true
   def handle_event("save", %{"image" => params}, socket) do
     case Images.update_image(socket.assigns.image, params) do
       {:ok, image} ->
+        Images.attach_observations(image, socket.assigns.selected_observation_ids)
+
         {:noreply,
          socket
          |> put_flash(:info, "Image updated")
@@ -220,6 +235,30 @@ defmodule KjogviWeb.Live.My.Images.Edit do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
+    end
+  end
+
+  @impl true
+  def handle_info({:image_observations_changed, ids}, socket) do
+    user = socket.assigns.current_scope.user
+
+    {:noreply,
+     socket
+     |> assign(:selected_observation_ids, ids)
+     |> assign(:selected_observations, Images.get_observations_for_display(user, ids))}
+  end
+
+  # The observation search defaults to the date of the already-attached
+  # observations; failing that, the image's EXIF capture date; failing that, the
+  # user's most recent card date.
+  defp default_observation_date(_user, _image, [%{card: %{observ_date: %Date{} = date}} | _]) do
+    date
+  end
+
+  defp default_observation_date(user, image, []) do
+    case Image.exif_date(image) do
+      %NaiveDateTime{} = naive -> NaiveDateTime.to_date(naive)
+      _ -> Kjogvi.Birding.last_card_date(user)
     end
   end
 

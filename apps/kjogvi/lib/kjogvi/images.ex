@@ -137,6 +137,75 @@ defmodule Kjogvi.Images do
   end
 
   @doc """
+  Loads observations by id for display in the image's observation picker,
+  hydrating each with its taxon/species and preloading the card (with location).
+
+  Used to render the "currently attached/selected" tiles from a list of ids the
+  caller is staging. Preserves the order of `observation_ids`. Restricts to the
+  user's own observations.
+  """
+  def get_observations_for_display(user, observation_ids) when is_list(observation_ids) do
+    observations =
+      Kjogvi.Birding.Observation
+      |> join(:inner, [obs], c in assoc(obs, :card))
+      |> where([obs, c], obs.id in ^observation_ids and c.user_id == ^user.id)
+      |> preload([_obs, _c], card: :location)
+      |> Repo.all()
+      |> Kjogvi.Birding.preload_taxa_and_species()
+      |> Map.new(&{&1.id, &1})
+
+    observation_ids
+    |> Enum.map(&observations[&1])
+    |> Enum.reject(&is_nil/1)
+  end
+
+  @doc """
+  Searches a user's observations for the image observation picker.
+
+  The typed `query` is resolved to matching taxa (via `Search.Taxon`); the
+  user's observations of those taxa are then returned, hydrated for display.
+
+  When `date` is a `Date`, results are restricted to observations on cards of
+  that day. When `date` is `nil`, the most recent matching observations across
+  all cards are returned. Results are capped (`limit`, default 10) and ordered
+  newest card first.
+
+  Returns hydrated observation structs (with `:taxon`, `:species`, and the
+  preloaded `:card`), ready to render as tiles. Returns `[]` for a blank query.
+  """
+  def search_observations_for_image(user, opts) do
+    query = opts |> Map.get(:query, "") |> to_string() |> String.trim()
+    date = Map.get(opts, :date)
+    limit = Map.get(opts, :limit, 10)
+
+    taxon_keys =
+      case query do
+        "" -> []
+        text -> text |> Kjogvi.Search.Taxon.search_taxa(user) |> Enum.map(& &1.key)
+      end
+
+    if taxon_keys == [] do
+      []
+    else
+      Kjogvi.Birding.Observation
+      |> join(:inner, [obs], c in assoc(obs, :card))
+      |> where([obs, c], c.user_id == ^user.id and obs.taxon_key in ^taxon_keys)
+      |> maybe_filter_by_date(date)
+      |> order_by([_obs, c], desc: c.observ_date, desc: c.id)
+      |> limit(^limit)
+      |> preload([_obs, _c], card: :location)
+      |> Repo.all()
+      |> Kjogvi.Birding.preload_taxa_and_species()
+    end
+  end
+
+  defp maybe_filter_by_date(query, %Date{} = date) do
+    where(query, [_obs, c], c.observ_date == ^date)
+  end
+
+  defp maybe_filter_by_date(query, _date), do: query
+
+  @doc """
   Lists images linked to any observation on the given card.
   """
   def list_images_for_card(card_id) do
@@ -206,6 +275,28 @@ defmodule Kjogvi.Images do
     |> Application.get_env(:images, [])
     |> Keyword.get(:storage_backend, "local")
   end
+
+  @doc """
+  EXIF capture date of an uploaded file as a `Date`, or `nil` when absent.
+
+  Reads the same metadata `create_image/2` extracts (via `VixProcessor`), but
+  exposes just the capture date for callers that need it before the image is
+  saved — e.g. to default the observation picker's search date on upload.
+  """
+  def exif_date_from_upload(%Plug.Upload{} = upload) do
+    case extract_metadata(upload) do
+      %{"exif_date" => value} when is_binary(value) ->
+        case NaiveDateTime.from_iso8601(String.replace(value, " ", "T")) do
+          {:ok, naive} -> NaiveDateTime.to_date(naive)
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  def exif_date_from_upload(_), do: nil
 
   # Extract metadata from a Plug.Upload before the file is stored. Keys are
   # stringified to match the jsonb column's round-trip representation.

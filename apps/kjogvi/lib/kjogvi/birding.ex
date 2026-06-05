@@ -195,23 +195,27 @@ defmodule Kjogvi.Birding do
   card, capped at today. Returns today when the user has no cards.
   """
   def next_empty_date(user) do
-    latest_date =
-      Card
-      |> Card.Query.as_card()
-      |> Card.Query.by_user(user)
-      |> select([card: c], max(c.observ_date))
-      |> Repo.one()
-
-    today = Date.utc_today()
-
-    case latest_date do
+    case last_card_date(user) do
       nil ->
-        today
+        Date.utc_today()
 
       date ->
+        today = Date.utc_today()
         candidate = Date.add(date, 1)
         if Date.compare(candidate, today) == :gt, do: today, else: candidate
     end
+  end
+
+  @doc """
+  Returns the observation date of the user's most recent card, or `nil` when
+  the user has no cards.
+  """
+  def last_card_date(user) do
+    Card
+    |> Card.Query.as_card()
+    |> Card.Query.by_user(user)
+    |> select([card: c], max(c.observ_date))
+    |> Repo.one()
   end
 
   def new_observation() do

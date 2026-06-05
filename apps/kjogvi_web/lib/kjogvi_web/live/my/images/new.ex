@@ -6,14 +6,16 @@ defmodule KjogviWeb.Live.My.Images.New do
   and can be replaced. The slug is prefilled from the file name and the rest of
   the metadata form (title, description, sort order) is filled in before saving.
 
-  TODO: add an observation search field so an image can optionally be linked to
-  observations on save. Images are standalone for now.
+  Observations can optionally be attached via the shared `ImageObservations`
+  picker; the selection is staged in `selected_observation_ids` and linked right
+  after the image is created.
   """
 
   use KjogviWeb, :live_view
 
   alias Kjogvi.Images
   alias Kjogvi.Images.Image
+  alias KjogviWeb.Live.Components.ImageObservations
 
   # 50 MB.
   @max_file_size 50 * 1_024 * 1_024
@@ -21,12 +23,24 @@ defmodule KjogviWeb.Live.My.Images.New do
 
   @impl true
   def mount(_params, _session, socket) do
+    user = socket.assigns.current_scope.user
+
     {:ok,
      socket
      |> assign(:page_title, "Add Image")
      |> assign(:uploaded?, false)
      |> assign(:client_name, nil)
      |> assign(:client_size, nil)
+     # The finished upload, consumed to a stable Plug.Upload on progress so its
+     # EXIF date can be read before save; reused as the file at save time.
+     # (The preview while the entry is consumed is rendered client-side from the
+     # browser-held File by the ImageUploadPreview hook.)
+     |> assign(:upload, nil)
+     |> assign(:selected_observation_ids, [])
+     |> assign(:selected_observations, [])
+     # Until a file is uploaded there is no EXIF date, so seed the picker with
+     # the user's most recent card date; the EXIF date replaces it on upload.
+     |> assign(:observation_date, Kjogvi.Birding.last_card_date(user))
      |> assign_form(%{"sort_order" => 100})
      |> allow_upload(:image,
        accept: @accept,
@@ -50,15 +64,19 @@ defmodule KjogviWeb.Live.My.Images.New do
           uploaded?={@uploaded?}
           client_name={@client_name}
           client_size={@client_size}
+          client_preview?={true}
         />
 
         <div :if={@uploaded?} class="space-y-4">
-          <CoreComponents.input field={@form[:slug]} label="Slug" required />
-          <CoreComponents.input field={@form[:title]} label="Title" />
-          <CoreComponents.input field={@form[:description]} type="textarea" label="Description" />
-          <div class="w-32">
-            <CoreComponents.input field={@form[:sort_order]} type="number" label="Sort order" min="0" />
-          </div>
+          <.image_metadata_fields form={@form} />
+
+          <.live_component
+            module={ImageObservations}
+            id="image-observations"
+            current_user={@current_scope.user}
+            date={@observation_date}
+            selected={@selected_observations}
+          />
 
           <div class="flex gap-4 pt-2 border-t border-stone-200">
             <button
@@ -77,20 +95,57 @@ defmodule KjogviWeb.Live.My.Images.New do
   end
 
   defp handle_progress(:image, entry, socket) do
-    if entry.done? do
+    # Consume the entry now (not at save) so the file is on a stable path we can
+    # read EXIF from for the observation picker. The browser-rendered preview
+    # doesn't depend on the server entry, so consuming here is safe.
+    with true <- entry.done?,
+         {:ok, plug_upload} <- consume_upload(socket) do
       params =
         current_params(socket)
         |> maybe_prefill_slug(entry.client_name)
 
       {:noreply,
        socket
+       |> stash_upload(plug_upload)
        |> assign(:uploaded?, true)
        |> assign(:client_name, entry.client_name)
        |> assign(:client_size, entry.client_size)
+       |> assign(:observation_date, observation_date(socket, plug_upload))
        |> assign_form(params)}
     else
-      {:noreply, socket}
+      _ -> {:noreply, socket}
     end
+  end
+
+  # Prefer the uploaded file's EXIF capture date; fall back to the last-card
+  # date the picker was seeded with when the file carries no EXIF date.
+  defp observation_date(socket, plug_upload) do
+    Images.exif_date_from_upload(plug_upload) || socket.assigns.observation_date
+  end
+
+  # Replace any previously stashed upload, removing its temp file first so a
+  # re-pick doesn't leak the prior file.
+  defp stash_upload(socket, plug_upload) do
+    discard_stash(socket)
+    assign(socket, :upload, plug_upload)
+  end
+
+  # Remove the stashed temp file, if any.
+  defp discard_stash(socket) do
+    case socket.assigns[:upload] do
+      %Plug.Upload{path: path} -> File.rm(path)
+      _ -> :ok
+    end
+  end
+
+  @impl true
+  def handle_info({:image_observations_changed, ids}, socket) do
+    user = socket.assigns.current_scope.user
+
+    {:noreply,
+     socket
+     |> assign(:selected_observation_ids, ids)
+     |> assign(:selected_observations, Images.get_observations_for_display(user, ids))}
   end
 
   @impl true
@@ -100,20 +155,22 @@ defmodule KjogviWeb.Live.My.Images.New do
     {:noreply, assign_form(socket, params["image"] || %{}, :validate)}
   end
 
-  @impl true
   def handle_event("save", %{"image" => params}, socket) do
     user = socket.assigns.current_scope.user
 
-    case consume_upload(socket) do
-      {:ok, plug_upload} ->
+    case socket.assigns.upload do
+      %Plug.Upload{} = plug_upload ->
         attrs = Map.put(params, "file", plug_upload)
         result = Images.create_image(user, attrs)
-        File.rm(plug_upload.path)
 
         case result do
           {:ok, image} ->
+            maybe_attach_observations(image, socket.assigns.selected_observation_ids)
+            discard_stash(socket)
+
             {:noreply,
              socket
+             |> assign(:upload, nil)
              |> put_flash(:info, "Image uploaded")
              |> push_navigate(to: ~p"/my/images/#{image.id}")}
 
@@ -121,9 +178,20 @@ defmodule KjogviWeb.Live.My.Images.New do
             {:noreply, assign(socket, :form, to_form(changeset))}
         end
 
-      :error ->
+      _ ->
         {:noreply, put_flash(socket, :error, "Please choose a file to upload")}
     end
+  end
+
+  defp maybe_attach_observations(_image, []), do: :ok
+
+  defp maybe_attach_observations(image, ids), do: Images.attach_observations(image, ids)
+
+  @impl true
+  def terminate(_reason, socket) do
+    # Drop the stashed temp file and staged preview if the user navigated away
+    # without saving.
+    discard_stash(socket)
   end
 
   # Consume the single uploaded entry into a persistent Plug.Upload. The

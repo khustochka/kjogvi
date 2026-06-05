@@ -17,10 +17,13 @@ defmodule KjogviWeb.Live.My.Images.Show do
       |> Images.get_image!(id)
       |> Repo.preload(observations: [card: :location])
 
+    observations = Kjogvi.Birding.preload_taxa_and_species(image.observations)
+
     {:ok,
      socket
      |> assign(:page_title, image.title || image.slug)
-     |> assign(:image, image)}
+     |> assign(:image, image)
+     |> assign(:observations, observations)}
   end
 
   @impl true
@@ -83,20 +86,12 @@ defmodule KjogviWeb.Live.My.Images.Show do
           </dl>
         </div>
 
-        <div :if={@image.observations != []}>
+        <div :if={@observations != []}>
           <.h2 class="text-sm! uppercase tracking-wide text-stone-500!">Observations</.h2>
           <ul class="mt-2 space-y-2" aria-label="Linked observations">
-            <li
-              :for={obs <- @image.observations}
-              id={"observation-#{obs.id}"}
-              class="text-sm border border-stone-200 rounded-lg p-2"
-            >
-              <.link navigate={~p"/my/cards/#{obs.card_id}"} class="no-underline hover:underline">
-                <span class="font-medium">{obs.taxon_key}</span>
-                <span class="text-stone-500 ml-1 text-xs">{obs.card.observ_date}</span>
-                <span :if={obs.card.location} class="block text-stone-400 text-xs">
-                  {obs.card.location.name_en}
-                </span>
+            <li :for={obs <- @observations} id={"observation-#{obs.id}"}>
+              <.link navigate={~p"/my/cards/#{obs.card_id}"} class="block no-underline">
+                <.observation_tile observation={obs} />
               </.link>
             </li>
           </ul>

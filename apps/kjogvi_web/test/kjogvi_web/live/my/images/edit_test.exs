@@ -139,6 +139,109 @@ defmodule KjogviWeb.Live.My.Images.EditTest do
     end
   end
 
+  describe "observations" do
+    setup %{user: user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "gretit1",
+        name_en: "Great Tit",
+        name_sci: "Parus major"
+      )
+
+      {:ok, user} =
+        Kjogvi.Users.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
+
+      location = Kjogvi.Factory.insert(:location)
+      card = Kjogvi.Factory.insert(:card, user: user, location: location)
+
+      obs =
+        Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
+
+      %{user: user, card: card, obs: obs}
+    end
+
+    test "renders the already-attached observations as tiles", %{
+      conn: conn,
+      user: user,
+      obs: obs
+    } do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      assert has_element?(live, "#image-observations-selected-#{obs.id}")
+    end
+
+    test "searching lists matching observations and adding selects one", %{
+      conn: conn,
+      user: user,
+      obs: obs
+    } do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+
+      assert has_element?(live, "#image-observations-result-#{obs.id}")
+
+      live
+      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
+      |> render_click()
+
+      assert has_element?(live, "#image-observations-selected-#{obs.id}")
+    end
+
+    test "removing a selected observation drops its tile", %{conn: conn, user: user, obs: obs} do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      live
+      |> element("#image-observations-selected-#{obs.id} button[phx-click=remove_observation]")
+      |> render_click()
+
+      refute has_element?(live, "#image-observations-selected-#{obs.id}")
+    end
+
+    test "saving persists the staged observation selection", %{conn: conn, user: user, obs: obs} do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+
+      live
+      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
+      |> render_click()
+
+      render_submit(live, "save", %{"image" => %{"slug" => image.slug, "sort_order" => "100"}})
+
+      assert_redirect(live, ~p"/my/images/#{image.id}")
+
+      reloaded = Images.get_image!(user, image.id) |> Kjogvi.Repo.preload(:observations)
+      assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
+    end
+
+    test "saving with no selection clears any existing links", %{conn: conn, user: user, obs: obs} do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      live
+      |> element("#image-observations-selected-#{obs.id} button[phx-click=remove_observation]")
+      |> render_click()
+
+      render_submit(live, "save", %{"image" => %{"slug" => image.slug, "sort_order" => "100"}})
+
+      reloaded = Images.get_image!(user, image.id) |> Kjogvi.Repo.preload(:observations)
+      assert reloaded.observations == []
+    end
+  end
+
   defp create_stored_image(user) do
     dest = Waffle.File.generate_temporary_path(".jpg")
     File.cp!(@sample_image, dest)

@@ -118,6 +118,89 @@ defmodule KjogviWeb.Live.My.Images.NewTest do
     end
   end
 
+  test "attaches a searched observation to the new image on save", %{conn: conn, user: user} do
+    book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+    Ornitho.Factory.insert(:taxon,
+      book: book,
+      code: "gretit1",
+      name_en: "Great Tit",
+      name_sci: "Parus major"
+    )
+
+    {:ok, user} =
+      Kjogvi.Users.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
+
+    # The sample image's EXIF capture date (2021-07-15) prefills the picker's
+    # date, which scopes the search — so the matching observation must be on a
+    # card of that day to surface in the dropdown.
+    card =
+      Kjogvi.Factory.insert(:card,
+        user: user,
+        location: Kjogvi.Factory.insert(:location),
+        observ_date: ~D[2021-07-15]
+      )
+
+    obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
+
+    {:ok, live, _html} = live(conn, ~p"/my/images/new")
+
+    slug = "sample-bird-#{System.unique_integer([:positive])}"
+    upload_name = "#{slug}.jpg"
+
+    upload =
+      file_input(live, "#image-form", :image, [
+        %{name: upload_name, content: File.read!(@sample_image), type: "image/jpeg"}
+      ])
+
+    render_upload(upload, upload_name)
+
+    user_dir = Path.join([waffle_prefix(), "uploads/images", user.public_token])
+    on_exit(fn -> File.rm_rf!(user_dir) end)
+
+    live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+
+    live
+    |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
+    |> render_click()
+
+    render_submit(live, "save", %{"image" => %{"slug" => slug}})
+
+    image = Images.get_image_by_slug(slug) |> Kjogvi.Repo.preload(:observations)
+    assert_redirect(live, ~p"/my/images/#{image.id}")
+    assert Enum.map(image.observations, & &1.id) == [obs.id]
+  end
+
+  test "renders the client-side preview img after upload (entry consumed early)", %{conn: conn} do
+    {:ok, live, _html} = live(conn, ~p"/my/images/new")
+
+    upload =
+      file_input(live, "#image-form", :image, [
+        %{name: "preview.jpg", content: File.read!(@sample_image), type: "image/jpeg"}
+      ])
+
+    render_upload(upload, "preview.jpg")
+
+    # The hook fills this <img>'s src from the browser-held File; in the test we
+    # can only assert the element (and its hook) are present, not the blob src.
+    assert has_element?(live, "#upload-drop-zone[phx-hook=ImageUploadPreview]")
+    assert has_element?(live, "#upload-drop-zone img[data-role=client-preview]")
+  end
+
+  test "prefills the observation date from the uploaded file's EXIF date", %{conn: conn} do
+    {:ok, live, _html} = live(conn, ~p"/my/images/new")
+
+    upload =
+      file_input(live, "#image-form", :image, [
+        %{name: "exif.jpg", content: File.read!(@sample_image), type: "image/jpeg"}
+      ])
+
+    render_upload(upload, "exif.jpg")
+
+    # The sample carries DateTimeOriginal 2021-07-15 (see the metadata test).
+    assert has_element?(live, "#image-observations-date[value='2021-07-15']")
+  end
+
   defp waffle_prefix do
     Application.get_env(:waffle, :storage_dir_prefix, "")
   end
