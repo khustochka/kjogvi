@@ -40,40 +40,33 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   Removing the last selected observation unlocks the card: the date field
   becomes editable again and search returns to the date/recent scope.
 
-  ## Relationship to `Autocomplete`
+  ## Search via `Autocomplete`
 
-  The search box, dropdown, open/close, click-away, and min-length here partly
-  duplicate `KjogviWeb.Live.Components.Autocomplete` (term highlighting reuses
-  the shared `Autocomplete.Highlight`, so that part is not duplicated).
-  This was a deliberate (if regrettable) divergence: `Autocomplete` is built to
-  pick a *single* value into a hidden form input and emits its selection to the
-  *root* LiveView via `send(self(), …)`. This picker instead **appends many**
-  observations to a staged list, renders **disabled rows** (already-added) with
-  reasons, and carries an adjacent **date** field — and as a LiveComponent it
-  can't receive `Autocomplete`'s root-targeted message cleanly. Reusing only
-  `SearchInput` was the pragmatic middle ground.
+  The search box, dropdown, keyboard navigation, click-away, and min-length are
+  the shared `KjogviWeb.Live.Components.Autocomplete`. Because this is a nested
+  `LiveComponent`, the autocomplete is told to deliver its selection back *here*
+  (rather than to the root LiveView) with `notify_to={{__MODULE__, @id}}`; the
+  pick then arrives in `update/2` as `:autocomplete_select`. `clear_on_select`
+  empties the field after each pick so the next one can be searched, and the
+  `search_fn` closure carries the current card-lock / date scope.
 
-  TODO: fold this back onto `Autocomplete` (extending it for multi-select +
-  disabled rows + component-targeted selection), which would also restore the
-  keyboard navigation this hand-rolled dropdown currently lacks.
+  The result rows are rendered by the `:result` slot as observation tiles.
+  Already-attached observations are shown dimmed with an "Already attached"
+  note; the autocomplete still wires them as clickable, but a re-pick is a
+  no-op here (guarded by `addable?/2`).
   """
 
   use KjogviWeb, :live_component
 
   alias Kjogvi.Images
   alias KjogviWeb.ImageComponents
-  alias KjogviWeb.Live.Components.Autocomplete.SearchInput
+  alias KjogviWeb.Live.Components.Autocomplete
 
   @impl true
-  def mount(socket) do
-    {:ok,
-     socket
-     |> assign(:search_results, [])
-     |> assign(:search_term, "")
-     |> assign(:is_open, false)}
+  def update(%{autocomplete_select: %{params: %{"result" => obs}}}, socket) do
+    {:ok, add_observation(socket, obs)}
   end
 
-  @impl true
   def update(assigns, socket) do
     # `selected` is the list of hydrated observation structs the parent has
     # staged; `date` is the (optional) Date the search is scoped to. Both are
@@ -129,59 +122,34 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
             disabled={@selected != []}
             phx-change="date_changed"
             phx-target={@myself}
-            class="block w-full rounded-lg border-zinc-300 text-zinc-900 focus:border-zinc-400 focus:ring-0 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:text-sm sm:leading-6"
+            class="mt-2 block w-full rounded-lg border-zinc-300 text-zinc-900 focus:border-zinc-400 focus:ring-0 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:text-sm sm:leading-6"
           />
           <p :if={@selected != []} id={"#{@id}-date-locked"} class="mt-1 text-xs text-stone-400">
             Locked to the selected observation's card.
           </p>
         </div>
 
-        <div
-          class="relative w-full sm:max-w-md"
-          phx-click-away={JS.push("close_dropdown", target: @myself)}
-        >
-          <label for={"#{@id}-search"} class="block text-sm font-semibold leading-6 text-zinc-800">
-            Search observations
-          </label>
-          <SearchInput.search_input
+        <div class="w-full sm:max-w-md">
+          <.live_component
+            module={Autocomplete}
             id={"#{@id}-search"}
-            target={@myself}
-            on_search="search"
-            on_clear="clear_search"
+            label="Search observations"
             placeholder="Start typing a taxon name..."
-            value={@search_term}
-            phx-focus="open_dropdown"
-          />
-
-          <ul
-            :if={@is_open and @search_results != []}
-            id={"#{@id}-results"}
-            class="absolute top-full left-0 right-0 z-10 mt-1 max-h-64 space-y-2 overflow-y-auto rounded-lg border border-gray-300 bg-white p-2 shadow-lg"
+            search_fn={search_fn(@current_user, @selected, @date)}
+            on_select_event="add_observation"
+            notify_to={{__MODULE__, @id}}
+            clear_on_select
+            keep_focus_on_select
           >
-            <li :for={obs <- @search_results} id={"#{@id}-result-#{obs.id}"}>
-              <ImageComponents.observation_tile
-                observation={obs}
-                on_add={unless selected?(obs, @selected), do: "add_observation"}
-                target={@myself}
-                term={@search_term}
-                class={selected?(obs, @selected) && "opacity-50"}
-              />
-              <p
-                :if={selected?(obs, @selected)}
-                class="px-3 pb-1 text-xs text-stone-400"
-              >
-                Already attached
-              </p>
-            </li>
-          </ul>
-
-          <p
-            :if={@is_open and @search_results == [] and String.trim(@search_term) != ""}
-            id={"#{@id}-no-results"}
-            class="mt-1 text-sm text-stone-500"
-          >
-            No matching observations.
-          </p>
+            <:result :let={%{result: obs, term: term}}>
+              <div class={selected?(obs, @selected) && "opacity-50"}>
+                <ImageComponents.observation_tile observation={obs} term={term} />
+                <p :if={selected?(obs, @selected)} class="px-3 pt-1 text-xs text-stone-400">
+                  Already attached
+                </p>
+              </div>
+            </:result>
+          </.live_component>
         </div>
       </div>
     </div>
@@ -190,57 +158,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
 
   @impl true
   def handle_event("date_changed", %{"date" => date_string}, socket) do
-    date = parse_date(date_string)
-
-    {:noreply,
-     socket
-     |> assign(:date, date)
-     |> rerun_search()}
-  end
-
-  def handle_event("search", %{"value" => query}, socket) do
-    query = String.trim(query)
-
-    {:noreply,
-     socket
-     |> assign(:search_term, query)
-     |> assign(:is_open, true)
-     |> run_search(query)}
-  end
-
-  def handle_event("clear_search", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(:search_term, "")
-     |> assign(:search_results, [])
-     |> assign(:is_open, false)}
-  end
-
-  def handle_event("open_dropdown", _params, socket) do
-    {:noreply, assign(socket, :is_open, socket.assigns.search_results != [])}
-  end
-
-  def handle_event("close_dropdown", _params, socket) do
-    {:noreply, assign(socket, :is_open, false)}
-  end
-
-  def handle_event("add_observation", %{"observation-id" => id_string}, socket) do
-    id = String.to_integer(id_string)
-    result = Enum.find(socket.assigns.search_results, &(&1.id == id))
-
-    if result && addable?(result, socket.assigns.selected) do
-      selected = socket.assigns.selected ++ [result]
-      notify_parent(selected)
-
-      # The first pick locks the card; re-run the search so it narrows to that
-      # card straight away.
-      {:noreply,
-       socket
-       |> assign(:selected, selected)
-       |> rerun_search()}
-    else
-      {:noreply, socket}
-    end
+    {:noreply, assign(socket, :date, parse_date(date_string))}
   end
 
   def handle_event("remove_observation", %{"observation-id" => id_string}, socket) do
@@ -248,38 +166,40 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
     selected = Enum.reject(socket.assigns.selected, &(&1.id == id))
     notify_parent(selected)
 
-    # Removing the last pick unlocks the card; re-run so results widen again.
-    {:noreply,
-     socket
-     |> assign(:selected, selected)
-     |> rerun_search()}
+    {:noreply, assign(socket, :selected, selected)}
   end
 
   # Don't search (or highlight) until the query is at least this long; a single
   # letter matches too much to be useful.
   @min_query_length 2
 
-  defp rerun_search(socket) do
-    run_search(socket, socket.assigns.search_term)
-  end
-
-  defp run_search(socket, query) do
-    if String.length(String.trim(query)) < @min_query_length do
-      socket
-      |> assign(:search_results, [])
-      |> assign(:is_open, false)
-    else
-      selected = socket.assigns.selected
-
-      results =
-        Images.search_observations_for_image(socket.assigns.current_user, %{
+  # A closure the embedded `Autocomplete` calls with the typed query. Capturing
+  # the current `selected`/`date` keeps the search scope (card lock or date) in
+  # sync with what's staged. `Autocomplete` already gates on its own
+  # `min_length`, but we keep the guard so the scope-resolving query never runs
+  # on a too-short term.
+  defp search_fn(user, selected, date) do
+    fn query ->
+      if String.length(String.trim(query)) < @min_query_length do
+        []
+      else
+        Images.search_observations_for_image(user, %{
           query: query,
           # Once a card is locked in, search only it; otherwise scope by date.
           card_id: locked_card_id(selected),
-          date: socket.assigns.date
+          date: date
         })
+      end
+    end
+  end
 
-      assign(socket, :search_results, results)
+  defp add_observation(socket, obs) do
+    if addable?(obs, socket.assigns.selected) do
+      selected = socket.assigns.selected ++ [obs]
+      notify_parent(selected)
+      assign(socket, :selected, selected)
+    else
+      socket
     end
   end
 

@@ -3,12 +3,36 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
   Autocomplete picker: search field + dropdown of results.
 
   Owns search results, dropdown visibility, and the highlighted index.
-  Two messages flow to the parent process via `send/2`:
+  Two messages carry the selection and clear out of the component:
 
       {:autocomplete_select, on_select_event,
         %{"result" => result, ...on_select_params}}
 
       {:autocomplete_clear, on_select_event, on_select_params}
+
+  ## Where the selection is delivered (`:notify_to`)
+
+  By default both messages go to the **root LiveView** via `send/2`,
+  landing in its `handle_info/2`. This is right when the autocomplete
+  sits directly in a LiveView (the common case).
+
+  When the autocomplete is nested inside another `LiveComponent`, that
+  component has no `handle_info/2` and `send(self(), …)` would bypass it
+  entirely (`self()` is the root process). Pass
+  `notify_to={{Module, id}}` to instead route both messages into that
+  component's `update/2` via `send_update/3`, as the assigns
+  `:autocomplete_select` / `:autocomplete_clear` (each a map with
+  `:event` and `:params`). The component handles them in `update/2`.
+
+  ## Clearing the field after a pick (`:clear_on_select`)
+
+  By default the field shows the committed `:input_value` after a
+  selection — the single-value picker behaviour. Pass
+  `clear_on_select` for a multi-select host (e.g. one that appends each
+  pick to a list): the field empties after each pick so the user can
+  search the next item. Pair it with `keep_focus_on_select`, which keeps
+  focus in the field after an Enter commit instead of blurring, for a
+  keep-typing picker.
 
   `:autocomplete_clear` fires when the user clears the field while a
   selection was in effect — via the × button, by deleting the text to
@@ -66,6 +90,21 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
   attr :on_select_event, :string, required: true
   attr :on_select_params, :map, default: %{}
 
+  # Where selection/clear are delivered. `nil` → the root LiveView via
+  # `send/2`; `{Module, id}` → that LiveComponent's `update/2` via
+  # `send_update/3`.
+  attr :notify_to, :any, default: nil
+
+  # When true, the field empties after a pick (multi-select host) instead
+  # of showing the committed `:input_value`.
+  attr :clear_on_select, :boolean, default: false
+
+  # When true, pressing Enter to commit a result leaves focus in the
+  # search field (rather than blurring) so the user can keep picking.
+  # Read by the `AutocompletePicker` JS hook. Pairs naturally with
+  # `:clear_on_select` for a multi-select host.
+  attr :keep_focus_on_select, :boolean, default: false
+
   attr :debounce, :string, default: "300"
   attr :min_length, :integer, default: 2
   attr :compact, :boolean, default: false
@@ -97,7 +136,10 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
      |> assign_new(:label, fn -> nil end)
      |> assign_new(:placeholder, fn -> "Search..." end)
      |> assign_new(:hidden_name, fn -> nil end)
-     |> assign_new(:hidden_value, fn -> "" end)}
+     |> assign_new(:hidden_value, fn -> "" end)
+     |> assign_new(:notify_to, fn -> nil end)
+     |> assign_new(:clear_on_select, fn -> false end)
+     |> assign_new(:keep_focus_on_select, fn -> false end)}
   end
 
   @impl true
@@ -170,9 +212,9 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
 
   defp do_select(socket, result) do
     event_params = Map.put(socket.assigns.on_select_params, "result", result)
-    send(self(), {:autocomplete_select, socket.assigns.on_select_event, event_params})
+    notify_select(socket, event_params)
 
-    {:noreply, reset_search(socket)}
+    {:noreply, reset_search(socket, socket.assigns.clear_on_select)}
   end
 
   # When `cleared?` is true, keep `search_term` as `""` instead of
@@ -192,11 +234,27 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
     socket.assigns.input_value not in [nil, ""]
   end
 
+  defp notify_select(socket, params) do
+    notify(socket, :autocomplete_select, params)
+  end
+
   defp send_clear(socket) do
-    send(
-      self(),
-      {:autocomplete_clear, socket.assigns.on_select_event, socket.assigns.on_select_params}
-    )
+    notify(socket, :autocomplete_clear, socket.assigns.on_select_params)
+  end
+
+  # Deliver a selection/clear out of the component, either to the root
+  # LiveView (`send/2`) or — when `:notify_to` names a component — into
+  # that component's `update/2` (`send_update/3`).
+  defp notify(socket, kind, params) do
+    event = socket.assigns.on_select_event
+
+    case socket.assigns.notify_to do
+      {module, id} ->
+        send_update(module, [{:id, id}, {kind, %{event: event, params: params}}])
+
+      _ ->
+        send(self(), {kind, event, params})
+    end
   end
 
   defp set_highlight(socket, new_index) do
@@ -229,6 +287,7 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
           has_errors={@errors != []}
           hook="AutocompletePicker"
           phx-focus="focus"
+          data-keep-focus-on-select={@keep_focus_on_select && "true"}
         />
         <input :if={@hidden_name} type="hidden" name={@hidden_name} value={@hidden_value} />
         <div

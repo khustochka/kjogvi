@@ -35,6 +35,13 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       assert has_element?(live, "#upload-drop-zone")
     end
 
+    test "shows an Images breadcrumb", %{conn: conn} do
+      {:ok, live, _html} = live(conn, ~p"/my/images/new")
+
+      assert has_element?(live, "#image-breadcrumbs a[href='/my/images']", "Images")
+      assert has_element?(live, "#image-breadcrumbs", "Add")
+    end
+
     test "hides the metadata form until a file is uploaded", %{conn: conn} do
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
@@ -73,7 +80,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
     test "uploads a real image, processes it, and stores metadata", %{conn: conn, user: user} do
       # An image must have an observation; the sample's EXIF date (2021-07-15)
       # scopes the picker, so the observation must be on a card of that day.
-      %{user: user, obs: obs} = seed_observation(user, observ_date: ~D[2021-07-15])
+      %{user: user} = seed_observation(user, observ_date: ~D[2021-07-15])
 
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
@@ -91,11 +98,8 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
       assert render_upload(upload, upload_name) =~ "Replace image"
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
-
-      live
-      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
-      |> render_click()
+      picker_search(live, "great tit")
+      picker_add_first(live)
 
       # In test, waffle stores under a throwaway tmp prefix (see config/test.exs).
       # Stored files live outside the DB sandbox, so clean up the user's whole
@@ -170,11 +174,8 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       user_dir = Path.join([waffle_prefix(), "uploads/images", user.public_token])
       on_exit(fn -> File.rm_rf!(user_dir) end)
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
-
-      live
-      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
-      |> render_click()
+      picker_search(live, "great tit")
+      picker_add_first(live)
 
       render_submit(live, "save", %{"image" => %{"slug" => slug}})
 
@@ -623,31 +624,29 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+      picker_search(live, "great tit")
 
-      assert has_element?(live, "#image-observations-result-#{obs.id}")
+      assert has_element?(live, "#image-observations-search-result-0")
 
       # The matched term is highlighted (the shared highlighter wraps it in
       # <strong>, styled here as a yellow background rather than bold).
-      result_html = render(element(live, "#image-observations-result-#{obs.id}"))
+      result_html = render(element(live, "#image-observations-search-result-0"))
       assert result_html =~ "<strong>Great Tit</strong>"
 
-      live
-      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
-      |> render_click()
+      picker_add_first(live)
 
       assert has_element?(live, "#image-observations-selected-#{obs.id}")
     end
 
-    test "does not search on a single letter", %{conn: conn, user: user, obs: obs} do
+    test "does not search on a single letter", %{conn: conn, user: user} do
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "g"})
-      refute has_element?(live, "#image-observations-result-#{obs.id}")
+      picker_search(live, "g")
+      refute has_element?(live, "#image-observations-search-result-0")
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "gr"})
-      assert has_element?(live, "#image-observations-result-#{obs.id}")
+      picker_search(live, "gr")
+      assert has_element?(live, "#image-observations-search-result-0")
     end
 
     test "removing a selected observation drops its tile", %{conn: conn, user: user, obs: obs} do
@@ -667,11 +666,8 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
-
-      live
-      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
-      |> render_click()
+      picker_search(live, "great tit")
+      picker_add_first(live)
 
       render_submit(live, "save", %{"image" => %{"slug" => image.slug, "sort_order" => "100"}})
 
@@ -725,8 +721,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
     test "selecting an observation locks the date field to its card date", %{
       conn: conn,
-      user: user,
-      obs: obs
+      user: user
     } do
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
@@ -734,11 +729,8 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       # Editable while nothing is selected.
       refute has_element?(live, "#image-observations-date[disabled]")
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
-
-      live
-      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
-      |> render_click()
+      picker_search(live, "great tit")
+      picker_add_first(live)
 
       # Locked to the selected observation's card date (factory default).
       assert has_element?(live, "#image-observations-date[disabled][value='2023-08-29']")
@@ -767,8 +759,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
     test "once a card is locked, search is restricted to that card", %{
       conn: conn,
       user: user,
-      card: card,
-      obs: obs
+      card: card
     } do
       # A second observation of the same taxon on the same day, but a different
       # card — so the date scope alone keeps both, and only locking the card
@@ -776,32 +767,31 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       other_card =
         Kjogvi.Factory.insert(:card, user: user, observ_date: card.observ_date)
 
-      other_obs =
-        Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "/ebird/v2024/gretit1")
+      Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "/ebird/v2024/gretit1")
 
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      # Scope the picker to the shared day; both cards' observations show.
+      # Scope the picker to the shared day; both cards' observations show as two
+      # rows (keyed by position).
       live
       |> element("#image-observations-date")
       |> render_change(%{"date" => Date.to_iso8601(card.observ_date)})
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
-      assert has_element?(live, "#image-observations-result-#{obs.id}")
-      assert has_element?(live, "#image-observations-result-#{other_obs.id}")
+      picker_search(live, "great tit")
+      assert has_element?(live, "#image-observations-search-result-0")
+      assert has_element?(live, "#image-observations-search-result-1")
 
       # Pick the first; its card is now locked.
-      live
-      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
-      |> render_click()
+      picker_add_first(live)
 
-      # The other card's observation can no longer be found.
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
-      refute has_element?(live, "#image-observations-result-#{other_obs.id}")
+      # Search again: only the locked card's single observation remains.
+      picker_search(live, "great tit")
+      assert has_element?(live, "#image-observations-search-result-0")
+      refute has_element?(live, "#image-observations-search-result-1")
     end
 
-    test "an already-attached search result is shown disabled, not addable", %{
+    test "an already-attached search result is shown dimmed and re-adding is a no-op", %{
       conn: conn,
       user: user,
       obs: obs
@@ -811,17 +801,28 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+      picker_search(live, "great tit")
 
-      assert has_element?(live, "#image-observations-result-#{obs.id}")
-
-      refute has_element?(
-               live,
-               "#image-observations-result-#{obs.id} button[phx-click=add_observation]"
-             )
-
-      result_html = render(element(live, "#image-observations-result-#{obs.id}"))
+      # The only matching observation is already attached: its row is dimmed and
+      # flagged.
+      result_html = render(element(live, "#image-observations-search-result-0"))
+      assert result_html =~ "opacity-50"
       assert result_html =~ "Already attached"
+
+      # Re-picking it does not stage a duplicate; the single tile stands.
+      picker_add_first(live)
+
+      assert has_element?(live, "#image-observations-selected-#{obs.id}")
+
+      selected_count =
+        live
+        |> element("#image-observations-selected")
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find("li")
+        |> length()
+
+      assert selected_count == 1
     end
 
     # The picker UI can't stage cross-card ids (search locks to one card), but a
@@ -917,6 +918,18 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
     obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
     %{user: user, card: card, obs: obs}
+  end
+
+  # Types a query into the picker's autocomplete (the embedded
+  # `Autocomplete` lives at `#image-observations-search`).
+  defp picker_search(live, query) do
+    live |> element("#image-observations-search") |> render_keyup(%{"value" => query})
+  end
+
+  # Clicks the first dropdown result row, committing that observation. The
+  # `Autocomplete` keys its rows by position, so the first match is row 0.
+  defp picker_add_first(live) do
+    live |> element("#image-observations-search-result-0") |> render_click()
   end
 
   defp create_stored_image(user) do

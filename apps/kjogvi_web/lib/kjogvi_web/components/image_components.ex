@@ -17,7 +17,8 @@ defmodule KjogviWeb.ImageComponents do
   Used both for the observations already attached/selected on an image and for
   the search-result rows in the observation picker. When an `on_remove` event is
   given, an × button is shown that pushes it with `phx-value-observation-id`.
-  When an `on_add` event is given (search results), a + button is shown instead.
+  Result rows are rendered without a button — the picker's `Autocomplete` wraps
+  each row and handles the click itself.
 
   Pass `term` (the current search text) to highlight the matched portion of the
   taxon names with a yellow background. Only a contiguous, case-insensitive
@@ -25,8 +26,7 @@ defmodule KjogviWeb.ImageComponents do
   """
   attr :observation, :map, required: true
   attr :on_remove, :string, default: nil, doc: "event pushed by the × button"
-  attr :on_add, :string, default: nil, doc: "event pushed by the + button"
-  attr :target, :any, default: nil, doc: "phx-target for the add/remove events"
+  attr :target, :any, default: nil, doc: "phx-target for the remove event"
   attr :term, :string, default: nil, doc: "search term to highlight in the taxon names"
   attr :rest, :global
 
@@ -60,19 +60,6 @@ defmodule KjogviWeb.ImageComponents do
           {Enum.join(effort_parts(@observation.card), " · ")}
         </div>
       </div>
-
-      <button
-        :if={@on_add}
-        type="button"
-        phx-click={@on_add}
-        phx-target={@target}
-        phx-value-observation-id={@observation.id}
-        aria-label="Attach observation"
-        title="Attach observation"
-        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600"
-      >
-        <.icon name="hero-plus" class="h-4 w-4" />
-      </button>
 
       <button
         :if={@on_remove}

@@ -117,12 +117,16 @@ defmodule KjogviWeb.Live.My.Images.Form do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <nav :if={@live_action == :edit} id="image-breadcrumbs" class="text-sm text-stone-500">
+      <nav id="image-breadcrumbs" class="text-sm text-stone-500">
         <.breadcrumb_link href={~p"/my/images"}>Images</.breadcrumb_link>
         <span class="mx-1 text-stone-400">/</span>
-        <.breadcrumb_link href={~p"/my/images/#{@image.id}"} phx-no-format>{@image.title || @image.slug}</.breadcrumb_link>
-        <span class="mx-1 text-stone-400">/</span>
-        <span class="text-stone-700">Edit</span>
+        <%= if @live_action == :edit do %>
+          <.breadcrumb_link href={~p"/my/images/#{@image.id}"} phx-no-format>{@image.title || @image.slug}</.breadcrumb_link>
+          <span class="mx-1 text-stone-400">/</span>
+          <span class="text-stone-700">Edit</span>
+        <% else %>
+          <span class="text-stone-700">Add</span>
+        <% end %>
       </nav>
 
       <.h1>{@page_title}</.h1>
