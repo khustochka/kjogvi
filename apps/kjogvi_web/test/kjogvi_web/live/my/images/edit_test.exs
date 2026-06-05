@@ -154,7 +154,16 @@ defmodule KjogviWeb.Live.My.Images.EditTest do
         Kjogvi.Users.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
 
       location = Kjogvi.Factory.insert(:location)
-      card = Kjogvi.Factory.insert(:card, user: user, location: location)
+
+      card =
+        Kjogvi.Factory.insert(:card,
+          user: user,
+          location: location,
+          effort_type: "TRAVEL",
+          start_time: ~T[08:15:00],
+          duration_minutes: 90,
+          distance_kms: 3.5
+        )
 
       obs =
         Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
@@ -165,6 +174,7 @@ defmodule KjogviWeb.Live.My.Images.EditTest do
     test "renders the already-attached observations as tiles", %{
       conn: conn,
       user: user,
+      card: card,
       obs: obs
     } do
       image = ImagesFixtures.image_fixture(user: user)
@@ -172,7 +182,17 @@ defmodule KjogviWeb.Live.My.Images.EditTest do
 
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      assert has_element?(live, "#image-observations-selected-#{obs.id}")
+      tile = element(live, "#image-observations-selected-#{obs.id}")
+      assert has_element?(tile)
+
+      html = render(tile)
+      # Sci name (italic), card id, and the available effort details.
+      assert html =~ "Parus major"
+      assert html =~ "##{card.id}"
+      assert html =~ "TRAVEL"
+      assert html =~ "08:15"
+      assert html =~ "90 min"
+      assert html =~ "3.5 km"
     end
 
     test "searching lists matching observations and adding selects one", %{

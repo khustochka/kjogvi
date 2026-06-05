@@ -50,12 +50,21 @@ defmodule KjogviWeb.ImageComponents do
       {@rest}
     >
       <div class="min-w-0">
-        <div class="truncate font-medium text-stone-800">{taxon_name(@observation)}</div>
+        <div class="truncate font-medium text-stone-800">
+          {taxon_name(@observation)}
+          <em :if={sci_name(@observation)} class="font-normal text-stone-500">
+            {sci_name(@observation)}
+          </em>
+        </div>
         <div class="text-xs text-stone-500">
-          {@observation.card.observ_date}
+          <span class="text-stone-400">#{@observation.card.id}</span>
+          · {@observation.card.observ_date}
           <span :if={@observation.card.location} class="text-stone-400">
             · {@observation.card.location.name_en}
           </span>
+        </div>
+        <div :if={effort_parts(@observation.card) != []} class="text-xs text-stone-500">
+          {Enum.join(effort_parts(@observation.card), " · ")}
         </div>
       </div>
 
@@ -67,9 +76,9 @@ defmodule KjogviWeb.ImageComponents do
         phx-value-observation-id={@observation.id}
         aria-label="Attach observation"
         title="Attach observation"
-        class="shrink-0 rounded-md bg-green-100 p-1 text-green-700 hover:bg-green-200"
+        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600"
       >
-        <.icon name="hero-plus" class="w-4 h-4" />
+        <.icon name="hero-plus" class="h-4 w-4" />
       </button>
 
       <button
@@ -80,9 +89,9 @@ defmodule KjogviWeb.ImageComponents do
         phx-value-observation-id={@observation.id}
         aria-label="Remove observation"
         title="Remove observation"
-        class="shrink-0 rounded-md bg-rose-100 p-1 text-rose-700 hover:bg-rose-200"
+        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
       >
-        <.icon name="hero-x-mark" class="w-4 h-4" />
+        <.icon name="hero-x-mark" class="h-4 w-4" />
       </button>
     </div>
     """
@@ -91,6 +100,41 @@ defmodule KjogviWeb.ImageComponents do
   defp taxon_name(%{taxon: %{name_en: name_en}}) when is_binary(name_en), do: name_en
   defp taxon_name(%{taxon_key: key}) when is_binary(key), do: key
   defp taxon_name(_), do: "Unknown taxon"
+
+  defp sci_name(%{taxon: %{name_sci: name_sci}}) when is_binary(name_sci), do: name_sci
+  defp sci_name(_), do: nil
+
+  # The effort attributes available on the card, formatted for the tile's effort
+  # line. Each is included only when present, so an INCIDENTAL card with no
+  # timing shows just its effort type (or nothing).
+  defp effort_parts(card) do
+    [
+      card.effort_type,
+      format_time(card.start_time),
+      format_duration(card.duration_minutes),
+      format_distance(card.distance_kms),
+      format_area(card.area_acres)
+    ]
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp format_time(%Time{} = time), do: Calendar.strftime(time, "%H:%M")
+  defp format_time(_), do: nil
+
+  defp format_duration(minutes) when is_integer(minutes) and minutes > 0, do: "#{minutes} min"
+  defp format_duration(_), do: nil
+
+  defp format_distance(kms) when is_number(kms) and kms > 0, do: "#{trim_float(kms)} km"
+  defp format_distance(_), do: nil
+
+  defp format_area(acres) when is_number(acres) and acres > 0, do: "#{trim_float(acres)} ac"
+  defp format_area(_), do: nil
+
+  # Drop a trailing ".0" so whole numbers read cleanly (e.g. "5 km", not "5.0").
+  defp trim_float(value) do
+    float = value / 1
+    if float == Float.round(float), do: trunc(float), else: float
+  end
 
   @doc """
   A drag-and-drop file upload zone with an inline preview.

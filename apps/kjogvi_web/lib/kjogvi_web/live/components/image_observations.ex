@@ -62,7 +62,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
       <ul
         :if={@selected != []}
         id={"#{@id}-selected"}
-        class="space-y-2"
+        class="grid grid-cols-1 gap-2 sm:grid-cols-2"
         aria-label="Selected observations"
       >
         <li :for={obs <- @selected} id={"#{@id}-selected-#{obs.id}"}>
@@ -78,8 +78,8 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
         No observations attached yet.
       </p>
 
-      <div class="space-y-2 rounded-xl border border-stone-200 bg-stone-50 p-4">
-        <div class="w-44">
+      <div class="flex flex-col gap-2 rounded-xl border border-stone-200 bg-stone-50 p-4 sm:flex-row sm:items-start sm:gap-4">
+        <div class="w-44 shrink-0">
           <label for={"#{@id}-date"} class="block text-sm font-semibold leading-6 text-zinc-800">
             Date
           </label>
@@ -94,7 +94,10 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
           />
         </div>
 
-        <div class="relative" phx-click-away={JS.push("close_dropdown", target: @myself)}>
+        <div
+          class="relative w-full sm:max-w-md"
+          phx-click-away={JS.push("close_dropdown", target: @myself)}
+        >
           <label for={"#{@id}-search"} class="block text-sm font-semibold leading-6 text-zinc-800">
             Search observations
           </label>
