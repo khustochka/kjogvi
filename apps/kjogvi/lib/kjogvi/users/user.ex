@@ -19,6 +19,8 @@ defmodule Kjogvi.Users.User do
     field :roles, {:array, :string}, default: []
     field :is_main_user, :boolean, default: false
     field :default_book_signature, :string
+    # Opaque, stable public identifier (used e.g. in image storage paths).
+    field :public_token, :string
     embeds_one :extras, Extras, on_replace: :update, defaults_to_struct: true
 
     timestamps(type: :utc_datetime_usec)
@@ -52,6 +54,7 @@ defmodule Kjogvi.Users.User do
     |> cast(attrs, [:email, :password])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> ensure_public_token()
   end
 
   @doc """
@@ -63,6 +66,20 @@ defmodule Kjogvi.Users.User do
     |> put_change(:roles, [Kjogvi.Users.admin_role()])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> ensure_public_token()
+  end
+
+  # Assigns a public token on first creation, leaving any existing one intact.
+  defp ensure_public_token(changeset) do
+    case get_field(changeset, :public_token) do
+      nil ->
+        changeset
+        |> put_change(:public_token, Kjogvi.Util.Token.generate())
+        |> unique_constraint(:public_token)
+
+      _ ->
+        changeset
+    end
   end
 
   @doc """

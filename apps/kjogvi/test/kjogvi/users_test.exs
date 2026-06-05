@@ -93,6 +93,15 @@ defmodule Kjogvi.UsersTest do
       assert is_nil(user.confirmed_at)
       assert is_nil(user.password)
     end
+
+    test "assigns a distinct public token to each user" do
+      {:ok, user1} = Users.register_user(valid_user_attributes())
+      {:ok, user2} = Users.register_user(valid_user_attributes())
+
+      assert is_binary(user1.public_token)
+      assert user1.public_token != ""
+      assert user1.public_token != user2.public_token
+    end
   end
 
   describe "change_user_registration/2" do

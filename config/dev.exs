@@ -115,21 +115,40 @@ config :swoosh, :api_client, false
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
 
-# ORNITHOLOGUE
+# AWS — image storage profile (global ex_aws config).
+#
+# This is the credentials/region waffle uses for image uploads in dev. Waffle
+# takes no per-call ex_aws config, so the image profile must be the global one.
+# Consumers like the taxonomy importer override credentials/region per request
+# instead of relying on this.
+#
+# Image-specific env vars are preferred (parallel to prod's IMAGES_PROD_S3_*),
+# falling back to the generic AWS_* / awscli / instance-role chain.
+config :ex_aws,
+  access_key_id: [
+    {:system, "IMAGES_DEV_S3_ACCESS_KEY_ID"},
+    {:system, "AWS_ACCESS_KEY_ID"},
+    {:awscli, "default", 30},
+    :instance_role
+  ],
+  secret_access_key: [
+    {:system, "IMAGES_DEV_S3_SECRET_ACCESS_KEY"},
+    {:system, "AWS_SECRET_ACCESS_KEY"},
+    {:awscli, "default", 30},
+    :instance_role
+  ],
+  region: [{:system, "IMAGES_DEV_S3_REGION"}, {:system, "AWS_REGION"}]
 
-# config :ex_aws,
-#   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, {:awscli, "default", 30}, :instance_role],
-#   secret_access_key: [
-#     {:system, "AWS_SECRET_ACCESS_KEY"},
-#     {:awscli, "default", 30},
-#     :instance_role
-#   ],
-#   region: {:system, "AWS_REGION"}
+# ORNITHOLOGUE
 
 # config :ornithologue, Ornitho.StreamImporter,
 #   adapter: Ornitho.StreamImporter.S3Adapter,
 #   bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
-#   region: System.get_env("ORNITHO_IMPORTER_S3_REGION")
+#   region: System.get_env("ORNITHO_IMPORTER_S3_REGION"),
+#   # Optional: taxonomy's own S3 credentials. Omit to fall back to the global
+#   # ex_aws chain (the image profile / awscli / instance role).
+#   access_key_id: System.get_env("ORNITHO_IMPORTER_S3_ACCESS_KEY_ID"),
+#   secret_access_key: System.get_env("ORNITHO_IMPORTER_S3_SECRET_ACCESS_KEY")
 
 # KJOGVI
 
@@ -137,3 +156,27 @@ config :phoenix, :stacktrace_depth, 20
 #   adapter: Kjogvi.Legacy.Adapters.Download,
 #   url: System.get_env("LEGACY_URL"),
 #   api_key: System.get_env("LEGACY_API_KEY")
+
+# IMAGES
+#
+# Dev uploads go to the local filesystem by default (see config.exs). Set
+# IMAGES_DEV_S3_ENABLED=1 to send new dev uploads to the dev S3 bucket instead.
+#
+# The host map is configured either way, so a dev database imported from prod
+# still renders its prod-stored images regardless of this toggle — each image
+# records the backend it was uploaded with, and the URL is built from that.
+images_dev_s3? = System.get_env("IMAGES_DEV_S3_ENABLED") in ~w(1 true)
+
+if images_dev_s3? do
+  config :waffle,
+    storage: Waffle.Storage.S3,
+    bucket: System.get_env("IMAGES_DEV_S3_BUCKET")
+end
+
+config :kjogvi, :images,
+  storage_backend: if(images_dev_s3?, do: "s3_dev", else: "local"),
+  hosts: %{
+    "local" => nil,
+    "s3_dev" => System.get_env("IMAGES_DEV_S3_HOST"),
+    "s3_prod" => System.get_env("IMAGES_PROD_S3_HOST")
+  }

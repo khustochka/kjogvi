@@ -83,8 +83,48 @@ config :scrivener_phoenix,
   window: 2,
   template: KjogviWeb.Scrivener.Phoenix.Template
 
+# ex_aws S3 — IMAGES.
+#
+# The global ex_aws config is the IMAGE storage profile: waffle reads only the
+# global ex_aws env (it accepts no per-call credentials/region), so whatever
+# images need must live here. Other S3 consumers that call ExAws.request/2
+# directly (e.g. the taxonomy importer) pass their own profile as a per-request
+# override and do not rely on this global config for credentials.
 config :ex_aws,
   http_client: ExAws.Request.Req
+
+# Force HTTP/1 for S3: Req's shared Finch pool intermittently raises
+# `:pool_not_available` when several requests negotiate HTTP/2 to S3 at once
+# (e.g. waffle uploading all image variants concurrently). S3 fully supports
+# HTTP/1, and Finch's HTTP/1 pooling handles the concurrency cleanly.
+config :ex_aws, :req_opts,
+  receive_timeout: 30_000,
+  connect_options: [protocols: [:http1]]
+
+# IMAGES
+
+# Default storage is the local filesystem; prod switches to S3 in runtime.exs.
+# The `storage_backend` string is persisted on each image so URLs keep
+# resolving even when the running environment uses a different backend (e.g.
+# a dev database imported from prod still points its images at prod S3).
+config :waffle,
+  storage: Waffle.Storage.Local,
+  storage_dir_prefix: "apps/kjogvi_web/priv/static"
+
+# `storage_backend` is the backend NEW uploads are written with in this env.
+# `hosts` maps every backend an image might carry to the public host its URL is
+# built against, so a database imported across environments still renders every
+# image: a prod-S3 image opened on a local dev box resolves to the prod host,
+# not the local one. `local` has no host — its files are served as a relative
+# `/uploads/...` path by the endpoint's Plug.Static. The S3 hosts are filled in
+# per environment (dev.exs / runtime.exs) from env vars.
+config :kjogvi, :images,
+  storage_backend: "local",
+  hosts: %{
+    "local" => nil,
+    "s3_dev" => nil,
+    "s3_prod" => nil
+  }
 
 # ORNITHOLOGUE
 

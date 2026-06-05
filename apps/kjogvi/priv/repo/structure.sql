@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict wfb8XMSxdHPFQVyLQFH6a1E1sdG6ybkL7cx6kSwCaGSfECzHdVgcoCGmVGF8oj0
+\restrict QoRuYdgW2QMxtr2F8NpMqa8cvOaG0dJPIYbYH1tJLLVGqNO0P1IiZypRd4NQyOT
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
--- Dumped by pg_dump version 18.3
+-- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -84,6 +84,77 @@ CREATE SEQUENCE public.cards_id_seq
 --
 
 ALTER SEQUENCE public.cards_id_seq OWNED BY public.cards.id;
+
+
+--
+-- Name: image_observations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.image_observations (
+    id bigint NOT NULL,
+    image_id bigint NOT NULL,
+    observation_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: image_observations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.image_observations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: image_observations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.image_observations_id_seq OWNED BY public.image_observations.id;
+
+
+--
+-- Name: images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.images (
+    id bigint NOT NULL,
+    slug character varying(255) NOT NULL,
+    title character varying(255),
+    description text,
+    sort_order integer DEFAULT 100 NOT NULL,
+    extras jsonb DEFAULT '{}'::jsonb NOT NULL,
+    file character varying(255),
+    storage_backend character varying(255) DEFAULT 'local'::character varying NOT NULL,
+    user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    token character varying(255) NOT NULL
+);
+
+
+--
+-- Name: images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.images_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.images_id_seq OWNED BY public.images.id;
 
 
 --
@@ -292,7 +363,8 @@ CREATE TABLE public.users (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     default_book_signature character varying(255),
-    is_main_user boolean DEFAULT false NOT NULL
+    is_main_user boolean DEFAULT false NOT NULL,
+    public_token character varying(255) NOT NULL
 );
 
 
@@ -356,6 +428,20 @@ ALTER TABLE ONLY public.cards ALTER COLUMN id SET DEFAULT nextval('public.cards_
 
 
 --
+-- Name: image_observations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_observations ALTER COLUMN id SET DEFAULT nextval('public.image_observations_id_seq'::regclass);
+
+
+--
+-- Name: images id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images ALTER COLUMN id SET DEFAULT nextval('public.images_id_seq'::regclass);
+
+
+--
 -- Name: locations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -410,6 +496,22 @@ ALTER TABLE ONLY public.users_tokens ALTER COLUMN id SET DEFAULT nextval('public
 
 ALTER TABLE ONLY public.cards
     ADD CONSTRAINT cards_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: image_observations image_observations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_observations
+    ADD CONSTRAINT image_observations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images
+    ADD CONSTRAINT images_pkey PRIMARY KEY (id);
 
 
 --
@@ -519,6 +621,34 @@ CREATE INDEX cards_user_id_index ON public.cards USING btree (user_id);
 
 
 --
+-- Name: image_observations_image_id_observation_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX image_observations_image_id_observation_id_index ON public.image_observations USING btree (image_id, observation_id);
+
+
+--
+-- Name: image_observations_observation_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX image_observations_observation_id_index ON public.image_observations USING btree (observation_id);
+
+
+--
+-- Name: images_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX images_token_index ON public.images USING btree (token);
+
+
+--
+-- Name: images_user_id_slug_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX images_user_id_slug_index ON public.images USING btree (user_id, slug);
+
+
+--
 -- Name: locations_ancestry_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -617,6 +747,13 @@ CREATE UNIQUE INDEX users_is_main_user_index ON public.users USING btree (is_mai
 
 
 --
+-- Name: users_public_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_public_token_index ON public.users USING btree (public_token);
+
+
+--
 -- Name: users_tokens_context_token_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -644,6 +781,30 @@ ALTER TABLE ONLY public.cards
 
 ALTER TABLE ONLY public.cards
     ADD CONSTRAINT cards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: image_observations image_observations_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_observations
+    ADD CONSTRAINT image_observations_image_id_fkey FOREIGN KEY (image_id) REFERENCES public.images(id) ON DELETE CASCADE;
+
+
+--
+-- Name: image_observations image_observations_observation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_observations
+    ADD CONSTRAINT image_observations_observation_id_fkey FOREIGN KEY (observation_id) REFERENCES public.observations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: images images_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images
+    ADD CONSTRAINT images_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -730,7 +891,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict wfb8XMSxdHPFQVyLQFH6a1E1sdG6ybkL7cx6kSwCaGSfECzHdVgcoCGmVGF8oj0
+\unrestrict QoRuYdgW2QMxtr2F8NpMqa8cvOaG0dJPIYbYH1tJLLVGqNO0P1IiZypRd4NQyOT
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -743,3 +904,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260410000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260419120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260419183659);
 INSERT INTO public."schema_migrations" (version) VALUES (20260508013050);
+INSERT INTO public."schema_migrations" (version) VALUES (20260509232720);
+INSERT INTO public."schema_migrations" (version) VALUES (20260603121159);
+INSERT INTO public."schema_migrations" (version) VALUES (20260603220042);

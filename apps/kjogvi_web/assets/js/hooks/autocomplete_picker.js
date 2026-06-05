@@ -24,6 +24,12 @@
 // user has already left. A capture-phase listener consumes exactly one
 // post-blur keyup before LiveView sees it.
 //
+// `data-keep-focus-on-select="true"` (set by Autocomplete's
+// `keep_focus_on_select` for a multi-select host): Enter commits without
+// blurring, so focus stays in the field for the next pick. The same
+// keyup-swallow is armed manually in that case so a pending debounced
+// search can't reopen the dropdown before the server clears the field.
+//
 // Also listens for a server-pushed event named `${id}:highlight` and
 // scrolls the matching result into view.
 const navKeys = new Set(["ArrowDown", "ArrowUp", "Enter", "Escape", "Tab"])
@@ -63,7 +69,15 @@ export default {
         this.pushEventTo(this.el, "nav", {direction: "up"})
       } else if (e.key === "Enter") {
         e.preventDefault()
-        this.el.blur()
+        if (this.el.dataset.keepFocusOnSelect === "true") {
+          // Multi-select host: commit but stay in the field so the user
+          // can keep picking. Don't blur; instead swallow the next keyup
+          // so a pending debounced search can't reopen the dropdown
+          // before the server clears the field.
+          this.swallowNextKeyup = true
+        } else {
+          this.el.blur()
+        }
         this.pushEventTo(this.el, "nav_select", {})
       } else if (e.key === "Tab") {
         // Tab commits and lets the browser advance focus naturally.

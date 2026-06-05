@@ -3,6 +3,12 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
+# Store uploaded images under a throwaway tmp dir in tests, so they never land
+# in the dev static folder (priv/static/uploads) alongside real uploads.
+config :waffle,
+  storage: Waffle.Storage.Local,
+  storage_dir_prefix: Path.join(System.tmp_dir!(), "kjogvi_test_uploads")
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

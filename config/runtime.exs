@@ -177,10 +177,43 @@ if config_env() == :prod do
   config :ornithologue, Ornitho.Importer,
     import_timeout: String.to_integer(System.get_env("ORNITHO_IMPORTER_TIMEOUT", "30000"))
 
+  # Taxonomy downloads use their own S3 profile, passed as a per-request ex_aws
+  # override (the global ex_aws config is the image storage profile). Credentials
+  # are optional: when unset, ex_aws falls back to the global chain / instance
+  # role.
   config :ornithologue, Ornitho.StreamImporter,
     adapter: Ornitho.StreamImporter.S3Adapter,
     bucket: System.get_env("ORNITHO_IMPORTER_S3_BUCKET"),
-    region: System.get_env("ORNITHO_IMPORTER_S3_REGION")
+    region: System.get_env("ORNITHO_IMPORTER_S3_REGION"),
+    access_key_id: System.get_env("ORNITHO_IMPORTER_S3_ACCESS_KEY_ID"),
+    secret_access_key: System.get_env("ORNITHO_IMPORTER_S3_SECRET_ACCESS_KEY")
+
+  # IMAGES
+
+  config :waffle,
+    storage: Waffle.Storage.S3,
+    bucket: System.get_env("IMAGES_PROD_S3_BUCKET")
+
+  # Global ex_aws config = the IMAGE storage profile. Waffle reads only the
+  # global ex_aws env (no per-call credentials/region), so the image profile
+  # lives here. Other consumers (e.g. the taxonomy importer) override per
+  # request and don't depend on this.
+  config :ex_aws,
+    access_key_id: [{:system, "IMAGES_PROD_S3_ACCESS_KEY_ID"}, :instance_role],
+    secret_access_key: [{:system, "IMAGES_PROD_S3_SECRET_ACCESS_KEY"}, :instance_role]
+
+  config :ex_aws, :s3, region: System.get_env("IMAGES_PROD_S3_REGION")
+
+  # New prod uploads go to the prod S3 bucket. Image URLs are built per-image
+  # from its recorded backend (see Kjogvi.Images.url/2), so the host map carries
+  # the dev host too, letting prod render any dev-uploaded images present.
+  config :kjogvi, :images,
+    storage_backend: "s3_prod",
+    hosts: %{
+      "local" => nil,
+      "s3_dev" => System.get_env("IMAGES_DEV_S3_HOST"),
+      "s3_prod" => System.get_env("IMAGES_PROD_S3_HOST")
+    }
 
   # KJOGVI Legacy Import
 

@@ -21,6 +21,7 @@ defmodule KjogviWeb do
     assets
     fonts
     images
+    uploads
     android-chrome-192x192.png
     android-chrome-512x512.png
     apple-touch-icon.png
@@ -110,6 +111,7 @@ defmodule KjogviWeb do
       import KjogviWeb.BirdingComponents
       import KjogviWeb.FilterComponents
       import KjogviWeb.FormatComponents
+      import KjogviWeb.ImageComponents
       import KjogviWeb.LocationComponents
       use Gettext, backend: KjogviWeb.Gettext
 
