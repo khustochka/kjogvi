@@ -422,6 +422,45 @@ defmodule Kjogvi.ImagesTest do
       assert Enum.map(results, & &1.id) == [on_obs.id]
     end
 
+    test "with a card_id set, restricts results to that one card", %{user: user} do
+      location = Kjogvi.Factory.insert(:location)
+      this_card = Kjogvi.Factory.insert(:card, user: user, location: location)
+      other_card = Kjogvi.Factory.insert(:card, user: user, location: location)
+
+      on_card =
+        Kjogvi.Factory.insert(:observation, card: this_card, taxon_key: "/ebird/v2024/gretit1")
+
+      _off_card =
+        Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "/ebird/v2024/gretit1")
+
+      results =
+        Images.search_observations_for_image(user, %{
+          query: "great tit",
+          card_id: this_card.id
+        })
+
+      assert Enum.map(results, & &1.id) == [on_card.id]
+    end
+
+    test "card_id takes precedence over date", %{user: user} do
+      location = Kjogvi.Factory.insert(:location)
+
+      card =
+        Kjogvi.Factory.insert(:card, user: user, location: location, observ_date: ~D[2024-05-12])
+
+      obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
+
+      # A non-matching date is ignored once the search is scoped to a card.
+      results =
+        Images.search_observations_for_image(user, %{
+          query: "great tit",
+          card_id: card.id,
+          date: ~D[2024-01-01]
+        })
+
+      assert Enum.map(results, & &1.id) == [obs.id]
+    end
+
     test "excludes another user's observations", %{user: user} do
       other_user = UsersFixtures.user_fixture()
 

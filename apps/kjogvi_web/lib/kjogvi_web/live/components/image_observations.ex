@@ -20,10 +20,20 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   so the parent can persist it (right after `create_image` on add, or on save on
   edit). The parent owns persistence; this component only stages the selection.
 
-  All linked observations of an image must belong to the same card. That rule is
-  ultimately enforced by `Kjogvi.Images.attach_observations/2`, but this picker
-  also surfaces it inline: once one observation is selected, search results from
-  other cards are shown disabled, so the user is steered toward same-card picks.
+  ## Same-card locking
+
+  All linked observations of an image must belong to the same card (ultimately
+  enforced by `Kjogvi.Images.attach_observations/2`). The picker enforces this
+  up front: once the first observation is selected its card is *locked in*, and
+  while anything is selected
+
+    * the date field is filled with that card's date and disabled — the user
+      can't search a different day, so a date mismatch can't arise through the
+      UI; and
+    * search is scoped to that one card, so every result is addable.
+
+  Removing the last selected observation unlocks the card: the date field
+  becomes editable again and search returns to the date/recent scope.
 
   ## Relationship to `Autocomplete`
 
@@ -33,10 +43,10 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   This was a deliberate (if regrettable) divergence: `Autocomplete` is built to
   pick a *single* value into a hidden form input and emits its selection to the
   *root* LiveView via `send(self(), …)`. This picker instead **appends many**
-  observations to a staged list, renders **disabled rows** (already-added /
-  different-card) with reasons, and carries an adjacent **date** field — and as
-  a LiveComponent it can't receive `Autocomplete`'s root-targeted message
-  cleanly. Reusing only `SearchInput` was the pragmatic middle ground.
+  observations to a staged list, renders **disabled rows** (already-added) with
+  reasons, and carries an adjacent **date** field — and as a LiveComponent it
+  can't receive `Autocomplete`'s root-targeted message cleanly. Reusing only
+  `SearchInput` was the pragmatic middle ground.
 
   TODO: fold this back onto `Autocomplete` (extending it for multi-select +
   disabled rows + component-targeted selection), which would also restore the
@@ -104,11 +114,15 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
             type="date"
             id={"#{@id}-date"}
             name="date"
-            value={date_value(@date)}
+            value={date_value(locked_date(@selected) || @date)}
+            disabled={@selected != []}
             phx-change="date_changed"
             phx-target={@myself}
-            class="block w-full rounded-lg border-zinc-300 text-zinc-900 focus:border-zinc-400 focus:ring-0 sm:text-sm sm:leading-6"
+            class="block w-full rounded-lg border-zinc-300 text-zinc-900 focus:border-zinc-400 focus:ring-0 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:text-sm sm:leading-6"
           />
+          <p :if={@selected != []} id={"#{@id}-date-locked"} class="mt-1 text-xs text-stone-400">
+            Locked to the selected observation's card.
+          </p>
         </div>
 
         <div
@@ -136,19 +150,16 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
             <li :for={obs <- @search_results} id={"#{@id}-result-#{obs.id}"}>
               <ImageComponents.observation_tile
                 observation={obs}
-                on_add={if selectable?(obs, @selected), do: "add_observation"}
+                on_add={unless selected?(obs, @selected), do: "add_observation"}
                 target={@myself}
                 term={@search_term}
-                class={[
-                  selected?(obs, @selected) && "opacity-50",
-                  not selectable?(obs, @selected) && "opacity-50"
-                ]}
+                class={selected?(obs, @selected) && "opacity-50"}
               />
               <p
-                :if={not selectable?(obs, @selected)}
+                :if={selected?(obs, @selected)}
                 class="px-3 pb-1 text-xs text-stone-400"
               >
-                {disabled_reason(obs, @selected)}
+                Already attached
               </p>
             </li>
           </ul>
@@ -206,10 +217,16 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
     id = String.to_integer(id_string)
     result = Enum.find(socket.assigns.search_results, &(&1.id == id))
 
-    if result && selectable?(result, socket.assigns.selected) do
+    if result && addable?(result, socket.assigns.selected) do
       selected = socket.assigns.selected ++ [result]
       notify_parent(selected)
-      {:noreply, assign(socket, :selected, selected)}
+
+      # The first pick locks the card; re-run the search so it narrows to that
+      # card straight away.
+      {:noreply,
+       socket
+       |> assign(:selected, selected)
+       |> rerun_search()}
     else
       {:noreply, socket}
     end
@@ -219,7 +236,12 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
     id = String.to_integer(id_string)
     selected = Enum.reject(socket.assigns.selected, &(&1.id == id))
     notify_parent(selected)
-    {:noreply, assign(socket, :selected, selected)}
+
+    # Removing the last pick unlocks the card; re-run so results widen again.
+    {:noreply,
+     socket
+     |> assign(:selected, selected)
+     |> rerun_search()}
   end
 
   # Don't search (or highlight) until the query is at least this long; a single
@@ -236,9 +258,13 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
       |> assign(:search_results, [])
       |> assign(:is_open, false)
     else
+      selected = socket.assigns.selected
+
       results =
         Images.search_observations_for_image(socket.assigns.current_user, %{
           query: query,
+          # Once a card is locked in, search only it; otherwise scope by date.
+          card_id: locked_card_id(selected),
           date: socket.assigns.date
         })
 
@@ -250,25 +276,19 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
     send(self(), {:image_observations_changed, Enum.map(selected, & &1.id)})
   end
 
-  # A result is selectable when it isn't already chosen and doesn't conflict
-  # with the same-card rule (everything must share one card).
-  defp selectable?(obs, selected) do
-    not selected?(obs, selected) and same_card_allowed?(obs, selected)
-  end
+  # A result can be added when it isn't already chosen. Once a card is locked,
+  # search is already restricted to it, so every result is on the right card.
+  defp addable?(obs, selected), do: not selected?(obs, selected)
 
   defp selected?(obs, selected), do: Enum.any?(selected, &(&1.id == obs.id))
 
-  defp same_card_allowed?(_obs, []), do: true
+  # The card of the first selected observation (all picks share one card). `nil`
+  # when nothing is selected yet.
+  defp locked_card_id([%{card_id: card_id} | _]), do: card_id
+  defp locked_card_id(_), do: nil
 
-  defp same_card_allowed?(obs, [first | _]), do: obs.card_id == first.card_id
-
-  defp disabled_reason(obs, selected) do
-    cond do
-      selected?(obs, selected) -> "Already attached"
-      not same_card_allowed?(obs, selected) -> "Different card"
-      true -> nil
-    end
-  end
+  defp locked_date([%{card: %{observ_date: %Date{} = date}} | _]), do: date
+  defp locked_date(_), do: nil
 
   defp date_value(%Date{} = date), do: Date.to_iso8601(date)
   defp date_value(_), do: ""

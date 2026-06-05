@@ -634,6 +634,107 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       reloaded = Images.get_image!(user, image.id) |> Kjogvi.Repo.preload(:observations)
       assert reloaded.observations == []
     end
+
+    test "selecting an observation locks the date field to its card date", %{
+      conn: conn,
+      user: user,
+      obs: obs
+    } do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      # Editable while nothing is selected.
+      refute has_element?(live, "#image-observations-date[disabled]")
+
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+
+      live
+      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
+      |> render_click()
+
+      # Locked to the selected observation's card date (factory default).
+      assert has_element?(live, "#image-observations-date[disabled][value='2023-08-29']")
+      assert has_element?(live, "#image-observations-date-locked")
+    end
+
+    test "removing the last observation re-enables the date field", %{
+      conn: conn,
+      user: user,
+      obs: obs
+    } do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+      assert has_element?(live, "#image-observations-date[disabled]")
+
+      live
+      |> element("#image-observations-selected-#{obs.id} button[phx-click=remove_observation]")
+      |> render_click()
+
+      refute has_element?(live, "#image-observations-date[disabled]")
+      refute has_element?(live, "#image-observations-date-locked")
+    end
+
+    test "once a card is locked, search is restricted to that card", %{
+      conn: conn,
+      user: user,
+      card: card,
+      obs: obs
+    } do
+      # A second observation of the same taxon on the same day, but a different
+      # card — so the date scope alone keeps both, and only locking the card
+      # narrows it down.
+      other_card =
+        Kjogvi.Factory.insert(:card, user: user, observ_date: card.observ_date)
+
+      other_obs =
+        Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "/ebird/v2024/gretit1")
+
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      # Scope the picker to the shared day; both cards' observations show.
+      live
+      |> element("#image-observations-date")
+      |> render_change(%{"date" => Date.to_iso8601(card.observ_date)})
+
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+      assert has_element?(live, "#image-observations-result-#{obs.id}")
+      assert has_element?(live, "#image-observations-result-#{other_obs.id}")
+
+      # Pick the first; its card is now locked.
+      live
+      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
+      |> render_click()
+
+      # The other card's observation can no longer be found.
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+      refute has_element?(live, "#image-observations-result-#{other_obs.id}")
+    end
+
+    test "an already-attached search result is shown disabled, not addable", %{
+      conn: conn,
+      user: user,
+      obs: obs
+    } do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+
+      assert has_element?(live, "#image-observations-result-#{obs.id}")
+
+      refute has_element?(
+               live,
+               "#image-observations-result-#{obs.id} button[phx-click=add_observation]"
+             )
+
+      result_html = render(element(live, "#image-observations-result-#{obs.id}"))
+      assert result_html =~ "Already attached"
+    end
   end
 
   defp create_stored_image(user) do

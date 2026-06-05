@@ -165,16 +165,22 @@ defmodule Kjogvi.Images do
   The typed `query` is resolved to matching taxa (via `Search.Taxon`); the
   user's observations of those taxa are then returned, hydrated for display.
 
-  When `date` is a `Date`, results are restricted to observations on cards of
-  that day. When `date` is `nil`, the most recent matching observations across
-  all cards are returned. Results are capped (`limit`, default 10) and ordered
-  newest card first.
+  Scoping (most specific wins):
+
+    * `card_id` — restrict to that one card. Used once an observation is
+      selected: all of an image's observations must share a card, so the picker
+      locks subsequent search to it.
+    * `date` (a `Date`) — restrict to observations on cards of that day.
+    * neither — the most recent matching observations across all cards.
+
+  Results are capped (`limit`, default 10) and ordered newest card first.
 
   Returns hydrated observation structs (with `:taxon`, `:species`, and the
   preloaded `:card`), ready to render as tiles. Returns `[]` for a blank query.
   """
   def search_observations_for_image(user, opts) do
     query = opts |> Map.get(:query, "") |> to_string() |> String.trim()
+    card_id = Map.get(opts, :card_id)
     date = Map.get(opts, :date)
     limit = Map.get(opts, :limit, 10)
 
@@ -190,7 +196,7 @@ defmodule Kjogvi.Images do
       Kjogvi.Birding.Observation
       |> join(:inner, [obs], c in assoc(obs, :card))
       |> where([obs, c], c.user_id == ^user.id and obs.taxon_key in ^taxon_keys)
-      |> maybe_filter_by_date(date)
+      |> maybe_scope(card_id, date)
       |> order_by([_obs, c], desc: c.observ_date, desc: c.id)
       |> limit(^limit)
       |> preload([_obs, _c], card: :location)
@@ -199,11 +205,15 @@ defmodule Kjogvi.Images do
     end
   end
 
-  defp maybe_filter_by_date(query, %Date{} = date) do
+  defp maybe_scope(query, card_id, _date) when not is_nil(card_id) do
+    where(query, [obs, _c], obs.card_id == ^card_id)
+  end
+
+  defp maybe_scope(query, _card_id, %Date{} = date) do
     where(query, [_obs, c], c.observ_date == ^date)
   end
 
-  defp maybe_filter_by_date(query, _date), do: query
+  defp maybe_scope(query, _card_id, _date), do: query
 
   @doc """
   Lists images linked to any observation on the given card.
