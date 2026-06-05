@@ -50,7 +50,16 @@ defmodule Kjogvi.Legacy.Import.Observations do
          book_signature
        ) do
     obs
-    |> Map.drop([:created_at, :post_core_id, :taxon_id, :ebird_code])
+    |> Map.take([
+      :id,
+      :hidden,
+      :card_id,
+      :quantity,
+      :voice,
+      :notes,
+      :ebird_obs_id,
+      :private_notes
+    ])
     |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
     |> Map.put(:inserted_at, convert_timestamp(created_at))
     |> Map.put(:updated_at, convert_timestamp(updated_at))

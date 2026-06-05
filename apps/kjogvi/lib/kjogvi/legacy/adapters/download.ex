@@ -1,7 +1,7 @@
 defmodule Kjogvi.Legacy.Adapters.Download do
   @moduledoc false
 
-  @per_page 1000
+  @per_page 2_000
 
   def init() do
     Req.new(base_url: base_url(), auth: auth())
