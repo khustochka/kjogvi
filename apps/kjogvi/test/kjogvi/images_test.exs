@@ -293,15 +293,20 @@ defmodule Kjogvi.ImagesTest do
       assert "must all belong to the same card" in errors_on(changeset).observations
     end
 
-    test "clears links when given an empty list" do
+    test "returns an error changeset (and keeps existing links) for an empty list" do
       user = UsersFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
       card = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
       obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "mallar1")
 
       {:ok, _} = Images.attach_observations(image, [obs.id])
-      assert {:ok, updated} = Images.attach_observations(image, [])
-      assert updated.observations == []
+
+      assert {:error, changeset} = Images.attach_observations(image, [])
+      assert "can't be empty" in errors_on(changeset).observations
+
+      # The failed update left the existing link untouched.
+      reloaded = Kjogvi.Repo.preload(image, :observations, force: true)
+      assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
     end
   end
 

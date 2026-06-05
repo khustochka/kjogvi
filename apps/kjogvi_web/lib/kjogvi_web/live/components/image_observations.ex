@@ -20,6 +20,11 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   so the parent can persist it (right after `create_image` on add, or on save on
   edit). The parent owns persistence; this component only stages the selection.
 
+  An image must currently have at least one observation (a temporary product
+  rule, also enforced by `Image.observations_changeset/2`). While nothing is
+  selected the picker shows a standing "attach at least one" message and the
+  parent's save is rejected.
+
   ## Same-card locking
 
   All linked observations of an image must belong to the same card (ultimately
@@ -101,8 +106,14 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
         </li>
       </ul>
 
-      <p :if={@selected == []} class="text-sm text-stone-500">
-        No observations attached yet.
+      <p
+        :if={@selected == []}
+        id={"#{@id}-required"}
+        class="flex items-center gap-1.5 text-sm text-red-600"
+        role="alert"
+      >
+        <.icon name="hero-exclamation-circle-mini" class="h-4 w-4 shrink-0" />
+        Attach at least one observation before saving.
       </p>
 
       <div class="flex flex-col gap-2 rounded-xl border border-stone-200 bg-stone-50 p-4 sm:flex-row sm:items-start sm:gap-4">

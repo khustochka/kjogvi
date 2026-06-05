@@ -43,6 +43,11 @@ defmodule KjogviWeb.Live.My.Images.Form do
   @max_file_size 50 * 1_024 * 1_024
   @accept ~w(.jpg .jpeg .png .webp .tiff .tif .heic .heif)
 
+  # Temporary product rule: an image must be linked to at least one observation
+  # (also enforced by `Image.observations_changeset/2`). Remove this guard when
+  # standalone images are allowed.
+  @no_observations_message "Please attach at least one observation."
+
   @impl true
   def mount(params, _session, socket) do
     socket
@@ -369,13 +374,20 @@ defmodule KjogviWeb.Live.My.Images.Form do
   defp save(socket, :new, %{"image" => params}) do
     user = socket.assigns.current_scope.user
 
-    case socket.assigns.upload do
-      %Plug.Upload{} = plug_upload ->
+    cond do
+      not match?(%Plug.Upload{}, socket.assigns.upload) ->
+        {:noreply, put_flash(socket, :error, "Please choose a file to upload")}
+
+      socket.assigns.selected_observation_ids == [] ->
+        {:noreply, put_flash(socket, :error, @no_observations_message)}
+
+      true ->
+        plug_upload = socket.assigns.upload
         attrs = Map.put(params, "file", plug_upload)
 
         case Images.create_image(user, attrs) do
           {:ok, image} ->
-            maybe_attach_observations(image, socket.assigns.selected_observation_ids)
+            Images.attach_observations(image, socket.assigns.selected_observation_ids)
             discard_stash(socket)
 
             {:noreply,
@@ -387,21 +399,22 @@ defmodule KjogviWeb.Live.My.Images.Form do
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply, assign(socket, :form, to_form(changeset))}
         end
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Please choose a file to upload")}
     end
   end
 
   defp save(socket, :edit, %{"image" => params}) do
-    case Images.update_image(socket.assigns.image, params) do
-      {:ok, image} ->
-        Images.attach_observations(image, socket.assigns.selected_observation_ids)
+    if socket.assigns.selected_observation_ids == [] do
+      {:noreply, put_flash(socket, :error, @no_observations_message)}
+    else
+      case Images.update_image(socket.assigns.image, params) do
+        {:ok, image} ->
+          Images.attach_observations(image, socket.assigns.selected_observation_ids)
 
-        {:noreply, maybe_replace_then_navigate(socket, image)}
+          {:noreply, maybe_replace_then_navigate(socket, image)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :form, to_form(changeset))}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, :form, to_form(changeset))}
+      end
     end
   end
 
@@ -435,9 +448,6 @@ defmodule KjogviWeb.Live.My.Images.Form do
         |> push_navigate(to: ~p"/my/images/#{image.id}")
     end
   end
-
-  defp maybe_attach_observations(_image, []), do: :ok
-  defp maybe_attach_observations(image, ids), do: Images.attach_observations(image, ids)
 
   @impl true
   def handle_info({:image_observations_changed, ids}, socket) do

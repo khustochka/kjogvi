@@ -71,6 +71,10 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
     end
 
     test "uploads a real image, processes it, and stores metadata", %{conn: conn, user: user} do
+      # An image must have an observation; the sample's EXIF date (2021-07-15)
+      # scopes the picker, so the observation must be on a card of that day.
+      %{user: user, obs: obs} = seed_observation(user, observ_date: ~D[2021-07-15])
+
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
       slug = "sample-bird-#{System.unique_integer([:positive])}"
@@ -86,6 +90,12 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
         ])
 
       assert render_upload(upload, upload_name) =~ "Replace image"
+
+      live |> element("#image-observations-search") |> render_keyup(%{"value" => "great tit"})
+
+      live
+      |> element("#image-observations-result-#{obs.id} button[phx-click=add_observation]")
+      |> render_click()
 
       # In test, waffle stores under a throwaway tmp prefix (see config/test.exs).
       # Stored files live outside the DB sandbox, so clean up the user's whole
@@ -173,6 +183,26 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       assert Enum.map(image.observations, & &1.id) == [obs.id]
     end
 
+    test "saving without an observation is rejected and creates nothing", %{conn: conn} do
+      {:ok, live, _html} = live(conn, ~p"/my/images/new")
+
+      # The required message stands as soon as the metadata form appears.
+      slug = "no-obs-#{System.unique_integer([:positive])}"
+
+      upload =
+        file_input(live, "#image-form", :image, [
+          %{name: "#{slug}.jpg", content: File.read!(@sample_image), type: "image/jpeg"}
+        ])
+
+      render_upload(upload, "#{slug}.jpg")
+      assert has_element?(live, "#image-observations-required")
+
+      html = render_submit(live, "save", %{"image" => %{"slug" => slug}})
+
+      assert html =~ "at least one observation"
+      assert Images.get_image_by_slug(slug) == nil
+    end
+
     test "renders the client-side preview img after upload (entry consumed early)", %{conn: conn} do
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
@@ -249,6 +279,9 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
     test "saves metadata changes and navigates to the image", %{conn: conn, user: user} do
       image = ImagesFixtures.image_fixture(user: user, title: "Old Title")
+      # An image must have an observation to be saved.
+      %{obs: obs} = seed_observation(user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
 
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
@@ -392,6 +425,9 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       user: user
     } do
       image = create_stored_image(user)
+      # An image must have an observation to be saved.
+      %{obs: obs} = seed_observation(user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
 
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
@@ -615,7 +651,25 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
     end
 
-    test "saving with no selection clears any existing links", %{
+    test "removing all observations shows the required message", %{
+      conn: conn,
+      user: user,
+      obs: obs
+    } do
+      image = ImagesFixtures.image_fixture(user: user)
+      {:ok, _} = Images.attach_observations(image, [obs.id])
+
+      {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
+      refute has_element?(live, "#image-observations-required")
+
+      live
+      |> element("#image-observations-selected-#{obs.id} button[phx-click=remove_observation]")
+      |> render_click()
+
+      assert has_element?(live, "#image-observations-required")
+    end
+
+    test "saving with no observations is rejected and keeps existing links", %{
       conn: conn,
       user: user,
       obs: obs
@@ -629,10 +683,14 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       |> element("#image-observations-selected-#{obs.id} button[phx-click=remove_observation]")
       |> render_click()
 
-      render_submit(live, "save", %{"image" => %{"slug" => image.slug, "sort_order" => "100"}})
+      html =
+        render_submit(live, "save", %{"image" => %{"slug" => image.slug, "sort_order" => "100"}})
+
+      # Stayed on the form with an error, and the prior link is untouched.
+      assert html =~ "at least one observation"
 
       reloaded = Images.get_image!(user, image.id) |> Kjogvi.Repo.preload(:observations)
-      assert reloaded.observations == []
+      assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
     end
 
     test "selecting an observation locks the date field to its card date", %{
@@ -735,6 +793,32 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       result_html = render(element(live, "#image-observations-result-#{obs.id}"))
       assert result_html =~ "Already attached"
     end
+  end
+
+  # Sets up the default taxonomy book/taxon used by the picker and returns an
+  # observation on a card belonging to `user`. Tests that must satisfy the
+  # "image needs an observation" rule attach or select this.
+  defp seed_observation(user, opts \\ []) do
+    book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+    Ornitho.Factory.insert(:taxon,
+      book: book,
+      code: "gretit1",
+      name_en: "Great Tit",
+      name_sci: "Parus major"
+    )
+
+    {:ok, user} =
+      Kjogvi.Users.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
+
+    card =
+      Kjogvi.Factory.insert(
+        :card,
+        Keyword.merge([user: user, location: Kjogvi.Factory.insert(:location)], opts)
+      )
+
+    obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
+    %{user: user, card: card, obs: obs}
   end
 
   defp create_stored_image(user) do

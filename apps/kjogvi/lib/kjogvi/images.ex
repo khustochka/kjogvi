@@ -123,9 +123,11 @@ defmodule Kjogvi.Images do
   end
 
   @doc """
-  Replaces the set of observations linked to an image. All observations must
-  belong to the same card (enforced by `Image.observations_changeset/2`);
-  passing an empty list clears the links.
+  Replaces the set of observations linked to an image.
+
+  An image must have at least one observation and they must all belong to the
+  same card (both enforced by `Image.observations_changeset/2`), so passing an
+  empty list returns an error changeset.
   """
   def attach_observations(%Image{} = image, observation_ids) when is_list(observation_ids) do
     observations = load_observations(observation_ids)

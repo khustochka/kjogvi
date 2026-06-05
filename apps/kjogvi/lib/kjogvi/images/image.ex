@@ -68,15 +68,29 @@ defmodule Kjogvi.Images.Image do
   Changeset that replaces the image's linked observations.
 
   Takes already-loaded `Observation` structs (the caller is responsible for
-  loading them) and enforces that they all belong to the same card. Does no
-  database access itself.
+  loading them) and enforces that
+
+    * an image has at least one observation, and
+    * they all belong to the same card.
+
+  Does no database access itself.
   """
   def observations_changeset(image, observations) when is_list(observations) do
     image
     |> change()
     |> put_assoc(:observations, observations)
+    |> validate_at_least_one(observations)
     |> validate_same_card(observations)
   end
+
+  # Temporary product rule: every image must be linked to at least one
+  # observation. To allow standalone (observation-less) images later, drop this
+  # validation (and its call above).
+  defp validate_at_least_one(changeset, []) do
+    add_error(changeset, :observations, "can't be empty")
+  end
+
+  defp validate_at_least_one(changeset, _observations), do: changeset
 
   defp validate_same_card(changeset, observations) do
     case observations |> Enum.map(& &1.card_id) |> Enum.uniq() do

@@ -19,9 +19,10 @@ defmodule Kjogvi.Images.ImageTest do
       assert changeset.valid?
     end
 
-    test "accepts an empty list" do
+    test "rejects an empty list" do
       changeset = Image.observations_changeset(%Image{observations: []}, [])
-      assert changeset.valid?
+      refute changeset.valid?
+      assert "can't be empty" in errors_on(changeset).observations
     end
 
     test "rejects observations from different cards" do
