@@ -19,16 +19,16 @@ defmodule Kjogvi.Images.Uploader do
     large: 2400
   }
 
+  # Images are served via public, unsigned URLs, so stored objects must be
+  # world-readable. Applies to S3; ignored by local storage.
+  @acl :public_read
+
   @accepted_extensions ~w(.jpg .jpeg .png .webp .tiff .tif .heic .heif)
 
   # Storage keys are immutable for a given image (token folders + a frozen
   # basename), so objects can be cached for a year. A re-upload bumps waffle's
   # URL timestamp, which busts the cache despite the stable key.
   @cache_control "public, max-age=31536000, immutable"
-
-  # Images are served via public, unsigned URLs, so stored objects must be
-  # world-readable. Applies to S3; ignored by local storage.
-  def acl(_version, _scope), do: :public_read
 
   # Headers stored on the S3 object (ignored by local storage):
   #
