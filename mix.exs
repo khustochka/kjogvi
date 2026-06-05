@@ -67,6 +67,11 @@ defmodule Kjogvi.Umbrella.MixProject do
     [
       # run `mix setup` in all child apps
       setup: ["cmd mix setup"],
+      # kjogvi_web bundles ornitho_web's JS/CSS sources, so it owns the only
+      # asset build in the umbrella. Delegate to it instead of fanning out to
+      # every child app (which would fail on ornitho_web's standalone profile).
+      "assets.build": ["do --app kjogvi_web assets.build"],
+      "assets.deploy": ["do --app kjogvi_web assets.deploy"],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"],
       "ecto.setup": ["ecto.create --quiet", "ecto.migrate --quiet"],
       lint: [
