@@ -60,8 +60,26 @@ defmodule KjogviWeb.Live.My.Images.Show do
       </div>
 
       <div class="space-y-4">
+        <div class="flex flex-wrap gap-3 pb-3 border-b border-stone-200">
+          <.action_button
+            navigate={~p"/my/images/#{@image.id}/edit"}
+            icon="hero-pencil"
+            variant="secondary"
+          >
+            Edit
+          </.action_button>
+          <button
+            type="button"
+            phx-click="delete"
+            data-confirm="Delete this image? This cannot be undone."
+            class="inline-flex items-center gap-2 rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+          >
+            <.icon name="hero-trash" class="w-4 h-4" /> Delete
+          </button>
+        </div>
+
         <div>
-          <.h2 class="text-sm! uppercase tracking-wide text-stone-500!">Details</.h2>
+          <.h2 class="text-sm! uppercase tracking-wide text-stone-500! mb-1!">Details</.h2>
           <dl class="mt-2 space-y-2 text-sm">
             <div>
               <dt class="text-stone-500">Slug</dt>
@@ -87,7 +105,7 @@ defmodule KjogviWeb.Live.My.Images.Show do
         </div>
 
         <div :if={@observations != []}>
-          <.h2 class="text-sm! uppercase tracking-wide text-stone-500!">Observations</.h2>
+          <.h2 class="text-sm! uppercase tracking-wide text-stone-500! mb-1!">Observations</.h2>
           <ul class="mt-2 space-y-2" aria-label="Linked observations">
             <li :for={obs <- @observations} id={"observation-#{obs.id}"}>
               <.link navigate={~p"/my/cards/#{obs.card_id}"} class="block no-underline">
@@ -95,24 +113,6 @@ defmodule KjogviWeb.Live.My.Images.Show do
               </.link>
             </li>
           </ul>
-        </div>
-
-        <div class="flex flex-wrap gap-3 pt-2 border-t border-stone-200">
-          <.action_button
-            navigate={~p"/my/images/#{@image.id}/edit"}
-            icon="hero-pencil"
-            variant="secondary"
-          >
-            Edit
-          </.action_button>
-          <button
-            type="button"
-            phx-click="delete"
-            data-confirm="Delete this image? This cannot be undone."
-            class="inline-flex items-center gap-2 rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50"
-          >
-            <.icon name="hero-trash" class="w-4 h-4" /> Delete
-          </button>
         </div>
       </div>
     </div>
