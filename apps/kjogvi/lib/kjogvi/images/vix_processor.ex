@@ -6,27 +6,56 @@ defmodule Kjogvi.Images.VixProcessor do
   alias Vix.Vips.Image, as: VipsImage
   alias Vix.Vips.Operation
 
-  @jpeg_save_opts [
-    Q: 85,
-    strip: true,
-    optimize_coding: true
-  ]
+  # Save options per output encoder. JPEG and WebP are lossy (quality 85); PNG
+  # is lossless. Metadata is stripped from every variant.
+  @jpeg_save_opts [Q: 85, strip: true, optimize_coding: true]
+  @webp_save_opts [Q: 85, strip: true]
+  @png_save_opts [strip: true]
+
+  @doc """
+  The extension (and therefore encoder) a resized variant gets for a given
+  source extension.
+
+  Web-friendly formats that every browser renders are preserved: PNG (which may
+  carry transparency) and WebP. Everything else — JPEG, plus camera/archive
+  formats browsers can't display such as HEIC/HEIF and TIFF — is flattened to
+  JPEG. Used by both the resizer here and the uploader's variant naming so the
+  two never disagree on a variant's format.
+  """
+  def variant_extension(source_extension) do
+    case String.downcase(source_extension) do
+      ".png" -> ".png"
+      ".webp" -> ".webp"
+      _ -> ".jpg"
+    end
+  end
 
   @doc """
   Resize an image to at most `max_width` (never upscaling), preserving aspect
-  ratio, and write it as JPEG to a temporary file. Returns `{:ok, path}`.
+  ratio, and write it to a temporary file. Returns `{:ok, path}`.
+
+  The output format is chosen by `variant_extension/1` from `source_extension`
+  (the original upload's extension): PNG and WebP keep their format, everything
+  else is re-encoded as JPEG. The format is taken from `source_extension` rather
+  than `input_path` because waffle may hand us a temp path whose extension does
+  not reflect the original format.
   """
-  def resize_to_jpeg(input_path, max_width) do
-    output_path = Waffle.File.generate_temporary_path(".jpg")
+  def resize(input_path, max_width, source_extension) do
+    ext = variant_extension(source_extension)
+    output_path = Waffle.File.generate_temporary_path(ext)
 
     with {:ok, image} <- VipsImage.new_from_file(input_path),
          width = VipsImage.width(image),
          scale = min(1.0, max_width / width),
          {:ok, resized} <- Operation.resize(image, scale),
-         :ok <- VipsImage.write_to_file(resized, output_path, @jpeg_save_opts) do
+         :ok <- VipsImage.write_to_file(resized, output_path, save_opts(ext)) do
       {:ok, output_path}
     end
   end
+
+  defp save_opts(".png"), do: @png_save_opts
+  defp save_opts(".webp"), do: @webp_save_opts
+  defp save_opts(_), do: @jpeg_save_opts
 
   @doc """
   Extract image metadata: dimensions and EXIF capture date.

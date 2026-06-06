@@ -50,11 +50,34 @@ defmodule Kjogvi.Images.UploaderTest do
       assert content_type(:original, "shot.JPG") == "image/jpeg"
     end
 
-    test "always reports JPEG for re-encoded variants" do
+    test "preserves PNG and WebP for variants" do
       for version <- ~w(thumbnail small medium large)a do
-        # Even a PNG upload yields JPEG variants.
-        assert content_type(version, "shot.png") == "image/jpeg"
+        assert content_type(version, "shot.png") == "image/png"
+        assert content_type(version, "shot.PNG") == "image/png"
+        assert content_type(version, "shot.webp") == "image/webp"
       end
+    end
+
+    test "flattens JPEG, HEIC, and TIFF sources to JPEG variants" do
+      for version <- ~w(thumbnail small medium large)a,
+          name <- ~w(shot.jpg shot.jpeg shot.heic shot.heif shot.tiff shot.tif) do
+        assert content_type(version, name) == "image/jpeg"
+      end
+    end
+  end
+
+  describe "extension/2" do
+    test "preserves the original's own extension, lowercased" do
+      assert Uploader.extension(:original, {%{file_name: "shot.PNG"}, %{}}) == ".png"
+      assert Uploader.extension(:original, {%{file_name: "shot.heic"}, %{}}) == ".heic"
+    end
+
+    test "keeps web-friendly formats and flattens the rest for variants" do
+      assert Uploader.extension(:medium, {%{file_name: "shot.png"}, %{}}) == ".png"
+      assert Uploader.extension(:medium, {%{file_name: "shot.webp"}, %{}}) == ".webp"
+      assert Uploader.extension(:medium, {%{file_name: "shot.heic"}, %{}}) == ".jpg"
+      assert Uploader.extension(:medium, {%{file_name: "shot.tiff"}, %{}}) == ".jpg"
+      assert Uploader.extension(:medium, {%{file_name: "shot.jpg"}, %{}}) == ".jpg"
     end
   end
 

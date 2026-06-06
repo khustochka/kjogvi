@@ -2,8 +2,9 @@ defmodule Kjogvi.Images.Uploader do
   @moduledoc """
   Waffle uploader for bird images.
 
-  Stores the original unchanged plus four resized JPEG variants (quality 85,
-  metadata stripped). Variants are produced with libvips via
+  Stores the original unchanged plus four resized variants (metadata stripped).
+  PNG and WebP variants keep their format; every other source is re-encoded as
+  JPEG (quality 85). Variants are produced with libvips via
   `Kjogvi.Images.VixProcessor`.
   """
 
@@ -61,6 +62,14 @@ defmodule Kjogvi.Images.Uploader do
     )
   end
 
+  @doc """
+  The image file extensions this uploader accepts (lowercased, dot-prefixed).
+
+  Exposed so the upload form's `allow_upload` `:accept` list stays in sync with
+  what `validate/1` enforces server-side.
+  """
+  def accepted_extensions, do: @accepted_extensions
+
   def validate({file, _scope}) do
     ext = file.file_name |> Path.extname() |> String.downcase()
 
@@ -78,7 +87,9 @@ defmodule Kjogvi.Images.Uploader do
     width = @version_widths[version]
 
     fn _version, %Waffle.File{} = file ->
-      case Kjogvi.Images.VixProcessor.resize_to_jpeg(file.path, width) do
+      source_ext = Path.extname(file.file_name)
+
+      case Kjogvi.Images.VixProcessor.resize(file.path, width, source_ext) do
         {:ok, new_path} ->
           {:ok, %Waffle.File{file | path: new_path, is_tempfile?: true}}
 
@@ -111,8 +122,8 @@ defmodule Kjogvi.Images.Uploader do
   # `file` column at upload time and replays on every URL build. We deliberately
   # do NOT read the slug here: the slug can change, but the stored basename must
   # not, or computed URLs would point at files that no longer exist. Uploading
-  # as `<slug>.jpg` therefore yields `<slug>.jpg` and `<slug>_<version>.jpg`,
-  # frozen regardless of any later rename.
+  # as `<slug>.png` therefore yields `<slug>.png` and `<slug>_<version>.png`
+  # (variant extension per `extension/2`), frozen regardless of any later rename.
   def filename(:original, {file, _scope}) do
     Path.basename(file.file_name, Path.extname(file.file_name))
   end
@@ -122,10 +133,14 @@ defmodule Kjogvi.Images.Uploader do
     "#{base}_#{version}"
   end
 
-  # The original keeps its extension; variants are always JPEG.
+  # The original keeps its extension. Variants preserve web-friendly formats
+  # (PNG, WebP) and flatten everything else to JPEG; the mapping lives in
+  # VixProcessor so the stored name matches the bytes the resizer wrote.
   def extension(:original, {file, _scope}) do
     file.file_name |> Path.extname() |> String.downcase()
   end
 
-  def extension(_version, _), do: ".jpg"
+  def extension(_version, {file, _scope}) do
+    file.file_name |> Path.extname() |> Kjogvi.Images.VixProcessor.variant_extension()
+  end
 end

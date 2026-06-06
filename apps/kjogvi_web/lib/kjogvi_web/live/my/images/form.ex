@@ -36,6 +36,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
 
   alias Kjogvi.Images
   alias Kjogvi.Images.Image
+  alias Kjogvi.Images.Uploader
   alias Kjogvi.Repo
   # CoreComponents.input is used explicitly for the metadata fields: the
   # ambient <.input> imported into LiveViews is FormComponents.input, which only
@@ -45,7 +46,6 @@ defmodule KjogviWeb.Live.My.Images.Form do
 
   # 50 MB.
   @max_file_size 50 * 1_024 * 1_024
-  @accept ~w(.jpg .jpeg .png .webp .tiff .tif .heic .heif)
 
   # Temporary product rule: an image must be linked to at least one observation
   # (also enforced by `Image.observations_changeset/2`). Remove this guard when
@@ -76,7 +76,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
     |> assign(:selected_observations, [])
     |> mount_action(socket.assigns.live_action, params)
     |> allow_upload(:image,
-      accept: @accept,
+      accept: Uploader.accepted_extensions(),
       max_entries: 1,
       max_file_size: @max_file_size,
       auto_upload: true,
