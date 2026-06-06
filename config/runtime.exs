@@ -188,33 +188,6 @@ if config_env() == :prod do
     access_key_id: System.get_env("ORNITHO_IMPORTER_S3_ACCESS_KEY_ID"),
     secret_access_key: System.get_env("ORNITHO_IMPORTER_S3_SECRET_ACCESS_KEY")
 
-  # IMAGES
-
-  config :waffle,
-    storage: Waffle.Storage.S3,
-    bucket: System.get_env("IMAGES_PROD_S3_BUCKET")
-
-  # Global ex_aws config = the IMAGE storage profile. Waffle reads only the
-  # global ex_aws env (no per-call credentials/region), so the image profile
-  # lives here. Other consumers (e.g. the taxonomy importer) override per
-  # request and don't depend on this.
-  config :ex_aws,
-    access_key_id: [{:system, "IMAGES_PROD_S3_ACCESS_KEY_ID"}, :instance_role],
-    secret_access_key: [{:system, "IMAGES_PROD_S3_SECRET_ACCESS_KEY"}, :instance_role]
-
-  config :ex_aws, :s3, region: System.get_env("IMAGES_PROD_S3_REGION")
-
-  # New prod uploads go to the prod S3 bucket. Image URLs are built per-image
-  # from its recorded backend (see Kjogvi.Images.url/2), so the host map carries
-  # the dev host too, letting prod render any dev-uploaded images present.
-  config :kjogvi, :images,
-    storage_backend: "s3_prod",
-    hosts: %{
-      "local" => nil,
-      "s3_dev" => System.get_env("IMAGES_DEV_S3_HOST"),
-      "s3_prod" => System.get_env("IMAGES_PROD_S3_HOST")
-    }
-
   # KJOGVI Legacy Import
 
   config :kjogvi, Kjogvi.Legacy.Import,
@@ -241,3 +214,96 @@ config :kjogvi, :setup_code, System.get_env("SETUP_CODE")
 config :kjogvi, Kjogvi.Legacy.Import, taxonomy_slug: System.get_env("LEGACY_TAXONOMY_SLUG")
 
 config :kjogvi_web, :google_maps, api_key: System.get_env("GOOGLE_MAPS_API_KEY")
+
+# IMAGES
+#
+# Two concepts are kept separate here:
+#
+#   * Storage PROFILES (`s3_prod`, `s3_dev`) describe a *destination* — bucket,
+#     region, and public host. They are read in every environment so that a
+#     database shared across environments (e.g. a prod dump opened on a dev box,
+#     or restored to staging) renders every image: each image records the
+#     profile it was uploaded with, and `Kjogvi.Images.url/2` builds its URL
+#     from that profile's host. This is why both hosts must always be present.
+#
+#   * The UPLOAD target is which profile NEW uploads are written to, chosen by
+#     `IMAGES_UPLOAD_TARGET` — one of the backend names `s3_prod`, `s3_dev`, or
+#     `local`, matching the value persisted on each image. There is exactly ONE
+#     set of upload credentials (`IMAGES_UPLOAD_S3_*`) — you only ever write to
+#     one bucket from a given running environment. The cross-bucket behaviour
+#     is entirely on the read side, via the host map above.
+#
+# Examples:
+#   * dev box, local files:     IMAGES_UPLOAD_TARGET=local (the default)
+#   * dev box, dev bucket:      IMAGES_UPLOAD_TARGET=s3_dev  + IMAGES_UPLOAD_S3_*
+#   * staging (prod env),
+#     uploads to dev bucket:    IMAGES_UPLOAD_TARGET=s3_dev  + IMAGES_UPLOAD_S3_*
+#   * production:               IMAGES_UPLOAD_TARGET=s3_prod + IMAGES_UPLOAD_S3_*
+#
+# Test pins local storage in test.exs, so this block is skipped there.
+if config_env() != :test do
+  image_profiles = %{
+    "s3_prod" => %{
+      backend: "s3_prod",
+      bucket: System.get_env("IMAGES_PROD_S3_BUCKET"),
+      region: System.get_env("IMAGES_PROD_S3_REGION"),
+      host: System.get_env("IMAGES_PROD_S3_HOST")
+    },
+    "s3_dev" => %{
+      backend: "s3_dev",
+      bucket: System.get_env("IMAGES_DEV_S3_BUCKET"),
+      region: System.get_env("IMAGES_DEV_S3_REGION"),
+      host: System.get_env("IMAGES_DEV_S3_HOST")
+    }
+  }
+
+  # The host map carries every backend an image might be tagged with, so any
+  # image resolves regardless of which environment is rendering it.
+  config :kjogvi, :images,
+    hosts: %{
+      "local" => nil,
+      "s3_dev" => image_profiles["s3_dev"].host,
+      "s3_prod" => image_profiles["s3_prod"].host
+    }
+
+  upload_target =
+    case System.get_env("IMAGES_UPLOAD_TARGET", "local") do
+      t when t in ~w(s3_prod s3_dev local) ->
+        t
+
+      other ->
+        raise "IMAGES_UPLOAD_TARGET must be one of s3_prod|s3_dev|local, got: #{inspect(other)}"
+    end
+
+  case upload_target do
+    "local" ->
+      # New uploads go to the local filesystem (waffle's default from
+      # config.exs); nothing to configure here. Images still render from S3 if
+      # the database carries s3_* backends.
+      config :kjogvi, :images, storage_backend: "local"
+
+    backend ->
+      profile = image_profiles[backend]
+      env_prefix = "IMAGES_#{backend |> String.trim_leading("s3_") |> String.upcase()}_S3"
+
+      profile.bucket ||
+        raise "IMAGES_UPLOAD_TARGET=#{backend} requires #{env_prefix}_BUCKET"
+
+      config :kjogvi, :images, storage_backend: profile.backend
+
+      config :waffle,
+        storage: Waffle.Storage.S3,
+        bucket: profile.bucket
+
+      # Waffle reads only the GLOBAL ex_aws config (no per-call credentials or
+      # region), so the upload profile must live there. The single upload
+      # credential set pairs with the destination profile's region. Other
+      # consumers (e.g. the taxonomy importer) override per request and don't
+      # depend on this.
+      config :ex_aws,
+        access_key_id: [{:system, "IMAGES_UPLOAD_S3_ACCESS_KEY_ID"}, :instance_role],
+        secret_access_key: [{:system, "IMAGES_UPLOAD_S3_SECRET_ACCESS_KEY"}, :instance_role]
+
+      config :ex_aws, :s3, region: profile.region
+  end
+end
