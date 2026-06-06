@@ -245,15 +245,15 @@ if config_env() != :test do
   image_profiles = %{
     "s3_prod" => %{
       backend: "s3_prod",
-      bucket: System.get_env("IMAGES_PROD_S3_BUCKET"),
-      region: System.get_env("IMAGES_PROD_S3_REGION"),
-      host: System.get_env("IMAGES_PROD_S3_HOST")
+      bucket: System.get_env("IMAGES_S3_PROD_BUCKET"),
+      region: System.get_env("IMAGES_S3_PROD_REGION"),
+      host: System.get_env("IMAGES_S3_PROD_HOST")
     },
     "s3_dev" => %{
       backend: "s3_dev",
-      bucket: System.get_env("IMAGES_DEV_S3_BUCKET"),
-      region: System.get_env("IMAGES_DEV_S3_REGION"),
-      host: System.get_env("IMAGES_DEV_S3_HOST")
+      bucket: System.get_env("IMAGES_S3_DEV_BUCKET"),
+      region: System.get_env("IMAGES_S3_DEV_REGION"),
+      host: System.get_env("IMAGES_S3_DEV_HOST")
     }
   }
 
@@ -284,7 +284,7 @@ if config_env() != :test do
 
     backend ->
       profile = image_profiles[backend]
-      env_prefix = "IMAGES_#{backend |> String.trim_leading("s3_") |> String.upcase()}_S3"
+      env_prefix = "IMAGES_#{String.upcase(backend)}"
 
       profile.bucket ||
         raise "IMAGES_UPLOAD_TARGET=#{backend} requires #{env_prefix}_BUCKET"
