@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict QoRuYdgW2QMxtr2F8NpMqa8cvOaG0dJPIYbYH1tJLLVGqNO0P1IiZypRd4NQyOT
+\restrict uUc14Q0LsBcOe4byUbLHMkjzFAEtEsyz6pUiDeqZfozhDi7xwmJFBYzAxijIjXo
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -124,6 +124,7 @@ ALTER SEQUENCE public.image_observations_id_seq OWNED BY public.image_observatio
 
 CREATE TABLE public.images (
     id bigint NOT NULL,
+    token character varying(255) NOT NULL,
     slug character varying(255) NOT NULL,
     title character varying(255),
     description text,
@@ -133,8 +134,7 @@ CREATE TABLE public.images (
     storage_backend character varying(255) DEFAULT 'local'::character varying NOT NULL,
     user_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    token character varying(255) NOT NULL
+    updated_at timestamp without time zone NOT NULL
 );
 
 
@@ -891,7 +891,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict QoRuYdgW2QMxtr2F8NpMqa8cvOaG0dJPIYbYH1tJLLVGqNO0P1IiZypRd4NQyOT
+\unrestrict uUc14Q0LsBcOe4byUbLHMkjzFAEtEsyz6pUiDeqZfozhDi7xwmJFBYzAxijIjXo
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
