@@ -61,13 +61,12 @@ defmodule Kjogvi.MixProject do
       {:ecto_psql_extras, "~> 0.8"},
       {:postgrex, "~> 0.22"},
       {:cachex, "~> 4.0"},
-      {:waffle, "~> 1.1"},
+      # Fork of waffle that makes hackney optional.
+      {:waffle, github: "khustochka/waffle", branch: "hackney-optional", override: true},
       {:waffle_ecto, "~> 0.0.12"},
       {:vix, "~> 0.31"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
-      # waffle requires hackney; ex_aws 2.7 pins it to ~> 4.0.
-      {:hackney, "~> 4.0", override: true},
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.25"},
       {:req, "~> 0.5"},
