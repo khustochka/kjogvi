@@ -43,6 +43,7 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 - **Icons**: Heroicons via the `<.icon>` component (e.g. `name="hero-star-solid"`); the bicycle is a bundled inline-SVG variant: `<.icon name="bicycle" />`
 - **Birding Data** ([kjogvi/lib/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex)): `Kjogvi.Birding` context, `Card`/`Location` models with privacy settings (`is_private`)
 - **Taxonomy** ([ornithologue](./apps/ornithologue/)): Use `Kjogvi.OrnithoRepo`. Mounted at `/taxonomy` with `ornitho_web` macro
+- **Images** ([kjogvi/lib/kjogvi/images.ex](./apps/kjogvi/lib/kjogvi/images.ex)): `Kjogvi.Images` context; Waffle uploader (`Images.Uploader`) + libvips/Vix resizing (`Images.VixProcessor`). Variant filenames are computed at serve time, not stored — only the original `file` is persisted. URLs resolve against each image's own recorded `storage_backend` (not the env's current one), so images stay viewable across environments sharing a DB (prod-S3 image renders on local dev and vice versa)
 - **Streams**: Use `stream(socket, :items, list)` + `phx-update="stream"`. Not enumerable—refetch and reset to filter. Track counts separately
 - **CSS**: Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS into `app.js`, not inline `<script>` tags
 - **Testing**: `Phoenix.LiveViewTest` + `LazyHTML`. Assert elements by ID, not HTML. Test outcomes, not implementation
