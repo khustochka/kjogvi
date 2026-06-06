@@ -57,6 +57,11 @@ defmodule KjogviWeb.Live.My.Images.Form do
   # this is the backstop for a tampered request.
   @observations_invalid_message "Those observations couldn't be attached. They must be your own and from a single card."
 
+  # Generic message for a failed file upload. The detail (missing credentials,
+  # denied permission, backend unreachable) is logged server-side; the user just
+  # needs to know it didn't work and can retry.
+  @storage_failed_message "Could not upload the image. Please try again later."
+
   @impl true
   def mount(params, _session, socket) do
     socket
@@ -376,6 +381,9 @@ defmodule KjogviWeb.Live.My.Images.Form do
              |> put_flash(:info, "Image file replaced")
              |> push_navigate(to: ~p"/my/images/#{image.id}")}
 
+          {:error, :storage_failed} ->
+            {:noreply, put_flash(socket, :error, @storage_failed_message)}
+
           {:error, %Ecto.Changeset{}} ->
             {:noreply, put_flash(socket, :error, "Could not replace the image file")}
         end
@@ -424,6 +432,9 @@ defmodule KjogviWeb.Live.My.Images.Form do
                 {:noreply, put_flash(socket, :error, @observations_invalid_message)}
             end
 
+          {:error, :storage_failed} ->
+            {:noreply, put_flash(socket, :error, @storage_failed_message)}
+
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply, assign(socket, :form, to_form(changeset))}
         end
@@ -470,7 +481,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
             |> put_flash(:info, "Image and file updated")
             |> push_navigate(to: ~p"/my/images/#{replaced.id}")
 
-          {:error, %Ecto.Changeset{}} ->
+          {:error, _reason} ->
             socket
             |> assign(:upload, nil)
             |> put_flash(:info, "Image updated, but the file could not be replaced")

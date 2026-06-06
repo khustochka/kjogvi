@@ -300,9 +300,16 @@ if config_env() != :test do
       # credential set pairs with the destination profile's region. Other
       # consumers (e.g. the taxonomy importer) override per request and don't
       # depend on this.
+      # Instance role disabled. If not configured, it causes catastrophic failure.
       config :ex_aws,
-        access_key_id: [{:system, "IMAGES_UPLOAD_S3_ACCESS_KEY_ID"}, :instance_role],
-        secret_access_key: [{:system, "IMAGES_UPLOAD_S3_SECRET_ACCESS_KEY"}, :instance_role]
+        access_key_id: [
+          {:system, "IMAGES_UPLOAD_S3_ACCESS_KEY_ID"}
+          # :instance_role
+        ],
+        secret_access_key: [
+          {:system, "IMAGES_UPLOAD_S3_SECRET_ACCESS_KEY"}
+          # :instance_role
+        ]
 
       config :ex_aws, :s3, region: profile.region
   end

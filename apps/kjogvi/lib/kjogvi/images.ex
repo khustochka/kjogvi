@@ -56,6 +56,11 @@ defmodule Kjogvi.Images do
   Expects a `%Plug.Upload{}` under the `"file"` key. Dimensions and EXIF date
   are extracted from the uploaded file (before storage, so it works for any
   backend) and saved into `extras`.
+
+  The file is stored to the configured backend as part of the insert. A storage
+  failure (e.g. missing S3 credentials or no write permission) returns
+  `{:error, :storage_failed}` so callers can show a generic message; validation
+  failures still return `{:error, %Ecto.Changeset{}}`.
   """
   def create_image(user, attrs) do
     extras = extract_metadata(attrs["file"])
@@ -68,9 +73,11 @@ defmodule Kjogvi.Images do
     # Set the user association on the base struct so it rides along as the
     # waffle scope: the uploader needs the user's public_token to build the
     # storage path.
-    %Image{extras: extras, user: user}
-    |> Image.changeset(attrs)
-    |> Repo.insert()
+    with_storage_guard(fn ->
+      %Image{extras: extras, user: user}
+      |> Image.changeset(attrs)
+      |> Repo.insert()
+    end)
   end
 
   @doc """
@@ -95,6 +102,8 @@ defmodule Kjogvi.Images do
   variants in the backend (replacing with the same basename overwrites them in
   place). Recorded URLs always point at the now-current `file`, so the orphaned
   objects are simply unreferenced; clean them up out of band if desired.
+
+  Like `create_image/2`, a storage failure returns `{:error, :storage_failed}`.
   """
   def replace_image_file(%Image{} = image, attrs) do
     # The user carries the public_token segment of the storage path; the
@@ -105,10 +114,38 @@ defmodule Kjogvi.Images do
 
     attrs = Map.put(attrs, "storage_backend", current_storage_backend())
 
-    image
-    |> Image.changeset(attrs)
-    |> Image.metadata_changeset(extras)
-    |> Repo.update()
+    with_storage_guard(fn ->
+      image
+      |> Image.changeset(attrs)
+      |> Image.metadata_changeset(extras)
+      |> Repo.update()
+    end)
+  end
+
+  # Runs a waffle-backed insert/update and normalizes storage failures.
+  #
+  # The file is uploaded to the backend during `cast_attachments` (inside the
+  # changeset). When the store fails gracefully, waffle's Ecto type turns it into
+  # a generic `:file` changeset error ("is invalid"), so the op returns
+  # `{:error, changeset}` with an error on `:file`.
+  #
+  # The `:file` field is never validated for content here (no `required`, no
+  # format) — the only way it gets an error is a failed store — so an error on it
+  # unambiguously means a storage failure, which collapses to
+  # `{:error, :storage_failed}`. Genuine validation failures (slug, etc.) pass
+  # through as `{:error, changeset}`.
+  defp with_storage_guard(fun) do
+    case fun.() do
+      {:ok, image} ->
+        {:ok, image}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        if Keyword.has_key?(changeset.errors, :file) do
+          {:error, :storage_failed}
+        else
+          {:error, changeset}
+        end
+    end
   end
 
   @doc """
