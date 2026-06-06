@@ -143,8 +143,8 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
           >
             <:result :let={%{result: obs, term: term}}>
               <div class={selected?(obs, @selected) && "opacity-50"}>
-                <ImageComponents.observation_tile observation={obs} term={term} />
-                <p :if={selected?(obs, @selected)} class="px-3 pt-1 text-xs text-stone-400">
+                <ImageComponents.observation_tile observation={obs} term={term} variant={:result} />
+                <p :if={selected?(obs, @selected)} class="pt-1 text-xs text-stone-400">
                   Already attached
                 </p>
               </div>

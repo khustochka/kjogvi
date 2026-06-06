@@ -18,7 +18,9 @@ defmodule KjogviWeb.ImageComponents do
   the search-result rows in the observation picker. When an `on_remove` event is
   given, an × button is shown that pushes it with `phx-value-observation-id`.
   Result rows are rendered without a button — the picker's `Autocomplete` wraps
-  each row and handles the click itself.
+  each row and handles the click itself. The `variant` controls the chrome: the
+  default `:selected` is a bordered standalone tile, while `:result` is
+  borderless and relies on the dropdown's own row padding and dividers.
 
   Pass `term` (the current search text) to highlight the matched portion of the
   taxon names with a yellow background. Only a contiguous, case-insensitive
@@ -28,12 +30,21 @@ defmodule KjogviWeb.ImageComponents do
   attr :on_remove, :string, default: nil, doc: "event pushed by the × button"
   attr :target, :any, default: nil, doc: "phx-target for the remove event"
   attr :term, :string, default: nil, doc: "search term to highlight in the taxon names"
+
+  attr :variant, :atom,
+    default: :selected,
+    values: [:selected, :result],
+    doc: "`:selected` is a bordered standalone tile; `:result` is borderless for dropdown rows"
+
   attr :rest, :global
 
   def observation_tile(assigns) do
     ~H"""
     <div
-      class="flex items-center justify-between gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
+      class={[
+        "flex items-center justify-between gap-2 text-sm",
+        @variant == :selected && "rounded border border-stone-400 bg-white px-3 py-2"
+      ]}
       {@rest}
     >
       <div class="min-w-0">
