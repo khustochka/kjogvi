@@ -113,6 +113,14 @@ export default {
       const el = document.getElementById(`${this.el.id}-result-${index}`)
       if (el) el.scrollIntoView({block: "nearest"})
     })
+
+    // Empty the field on a keep-focus pick. LiveView won't patch the
+    // value of a focused input, so the server-side clear (search_term ->
+    // "") can't reach the field while focus stays here (both Enter and
+    // click commits). Clear it on the client instead.
+    this.handleEvent(`${this.el.id}:clear`, () => {
+      this.el.value = ""
+    })
   },
   destroyed() {
     if (this.mouseoverHandler) {

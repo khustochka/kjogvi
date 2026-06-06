@@ -214,7 +214,19 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
     event_params = Map.put(socket.assigns.on_select_params, "result", result)
     notify_select(socket, event_params)
 
-    {:noreply, reset_search(socket, socket.assigns.clear_on_select)}
+    socket = reset_search(socket, socket.assigns.clear_on_select)
+
+    # With focus kept in the field, LiveView won't patch its value, so the
+    # cleared `search_term` wouldn't empty the input on its own. Tell the
+    # hook to clear it client-side.
+    socket =
+      if socket.assigns.clear_on_select and socket.assigns.keep_focus_on_select do
+        push_event(socket, "#{socket.assigns.id}:clear", %{})
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   # When `cleared?` is true, keep `search_term` as `""` instead of

@@ -30,6 +30,8 @@ defmodule KjogviWeb.Live.Components.AutocompleteTest do
           on_select_params={@on_select_params}
           errors={@errors}
           min_length={@min_length}
+          clear_on_select={@clear_on_select}
+          keep_focus_on_select={@keep_focus_on_select}
         >
           <:result :let={%{result: result, term: term}}>
             <Highlight.highlighted_text text={display(result)} term={term} />
@@ -52,6 +54,8 @@ defmodule KjogviWeb.Live.Components.AutocompleteTest do
         on_select_params: session["on_select_params"] || %{},
         errors: session["errors"] || [],
         min_length: session["min_length"] || 2,
+        clear_on_select: session["clear_on_select"],
+        keep_focus_on_select: session["keep_focus_on_select"],
         last_event: "",
         last_value: "",
         last_clear_event: nil
@@ -143,7 +147,9 @@ defmodule KjogviWeb.Live.Components.AutocompleteTest do
       "on_select_event" => opts[:on_select_event] || "location_selected",
       "on_select_params" => opts[:on_select_params] || %{},
       "errors" => opts[:errors] || [],
-      "min_length" => opts[:min_length]
+      "min_length" => opts[:min_length],
+      "clear_on_select" => opts[:clear_on_select] || false,
+      "keep_focus_on_select" => opts[:keep_focus_on_select] || false
     }
 
     {:ok, lv, html} = live_isolated(conn, TestLive, session: session)
@@ -307,6 +313,46 @@ defmodule KjogviWeb.Live.Components.AutocompleteTest do
       lv |> element("#test_search") |> render_hook("clear", %{})
 
       refute has_element?(lv, "#cleared-event")
+    end
+  end
+
+  describe "clear_on_select" do
+    test "empties the field after a pick (click)", %{conn: conn} do
+      {lv, _html} = mount_component(conn, %{clear_on_select: true})
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      html = lv |> element("#test_search-result-0") |> render_click()
+
+      # Field is rendered empty, not showing the typed term.
+      refute html =~ ~s(value="park")
+    end
+
+    test "empties the field after a pick (Enter)", %{conn: conn} do
+      {lv, _html} = mount_component(conn, %{clear_on_select: true})
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      html = lv |> element("#test_search") |> render_hook("nav_select", %{})
+
+      refute html =~ ~s(value="park")
+    end
+
+    test "with keep_focus_on_select, pushes a client clear event on pick", %{conn: conn} do
+      {lv, _html} =
+        mount_component(conn, %{clear_on_select: true, keep_focus_on_select: true})
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search-result-0") |> render_click()
+
+      assert_push_event(lv, "test_search:clear", %{})
+    end
+
+    test "without keep_focus_on_select, does not push a client clear event", %{conn: conn} do
+      {lv, _html} = mount_component(conn, %{clear_on_select: true})
+
+      lv |> element("#test_search") |> render_keyup(%{"value" => "park"})
+      lv |> element("#test_search-result-0") |> render_click()
+
+      refute_push_event(lv, "test_search:clear", %{})
     end
   end
 
