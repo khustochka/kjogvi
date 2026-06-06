@@ -35,7 +35,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
   end
 
   def truncate do
-    _ = Repo.query!("TRUNCATE observations;")
+    _ = Repo.query!("TRUNCATE observations CASCADE;")
     _ = Repo.query!("ALTER SEQUENCE observations_id_seq RESTART;")
   end
 
