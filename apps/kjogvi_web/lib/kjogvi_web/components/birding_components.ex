@@ -76,7 +76,7 @@ defmodule KjogviWeb.BirdingComponents do
         <%!-- Date + location --%>
         <.link
           navigate={~p"/my/cards/#{@card.id}"}
-          class="font-semibold text-stone-900 underline decoration-stone-200 decoration-2 underline-offset-2 hover:decoration-forest-500"
+          class="font-semibold text-stone-900 underline decoration-forest-500 decoration-2 underline-offset-2 hover:decoration-forest-700"
         >
           {format_date(@card.observ_date)}
         </.link>
@@ -263,9 +263,9 @@ defmodule KjogviWeb.BirdingComponents do
   @doc """
   Renders the card delete control.
 
-  When the card can be deleted, renders a pale-red trash button that triggers
-  the `on_delete` event (with a confirmation). When it cannot (it still has
-  observations), renders an inert, plainly-disabled placeholder carrying none
+  When the card can be deleted, renders a clearly red-outlined trash button that
+  triggers the `on_delete` event (with a confirmation). When it cannot (it still
+  has observations), renders an inert, plainly-disabled placeholder carrying none
   of the action wiring (`phx-click`, `data-confirm`, …).
   """
   attr :card, :map, required: true
@@ -284,7 +284,7 @@ defmodule KjogviWeb.BirdingComponents do
       data-confirm={"Delete card ##{@card.id}? This cannot be undone."}
       title="Delete card"
       aria-label={"Delete card ##{@card.id}"}
-      class="inline-flex cursor-pointer items-center rounded-md border border-stone-300 bg-white p-1 text-red-300 hover:border-red-400 hover:text-red-600"
+      class="inline-flex cursor-pointer items-center rounded-md border border-red-400 bg-white p-1 text-red-600 hover:border-red-500 hover:bg-red-50 hover:text-red-700"
     >
       <.icon name="hero-trash" class="h-3.5 w-3.5" />
     </button>
