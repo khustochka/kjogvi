@@ -140,6 +140,13 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert has_element?(lv, ~s(button[aria-label="Remove observation"]))
     end
 
+    test "renders Resolved checkbox checked by default on new card", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      assert has_element?(lv, "label", "Resolved")
+      assert has_element?(lv, "input#card_resolved[type=checkbox][checked]")
+    end
+
     test "location search results display with dropdown styling", %{conn: conn} do
       _location = GeoFixtures.location_fixture(name_en: "Central Park")
       {:ok, lv, _html} = live(conn, "/my/cards/new")
@@ -269,6 +276,54 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       # Verify the most recent card has the selected location
       card = List.first(cards.entries)
       assert card.location_id == location.id
+    end
+
+    test "saves card as resolved by default", %{conn: conn, user: user, location: location} do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      search_and_select_location(lv, "Test")
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "INCIDENTAL",
+          "location_id" => to_string(location.id),
+          "resolved" => "true"
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      card =
+        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+
+      assert card.resolved == true
+    end
+
+    test "saves card as unresolved when checkbox unchecked", %{
+      conn: conn,
+      user: user,
+      location: location
+    } do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      search_and_select_location(lv, "Test")
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "INCIDENTAL",
+          "location_id" => to_string(location.id),
+          "resolved" => "false"
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      card =
+        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+
+      assert card.resolved == false
     end
   end
 

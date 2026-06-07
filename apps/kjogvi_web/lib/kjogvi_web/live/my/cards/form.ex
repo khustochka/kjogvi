@@ -261,7 +261,15 @@ defmodule KjogviWeb.Live.My.Cards.Form do
         </button>
       </div>
 
-      <div class="flex gap-4 pt-6">
+      <div class="mt-6 rounded-lg border border-stone-200 bg-stone-50 p-4 space-y-2">
+        <CoreComponents.input type="checkbox" field={@form[:resolved]} label="Resolved" />
+        <p class="text-sm text-stone-500">
+          Leave this unchecked to mark the card as unresolved when you intend to revisit and
+          amend it later. You can filter your cards to find unresolved ones at any time.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-4 pt-6">
         <button
           type="submit"
           phx-disable-with="Saving..."
@@ -425,6 +433,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
         observers: params["observers"],
         notes: params["notes"],
         motorless: params["motorless"] == "true",
+        resolved: params["resolved"] == "true",
         observations: observations
     }
   end
