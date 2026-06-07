@@ -59,8 +59,8 @@ defmodule Kjogvi.Legacy.Import.Locations do
     |> Repo.update()
   end
 
-  def truncate do
-    _ = Repo.query!("TRUNCATE special_locations, locations CASCADE;")
+  def cleanup do
+    _ = Kjogvi.Repo.query!("DELETE FROM locations WHERE import_source='legacy';")
   end
 
   defp convert_ancestry(%{ancestry: nil} = loc) do

@@ -38,9 +38,9 @@ defmodule Kjogvi.Legacy.Import do
 
   def prepare_import(opts \\ []) do
     :telemetry.span([:kjogvi, :legacy, :import, :prepare], telemetry_metadata(opts), fn ->
-      Kjogvi.Legacy.Import.Observations.truncate()
-      Kjogvi.Legacy.Import.Cards.truncate()
-      Kjogvi.Legacy.Import.Locations.truncate()
+      Kjogvi.Legacy.Import.Observations.cleanup()
+      Kjogvi.Legacy.Import.Cards.cleanup()
+      Kjogvi.Legacy.Import.Locations.cleanup()
 
       {:ok, telemetry_metadata(opts)}
     end)

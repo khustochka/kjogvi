@@ -42,8 +42,8 @@ defmodule Kjogvi.Legacy.Import.Observations do
     end
   end
 
-  def truncate do
-    _ = Repo.query!("TRUNCATE observations CASCADE;")
+  def cleanup do
+    _ = Kjogvi.Repo.query!("DELETE FROM observations WHERE import_source='legacy';")
   end
 
   defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs, book_signature) do

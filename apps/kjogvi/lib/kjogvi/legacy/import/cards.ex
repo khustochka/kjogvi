@@ -27,8 +27,8 @@ defmodule Kjogvi.Legacy.Import.Cards do
       )
   end
 
-  def truncate do
-    _ = Kjogvi.Repo.query!("TRUNCATE cards CASCADE;")
+  def cleanup do
+    _ = Kjogvi.Repo.query!("DELETE FROM cards WHERE import_source='legacy';")
   end
 
   defp transform_keys(
