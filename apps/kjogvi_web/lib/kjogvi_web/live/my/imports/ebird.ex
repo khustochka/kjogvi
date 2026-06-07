@@ -42,15 +42,17 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   def update(%{status: :ok, data: ebird_checklists}, socket) do
     Store.ChecklistPreload.store_checklists(socket.assigns.user, ebird_checklists)
 
+    result = "eBird preload done: #{length(ebird_checklists)} new checklists."
+
     {:ok,
      socket
      |> assign_preloads_data()
      |> clear_flash()
-     |> put_flash(:info, "eBird preload done: #{length(ebird_checklists)} new checklists.")
-     |> assign(:async_result, AsyncResult.ok(%AsyncResult{}, :ok))}
+     |> put_flash(:info, result)
+     |> assign(:async_result, AsyncResult.ok(result))}
   end
 
-  def update(%{status: :error, data: data}, socket) do
+  def update(%{status: :error, data: data}, %{assigns: assigns} = socket) do
     data =
       case data do
         message when is_binary(message) -> %{message: message}
@@ -61,7 +63,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
      socket
      |> clear_flash()
      |> put_flash(:error, "eBird preload failed: " <> data.message)
-     |> assign(:async_result, AsyncResult.failed(%AsyncResult{}, data.message))}
+     |> assign(:async_result, AsyncResult.failed(assigns.async_result, data.message))}
   end
 
   def update(%{status: :progress, data: data}, socket) do

@@ -41,15 +41,15 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
      socket
      |> clear_flash()
      |> put_flash(:info, data.message)
-     |> assign(:async_result, AsyncResult.ok(%AsyncResult{}, :ok))}
+     |> assign(:async_result, AsyncResult.ok(data.message))}
   end
 
-  def update(%{status: :error, data: data}, socket) do
+  def update(%{status: :error, data: data}, %{assigns: assigns} = socket) do
     {:ok,
      socket
      |> clear_flash()
      |> put_flash(:error, "Legacy import failed: " <> data.message)
-     |> assign(:async_result, AsyncResult.failed(%AsyncResult{}, data.message))}
+     |> assign(:async_result, AsyncResult.failed(assigns.async_result, data.message))}
   end
 
   def update(%{status: :progress, data: data}, socket) do
