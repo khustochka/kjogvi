@@ -111,5 +111,6 @@ defmodule Kjogvi.Legacy.Import.Locations do
     |> Map.put(:cached_public_location_id, loc.cached_public_locus_id)
     |> Map.put(:inserted_at, time)
     |> Map.put(:updated_at, time)
+    |> Map.put(:import_source, :legacy)
   end
 end

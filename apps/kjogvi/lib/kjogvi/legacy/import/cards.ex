@@ -53,6 +53,7 @@ defmodule Kjogvi.Legacy.Import.Cards do
     |> Map.put(:updated_at, update_time)
     |> Map.put(:observ_date, observ_date)
     |> Map.put(:start_time, convert_start_time(start_time))
+    |> Map.put(:import_source, :legacy)
   end
 
   def convert_start_time(""), do: nil

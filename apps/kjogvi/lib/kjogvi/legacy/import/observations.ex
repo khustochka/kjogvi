@@ -70,6 +70,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
     |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
     |> Map.put(:inserted_at, convert_timestamp(created_at))
     |> Map.put(:updated_at, convert_timestamp(updated_at))
+    |> Map.put(:import_source, :legacy)
   end
 
   defp convert_timestamp(nil) do
