@@ -28,6 +28,26 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       assert obs.taxon_key == "/ebird/v2025/amerob"
     end
 
+    test "marks imported observations with the :legacy import source" do
+      user =
+        Kjogvi.UsersFixtures.user_fixture()
+        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
+        |> Repo.update!()
+
+      card = insert(:card, user: user)
+
+      now = "2026-01-02T03:04:05Z"
+
+      Observations.import(
+        ["card_id", "ebird_code", "created_at", "updated_at"],
+        [[card.id, "amerob", now, now]],
+        user: user
+      )
+
+      [obs] = Repo.all(Observation)
+      assert obs.import_source == :legacy
+    end
+
     test "raises when user has no default_book_signature" do
       user = Kjogvi.UsersFixtures.user_fixture()
 

@@ -80,5 +80,29 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
       assert Enum.map(five_mr.special_child_locations, & &1.slug) |> Enum.sort() ==
                ["home_patch", "nearby_park"]
     end
+
+    test "marks imported locations with the :legacy import source" do
+      rows = [
+        row(%{"id" => 1, "slug" => "5mr", "name_en" => "5MR"}),
+        row(%{"id" => 10, "slug" => "arabat_spit", "name_en" => "Arabat Spit"})
+      ]
+
+      Locations.import(@columns, rows, [])
+
+      location = Repo.get_by!(Location, slug: "arabat_spit")
+      assert location.import_source == :legacy
+    end
+
+    test "advances the id sequence past @min_start_seq for new locations" do
+      rows = [
+        row(%{"id" => 1, "slug" => "5mr", "name_en" => "5MR"}),
+        row(%{"id" => 10, "slug" => "arabat_spit", "name_en" => "Arabat Spit"})
+      ]
+
+      Locations.import(@columns, rows, [])
+
+      next_location = Repo.insert!(%Location{slug: "fresh", name_en: "Fresh"})
+      assert next_location.id >= 2_000
+    end
   end
 end

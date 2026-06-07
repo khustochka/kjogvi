@@ -32,7 +32,7 @@ defmodule Kjogvi.Util.Presence do
     if present?(value), do: String.trim(value), else: nil
   end
 
-  def presence(_), do: true
+  def presence(value), do: value
 
   @doc """
   ## Examples
