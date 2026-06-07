@@ -115,8 +115,24 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
           </label>
         </div>
 
+        <%!-- Card-level toggles (under the three text fields) --%>
+        <div class="sm:col-span-2 lg:col-start-1 lg:col-span-3 lg:row-start-2">
+          <label class="flex items-center gap-2 text-sm text-indigo-900">
+            <span class="font-semibold">Cards:</span>
+            <input type="hidden" name="filter[unresolved]" value="false" />
+            <input
+              type="checkbox"
+              id={"#{@id}-unresolved"}
+              name="filter[unresolved]"
+              value="true"
+              checked={@filter.unresolved}
+              class="h-4 w-4 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+            /> Unresolved only
+          </label>
+        </div>
+
         <%!-- Voice + hidden --%>
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3 lg:row-start-1 lg:col-start-4">
           <fieldset>
             <legend class="block text-sm font-semibold leading-6 text-indigo-900">
               Observations
@@ -150,7 +166,7 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
         </div>
 
         <%!-- Actions --%>
-        <div class="flex flex-col items-stretch gap-2">
+        <div class="flex flex-col items-stretch gap-2 lg:row-start-1 lg:col-start-5">
           <button
             type="submit"
             class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"

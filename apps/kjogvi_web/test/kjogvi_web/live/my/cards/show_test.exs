@@ -27,6 +27,22 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
     assert html =~ "This card has no observations."
   end
 
+  test "shows an unresolved marker for unresolved cards", %{conn: conn, user: user} do
+    card = insert(:card, user: user, resolved: false)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    assert has_element?(show_live, "#card-unresolved")
+  end
+
+  test "has no unresolved marker for resolved cards", %{conn: conn, user: user} do
+    card = insert(:card, user: user, resolved: true)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    refute has_element?(show_live, "#card-unresolved")
+  end
+
   test "renders an edit link", %{conn: conn, user: user} do
     card = insert(:card, user: user)
 

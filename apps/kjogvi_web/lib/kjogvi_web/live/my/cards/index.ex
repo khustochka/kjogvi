@@ -107,6 +107,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       filter
       | date: parse_date(params["date"]),
         include_subregions: checked?(params["include_subregions"]),
+        unresolved: checked?(params["unresolved"]),
         exclude_subspecies: checked?(params["exclude_subspecies"]),
         voice: parse_voice(params["voice"]),
         hidden: checked?(params["hidden"])

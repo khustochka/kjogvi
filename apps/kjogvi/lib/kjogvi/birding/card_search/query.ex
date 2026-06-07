@@ -34,11 +34,12 @@ defmodule Kjogvi.Birding.CardSearch.Query do
     |> Card.Query.load_observation_count()
   end
 
-  # Card-level filters: date, location (+ optional subregions).
+  # Card-level filters: date, location (+ optional subregions), unresolved.
   defp apply_card_filters(query, %Filter{} = filter) do
     query
     |> filter_by_date(filter.date)
     |> filter_by_location(filter.location, filter.include_subregions)
+    |> filter_by_unresolved(filter.unresolved)
   end
 
   defp filter_by_date(query, nil), do: query
@@ -55,6 +56,12 @@ defmodule Kjogvi.Birding.CardSearch.Query do
 
   defp filter_by_location(query, location, false) do
     where(query, [card: c], c.location_id == ^location.id)
+  end
+
+  defp filter_by_unresolved(query, false), do: query
+
+  defp filter_by_unresolved(query, true) do
+    where(query, [card: c], c.resolved == false)
   end
 
   # When observation-level filters are active, keep only cards that have at

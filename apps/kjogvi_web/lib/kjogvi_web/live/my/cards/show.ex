@@ -67,6 +67,14 @@ defmodule KjogviWeb.Live.My.Cards.Show do
         <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           <p class="text-lg text-stone-600">{Geo.Location.long_name(@card.location)}</p>
           <span
+            :if={not @card.resolved}
+            id="card-unresolved"
+            title="This card is marked unresolved and may still need amending"
+            class="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-sm font-medium text-red-700 ring-1 ring-red-200 ring-inset"
+          >
+            <.icon name="hero-exclamation-triangle" class="h-4 w-4" /> Unresolved
+          </span>
+          <span
             :if={@card.motorless}
             title="Motorless"
             class="inline-flex items-center gap-1 rounded-md bg-forest-50 px-2 py-0.5 text-sm font-medium text-forest-600"

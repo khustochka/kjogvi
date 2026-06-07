@@ -5,7 +5,7 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
   Filters split into two kinds:
 
     * **card-level** — narrow which cards match without looking inside their
-      observations: `date`, `location`, `include_subregions`.
+      observations: `date`, `location`, `include_subregions`, `unresolved`.
     * **observation-level** — narrow which individual observations match:
       `taxon_key`, `exclude_subspecies`, `voice` (all/seen/heard-only) and
       `hidden`.
@@ -32,6 +32,10 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
       default: nil
     ],
     include_subregions: [
+      type: :boolean,
+      default: false
+    ],
+    unresolved: [
       type: :boolean,
       default: false
     ],
@@ -76,7 +80,8 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
   """
   @spec blank?(t()) :: boolean()
   def blank?(%__MODULE__{} = filter) do
-    is_nil(filter.date) and is_nil(filter.location) and not observation_mode?(filter)
+    is_nil(filter.date) and is_nil(filter.location) and not filter.unresolved and
+      not observation_mode?(filter)
   end
 
   @doc """
@@ -93,6 +98,7 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
     |> put_present("date", filter.date && Date.to_iso8601(filter.date))
     |> put_present("location_id", filter.location && to_string(filter.location.id))
     |> put_flag("include_subregions", filter.include_subregions)
+    |> put_flag("unresolved", filter.unresolved)
     |> put_present("taxon_key", filter.taxon_key)
     |> put_flag("exclude_subspecies", filter.exclude_subspecies)
     |> put_present("voice", filter.voice != :all && to_string(filter.voice))
@@ -111,6 +117,7 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
     filter = %__MODULE__{
       date: parse_date(params["date"]),
       include_subregions: parse_flag(params["include_subregions"]),
+      unresolved: parse_flag(params["unresolved"]),
       taxon_key: presence(params["taxon_key"]),
       exclude_subspecies: parse_flag(params["exclude_subspecies"]),
       voice: parse_voice(params["voice"]),

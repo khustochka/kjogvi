@@ -36,6 +36,7 @@ defmodule Kjogvi.Birding.CardSearch.FilterTest do
     test "false for card-level-only filters" do
       refute Filter.observation_mode?(%Filter{date: ~D[2024-01-01]})
       refute Filter.observation_mode?(%Filter{include_subregions: true})
+      refute Filter.observation_mode?(%Filter{unresolved: true})
     end
   end
 
@@ -43,6 +44,7 @@ defmodule Kjogvi.Birding.CardSearch.FilterTest do
     test "false once any filter is set" do
       refute Filter.blank?(%Filter{date: ~D[2024-01-01]})
       refute Filter.blank?(%Filter{voice: :seen})
+      refute Filter.blank?(%Filter{unresolved: true})
     end
   end
 
@@ -55,6 +57,7 @@ defmodule Kjogvi.Birding.CardSearch.FilterTest do
       filter = %Filter{
         date: ~D[2024-05-01],
         include_subregions: true,
+        unresolved: true,
         taxon_key: "/ebird/v2024/houspa",
         exclude_subspecies: true,
         voice: :heard_only,
@@ -64,6 +67,7 @@ defmodule Kjogvi.Birding.CardSearch.FilterTest do
       assert Filter.to_params(filter) == %{
                "date" => "2024-05-01",
                "include_subregions" => "true",
+               "unresolved" => "true",
                "taxon_key" => "/ebird/v2024/houspa",
                "exclude_subspecies" => "true",
                "voice" => "heard_only",
@@ -92,6 +96,7 @@ defmodule Kjogvi.Birding.CardSearch.FilterTest do
       original = %Filter{
         date: ~D[2024-05-01],
         include_subregions: true,
+        unresolved: true,
         taxon_key: "/ebird/v2024/houspa",
         exclude_subspecies: true,
         voice: :seen,

@@ -27,6 +27,23 @@ defmodule KjogviWeb.Live.My.Cards.IndexTest do
     assert render(index_live) =~ "Winnipeg"
   end
 
+  test "panel shows an unresolved marker for unresolved cards", %{conn: conn, user: user} do
+    card = insert(:card, user: user, resolved: false)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+    assert has_element?(index_live, "#card-#{card.id}-unresolved")
+  end
+
+  test "panel has no unresolved marker for resolved cards", %{conn: conn, user: user} do
+    card = insert(:card, user: user, resolved: true)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+    assert has_element?(index_live, "#card-#{card.id}")
+    refute has_element?(index_live, "#card-#{card.id}-unresolved")
+  end
+
   test "panel links to show, edit and counts", %{conn: conn, user: user} do
     {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
     key = Ornitho.Schema.Taxon.key(taxon)
@@ -138,6 +155,20 @@ defmodule KjogviWeb.Live.My.Cards.IndexTest do
 
       assert has_element?(index_live, "#card-#{match.id}")
       refute has_element?(index_live, "#card-#{other.id}")
+    end
+
+    test "the unresolved filter shows only unresolved cards", %{conn: conn, user: user} do
+      unresolved = insert(:card, user: user, resolved: false)
+      resolved = insert(:card, user: user, resolved: true)
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+      index_live
+      |> form("#card-search-filter", filter: %{unresolved: "true"})
+      |> render_submit()
+
+      assert has_element?(index_live, "#card-#{unresolved.id}")
+      refute has_element?(index_live, "#card-#{resolved.id}")
     end
 
     test "an observation-level filter shows only matching observations", %{

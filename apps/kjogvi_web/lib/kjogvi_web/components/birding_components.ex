@@ -87,6 +87,16 @@ defmodule KjogviWeb.BirdingComponents do
           {Geo.Location.long_name(@card.location)}
         </.link>
 
+        <%!-- Unresolved marker --%>
+        <span
+          :if={not @card.resolved}
+          id={"card-#{@card.id}-unresolved"}
+          title="This card is marked unresolved and may still need amending"
+          class="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-50 px-1.5 py-0.5 text-sm font-medium text-red-700 ring-1 ring-red-200 ring-inset"
+        >
+          <.icon name="hero-exclamation-triangle" class="h-4 w-4" /> Unresolved
+        </span>
+
         <%!-- Counts --%>
         <ul class="flex shrink-0 items-baseline gap-2.5 tabular-nums">
           <li :if={not is_nil(@card.species_count)} title="Countable species">
