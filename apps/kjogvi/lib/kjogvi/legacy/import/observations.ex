@@ -4,6 +4,8 @@ defmodule Kjogvi.Legacy.Import.Observations do
   alias Kjogvi.Repo
   alias Kjogvi.Birding.Observation
 
+  @min_start_seq 100_000
+
   def import(columns_str, rows, opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
     book_signature = book_signature!(opts)
@@ -17,7 +19,13 @@ defmodule Kjogvi.Legacy.Import.Observations do
 
     _ = Repo.insert_all(Observation, obs)
 
-    Repo.query!("SELECT setval('observations_id_seq', (SELECT MAX(id) FROM observations));")
+    # Imported records keep their original ids, so advance the sequence past the
+    # highest existing id (but never below @min_start_seq) to avoid id collisions
+    # on subsequently inserted cards.
+    _ =
+      Repo.query!(
+        "SELECT setval('observations_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM observations)));"
+      )
   end
 
   def after_import do
@@ -36,7 +44,6 @@ defmodule Kjogvi.Legacy.Import.Observations do
 
   def truncate do
     _ = Repo.query!("TRUNCATE observations CASCADE;")
-    _ = Repo.query!("ALTER SEQUENCE observations_id_seq RESTART;")
   end
 
   defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs, book_signature) do

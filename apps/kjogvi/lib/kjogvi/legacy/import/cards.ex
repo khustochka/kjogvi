@@ -1,6 +1,8 @@
 defmodule Kjogvi.Legacy.Import.Cards do
   @moduledoc false
 
+  @min_start_seq 20_000
+
   def import(columns_str, rows, opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
     user_id = opts[:user].id
@@ -16,12 +18,17 @@ defmodule Kjogvi.Legacy.Import.Cards do
 
     _ = Kjogvi.Repo.insert_all(Kjogvi.Birding.Card, cards)
 
-    Kjogvi.Repo.query!("SELECT setval('cards_id_seq', (SELECT MAX(id) FROM cards));")
+    # Imported records keep their original ids, so advance the sequence past the
+    # highest existing id (but never below @min_start_seq) to avoid id collisions
+    # on subsequently inserted cards.
+    _ =
+      Kjogvi.Repo.query!(
+        "SELECT setval('cards_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM cards)));"
+      )
   end
 
   def truncate do
     _ = Kjogvi.Repo.query!("TRUNCATE cards CASCADE;")
-    _ = Kjogvi.Repo.query!("ALTER SEQUENCE cards_id_seq RESTART;")
   end
 
   defp transform_keys(
