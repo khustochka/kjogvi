@@ -202,7 +202,12 @@ defmodule KjogviWeb.Live.My.Cards.Form do
               />
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
-              <CoreComponents.input type="time" field={@form[:start_time]} label="Start Time" />
+              <CoreComponents.input
+                type="time"
+                field={@form[:start_time]}
+                value={format_time(@form[:start_time].value)}
+                label="Start Time"
+              />
               <CoreComponents.input
                 type="number"
                 field={@form[:duration_minutes]}
@@ -470,7 +475,19 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   defp parse_time(nil), do: nil
   defp parse_time(""), do: nil
-  defp parse_time(str), do: Time.from_iso8601!(str <> ":00")
+
+  # The time input submits either "HH:MM" (Chrome's default) or "HH:MM:SS"
+  # (e.g. when an existing card's start_time is rendered back with seconds on
+  # edit). Normalize to a full ISO time before parsing rather than blindly
+  # appending ":00", which would corrupt an already-complete "HH:MM:SS" value.
+  defp parse_time(str) do
+    normalized = if String.length(str) == 5, do: str <> ":00", else: str
+
+    case Time.from_iso8601(normalized) do
+      {:ok, time} -> time
+      {:error, _} -> nil
+    end
+  end
 
   defp parse_int(nil), do: nil
   defp parse_int(""), do: nil

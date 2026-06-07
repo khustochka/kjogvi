@@ -640,6 +640,38 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert Enum.any?(updated_card.observations, &(&1.taxon_key == "/ebird/v2024/comred"))
     end
 
+    test "toggling a checkbox does not crash when start time has seconds", %{
+      conn: conn,
+      card: card,
+      location1: location1
+    } do
+      {:ok, lv, _html} = live(conn, "/my/cards/#{card.id}/edit")
+
+      # An existing card's start_time renders with seconds in some browsers
+      # ("08:00:00"). A phx-change (e.g. a checkbox toggle) must not crash while
+      # parsing it back into a Time.
+      html =
+        lv
+        |> render_change("sync_card", %{
+          "card" => %{
+            "observ_date" => "2026-01-15",
+            "effort_type" => "STATIONARY",
+            "location_id" => to_string(location1.id),
+            "start_time" => "08:00:00",
+            "resolved" => "false"
+          }
+        })
+
+      assert html =~ "Edit Card"
+      assert has_element?(lv, "#card-form")
+    end
+
+    test "edit form shows start time as HH:MM in the time input", %{conn: conn, card: card} do
+      {:ok, lv, _html} = live(conn, "/my/cards/#{card.id}/edit")
+
+      assert has_element?(lv, ~s(input#card_start_time[type="time"][value="08:00"]))
+    end
+
     test "can edit existing observation", %{
       conn: conn,
       card: card,
