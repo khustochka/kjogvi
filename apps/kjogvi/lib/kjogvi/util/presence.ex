@@ -26,6 +26,14 @@ defmodule Kjogvi.Util.Presence do
   def present?(value) when is_binary(value), do: String.trim(value) != ""
   def present?(_), do: true
 
+  def presence(nil), do: nil
+
+  def presence(value) when is_binary(value) do
+    if present?(value), do: String.trim(value), else: nil
+  end
+
+  def presence(_), do: true
+
   @doc """
   ## Examples
     iex> Kjogvi.Util.Presence.blank?(nil)

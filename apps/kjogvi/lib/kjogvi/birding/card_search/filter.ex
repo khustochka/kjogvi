@@ -18,6 +18,8 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
 
   alias Kjogvi.Geo
 
+  alias Kjogvi.Util.Presence
+
   @type voice() :: :all | :seen | :heard_only
   @type t() :: %__MODULE__{}
 
@@ -118,13 +120,13 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
       date: parse_date(params["date"]),
       include_subregions: parse_flag(params["include_subregions"]),
       unresolved: parse_flag(params["unresolved"]),
-      taxon_key: presence(params["taxon_key"]),
+      taxon_key: Presence.presence(params["taxon_key"]),
       exclude_subspecies: parse_flag(params["exclude_subspecies"]),
       voice: parse_voice(params["voice"]),
       hidden: parse_flag(params["hidden"])
     }
 
-    {filter, presence(params["location_id"])}
+    {filter, Presence.presence(params["location_id"])}
   end
 
   defp put_present(map, _key, nil), do: map
@@ -134,10 +136,6 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
 
   defp put_flag(map, _key, false), do: map
   defp put_flag(map, key, true), do: Map.put(map, key, "true")
-
-  defp presence(nil), do: nil
-  defp presence(""), do: nil
-  defp presence(value) when is_binary(value), do: value
 
   defp parse_date(value) when value in [nil, ""], do: nil
 
