@@ -142,6 +142,13 @@ defmodule KjogviWeb.Live.My.Locations.Show do
               <.icon name="hero-trash" class="w-4 h-4" /> Delete
             </button>
           </div>
+          <p
+            :if={@location.import_source}
+            id="location-import-source"
+            class="mt-4 text-sm text-stone-400"
+          >
+            Imported from: {Kjogvi.Types.ImportSource.label(@location.import_source)}
+          </p>
         </div>
 
         <div id="location-stats" class="flex flex-wrap gap-2 mb-1">

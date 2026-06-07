@@ -67,6 +67,13 @@ defmodule KjogviWeb.Live.My.Cards.Show do
         <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           <p class="text-lg text-stone-600">{Geo.Location.long_name(@card.location)}</p>
           <span
+            :if={@card.import_source}
+            id="card-import-source"
+            class="text-sm text-stone-400"
+          >
+            Imported from: {Kjogvi.Types.ImportSource.label(@card.import_source)}
+          </span>
+          <span
             :if={not @card.resolved}
             id="card-unresolved"
             title="This card is marked unresolved and may still need amending"

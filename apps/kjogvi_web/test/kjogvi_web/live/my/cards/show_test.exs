@@ -98,6 +98,22 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
     refute has_element?(show_live, "#delete-card[phx-click]")
   end
 
+  test "shows an import source note when import_source is present", %{conn: conn, user: user} do
+    card = insert(:card, user: user, import_source: :ebird)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    assert has_element?(show_live, "#card-import-source", "Imported from: eBird")
+  end
+
+  test "shows no import source note when import_source is nil", %{conn: conn, user: user} do
+    card = insert(:card, user: user, import_source: nil)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    refute has_element?(show_live, "#card-import-source")
+  end
+
   test "does not render for wrong user", %{conn: conn} do
     card = insert(:card, user: user_fixture())
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")

@@ -8,4 +8,11 @@ defmodule Kjogvi.Types.ImportSourceTest do
       assert ImportSource.values() == [:ebird, :legacy]
     end
   end
+
+  describe "label/1" do
+    test "returns human-readable labels" do
+      assert ImportSource.label(:ebird) == "eBird"
+      assert ImportSource.label(:legacy) == "Legacy"
+    end
+  end
 end

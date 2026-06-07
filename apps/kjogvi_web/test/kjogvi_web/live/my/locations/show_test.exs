@@ -221,4 +221,20 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     assert has_element?(show_live, "#special-parent-badge-#{five_mr.id}", "5-Mile Radius")
     assert has_element?(show_live, "#special-parent-badge-#{arabat.id}", "Arabat Spit")
   end
+
+  test "shows an import source note when import_source is present", %{conn: conn} do
+    location = insert(:location, import_source: :legacy)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    assert has_element?(show_live, "#location-import-source", "Imported from: Legacy")
+  end
+
+  test "shows no import source note when import_source is nil", %{conn: conn} do
+    location = insert(:location, import_source: nil)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    refute has_element?(show_live, "#location-import-source")
+  end
 end
