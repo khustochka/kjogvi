@@ -22,6 +22,8 @@ defmodule Kjogvi.Birding.Observation do
     field :unreported, :boolean, default: false
     field :ebird_obs_id, :string
 
+    field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
+
     belongs_to :species_taxa_mapping, SpeciesTaxaMapping,
       foreign_key: :taxon_key,
       references: :taxon_key,

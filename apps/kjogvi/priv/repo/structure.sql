@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 5OGqEvhRisLeXIyYY8CrEmZJdEJJUmNZc8zdme01qhRZr4hxXrm9J6NiCbxUN1v
+\restrict vdTebDDLOqLZoVSS2bchQLtdk4BHiDTisK6XyeWRpHOpx8O50ZyxgoDPn1eJthX
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -63,7 +63,8 @@ CREATE TABLE public.cards (
     updated_at timestamp without time zone NOT NULL,
     user_id bigint NOT NULL,
     cached_year integer GENERATED ALWAYS AS (EXTRACT(year FROM observ_date)) STORED,
-    cached_month integer GENERATED ALWAYS AS (EXTRACT(month FROM observ_date)) STORED
+    cached_month integer GENERATED ALWAYS AS (EXTRACT(month FROM observ_date)) STORED,
+    import_source character varying(255)
 );
 
 
@@ -134,7 +135,8 @@ CREATE TABLE public.images (
     storage_backend character varying(255) DEFAULT 'local'::character varying NOT NULL,
     user_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    import_source character varying(255)
 );
 
 
@@ -178,7 +180,8 @@ CREATE TABLE public.locations (
     cached_city_id bigint,
     cached_subdivision_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    import_source character varying(255)
 );
 
 
@@ -217,7 +220,8 @@ CREATE TABLE public.observations (
     hidden boolean DEFAULT false NOT NULL,
     ebird_obs_id character varying(255),
     inserted_at timestamp without time zone,
-    updated_at timestamp without time zone
+    updated_at timestamp without time zone,
+    import_source character varying(255)
 );
 
 
@@ -891,7 +895,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 5OGqEvhRisLeXIyYY8CrEmZJdEJJUmNZc8zdme01qhRZr4hxXrm9J6NiCbxUN1v
+\unrestrict vdTebDDLOqLZoVSS2bchQLtdk4BHiDTisK6XyeWRpHOpx8O50ZyxgoDPn1eJthX
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -908,3 +912,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260509232720);
 INSERT INTO public."schema_migrations" (version) VALUES (20260603121159);
 INSERT INTO public."schema_migrations" (version) VALUES (20260603220042);
 INSERT INTO public."schema_migrations" (version) VALUES (20260606192436);
+INSERT INTO public."schema_migrations" (version) VALUES (20260607195437);

@@ -37,6 +37,9 @@ defmodule Kjogvi.Geo.Location do
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
+
+    field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
+
     belongs_to(:cached_public_location, Location)
 
     belongs_to(:cached_parent, Location)

@@ -39,6 +39,8 @@ defmodule Kjogvi.Birding.Card do
 
     field :ebird_id, :string
 
+    field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
+
     has_many(:observations, Kjogvi.Birding.Observation, on_replace: :delete)
     belongs_to(:user, Kjogvi.Users.User)
 

@@ -27,6 +27,8 @@ defmodule Kjogvi.Images.Image do
 
     field :file, Kjogvi.Images.Uploader.Type
 
+    field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
+
     belongs_to :user, Kjogvi.Users.User
 
     many_to_many :observations, Kjogvi.Birding.Observation,
