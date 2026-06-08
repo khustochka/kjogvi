@@ -19,7 +19,6 @@ defmodule OrnithoWeb.Live.Book.Show do
 
   @impl true
   def handle_params(params, _url, socket) do
-    # TODO: validate page number; redirect to default if number is 1
     page =
       Map.get(params, "page", "1")
       |> String.to_integer()
