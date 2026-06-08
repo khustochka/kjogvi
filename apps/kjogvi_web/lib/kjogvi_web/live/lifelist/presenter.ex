@@ -76,13 +76,8 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
     [:noindex]
   end
 
-  # Year lists - not indexed
-  def robots(%{year: year}) when not is_nil(year) do
-    nil
-  end
-
-  # Lifelist for diff locations and world are indexed (# TODO: only countries)
-  def robots(%{year: nil}) do
+  # Not country lists - not indexed
+  def robots(%{location: %{location_type: location_type}}) when location_type != "country" do
     nil
   end
 

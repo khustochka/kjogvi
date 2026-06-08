@@ -21,7 +21,6 @@ defmodule KjogviWeb.Router do
 
     plug :fetch_current_scope
 
-    # TODO: maybe include in :fetch_current_scope or only use plug for /
     Kjogvi.Config.with_single_user do
       plug :verify_main_user
     end

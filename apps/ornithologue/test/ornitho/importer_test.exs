@@ -35,9 +35,6 @@ defmodule Ornitho.ImporterTest do
 
       assert not is_nil(book)
       assert book.name == @importer.name()
-
-      # TODO: when upsert is implemented
-      # assert book.id == old_book.id
     end
 
     @importer Importer.Test.NoTaxa

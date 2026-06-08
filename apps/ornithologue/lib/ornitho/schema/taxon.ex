@@ -101,8 +101,12 @@ defmodule Ornitho.Schema.Taxon do
     |> changeset_common_process(attrs, :update)
   end
 
-  # TODO: sort order should be consequitive?
-  # TODO: parent_species should point to a species
+  # Two other validations are possible:
+  # * parent_species pointing to a species
+  # * sort_order being consecutive
+  #
+  # The benefit of this may be low, since taxa are created from prepared spreadsheets,
+  # where validity is expected.
   defp changeset_common_process(%Taxon{} = taxon, attrs, action) do
     taxon
     |> Ecto.Changeset.cast(attrs, saveable_fields(action))
