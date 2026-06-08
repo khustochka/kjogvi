@@ -1,5 +1,9 @@
 defmodule Kjogvi.Legacy.Import.CardsTest do
-  use Kjogvi.DataCase, async: true
+  # Not async: `Cards.import/3` calls `setval('cards_id_seq', ...)`, which is a
+  # non-transactional, database-global side effect that the SQL sandbox cannot
+  # roll back or isolate. Running concurrently with other tests that draw from
+  # the same sequence caused intermittent `cards_pkey` violations.
+  use Kjogvi.DataCase, async: false
 
   import Kjogvi.Factory
 

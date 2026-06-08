@@ -1,5 +1,8 @@
 defmodule Kjogvi.Legacy.Import.ObservationsTest do
-  use Kjogvi.DataCase, async: true
+  # Not async: `Observations.import/3` calls `setval('observations_id_seq', ...)`,
+  # a non-transactional, database-global side effect the SQL sandbox cannot
+  # roll back or isolate. See Kjogvi.Legacy.Import.CardsTest for details.
+  use Kjogvi.DataCase, async: false
 
   import Kjogvi.Factory
 
