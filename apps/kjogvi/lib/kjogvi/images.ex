@@ -283,6 +283,10 @@ defmodule Kjogvi.Images do
   """
   def url(image, version \\ :medium)
 
+  def url(%Image{file: nil, legacy_url: legacy_url}, _version) when not is_nil(legacy_url) do
+    legacy_url
+  end
+
   def url(%Image{file: nil}, _version), do: nil
 
   def url(%Image{} = image, version) do

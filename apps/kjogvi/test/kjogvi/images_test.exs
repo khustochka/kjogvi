@@ -145,6 +145,24 @@ defmodule Kjogvi.ImagesTest do
       assert Images.url(%Image{file: nil}) == nil
     end
 
+    test "returns the legacy URL when the image has no stored file but a legacy_url" do
+      legacy = "https://old.example.com/photos/pileated.jpg"
+      assert Images.url(%Image{file: nil, legacy_url: legacy}) == legacy
+    end
+
+    test "ignores the legacy URL for any requested version" do
+      legacy = "https://old.example.com/photos/pileated.jpg"
+      image = %Image{file: nil, legacy_url: legacy}
+      assert Images.url(image, :thumbnail) == legacy
+      assert Images.url(image, :original) == legacy
+    end
+
+    test "prefers the stored file over the legacy URL" do
+      user = UsersFixtures.user_fixture()
+      image = %{image_with_file(user, "s3_dev") | legacy_url: "https://old.example.com/x.jpg"}
+      assert Images.url(image) =~ "https://dev-bucket.s3.example.com/"
+    end
+
     test "builds an absolute URL against the image's own backend host" do
       user = UsersFixtures.user_fixture()
       url = Images.url(image_with_file(user, "s3_prod"), :medium)

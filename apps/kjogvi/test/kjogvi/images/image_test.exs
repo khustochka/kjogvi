@@ -4,6 +4,38 @@ defmodule Kjogvi.Images.ImageTest do
   alias Kjogvi.Birding.Observation
   alias Kjogvi.Images.Image
 
+  describe "legacy_changeset/2" do
+    @valid_attrs %{slug: "pileated", user_id: 1, legacy_url: "https://old.example.com/a.jpg"}
+
+    test "is valid with a legacy_url, slug and user" do
+      changeset = Image.legacy_changeset(%Image{}, @valid_attrs)
+      assert changeset.valid?
+    end
+
+    test "sets the storage backend to \"legacy\"" do
+      changeset = Image.legacy_changeset(%Image{}, @valid_attrs)
+      assert get_change(changeset, :storage_backend) == "legacy"
+    end
+
+    test "assigns a token" do
+      changeset = Image.legacy_changeset(%Image{}, @valid_attrs)
+      assert get_change(changeset, :token)
+    end
+
+    test "requires a legacy_url" do
+      changeset = Image.legacy_changeset(%Image{}, Map.delete(@valid_attrs, :legacy_url))
+      refute changeset.valid?
+      assert "can't be blank" in errors_on(changeset).legacy_url
+    end
+
+    test "does not cast a file" do
+      changeset =
+        Image.legacy_changeset(%Image{}, Map.put(@valid_attrs, :file, "anything"))
+
+      refute Map.has_key?(changeset.changes, :file)
+    end
+  end
+
   describe "observations_changeset/2" do
     test "accepts observations that share a card" do
       image = %Image{observations: []}

@@ -26,6 +26,7 @@ defmodule Kjogvi.Images.Image do
     field :storage_backend, :string, default: "local"
 
     field :file, Kjogvi.Images.Uploader.Type
+    field :legacy_url, :string
 
     field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
 
@@ -46,6 +47,21 @@ defmodule Kjogvi.Images.Image do
     # the storage path during attachment.
     |> ensure_token()
     |> cast_attachments(attrs, [:file])
+    |> default_validations()
+  end
+
+  @doc "Creates an image pointing to legacy URL"
+  def legacy_changeset(image, attrs) do
+    image
+    |> cast(attrs, [:slug, :title, :description, :sort_order, :user_id, :legacy_url])
+    |> put_change(:storage_backend, "legacy")
+    |> validate_required([:legacy_url])
+    |> default_validations()
+  end
+
+  defp default_validations(changeset) do
+    changeset
+    |> ensure_token()
     |> validate_required([:slug, :user_id, :storage_backend, :token])
     |> validate_length(:slug, min: 1, max: 255)
     |> validate_number(:sort_order, greater_than_or_equal_to: 0)
