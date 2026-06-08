@@ -6,24 +6,38 @@ defmodule Kjogvi.ImagesTest do
   alias Kjogvi.ImagesFixtures
   alias Kjogvi.UsersFixtures
 
-  describe "list_images/1" do
+  describe "list_images/2" do
+    @page %{page: 1, page_size: 20}
+
     test "returns only the given user's images" do
       user = UsersFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
       _other = ImagesFixtures.image_fixture(user: UsersFixtures.user_fixture())
 
-      assert [returned] = Images.list_images(user)
+      assert [returned] = Images.list_images(user, @page).entries
       assert returned.id == image.id
     end
 
-    test "orders by sort_order then id" do
+    test "orders by inserted_at descending (newest first)" do
       user = UsersFixtures.user_fixture()
-      img_b = ImagesFixtures.image_fixture(user: user, sort_order: 200)
-      img_a = ImagesFixtures.image_fixture(user: user, sort_order: 50)
-      img_c = ImagesFixtures.image_fixture(user: user, sort_order: 200)
+      older = ImagesFixtures.image_fixture(user: user)
+      newer = ImagesFixtures.image_fixture(user: user)
 
-      ids = Images.list_images(user) |> Enum.map(& &1.id)
-      assert ids == [img_a.id, img_b.id, img_c.id]
+      ids = Images.list_images(user, @page).entries |> Enum.map(& &1.id)
+      assert ids == [newer.id, older.id]
+    end
+
+    test "paginates the results" do
+      user = UsersFixtures.user_fixture()
+      for _ <- 1..3, do: ImagesFixtures.image_fixture(user: user)
+
+      page = Images.list_images(user, %{page: 1, page_size: 2})
+      assert length(page.entries) == 2
+      assert page.total_entries == 3
+      assert page.total_pages == 2
+
+      second = Images.list_images(user, %{page: 2, page_size: 2})
+      assert length(second.entries) == 1
     end
   end
 

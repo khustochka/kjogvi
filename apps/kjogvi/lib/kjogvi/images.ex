@@ -15,14 +15,14 @@ defmodule Kjogvi.Images do
   alias Kjogvi.Images.VixProcessor
 
   @doc """
-  Lists a user's images, ordered by `sort_order` then `id`.
+  Lists a user's images, newest first, as a paginated `Scrivener.Page`.
   """
-  def list_images(user) do
+  def list_images(user, %{page: page, page_size: page_size}) do
     Image
     |> where([i], i.user_id == ^user.id)
-    |> order_by([i], asc: i.sort_order, asc: i.id)
+    |> order_by([i], desc: i.inserted_at, desc: i.id)
     |> preload(:user)
-    |> Repo.all()
+    |> Repo.paginate(page: page, page_size: page_size)
   end
 
   @doc """

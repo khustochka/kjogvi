@@ -5,17 +5,37 @@ defmodule KjogviWeb.Live.My.Images.Index do
 
   use KjogviWeb, :live_view
 
+  import Scrivener.PhoenixView
+
   alias Kjogvi.Images
+
+  @images_per_page 20
 
   @impl true
   def mount(_params, _session, socket) do
-    images = Images.list_images(socket.assigns.current_scope.user)
-
     {:ok,
      socket
-     |> assign(:page_title, "Images")
-     |> assign(:image_count, length(images))
-     |> stream(:images, images)}
+     |> assign(:page_title, "Images")}
+  end
+
+  @impl true
+  @spec handle_params(map(), any(), map()) :: {:noreply, map()}
+  def handle_params(params, _uri, socket) do
+    page =
+      Map.get(params, "page", "1")
+      |> String.to_integer()
+
+    images =
+      Images.list_images(
+        socket.assigns.current_scope.user,
+        %{page: page, page_size: @images_per_page}
+      )
+
+    {:noreply,
+     socket
+     |> assign(:page, page)
+     |> assign(:image_count, length(images.entries))
+     |> assign(:images, images)}
   end
 
   @impl true
@@ -41,11 +61,10 @@ defmodule KjogviWeb.Live.My.Images.Index do
 
       <ul
         id="images-grid"
-        phx-update="stream"
         class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
         aria-label="Image gallery"
       >
-        <li :for={{dom_id, image} <- @streams.images} id={dom_id} class="group">
+        <li :for={image <- @images} id={"images-#{image.id}"} class="group">
           <.link navigate={~p"/my/images/#{image.id}"} class="block no-underline">
             <div class="aspect-square rounded-lg overflow-hidden bg-stone-100">
               <img
@@ -59,7 +78,20 @@ defmodule KjogviWeb.Live.My.Images.Index do
           </.link>
         </li>
       </ul>
+
+      <div class="mt-6">
+        {paginate(@socket, @images, paginated_images_path(), [:index], live: true)}
+      </div>
     </div>
     """
+  end
+
+  defp paginated_images_path() do
+    fn _conn, _action, page, _params ->
+      case page do
+        1 -> ~p"/my/images"
+        n -> ~p"/my/images/page/#{n}"
+      end
+    end
   end
 end

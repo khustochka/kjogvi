@@ -41,4 +41,37 @@ defmodule KjogviWeb.Live.My.Images.IndexTest do
 
     refute has_element?(live, "#images-#{other_image.id}")
   end
+
+  test "orders images newest first", %{conn: conn, user: user} do
+    older = ImagesFixtures.image_fixture(user: user)
+    newer = ImagesFixtures.image_fixture(user: user)
+
+    {:ok, _live, html} = live(conn, ~p"/my/images")
+
+    [first, second] =
+      Regex.scan(~r/id="images-(\d+)"/, html, capture: :all_but_first)
+      |> List.flatten()
+      |> Enum.map(&String.to_integer/1)
+
+    assert first == newer.id
+    assert second == older.id
+  end
+
+  test "renders pagination links when there is more than one page", %{conn: conn, user: user} do
+    for _ <- 1..21, do: ImagesFixtures.image_fixture(user: user)
+
+    {:ok, _live, html} = live(conn, ~p"/my/images")
+
+    assert html =~ "/my/images/page/2"
+  end
+
+  test "shows a later page at its own route", %{conn: conn, user: user} do
+    for _ <- 1..21, do: ImagesFixtures.image_fixture(user: user)
+
+    {:ok, live, _html} = live(conn, ~p"/my/images/page/2")
+
+    # 21 images at 20 per page leaves exactly one on page 2.
+    assert live |> element("#images-grid") |> render() =~ "images-"
+    assert length(Regex.scan(~r/id="images-\d+"/, render(live))) == 1
+  end
 end
