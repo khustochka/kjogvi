@@ -72,6 +72,9 @@ defmodule KjogviWeb.Live.My.Images.Form do
     # EXIF date can be read before save and so it survives until save; reused as
     # the file at save time.
     |> assign(:upload, nil)
+    # Metadata extracted from `:upload` once on progress, reused to prefill the
+    # observation date and passed to create/replace so the file isn't read again.
+    |> assign(:upload_extras, %{})
     |> assign(:selected_observation_ids, [])
     |> assign(:selected_observations, [])
     |> mount_action(socket.assigns.live_action, params)
@@ -268,7 +271,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
        |> assign(:uploaded?, true)
        |> assign(:client_name, entry.client_name)
        |> assign(:client_size, entry.client_size)
-       |> maybe_prefill_from_exif(entry, plug_upload)}
+       |> maybe_prefill_from_exif(entry)}
     else
       _ -> {:noreply, socket}
     end
@@ -283,21 +286,18 @@ defmodule KjogviWeb.Live.My.Images.Form do
   #   * The slug, from the file name — only on :new (on :edit the slug is the
   #     stored one and must not be clobbered by a replacement file's name). On
   #     :new the slug always tracks the latest file, including on a re-pick.
-  defp maybe_prefill_from_exif(socket, entry, plug_upload) do
+  defp maybe_prefill_from_exif(socket, entry) do
     socket
-    |> maybe_prefill_observation_date(plug_upload)
+    |> maybe_prefill_observation_date()
     |> maybe_prefill_slug(entry.client_name)
   end
 
-  defp maybe_prefill_observation_date(
-         %{assigns: %{selected_observation_ids: [_ | _]}} = socket,
-         _plug_upload
-       ) do
+  defp maybe_prefill_observation_date(%{assigns: %{selected_observation_ids: [_ | _]}} = socket) do
     socket
   end
 
-  defp maybe_prefill_observation_date(socket, plug_upload) do
-    assign(socket, :observation_date, observation_date(socket, plug_upload))
+  defp maybe_prefill_observation_date(socket) do
+    assign(socket, :observation_date, observation_date(socket))
   end
 
   defp maybe_prefill_slug(%{assigns: %{live_action: :new}} = socket, client_name) do
@@ -311,17 +311,22 @@ defmodule KjogviWeb.Live.My.Images.Form do
 
   defp maybe_prefill_slug(socket, _client_name), do: socket
 
-  # Prefer the uploaded file's EXIF capture date; fall back to the date the
-  # picker was already seeded with when the file carries no EXIF date.
-  defp observation_date(socket, plug_upload) do
-    Images.exif_date_from_upload(plug_upload) || socket.assigns.observation_date
+  # Prefer the uploaded file's EXIF capture date (from the metadata stashed on
+  # upload); fall back to the date the picker was already seeded with when the
+  # file carries no EXIF date.
+  defp observation_date(socket) do
+    Images.exif_date(socket.assigns.upload_extras) || socket.assigns.observation_date
   end
 
   # Replace any previously stashed upload, removing its temp file first so a
-  # re-pick doesn't leak the prior file.
+  # re-pick doesn't leak the prior file. Read the file's metadata once here so
+  # the date prefill and the eventual save both reuse it without re-reading.
   defp stash_upload(socket, plug_upload) do
     discard_stash(socket)
-    assign(socket, :upload, plug_upload)
+
+    socket
+    |> assign(:upload, plug_upload)
+    |> assign(:upload_extras, Images.extract_metadata(plug_upload))
   end
 
   # Remove the stashed temp file, if any.
@@ -370,7 +375,13 @@ defmodule KjogviWeb.Live.My.Images.Form do
   def handle_event("replace", _params, socket) do
     case socket.assigns.upload do
       %Plug.Upload{} = plug_upload ->
-        result = Images.replace_image_file(socket.assigns.image, %{"file" => plug_upload})
+        result =
+          Images.replace_image_file(
+            socket.assigns.image,
+            %{"file" => plug_upload},
+            socket.assigns.upload_extras
+          )
+
         discard_stash(socket)
 
         case result do
@@ -411,7 +422,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
         plug_upload = socket.assigns.upload
         attrs = Map.put(params, "file", plug_upload)
 
-        case Images.create_image(user, attrs) do
+        case Images.create_image(user, attrs, socket.assigns.upload_extras) do
           {:ok, image} ->
             case Images.attach_observations(image, socket.assigns.selected_observation_ids) do
               {:ok, _image} ->
@@ -471,7 +482,9 @@ defmodule KjogviWeb.Live.My.Images.Form do
   defp maybe_replace_then_navigate(socket, image) do
     case socket.assigns.upload do
       %Plug.Upload{} = plug_upload when socket.assigns.replacing? ->
-        result = Images.replace_image_file(image, %{"file" => plug_upload})
+        result =
+          Images.replace_image_file(image, %{"file" => plug_upload}, socket.assigns.upload_extras)
+
         discard_stash(socket)
 
         case result do

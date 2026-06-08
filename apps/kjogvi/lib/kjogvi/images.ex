@@ -57,13 +57,17 @@ defmodule Kjogvi.Images do
   are extracted from the uploaded file (before storage, so it works for any
   backend) and saved into `extras`.
 
+  Callers that already extracted the file's metadata (e.g. to seed a form on
+  upload) can pass it as `extras` to avoid re-reading the file; when omitted it
+  is extracted here.
+
   The file is stored to the configured backend as part of the insert. A storage
   failure (e.g. missing S3 credentials or no write permission) returns
   `{:error, :storage_failed}` so callers can show a generic message; validation
   failures still return `{:error, %Ecto.Changeset{}}`.
   """
-  def create_image(user, attrs) do
-    extras = extract_metadata(attrs["file"])
+  def create_image(user, attrs, extras \\ nil) do
+    extras = extras || extract_metadata(attrs["file"])
 
     attrs =
       attrs
@@ -103,14 +107,17 @@ defmodule Kjogvi.Images do
   place). Recorded URLs always point at the now-current `file`, so the orphaned
   objects are simply unreferenced; clean them up out of band if desired.
 
+  Callers that already extracted the file's metadata can pass it as `extras` to
+  avoid re-reading the file; when omitted it is extracted here.
+
   Like `create_image/2`, a storage failure returns `{:error, :storage_failed}`.
   """
-  def replace_image_file(%Image{} = image, attrs) do
+  def replace_image_file(%Image{} = image, attrs, extras \\ nil) do
     # The user carries the public_token segment of the storage path; the
     # uploader needs it as the waffle scope to store the new file.
     image = maybe_preload_user(image)
 
-    extras = extract_metadata(attrs["file"])
+    extras = extras || extract_metadata(attrs["file"])
 
     attrs = Map.put(attrs, "storage_backend", current_storage_backend())
 
@@ -333,30 +340,28 @@ defmodule Kjogvi.Images do
   end
 
   @doc """
-  EXIF capture date of an uploaded file as a `Date`, or `nil` when absent.
+  EXIF capture date as a `Date`, or `nil` when absent, from an extras map.
 
-  Reads the same metadata `create_image/2` extracts (via `VixProcessor`), but
-  exposes just the capture date for callers that need it before the image is
-  saved — e.g. to default the observation picker's search date on upload.
+  Lets callers that already have a file's extracted metadata (see
+  `extract_metadata/1`) read just the capture date — e.g. to default the
+  observation picker's search date on upload, without re-reading the file.
   """
-  def exif_date_from_upload(%Plug.Upload{} = upload) do
-    case extract_metadata(upload) do
-      %{"exif_date" => value} when is_binary(value) ->
-        case NaiveDateTime.from_iso8601(String.replace(value, " ", "T")) do
-          {:ok, naive} -> NaiveDateTime.to_date(naive)
-          _ -> nil
-        end
-
-      _ ->
-        nil
+  def exif_date(extras) do
+    case Image.exif_date(%Image{extras: extras}) do
+      %NaiveDateTime{} = naive -> NaiveDateTime.to_date(naive)
+      _ -> nil
     end
   end
 
-  def exif_date_from_upload(_), do: nil
+  @doc """
+  Extracts dimensions and EXIF metadata from a `%Plug.Upload{}`.
 
-  # Extract metadata from a Plug.Upload before the file is stored. Keys are
-  # stringified to match the jsonb column's round-trip representation.
-  defp extract_metadata(%Plug.Upload{path: path}) do
+  Reads the file via `VixProcessor` and returns a map with string keys matching
+  the `extras` jsonb column's round-trip representation; a non-upload (or a read
+  failure) yields `%{}`. Pass the result to `create_image/3` or
+  `replace_image_file/3` to avoid re-reading the file at save.
+  """
+  def extract_metadata(%Plug.Upload{path: path}) do
     case VixProcessor.extract_metadata(path) do
       {:ok, metadata} ->
         Map.new(metadata, fn {key, value} -> {to_string(key), value} end)
@@ -366,7 +371,7 @@ defmodule Kjogvi.Images do
     end
   end
 
-  defp extract_metadata(_), do: %{}
+  def extract_metadata(_), do: %{}
 
   defp load_observations(_user_id, []), do: []
 

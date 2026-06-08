@@ -263,6 +263,20 @@ defmodule Kjogvi.ImagesTest do
       assert replaced.extras["exif_date"] == "2021-07-15 09:30:00"
     end
 
+    test "uses passed-in extras instead of re-reading the file", %{image: image} do
+      extras = %{"width" => 1, "height" => 2, "exif_date" => "1999-12-31 00:00:00"}
+
+      assert {:ok, replaced} =
+               Images.replace_image_file(
+                 image,
+                 %{"file" => plug_upload("replacement.jpg")},
+                 extras
+               )
+
+      # The supplied extras are stored verbatim, not the actual file's metadata.
+      assert replaced.extras == extras
+    end
+
     test "leaves the previous stored objects in place", %{image: image} do
       original_path = stored_path(image, "original.jpg")
       assert File.exists?(original_path)
@@ -543,23 +557,35 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
-  describe "exif_date_from_upload/1" do
+  describe "extract_metadata/1" do
     @sample_image Path.expand(
                     Path.join([__DIR__, "..", "support", "fixtures", "files", "sample_bird.jpg"])
                   )
 
-    test "returns the capture date of an uploaded file" do
+    test "reads dimensions and EXIF date from an uploaded file" do
       upload = %Plug.Upload{
         path: @sample_image,
         filename: "sample_bird.jpg",
         content_type: "image/jpeg"
       }
 
-      assert Images.exif_date_from_upload(upload) == ~D[2021-07-15]
+      assert %{"width" => 60, "height" => 40, "exif_date" => "2021-07-15 09:30:00"} =
+               Images.extract_metadata(upload)
     end
 
-    test "returns nil for a non-upload" do
-      assert Images.exif_date_from_upload(nil) == nil
+    test "returns an empty map for a non-upload" do
+      assert Images.extract_metadata(nil) == %{}
+    end
+  end
+
+  describe "exif_date/1" do
+    test "returns the capture date from an extras map" do
+      assert Images.exif_date(%{"exif_date" => "2021-07-15 09:30:00"}) == ~D[2021-07-15]
+    end
+
+    test "returns nil when the extras map has no parseable date" do
+      assert Images.exif_date(%{}) == nil
+      assert Images.exif_date(%{"exif_date" => "not a date"}) == nil
     end
   end
 
