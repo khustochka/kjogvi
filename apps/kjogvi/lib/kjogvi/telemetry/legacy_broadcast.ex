@@ -13,23 +13,11 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         [:kjogvi, :legacy, :import, :cards, :progress],
         [:kjogvi, :legacy, :import, :observations, :start],
         [:kjogvi, :legacy, :import, :observations, :progress],
-        [:kjogvi, :legacy, :import, :observations, :after_import, :start],
-        [:kjogvi, :legacy, :import, :stop]
+        [:kjogvi, :legacy, :import, :observations, :after_import, :start]
       ],
       &__MODULE__.handle_event/4,
       nil
     )
-  end
-
-  # FIXME: Ideally lifecycle updates should be managed by processor. But how we deliver
-  # them to the caller?
-  def handle_event(
-        [:kjogvi, :legacy, :import, :stop] = _event,
-        _measurements,
-        %{broadcast_key: broadcast_key} = _metadata,
-        _config
-      ) do
-    broadcast(broadcast_key, %{message: "Legacy import done."})
   end
 
   def handle_event(

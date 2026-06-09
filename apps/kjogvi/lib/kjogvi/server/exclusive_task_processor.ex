@@ -41,6 +41,22 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   topic to receive live progress, and use `get_status/1,2` to fetch the current
   status on mount/reconnect.
 
+  ## Lifecycle events
+
+  In addition to the task-driven `:progress` updates, the processor itself
+  broadcasts lifecycle events to the same key topic as the tracked status
+  transitions:
+
+    * `{:lifecycle, :start, key, async_result}` — when a task is started
+    * `{:lifecycle, :ok, key, async_result}` — when it finishes `{:ok, _}`
+    * `{:lifecycle, :error, key, async_result}` — when it finishes `{:error, _}`,
+      returns a malformed result, or crashes
+
+  The `async_result` is the `AsyncResult` exactly as it is stored under the key,
+  so a subscriber can assign it directly without calling `get_status/1,2`. This
+  lets callers who subscribed to the topic learn about start/completion without
+  polling, complementing the mid-task `:progress` updates.
+
   ## Task contract
 
   The function passed to `start_task/3,4` receives the key and must return
@@ -105,12 +121,9 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
         %{ref: ref} =
           Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn -> func.(key) end)
 
-        put_ref(
-          state,
-          ref,
-          key,
-          AsyncResult.loading(%{message: start_message})
-        )
+        state
+        |> put_ref(ref, key, AsyncResult.loading(%{message: start_message}))
+        |> broadcast_lifecycle(:start, key)
       else
         state
       end
@@ -122,11 +135,11 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
 
   @impl true
   def handle_info({ref, {:ok, data}}, state) when is_reference(ref) do
-    {:noreply, finish_task(state, ref, &AsyncResult.ok(&1, data))}
+    {:noreply, finish_task(state, ref, :ok, &AsyncResult.ok(&1, data))}
   end
 
   def handle_info({ref, {:error, data}}, state) when is_reference(ref) do
-    {:noreply, finish_task(state, ref, &AsyncResult.failed(&1, data))}
+    {:noreply, finish_task(state, ref, :error, &AsyncResult.failed(&1, data))}
   end
 
   # A task ref carrying anything other than {:ok, _} / {:error, _} means `func`
@@ -139,15 +152,22 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     result: #{inspect(result)}. Task functions must return {:ok, data} or {:error, data}.
     """)
 
-    {:noreply, finish_task(state, ref, &AsyncResult.failed(&1, :malformed_result))}
+    {:noreply, finish_task(state, ref, :error, &AsyncResult.failed(&1, :malformed_result))}
   end
 
   def handle_info({:DOWN, ref, :process, _pid, reason}, state)
       when is_reference(ref) and reason != :normal do
-    {:noreply, finish_task(state, ref, &AsyncResult.failed(&1, reason))}
+    {:noreply, finish_task(state, ref, :error, &AsyncResult.failed(&1, reason))}
   end
 
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
+    {:noreply, state}
+  end
+
+  # The processor's own `:start` lifecycle broadcast is delivered back to it,
+  # since it is still subscribed to the key topic at that point. It's purely for
+  # external subscribers, so the processor ignores it.
+  def handle_info({:lifecycle, _event, _key, _async_result}, state) do
     {:noreply, state}
   end
 
@@ -174,12 +194,17 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   # it, so the topic is always derived from the real key rather than `nil`.
   # `Process.demonitor(ref, [:flush])` is safe even when the monitor already
   # fired (the `:DOWN` clause), so all clauses can share this path.
-  defp finish_task(state, ref, fun) do
+  defp finish_task(state, ref, event, fun) do
+    key = Map.fetch!(state.refs, ref)
+
     Process.demonitor(ref, [:flush])
-    Phoenix.PubSub.unsubscribe(Kjogvi.PubSub, PubSubTopic.for_key(Map.fetch!(state.refs, ref)))
+    Phoenix.PubSub.unsubscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
 
     # Drops the ref pointing to task signature, but the task signature -> result stays.
-    state |> update_ref(ref, fun) |> drop_ref(ref)
+    state
+    |> update_ref(ref, fun)
+    |> drop_ref(ref)
+    |> broadcast_lifecycle(event, key)
   end
 
   # Registers a freshly started task: remember which key the ref belongs to
@@ -201,5 +226,18 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   # Forgets a finished task's ref so it doesn't leak. The status stays in place.
   defp drop_ref(%{refs: refs} = state, ref) do
     %{state | refs: Map.delete(refs, ref)}
+  end
+
+  # Announces a status transition on the key's topic, carrying the `AsyncResult`
+  # exactly as stored, so subscribers can assign it without calling get_status/2.
+  # Returns the state unchanged for pipelining.
+  defp broadcast_lifecycle(%{statuses: statuses} = state, event, key) do
+    Phoenix.PubSub.broadcast(
+      Kjogvi.PubSub,
+      PubSubTopic.for_key(key),
+      {:lifecycle, event, key, Map.fetch!(statuses, key)}
+    )
+
+    state
   end
 end

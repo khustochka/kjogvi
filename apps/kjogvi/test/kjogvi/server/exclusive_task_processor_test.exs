@@ -177,4 +177,56 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
       assert Processor.get_status(key, server: server) == %AsyncResult{}
     end
   end
+
+  describe "lifecycle events" do
+    # A subscriber to the key topic learns about start/completion without polling.
+    # The processor broadcasts the AsyncResult exactly as stored, so the event
+    # payload matches what get_status/2 would return.
+    setup %{server: server} do
+      key = {:job, 1}
+      Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
+      %{server: server, key: key}
+    end
+
+    test "broadcasts :start with the loading status", %{server: server, key: key} do
+      Processor.start_task(key, blocking_task(self(), {:ok, :done}),
+        server: server,
+        message: "warming up"
+      )
+
+      assert_receive {:lifecycle, :start, ^key, %AsyncResult{loading: %{message: "warming up"}}}
+    end
+
+    test "broadcasts :ok with the successful result", %{server: server, key: key} do
+      Processor.start_task(key, fn _key -> {:ok, :done} end, server: server)
+
+      assert_receive {:lifecycle, :ok, ^key, %AsyncResult{ok?: true, result: :done}}
+    end
+
+    test "broadcasts :error for an {:error, _} result", %{server: server, key: key} do
+      Processor.start_task(key, fn _key -> {:error, :nope} end, server: server)
+
+      assert_receive {:lifecycle, :error, ^key, %AsyncResult{failed: :nope}}
+    end
+
+    test "broadcasts :error when the task crashes", %{server: server, key: key} do
+      capture_log(fn ->
+        Processor.start_task(key, fn _key -> raise "boom" end, server: server)
+
+        assert_receive {:lifecycle, :error, ^key, %AsyncResult{failed: failed}}
+        assert {%RuntimeError{message: "boom"}, _stacktrace} = failed
+      end)
+    end
+
+    test "does not broadcast a second :start while a task is loading", %{server: server, key: key} do
+      Processor.start_task(key, blocking_task(self(), {:ok, :first}), server: server)
+      assert_receive {:lifecycle, :start, ^key, _}
+      assert_receive {:task_started, first_pid}
+
+      Processor.start_task(key, blocking_task(self(), {:ok, :second}), server: server)
+      refute_receive {:lifecycle, :start, ^key, _}, 50
+
+      release(first_pid)
+    end
+  end
 end

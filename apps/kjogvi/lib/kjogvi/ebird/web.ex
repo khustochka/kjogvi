@@ -23,13 +23,9 @@ defmodule Kjogvi.Ebird.Web do
       with {:ok, checklists} <- Client.preload_checklists(user.extras.ebird, opts) do
         broadcast_progress(broadcast_key, %{message: "Finding new checklists..."})
 
+        # The "done" message is surfaced by the processor's :ok lifecycle event,
+        # which carries the result list, so no completion progress is broadcast here.
         {:ok, Birding.find_new_checklists(user, checklists)}
-        |> tap(fn {:ok, checklists} ->
-          broadcast_progress(
-            broadcast_key,
-            %{message: "eBird preload done: #{length(checklists)} new checklists."}
-          )
-        end)
       end
     else
       {:error, %{message: "User does not have eBird configuration."}}

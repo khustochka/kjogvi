@@ -18,8 +18,18 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
   defp handle_progress({:progress, {:legacy_import, _user_id}, status}, socket) do
     send_update(__MODULE__,
       id: @component_id,
-      status: :progress,
       async_result: AsyncResult.loading(status)
+    )
+
+    {:halt, socket}
+  end
+
+  # Lifecycle events (:start / :ok / :error) carry the AsyncResult exactly as the
+  # processor stores it, so it can be assigned as-is.
+  defp handle_progress({:lifecycle, _event, {:legacy_import, _user_id}, async_result}, socket) do
+    send_update(__MODULE__,
+      id: @component_id,
+      async_result: async_result
     )
 
     {:halt, socket}
@@ -49,7 +59,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     }
   end
 
-  def update(%{status: :progress, async_result: async_result}, socket) do
+  def update(%{async_result: async_result}, socket) do
     {:ok,
      socket
      |> clear_flash()

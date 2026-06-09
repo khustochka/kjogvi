@@ -21,8 +21,20 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   defp handle_progress({:progress, {:ebird_preload, _user_id}, status}, socket) do
     send_update(__MODULE__,
       id: @component_id,
-      status: :progress,
       async_result: AsyncResult.loading(status)
+    )
+
+    {:halt, socket}
+  end
+
+  # Lifecycle events (:start / :ok / :error) carry the AsyncResult exactly as the
+  # processor stores it, so it can be assigned as-is. The tagged event lets the
+  # component persist the freshly preloaded checklists once the task succeeds.
+  defp handle_progress({:lifecycle, event, {:ebird_preload, _user_id}, async_result}, socket) do
+    send_update(__MODULE__,
+      id: @component_id,
+      lifecycle: event,
+      async_result: async_result
     )
 
     {:halt, socket}
@@ -53,34 +65,23 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     }
   end
 
-  # def update(%{status: :ok, data: ebird_checklists}, socket) do
-  #   Store.ChecklistPreload.store_checklists(socket.assigns.user, ebird_checklists)
+  # On success the task's result is the list of newly preloaded checklists.
+  # Persist them and refresh the displayed preload data, then surface a count in
+  # the flash via an AsyncResult carrying a message.
+  def update(%{lifecycle: :ok, async_result: async_result}, %{assigns: %{user: user}} = socket) do
+    checklists = async_result.result
+    Store.ChecklistPreload.store_checklists(user, checklists)
 
-  #   result = "eBird preload done: #{length(ebird_checklists)} new checklists."
+    message = "eBird preload done: #{length(checklists)} new checklists."
 
-  #   {:ok,
-  #    socket
-  #    |> assign_preloads_data()
-  #    |> clear_flash()
-  #    |> put_flash(:info, result)
-  #    |> assign(:async_result, AsyncResult.ok(result))}
-  # end
+    {:ok,
+     socket
+     |> assign(:async_result, AsyncResult.ok(async_result, %{message: message}))
+     |> assign_preloads_data()
+     |> derive_flash()}
+  end
 
-  # def update(%{status: :error, data: data}, %{assigns: assigns} = socket) do
-  #   data =
-  #     case data do
-  #       message when is_binary(message) -> %{message: message}
-  #       _ -> data
-  #     end
-
-  #   {:ok,
-  #    socket
-  #    |> clear_flash()
-  #    |> put_flash(:error, "eBird preload failed: " <> data.message)
-  #    |> assign(:async_result, AsyncResult.failed(assigns.async_result, data.message))}
-  # end
-
-  def update(%{status: :progress, async_result: async_result}, socket) do
+  def update(%{async_result: async_result}, socket) do
     {:ok,
      socket
      |> clear_flash()
