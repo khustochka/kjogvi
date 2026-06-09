@@ -2,6 +2,7 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
   @moduledoc false
 
   alias Kjogvi.Legacy.Import
+  alias Kjogvi.Util.AsyncResult
 
   def setup do
     :telemetry.attach_many(
@@ -23,62 +24,76 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
     )
   end
 
+  # FIXME: Ideally lifecycle updates should be managed by processor. But how we deliver
+  # them to the caller?
   def handle_event(
         [:kjogvi, :legacy, :import, :stop] = _event,
         _measurements,
-        %{import_id: import_id} = _metadata,
+        %{broadcast_key: broadcast_key} = _metadata,
         _config
       ) do
-    Import.PubSub.broadcast(import_id, "Legacy import done.")
+    Import.PubSub.broadcast(broadcast_key, AsyncResult.ok(%{message: "Legacy import done."}))
   end
 
   def handle_event(
         [:kjogvi, :legacy, :import, :prepare, :start] = _event,
         _measurements,
-        %{import_id: import_id} = _metadata,
+        %{broadcast_key: broadcast_key} = _metadata,
         _config
       ) do
-    Import.PubSub.broadcast(import_id, "Preparing legacy import...")
+    Import.PubSub.broadcast(
+      broadcast_key,
+      AsyncResult.loading(%{message: "Preparing legacy import..."})
+    )
   end
 
   def handle_event(
         [:kjogvi, :legacy, :import, object_type, :start] = _event,
         _measurements,
-        %{import_id: import_id} = _metadata,
+        %{broadcast_key: broadcast_key} = _metadata,
         _config
       )
       when object_type in [:locations, :cards, :observations] do
-    Import.PubSub.broadcast(import_id, "Importing #{Atom.to_string(object_type)}...")
+    Import.PubSub.broadcast(
+      broadcast_key,
+      AsyncResult.loading(%{message: "Importing #{Atom.to_string(object_type)}..."})
+    )
   end
 
   def handle_event(
         [:kjogvi, :legacy, :import, :locations, :after_import, :start] = _event,
         _measurements,
-        %{import_id: import_id} = _metadata,
+        %{broadcast_key: broadcast_key} = _metadata,
         _config
       ) do
-    Import.PubSub.broadcast(import_id, "Caching public locations...")
+    Import.PubSub.broadcast(
+      broadcast_key,
+      AsyncResult.loading(%{message: "Caching public locations..."})
+    )
   end
 
   def handle_event(
         [:kjogvi, :legacy, :import, :observations, :after_import, :start] = _event,
         _measurements,
-        %{import_id: import_id} = _metadata,
+        %{broadcast_key: broadcast_key} = _metadata,
         _config
       ) do
-    Import.PubSub.broadcast(import_id, "Promoting observation species...")
+    Import.PubSub.broadcast(
+      broadcast_key,
+      AsyncResult.loading(%{message: "Promoting observation species..."})
+    )
   end
 
   def handle_event(
         [:kjogvi, :legacy, :import, object_type, :progress] = _event,
         %{count: count} = _measurements,
-        %{import_id: import_id} = _metadata,
+        %{broadcast_key: broadcast_key} = _metadata,
         _config
       )
       when object_type in [:locations, :cards, :observations] do
     Import.PubSub.broadcast(
-      import_id,
-      "Importing #{Atom.to_string(object_type)}... #{count}"
+      broadcast_key,
+      AsyncResult.loading(%{message: "Importing #{Atom.to_string(object_type)}... #{count}"})
     )
   end
 end

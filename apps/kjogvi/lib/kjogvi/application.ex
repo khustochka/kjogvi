@@ -17,7 +17,7 @@ defmodule Kjogvi.Application do
       {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Kjogvi.PubSub},
       {Task.Supervisor, name: Kjogvi.TaskSupervisor},
-      Kjogvi.Server.SingletonTaskProcessor,
+      Kjogvi.Server.ExclusiveTaskProcessor
       # Start a worker by calling: Kjogvi.Worker.start_link(arg)
       # {Kjogvi.Worker, arg}
     ]

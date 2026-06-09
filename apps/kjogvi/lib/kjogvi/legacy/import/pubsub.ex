@@ -7,19 +7,11 @@ defmodule Kjogvi.Legacy.Import.PubSub do
     :ok
   end
 
-  def broadcast(import_id, message) do
+  def broadcast(broadcast_key, data) do
     Phoenix.PubSub.broadcast(
       Kjogvi.PubSub,
-      progress_key(import_id),
-      {:legacy_import_progress, %{message: message}}
+      Kjogvi.Util.PubSubTopic.for_key(broadcast_key),
+      {:progress, broadcast_key, data}
     )
-  end
-
-  def subscribe(import_id) do
-    Phoenix.PubSub.subscribe(Kjogvi.PubSub, progress_key(import_id))
-  end
-
-  defp progress_key(import_id) do
-    "legacy.import:progress:#{import_id}"
   end
 end

@@ -124,6 +124,7 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   defp telemetry_metadata(opts) do
-    %{adapter: adapter(), user_id: opts[:user].id, import_id: opts[:import_id]}
+    broadcast_key = opts[:broadcast_key] || "legacy_import:#{opts[:user].id}"
+    %{adapter: adapter(), user_id: opts[:user].id, broadcast_key: broadcast_key}
   end
 end
