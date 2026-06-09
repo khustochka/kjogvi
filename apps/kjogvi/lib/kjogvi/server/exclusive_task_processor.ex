@@ -114,20 +114,11 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
 
   @impl true
   def handle_info({ref, {:ok, data}}, state) when is_reference(ref) do
-    # The task ended; we no longer need to monitor it.
-    Process.demonitor(ref, [:flush])
-    Phoenix.PubSub.unsubscribe(Kjogvi.PubSub, PubSubTopic.for_key(state.refs[ref]))
-
-    # Drops the ref pointing to task signature, but the task signature -> result stays.
-    {:noreply, state |> update_ref(ref, &AsyncResult.ok(&1, data)) |> drop_ref(ref)}
+    {:noreply, finish_task(state, ref, &AsyncResult.ok(&1, data))}
   end
 
   def handle_info({ref, {:error, data}}, state) when is_reference(ref) do
-    # The task ended; we no longer need to monitor it.
-    Process.demonitor(ref, [:flush])
-
-    # Drops the ref pointing to task signature, but the task signature -> result stays.
-    {:noreply, state |> update_ref(ref, &AsyncResult.failed(&1, data)) |> drop_ref(ref)}
+    {:noreply, finish_task(state, ref, &AsyncResult.failed(&1, data))}
   end
 
   # A task ref carrying anything other than {:ok, _} / {:error, _} means `func`
@@ -135,22 +126,17 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   # on loading) and log it for the admin to investigate.
   def handle_info({ref, result}, %{refs: refs} = state)
       when is_reference(ref) and is_map_key(refs, ref) do
-    Process.demonitor(ref, [:flush])
-    Phoenix.PubSub.unsubscribe(Kjogvi.PubSub, PubSubTopic.for_key(state.refs[ref]))
-
     Logger.error("""
     #{inspect(__MODULE__)}: task #{inspect(Map.get(refs, ref))} returned a malformed \
     result: #{inspect(result)}. Task functions must return {:ok, data} or {:error, data}.
     """)
 
-    {:noreply,
-     state |> update_ref(ref, &AsyncResult.failed(&1, :malformed_result)) |> drop_ref(ref)}
+    {:noreply, finish_task(state, ref, &AsyncResult.failed(&1, :malformed_result))}
   end
 
   def handle_info({:DOWN, ref, :process, _pid, reason}, state)
       when is_reference(ref) and reason != :normal do
-    Phoenix.PubSub.unsubscribe(Kjogvi.PubSub, PubSubTopic.for_key(state.refs[ref]))
-    {:noreply, state |> update_ref(ref, &AsyncResult.failed(&1, reason)) |> drop_ref(ref)}
+    {:noreply, finish_task(state, ref, &AsyncResult.failed(&1, reason))}
   end
 
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
@@ -166,6 +152,20 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     else
       {:noreply, state}
     end
+  end
+
+  # Teardown shared by every terminal clause: stop monitoring the task, drop its
+  # PubSub subscription, transition its status via `fun`, and forget the ref. The
+  # key is looked up (via `update_ref`/`unsubscribe`) before `drop_ref` removes
+  # it, so the topic is always derived from the real key rather than `nil`.
+  # `Process.demonitor(ref, [:flush])` is safe even when the monitor already
+  # fired (the `:DOWN` clause), so all clauses can share this path.
+  defp finish_task(state, ref, fun) do
+    Process.demonitor(ref, [:flush])
+    Phoenix.PubSub.unsubscribe(Kjogvi.PubSub, PubSubTopic.for_key(Map.fetch!(state.refs, ref)))
+
+    # Drops the ref pointing to task signature, but the task signature -> result stays.
+    state |> update_ref(ref, fun) |> drop_ref(ref)
   end
 
   # Registers a freshly started task: remember which key the ref belongs to
