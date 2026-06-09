@@ -361,7 +361,7 @@ defmodule Kjogvi.Images do
   failure) yields `%{}`. Pass the result to `create_image/3` or
   `replace_image_file/3` to avoid re-reading the file at save.
   """
-  def extract_metadata(%Plug.Upload{path: path}) do
+  def extract_metadata(%{path: path}) do
     case VixProcessor.extract_metadata(path) do
       {:ok, metadata} ->
         Map.new(metadata, fn {key, value} -> {to_string(key), value} end)

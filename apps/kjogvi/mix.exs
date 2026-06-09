@@ -61,7 +61,6 @@ defmodule Kjogvi.MixProject do
       {:ecto_psql_extras, "~> 0.8"},
       {:postgrex, "~> 0.22"},
       {:cachex, "~> 4.0"},
-      {:plug, "~> 1.19"},
       # Fork of waffle that makes hackney optional.
       {:waffle, github: "khustochka/waffle", branch: "hackney-optional", override: true},
       {:waffle_ecto, "~> 0.0.12"},
@@ -91,7 +90,8 @@ defmodule Kjogvi.MixProject do
       # For Livebook
       {:vega_lite, "~> 0.1.6", only: [:dev]},
       {:kino_vega_lite, "~> 0.1.11", only: [:dev]},
-      {:random_colour, "~> 0.1.0", only: [:dev]}
+      {:random_colour, "~> 0.1.0", only: [:dev]},
+      {:plug, "~> 1.19", only: [:test]}
     ]
   end
 
