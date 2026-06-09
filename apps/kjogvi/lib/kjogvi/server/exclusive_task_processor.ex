@@ -15,10 +15,10 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
 
   ## One task per key
 
-  `start_task/3` is a no-op when a task for the same key is already loading, so
+  `start_task/3,4` is a no-op when a task for the same key is already loading, so
   concurrent or repeated requests (e.g. impatient double-clicks) cannot spawn a
   second run for that key. Once a task finishes, its status is retained under the
-  key while the internal ref bookkeeping is dropped, so a later `start_task/3`
+  key while the internal ref bookkeeping is dropped, so a later `start_task/3,4`
   for that key starts fresh.
 
   ## Shared, observable status
@@ -26,7 +26,7 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   Because the status lives in the processor rather than in any one caller, it
   outlives the process that started the task. This lets a newly mounted LiveView
   or component — opened in another tab, after a reconnect, or by a different part
-  of the UI — call `get_status/1` and immediately see that the task is already
+  of the UI — call `get_status/1,2` and immediately see that the task is already
   running (or that it has finished, with its result/error), instead of offering
   to start it again. Combined with progress updates below, the new client also
   follows the rest of the task to completion.
@@ -38,12 +38,12 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   `AsyncResult`s by broadcasting `{:progress, key, async_result}`. These updates
   are merged into the tracked status. The `:progress` tag keeps them distinct
   from the internal task-result messages. Callers typically subscribe to the same
-  topic to receive live progress, and use `get_status/1` to fetch the current
+  topic to receive live progress, and use `get_status/1,2` to fetch the current
   status on mount/reconnect.
 
   ## Task contract
 
-  The function passed to `start_task/3` receives the key and must return
+  The function passed to `start_task/3,4` receives the key and must return
   `{:ok, data}` or `{:error, data}`. Any other return value is treated as a
   failure (with reason `:malformed_result`) and logged, so a misbehaving task
   never leaves a status stuck in the loading state. Task crashes are caught via
@@ -57,7 +57,8 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   alias Kjogvi.Util.PubSubTopic
 
   def start_link(init_arg \\ []) do
-    GenServer.start_link(__MODULE__, init_arg, name: __MODULE__)
+    {name, init_arg} = Keyword.pop(init_arg, :name, __MODULE__)
+    GenServer.start_link(__MODULE__, init_arg, name: name)
   end
 
   @impl true
@@ -66,14 +67,21 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   end
 
   # API
+  #
+  # `opts` accepts `:server` (defaults to the singleton named process started by
+  # the application supervisor; tests pass their own isolated instance) and
+  # `:message` (the initial loading status, shown until the task reports otherwise).
 
-  def get_status(key) do
-    GenServer.call(__MODULE__, {:get_status, key})
+  def get_status(key, opts \\ []) do
+    GenServer.call(server(opts), {:get_status, key})
   end
 
-  def start_task(key, start_message \\ "In progress...", func) do
-    GenServer.cast(__MODULE__, {:start_task, key, start_message, func})
+  def start_task(key, func, opts \\ []) when is_function(func, 1) do
+    message = Keyword.get(opts, :message, "In progress...")
+    GenServer.cast(server(opts), {:start_task, key, message, func})
   end
+
+  defp server(opts), do: Keyword.get(opts, :server, __MODULE__)
 
   # Callbacks
 

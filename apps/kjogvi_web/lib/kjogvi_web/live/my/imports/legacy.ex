@@ -61,10 +61,10 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
   defp start_import(%{assigns: %{user: user}} = socket) do
     Kjogvi.Server.ExclusiveTaskProcessor.start_task(
       {:legacy_import, user.id},
-      "Legacy import in progress...",
       fn key ->
         Kjogvi.Legacy.Import.run(user, broadcast_key: key)
-      end
+      end,
+      message: "Legacy import in progress..."
     )
 
     socket
