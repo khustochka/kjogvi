@@ -15,8 +15,13 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     {:cont, attach_hook(socket, :legacy_import_progress, :handle_info, &handle_progress/2)}
   end
 
-  defp handle_progress({:progress, {:legacy_import, _user_id}, async_result}, socket) do
-    send_update(__MODULE__, id: @component_id, status: :progress, async_result: async_result)
+  defp handle_progress({:progress, {:legacy_import, _user_id}, status}, socket) do
+    send_update(__MODULE__,
+      id: @component_id,
+      status: :progress,
+      async_result: AsyncResult.loading(status)
+    )
+
     {:halt, socket}
   end
 

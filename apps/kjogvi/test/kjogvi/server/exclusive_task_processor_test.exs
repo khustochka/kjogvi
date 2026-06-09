@@ -151,7 +151,7 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
   end
 
   describe "progress updates over PubSub" do
-    test "merges a broadcast progress AsyncResult into the tracked status", %{server: server} do
+    test "merges a broadcast progress status into the tracked status", %{server: server} do
       key = {:job, 1}
 
       Processor.start_task(key, blocking_task(self(), {:ok, :done}), server: server)
@@ -160,7 +160,7 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
       Phoenix.PubSub.broadcast(
         Kjogvi.PubSub,
         PubSubTopic.for_key(key),
-        {:progress, key, AsyncResult.loading(%{message: "halfway"})}
+        {:progress, key, %{message: "halfway"}}
       )
 
       assert await_status(server, key, &(&1.loading == %{message: "halfway"}))
@@ -172,7 +172,7 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
     test "ignores progress for a key that is not being tracked", %{server: server} do
       key = {:untracked, 1}
 
-      send(server, {:progress, key, AsyncResult.loading(%{message: "ghost"})})
+      send(server, {:progress, key, %{message: "ghost"}})
 
       assert Processor.get_status(key, server: server) == %AsyncResult{}
     end

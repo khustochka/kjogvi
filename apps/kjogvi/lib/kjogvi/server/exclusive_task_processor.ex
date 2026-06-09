@@ -154,9 +154,15 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   # Progress updates broadcast by a running task on its key's topic. Tagged with
   # `:progress` so they can't be confused with task-result messages (which are
   # plain `{ref, _}` tuples). Ignored for keys we aren't currently tracking.
-  def handle_info({:progress, key, async_result}, state) do
-    if Map.has_key?(state.statuses, key) do
-      {:noreply, %{state | statuses: Map.put(state.statuses, key, async_result)}}
+  def handle_info({:progress, key, status}, state) do
+    current_result = Map.get(state.statuses, key)
+
+    if current_result do
+      {:noreply,
+       %{
+         state
+         | statuses: Map.put(state.statuses, key, AsyncResult.loading(current_result, status))
+       }}
     else
       {:noreply, state}
     end

@@ -34,11 +34,14 @@ defmodule Kjogvi.Ebird.Web.Client do
   @spec preload_checklists(Login.credentials(), integer(), integer(), keyword()) ::
           Types.result([Checklist.Meta.t()])
   def preload_checklists(credentials, count \\ 100, start \\ 1, opts) do
-    with _ <- Ebird.Web.broadcast_progress(opts[:import_id], "Logging in..."),
+    broadcast_key = opts[:broadcast_key]
+
+    with _ <- Ebird.Web.broadcast_progress(broadcast_key, %{message: "Logging in..."}),
          {:ok, cookie_jar} <- Login.login(credentials),
-         _ <- Ebird.Web.broadcast_progress(opts[:import_id], "Finding the latest checklist..."),
+         _ <-
+           Ebird.Web.broadcast_progress(broadcast_key, %{message: "Fetching latest checklists..."}),
          {:ok, resp} <- fetch_checklists_page(cookie_jar, start, count) do
-      Ebird.Web.broadcast_progress(opts[:import_id], "Fetching the latest checklist...")
+      Ebird.Web.broadcast_progress(broadcast_key, %{message: "Extracting..."})
       extract_checklists(resp)
     end
   end

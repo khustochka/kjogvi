@@ -5,7 +5,10 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
 
   use KjogviWeb, :live_component
 
-  alias Phoenix.LiveView.AsyncResult
+  alias Kjogvi.Util.AsyncResult
+  alias Kjogvi.Util.PubSubTopic
+  alias Kjogvi.Server.ExclusiveTaskProcessor
+
   alias Kjogvi.Ebird
   alias Kjogvi.Store
 
@@ -15,8 +18,13 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     {:cont, attach_hook(socket, :ebird_import_progress, :handle_info, &handle_progress/2)}
   end
 
-  defp handle_progress({:ebird_preload_progress, data}, socket) do
-    send_update(__MODULE__, id: @component_id, status: :progress, data: data)
+  defp handle_progress({:progress, {:ebird_preload, _user_id}, status}, socket) do
+    send_update(__MODULE__,
+      id: @component_id,
+      status: :progress,
+      async_result: AsyncResult.loading(status)
+    )
+
     {:halt, socket}
   end
 
@@ -31,46 +39,53 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   end
 
   def update(%{user: user}, socket) do
+    # FIXME: do not run on re-render
+    Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key({:ebird_preload, user.id}))
+    current_status = ExclusiveTaskProcessor.get_status({:ebird_preload, user.id})
+
     {
       :ok,
       socket
       |> assign(:user, user)
       |> assign_preloads_data()
+      |> assign(:async_result, current_status)
+      |> derive_flash()
     }
   end
 
-  def update(%{status: :ok, data: ebird_checklists}, socket) do
-    Store.ChecklistPreload.store_checklists(socket.assigns.user, ebird_checklists)
+  # def update(%{status: :ok, data: ebird_checklists}, socket) do
+  #   Store.ChecklistPreload.store_checklists(socket.assigns.user, ebird_checklists)
 
-    result = "eBird preload done: #{length(ebird_checklists)} new checklists."
+  #   result = "eBird preload done: #{length(ebird_checklists)} new checklists."
 
+  #   {:ok,
+  #    socket
+  #    |> assign_preloads_data()
+  #    |> clear_flash()
+  #    |> put_flash(:info, result)
+  #    |> assign(:async_result, AsyncResult.ok(result))}
+  # end
+
+  # def update(%{status: :error, data: data}, %{assigns: assigns} = socket) do
+  #   data =
+  #     case data do
+  #       message when is_binary(message) -> %{message: message}
+  #       _ -> data
+  #     end
+
+  #   {:ok,
+  #    socket
+  #    |> clear_flash()
+  #    |> put_flash(:error, "eBird preload failed: " <> data.message)
+  #    |> assign(:async_result, AsyncResult.failed(assigns.async_result, data.message))}
+  # end
+
+  def update(%{status: :progress, async_result: async_result}, socket) do
     {:ok,
      socket
-     |> assign_preloads_data()
      |> clear_flash()
-     |> put_flash(:info, result)
-     |> assign(:async_result, AsyncResult.ok(result))}
-  end
-
-  def update(%{status: :error, data: data}, %{assigns: assigns} = socket) do
-    data =
-      case data do
-        message when is_binary(message) -> %{message: message}
-        _ -> data
-      end
-
-    {:ok,
-     socket
-     |> clear_flash()
-     |> put_flash(:error, "eBird preload failed: " <> data.message)
-     |> assign(:async_result, AsyncResult.failed(assigns.async_result, data.message))}
-  end
-
-  def update(%{status: :progress, data: data}, socket) do
-    {:ok,
-     socket
-     |> clear_flash()
-     |> put_flash(:info, data.message)}
+     |> assign(:async_result, async_result)
+     |> derive_flash()}
   end
 
   def handle_event("start_preload", _params, socket) do
@@ -81,22 +96,20 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   end
 
   defp start_ebird_preload(%{assigns: %{user: user}} = socket) do
-    import_id = Ecto.UUID.generate()
-    Ebird.Web.subscribe_progress(:preload, import_id)
-
     Store.ChecklistPreload.reset_preloads(user)
 
-    %{ref: ref} =
-      Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn ->
-        Ebird.Web.preload_new_checklists_for_user(user, import_id: import_id)
-      end)
-
-    send(self(), {:register_import, __MODULE__, @component_id, ref})
+    Kjogvi.Server.ExclusiveTaskProcessor.start_task(
+      {:ebird_preload, user.id},
+      fn key ->
+        Ebird.Web.preload_new_checklists_for_user(user, broadcast_key: key)
+      end,
+      message: "eBird preload in progress..."
+    )
 
     socket
     |> clear_flash()
-    |> put_flash(:info, "eBird import in progress...")
-    |> assign(:async_result, AsyncResult.loading())
+    |> assign(:async_result, AsyncResult.loading(%{message: "eBird preload in progress..."}))
+    |> derive_flash()
     |> assign_preloads_data()
   end
 
@@ -145,4 +158,27 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     socket
     |> assign(:preloads, Store.ChecklistPreload.get_preloads(socket.assigns.user))
   end
+
+  defp derive_flash(%{assigns: %{async_result: async_result}} = socket) do
+    cond do
+      async_result.failed ->
+        put_flash(
+          socket,
+          :error,
+          "Legacy import failed: " <> result_message(async_result.failed, "Server error.")
+        )
+
+      async_result.loading ->
+        put_flash(socket, :info, result_message(async_result.loading, "In progress..."))
+
+      async_result.ok? ->
+        put_flash(socket, :info, result_message(async_result.result, "Success."))
+
+      :otherwise ->
+        clear_flash(socket)
+    end
+  end
+
+  defp result_message(%{message: message}, _default), do: message
+  defp result_message(_other, default), do: default
 end

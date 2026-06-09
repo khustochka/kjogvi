@@ -10,7 +10,6 @@ defmodule KjogviWeb.Live.My.Imports.Index do
     {Imports.Ebird, "eBird preload", "ebird-import"}
   ]
 
-  on_mount {Imports.Registry, :attach}
   on_mount {Imports.Legacy, :attach}
   on_mount {Imports.Ebird, :attach}
 

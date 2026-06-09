@@ -1,9 +1,6 @@
 defmodule Kjogvi.Telemetry.LegacyBroadcast do
   @moduledoc false
 
-  alias Kjogvi.Legacy.Import
-  alias Kjogvi.Util.AsyncResult
-
   def setup do
     :telemetry.attach_many(
       __MODULE__,
@@ -32,7 +29,7 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         %{broadcast_key: broadcast_key} = _metadata,
         _config
       ) do
-    Import.PubSub.broadcast(broadcast_key, AsyncResult.ok(%{message: "Legacy import done."}))
+    broadcast(broadcast_key, %{message: "Legacy import done."})
   end
 
   def handle_event(
@@ -41,9 +38,9 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         %{broadcast_key: broadcast_key} = _metadata,
         _config
       ) do
-    Import.PubSub.broadcast(
+    broadcast(
       broadcast_key,
-      AsyncResult.loading(%{message: "Preparing legacy import..."})
+      %{message: "Preparing legacy import..."}
     )
   end
 
@@ -54,9 +51,9 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         _config
       )
       when object_type in [:locations, :cards, :observations] do
-    Import.PubSub.broadcast(
+    broadcast(
       broadcast_key,
-      AsyncResult.loading(%{message: "Importing #{Atom.to_string(object_type)}..."})
+      %{message: "Importing #{Atom.to_string(object_type)}..."}
     )
   end
 
@@ -66,9 +63,9 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         %{broadcast_key: broadcast_key} = _metadata,
         _config
       ) do
-    Import.PubSub.broadcast(
+    broadcast(
       broadcast_key,
-      AsyncResult.loading(%{message: "Caching public locations..."})
+      %{message: "Caching public locations..."}
     )
   end
 
@@ -78,9 +75,9 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         %{broadcast_key: broadcast_key} = _metadata,
         _config
       ) do
-    Import.PubSub.broadcast(
+    broadcast(
       broadcast_key,
-      AsyncResult.loading(%{message: "Promoting observation species..."})
+      %{message: "Promoting observation species..."}
     )
   end
 
@@ -91,9 +88,21 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         _config
       )
       when object_type in [:locations, :cards, :observations] do
-    Import.PubSub.broadcast(
+    broadcast(
       broadcast_key,
-      AsyncResult.loading(%{message: "Importing #{Atom.to_string(object_type)}... #{count}"})
+      %{message: "Importing #{Atom.to_string(object_type)}... #{count}"}
+    )
+  end
+
+  defp broadcast(nil, _message) do
+    :ok
+  end
+
+  defp broadcast(broadcast_key, data) do
+    Phoenix.PubSub.broadcast(
+      Kjogvi.PubSub,
+      Kjogvi.Util.PubSubTopic.for_key(broadcast_key),
+      {:progress, broadcast_key, data}
     )
   end
 end
