@@ -9,26 +9,22 @@ defmodule Kjogvi.Legacy.Import.Cards do
 
     cards =
       for row <- rows do
-        # time = DateTime.utc_now()
-
         Enum.zip([:user_id | columns], [user_id | row])
         |> Map.new()
         |> transform_keys
       end
 
-    _ = Kjogvi.Repo.insert_all(Kjogvi.Birding.Card, cards)
-
-    # Imported records keep their original ids, so advance the sequence past the
-    # highest existing id (but never below @min_start_seq) to avoid id collisions
-    # on subsequently inserted cards.
-    _ =
-      Kjogvi.Repo.query!(
-        "SELECT setval('cards_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM cards)));"
-      )
+    with {_, _} <- Kjogvi.Repo.insert_all(Kjogvi.Birding.Card, cards),
+         {:ok, _} <-
+           Kjogvi.Repo.query(
+             "SELECT setval('cards_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM cards)));"
+           ) do
+      :ok
+    end
   end
 
   def cleanup do
-    _ = Kjogvi.Repo.query!("DELETE FROM cards WHERE import_source='legacy';")
+    Kjogvi.Repo.query("DELETE FROM cards WHERE import_source='legacy';")
   end
 
   defp transform_keys(

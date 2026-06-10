@@ -2,24 +2,10 @@ defmodule Kjogvi.Legacy.Import do
   @moduledoc false
 
   def run(user, opts \\ []) do
-    new_opts = Keyword.put(opts, :user, user)
-
-    case validate(user) do
-      :ok ->
-        :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(new_opts), fn ->
-          prepare_import(new_opts)
-
-          perform_import(:locations, new_opts)
-
-          perform_import(:cards, new_opts)
-
-          perform_import(:observations, new_opts)
-
-          {{:ok, %{message: "Legacy import done."}}, telemetry_metadata(new_opts)}
-        end)
-
-      {:error, _} = error ->
-        error
+    with :ok <- validate(user) do
+      opts
+      |> Keyword.put(:user, user)
+      |> import_all()
     end
   end
 
@@ -36,13 +22,29 @@ defmodule Kjogvi.Legacy.Import do
      }}
   end
 
+  defp import_all(opts) do
+    :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(opts), fn ->
+      result =
+        Kjogvi.Repo.transact(fn ->
+          with :ok <- prepare_import(opts),
+               :ok <- perform_import(:locations, opts),
+               :ok <- perform_import(:cards, opts),
+               :ok <- perform_import(:observations, opts) do
+            {:ok, %{message: "Legacy import done."}}
+          end
+        end)
+
+      {result, telemetry_metadata(opts)}
+    end)
+  end
+
   def prepare_import(opts \\ []) do
     :telemetry.span([:kjogvi, :legacy, :import, :prepare], telemetry_metadata(opts), fn ->
-      Kjogvi.Legacy.Import.Observations.cleanup()
-      Kjogvi.Legacy.Import.Cards.cleanup()
-      Kjogvi.Legacy.Import.Locations.cleanup()
-
-      {:ok, telemetry_metadata(opts)}
+      with {:ok, _} <- Kjogvi.Legacy.Import.Observations.cleanup(),
+           {:ok, _} <- Kjogvi.Legacy.Import.Cards.cleanup(),
+           {:ok, _} <- Kjogvi.Legacy.Import.Locations.cleanup() do
+        {:ok, telemetry_metadata(opts)}
+      end
     end)
   end
 
@@ -59,18 +61,18 @@ defmodule Kjogvi.Legacy.Import do
 
     if Enum.empty?(results.rows) do
       after_import(object_type, opts)
-      :ok
     else
-      put_loaded(object_type, results.columns, results.rows, opts)
-      count = loaded + length(results.rows)
+      with :ok <- put_loaded(object_type, results.columns, results.rows, opts) do
+        count = loaded + length(results.rows)
 
-      :telemetry.execute(
-        [:kjogvi, :legacy, :import, object_type, :progress],
-        %{count: count},
-        telemetry_metadata(opts)
-      )
+        :telemetry.execute(
+          [:kjogvi, :legacy, :import, object_type, :progress],
+          %{count: count},
+          telemetry_metadata(opts)
+        )
 
-      load(object_type, fetcher, {page + 1, count}, opts)
+        load(object_type, fetcher, {page + 1, count}, opts)
+      end
     end
   end
 
@@ -96,10 +98,12 @@ defmodule Kjogvi.Legacy.Import do
     #     {:ok, telemetry_metadata(opts)}
     #   end
     # )
+    :ok
   end
 
   defp after_import(:cards, _opts) do
     # Kjogvi.Legacy.Import.Cards.after_import()
+    :ok
   end
 
   defp after_import(:observations, opts) do
@@ -124,6 +128,7 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   defp telemetry_metadata(opts) do
-    %{adapter: adapter(), user_id: opts[:user].id, import_id: opts[:import_id]}
+    broadcast_key = opts[:broadcast_key] || "legacy_import:#{opts[:user].id}"
+    %{adapter: adapter(), user_id: opts[:user].id, broadcast_key: broadcast_key}
   end
 end

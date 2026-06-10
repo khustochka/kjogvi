@@ -5,7 +5,10 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
 
   use KjogviWeb, :live_component
 
-  alias Phoenix.LiveView.AsyncResult
+  alias Kjogvi.Util.AsyncResult
+  alias Kjogvi.Util.PubSubTopic
+  alias Kjogvi.Server.ExclusiveTaskProcessor
+
   alias Kjogvi.Ebird
   alias Kjogvi.Store
 
@@ -15,20 +18,29 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     {:cont, attach_hook(socket, :ebird_import_progress, :handle_info, &handle_progress/2)}
   end
 
-  defp handle_progress({:ebird_preload_progress, data}, socket) do
-    send_update(__MODULE__, id: @component_id, status: :progress, data: data)
+  defp handle_progress({:progress, {:ebird_preload, _user_id}, status}, socket) do
+    send_update(__MODULE__,
+      id: @component_id,
+      async_result: AsyncResult.loading(status)
+    )
+
+    {:halt, socket}
+  end
+
+  # Lifecycle events (:start / :ok / :error) carry the AsyncResult exactly as the
+  # processor stores it, so it can be assigned as-is. The tagged event lets the
+  # component refresh its display once the task succeeds.
+  defp handle_progress({:lifecycle, event, {:ebird_preload, _user_id}, async_result}, socket) do
+    send_update(__MODULE__,
+      id: @component_id,
+      lifecycle: event,
+      async_result: async_result
+    )
+
     {:halt, socket}
   end
 
   defp handle_progress(_msg, socket), do: {:cont, socket}
-
-  def mount(socket) do
-    {
-      :ok,
-      socket
-      |> assign(:async_result, %AsyncResult{})
-    }
-  end
 
   def update(%{user: user}, socket) do
     {
@@ -36,41 +48,27 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
       socket
       |> assign(:user, user)
       |> assign_preloads_data()
+      |> subscribe_once()
     }
   end
 
-  def update(%{status: :ok, data: ebird_checklists}, socket) do
-    Store.ChecklistPreload.store_checklists(socket.assigns.user, ebird_checklists)
-
-    result = "eBird preload done: #{length(ebird_checklists)} new checklists."
-
+  # On success the task has already persisted the checklists to the store and its
+  # result carries the completion message. Refresh the displayed preload data
+  # from the store and surface that message in the flash.
+  def update(%{lifecycle: :ok, async_result: async_result}, socket) do
     {:ok,
      socket
+     |> assign(:async_result, async_result)
      |> assign_preloads_data()
-     |> clear_flash()
-     |> put_flash(:info, result)
-     |> assign(:async_result, AsyncResult.ok(result))}
+     |> derive_flash()}
   end
 
-  def update(%{status: :error, data: data}, %{assigns: assigns} = socket) do
-    data =
-      case data do
-        message when is_binary(message) -> %{message: message}
-        _ -> data
-      end
-
+  def update(%{async_result: async_result}, socket) do
     {:ok,
      socket
      |> clear_flash()
-     |> put_flash(:error, "eBird preload failed: " <> data.message)
-     |> assign(:async_result, AsyncResult.failed(assigns.async_result, data.message))}
-  end
-
-  def update(%{status: :progress, data: data}, socket) do
-    {:ok,
-     socket
-     |> clear_flash()
-     |> put_flash(:info, data.message)}
+     |> assign(:async_result, async_result)
+     |> derive_flash()}
   end
 
   def handle_event("start_preload", _params, socket) do
@@ -81,22 +79,31 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   end
 
   defp start_ebird_preload(%{assigns: %{user: user}} = socket) do
-    import_id = Ecto.UUID.generate()
-    Ebird.Web.subscribe_progress(:preload, import_id)
-
     Store.ChecklistPreload.reset_preloads(user)
 
-    %{ref: ref} =
-      Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn ->
-        Ebird.Web.preload_new_checklists_for_user(user, import_id: import_id)
-      end)
-
-    send(self(), {:register_import, __MODULE__, @component_id, ref})
+    Kjogvi.Server.ExclusiveTaskProcessor.start_task(
+      {:ebird_preload, user.id},
+      fn key ->
+        # Persist the checklists inside the task itself, so they are stored even
+        # if this LiveView is closed before the task finishes (the :ok lifecycle
+        # callback below only runs while a subscriber is alive). The store is the
+        # source of truth for the list, so the result only needs to carry the
+        # completion message that subscribers (this component, the admin
+        # dashboard) display.
+        with {:ok, checklists} <-
+               Ebird.Web.preload_new_checklists_for_user(user, broadcast_key: key) do
+          Store.ChecklistPreload.store_checklists(user, checklists)
+          {:ok, %{message: "eBird preload done: #{length(checklists)} new checklists."}}
+        end
+      end,
+      message: "eBird preload in progress...",
+      timeout: 2 * 60 * 1000
+    )
 
     socket
     |> clear_flash()
-    |> put_flash(:info, "eBird import in progress...")
-    |> assign(:async_result, AsyncResult.loading())
+    |> assign(:async_result, AsyncResult.loading(%{message: "eBird preload in progress..."}))
+    |> derive_flash()
     |> assign_preloads_data()
   end
 
@@ -145,4 +152,44 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     socket
     |> assign(:preloads, Store.ChecklistPreload.get_preloads(socket.assigns.user))
   end
+
+  # The PubSub subscription and initial status snapshot belong to the component's
+  # lifetime, not to each parent re-render. `assign_new` seeds `async_result` the
+  # first time the component is updated and is a no-op thereafter, so subsequent
+  # renders keep the live `async_result` maintained by the progress/lifecycle
+  # pushes instead of re-subscribing and clobbering it with a staler snapshot.
+  defp subscribe_once(%{assigns: %{user: user}} = socket) do
+    key = {:ebird_preload, user.id}
+
+    socket
+    |> assign_new(:async_result, fn ->
+      Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
+      ExclusiveTaskProcessor.get_status(key)
+    end)
+    |> derive_flash()
+  end
+
+  defp derive_flash(%{assigns: %{async_result: async_result}} = socket) do
+    cond do
+      async_result.failed ->
+        put_flash(
+          socket,
+          :error,
+          "eBird preload failed: " <> result_message(async_result.failed, "Server error.")
+        )
+
+      async_result.loading ->
+        put_flash(socket, :info, result_message(async_result.loading, "In progress..."))
+
+      async_result.ok? ->
+        put_flash(socket, :info, result_message(async_result.result, "Success."))
+
+      :otherwise ->
+        clear_flash(socket)
+    end
+  end
+
+  defp result_message(%{message: message}, _default), do: message
+  defp result_message(:timeout, _default), do: "Timeout"
+  defp result_message(_other, default), do: default
 end

@@ -88,7 +88,6 @@ defmodule KjogviWeb.Router do
     end
 
     post "/account/settings", UserController, :update
-    post "/imports/legacy", My.ImportsController, :legacy
   end
 
   # ADMIN ROUTES
@@ -101,7 +100,7 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :ensure_admin},
         {KjogviWeb.UserAuth, :mount_private_view}
       ] do
-      # No paths yet
+      live "/exclusive-tasks", Live.Admin.ExclusiveTasks.Index, :index
     end
 
     ornitho_web "/taxonomy",

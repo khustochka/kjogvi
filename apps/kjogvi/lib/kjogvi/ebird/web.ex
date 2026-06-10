@@ -9,57 +9,38 @@ defmodule Kjogvi.Ebird.Web do
   alias Kjogvi.Birding
   alias Kjogvi.Types
 
-  @actions %{
-    preload: {:ebird_preload_progress, "eBird preload: "}
-  }
-
   @doc """
   Preload user's checklists from eBird. Select only those that are not yet imported.
   """
-  @spec preload_new_checklists_for_user(Client.Login.credentials()) ::
+  @spec preload_new_checklists_for_user(User.t()) ::
           Types.result([Checklist.Meta.t()])
-  @spec preload_new_checklists_for_user(Client.Login.credentials(), keyword()) ::
+  @spec preload_new_checklists_for_user(User.t(), keyword()) ::
           Types.result([Checklist.Meta.t()])
   def preload_new_checklists_for_user(user, opts \\ []) do
-    import_id = {:preload, opts[:import_id]}
-    new_opts = Keyword.put(opts, :import_id, import_id)
+    broadcast_key = opts[:broadcast_key]
 
     if User.ebird_configured_async?(user) do
-      with {:ok, checklists} <- Client.preload_checklists(user.extras.ebird, new_opts) do
-        broadcast_progress(new_opts[:import_id], "Filtering for new checklists...")
+      with {:ok, checklists} <- Client.preload_checklists(user.extras.ebird, opts) do
+        broadcast_progress(broadcast_key, %{message: "Finding new checklists..."})
 
+        # The "done" message is surfaced by the processor's :ok lifecycle event,
+        # which carries the result list, so no completion progress is broadcast here.
         {:ok, Birding.find_new_checklists(user, checklists)}
-        |> tap(fn {:ok, checklists} ->
-          broadcast_progress(
-            new_opts[:import_id],
-            "eBird preload done: #{length(checklists)} new checklists."
-          )
-        end)
       end
     else
-      {:error, "User does not have eBird configuration."}
+      {:error, %{message: "User does not have eBird configuration."}}
     end
   end
 
-  def subscribe_progress(action, import_id) when is_map_key(@actions, action) do
-    Phoenix.PubSub.subscribe(Kjogvi.PubSub, progress_key({action, import_id}))
-  end
-
-  def broadcast_progress({_action, nil}, _message) do
+  def broadcast_progress(nil, _message) do
     :ok
   end
 
-  def broadcast_progress({action, _import_id} = key, message) when is_map_key(@actions, action) do
-    {tag, prefix} = @actions[action]
-
+  def broadcast_progress(broadcast_key, data) do
     Phoenix.PubSub.broadcast(
       Kjogvi.PubSub,
-      progress_key(key),
-      {tag, %{message: prefix <> message}}
+      Kjogvi.Util.PubSubTopic.for_key(broadcast_key),
+      {:progress, broadcast_key, data}
     )
-  end
-
-  defp progress_key({action, import_id}) do
-    "ebird:web:#{action}:progress:#{import_id}"
   end
 end
