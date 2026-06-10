@@ -208,6 +208,67 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
     end
   end
 
+  describe "retention sweep" do
+    test "evicts a finished status once it is older than the ttl" do
+      # ttl 0 makes any finished status immediately eligible; a fast sweep keeps
+      # the test snappy. This server isn't the shared one — it carries the
+      # retention overrides.
+      server = start_supervised!({Processor, name: nil, ttl: 0, sweep_interval: 1}, id: :ttl_zero)
+      key = {:job, 1}
+
+      Processor.start_task(key, fn _key -> {:ok, :done} end, server: server)
+      assert await_status(server, key, & &1.ok?).result == :done
+
+      # The next sweep (≤1s away) should drop it, leaving a blank result.
+      await_status(server, key, &(&1 == %AsyncResult{}), 300)
+    end
+
+    test "retains a finished status until the ttl elapses" do
+      server =
+        start_supervised!({Processor, name: nil, ttl: 60, sweep_interval: 1}, id: :ttl_long)
+
+      key = {:job, 1}
+
+      Processor.start_task(key, fn _key -> {:ok, :done} end, server: server)
+      assert await_status(server, key, & &1.ok?).result == :done
+
+      # Long enough for a sweep to have run; the status must survive it.
+      Process.sleep(50)
+      assert Processor.get_status(key, server: server).result == :done
+    end
+
+    test "never evicts a still-loading task" do
+      server =
+        start_supervised!({Processor, name: nil, ttl: 0, sweep_interval: 1}, id: :ttl_loading)
+
+      key = {:job, 1}
+
+      Processor.start_task(key, blocking_task(self(), {:ok, :done}), server: server)
+      assert_receive {:task_started, task_pid}
+
+      # A sweep would fire well within this window, but a loading task has no
+      # finish stamp, so it stays.
+      Process.sleep(50)
+      assert Processor.get_status(key, server: server).loading
+
+      release(task_pid)
+      assert await_status(server, key, & &1.ok?).result == :done
+    end
+
+    test "an :infinity ttl never evicts" do
+      server =
+        start_supervised!({Processor, name: nil, ttl: :infinity, sweep_interval: 1}, id: :ttl_inf)
+
+      key = {:job, 1}
+
+      Processor.start_task(key, fn _key -> {:ok, :done} end, server: server)
+      assert await_status(server, key, & &1.ok?).result == :done
+
+      Process.sleep(50)
+      assert Processor.get_status(key, server: server).result == :done
+    end
+  end
+
   describe "progress updates over PubSub" do
     test "merges a broadcast progress status into the tracked status", %{server: server} do
       key = {:job, 1}

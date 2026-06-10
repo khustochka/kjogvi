@@ -3,6 +3,12 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   # moduledoc so it can be interpolated into the docs.
   @default_timeout 5 * 60
 
+  # How long a finished (ok/failed) status is retained before the periodic sweep
+  # evicts it, in seconds, and how often that sweep runs. Loading statuses are
+  # never swept.
+  @default_ttl 60 * 60
+  @default_sweep_interval 30 * 60
+
   @moduledoc """
   Runs long-running background tasks while guaranteeing that, per key, only one
   task runs at a time.
@@ -77,6 +83,20 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   `Kjogvi.TaskSupervisor` and records a failure with reason `:timeout`,
   broadcasting the usual `{:lifecycle, :error, key, _}` event. This guarantees a
   runaway task can't hold its key's exclusive slot forever.
+
+  ## Retention and cleanup
+
+  A finished status is retained under its key so late-arriving clients can still
+  observe the last result (see "Shared, observable status"). To stop these from
+  accumulating forever, each terminal transition stamps the key with a finish
+  time, and a periodic sweep evicts any finished status older than `:ttl`
+  seconds (default #{div(@default_ttl, 60)} minutes; `:infinity` disables it).
+  The sweep runs every `:sweep_interval` seconds. Only finished statuses are
+  eligible: a loading task is never swept, and an evicted key behaves exactly
+  like one that was never run (`get_status/1,2` returns a blank result and the
+  next `start_task/3,4` runs fresh). `:ttl` and `:sweep_interval` can be
+  overridden via `start_link/1`; the application supervisor starts the singleton
+  with the defaults above.
   """
   use GenServer
 
@@ -91,8 +111,21 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   end
 
   @impl true
-  def init(_init_arg) do
-    {:ok, %{refs: %{}, statuses: %{}, timers: %{}}}
+  def init(init_arg) do
+    ttl = Keyword.get(init_arg, :ttl, @default_ttl)
+    sweep_interval = Keyword.get(init_arg, :sweep_interval, @default_sweep_interval)
+
+    schedule_sweep(sweep_interval)
+
+    {:ok,
+     %{
+       refs: %{},
+       statuses: %{},
+       timers: %{},
+       finished_at: %{},
+       ttl: ttl,
+       sweep_interval: sweep_interval
+     }}
   end
 
   # API
@@ -184,6 +217,14 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     {:noreply, state}
   end
 
+  # Periodic retention sweep. Evicts every finished status older than `:ttl`,
+  # then reschedules itself. `:infinity` ttl keeps the loop running (cheap) but
+  # never evicts, so retention can be re-enabled without restarting the process.
+  def handle_info(:sweep, state) do
+    schedule_sweep(state.sweep_interval)
+    {:noreply, sweep_expired(state)}
+  end
+
   # The task ran past its `:timeout`. Shut it down through the supervisor (the
   # resulting `:DOWN` is then ignored, since `finish_task` drops the ref) and
   # record the timeout as a failure. A stale timer for an already-finished task
@@ -235,11 +276,13 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     Process.demonitor(ref, [:flush])
     Phoenix.PubSub.unsubscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
 
-    # Drops the ref pointing to task signature, but the task signature -> result stays.
+    # Drops the ref pointing to task signature, but the task signature -> result
+    # stays. The finish time is stamped so the periodic sweep can later evict it.
     state
     |> cancel_timeout(ref)
     |> update_ref(ref, fun)
     |> drop_ref(ref)
+    |> stamp_finished(key)
     |> broadcast_lifecycle(event, key)
   end
 
@@ -268,9 +311,20 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   end
 
   # Registers a freshly started task: remember which key the ref belongs to
-  # and record the initial status under that key.
-  defp put_ref(%{refs: refs, statuses: statuses} = state, ref, key, async_result) do
-    %{state | refs: Map.put(refs, ref, key), statuses: Map.put(statuses, key, async_result)}
+  # and record the initial status under that key. Any prior finish stamp for the
+  # key is cleared, so a restarted (now-loading) task can't be swept.
+  defp put_ref(
+         %{refs: refs, statuses: statuses, finished_at: finished_at} = state,
+         ref,
+         key,
+         async_result
+       ) do
+    %{
+      state
+      | refs: Map.put(refs, ref, key),
+        statuses: Map.put(statuses, key, async_result),
+        finished_at: Map.delete(finished_at, key)
+    }
   end
 
   # Transitions the status for a task, looked up by its ref. `fun` receives the
@@ -299,5 +353,34 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     )
 
     state
+  end
+
+  # Records when a key's task finished, so the sweep can age it out. Uses
+  # monotonic time (immune to wall-clock adjustments) in milliseconds.
+  defp stamp_finished(%{finished_at: finished_at} = state, key) do
+    %{state | finished_at: Map.put(finished_at, key, System.monotonic_time(:millisecond))}
+  end
+
+  # Arms the next retention sweep.
+  defp schedule_sweep(sweep_interval) do
+    Process.send_after(self(), :sweep, sweep_interval * 1000)
+  end
+
+  # Drops every finished status whose age exceeds `:ttl`. A still-loading key has
+  # no finish stamp, so it is never eligible. `:infinity` retains everything.
+  defp sweep_expired(%{ttl: :infinity} = state), do: state
+
+  defp sweep_expired(%{finished_at: finished_at, statuses: statuses, ttl: ttl} = state) do
+    now = System.monotonic_time(:millisecond)
+    cutoff = ttl * 1000
+
+    expired =
+      for {key, at} <- finished_at, now - at >= cutoff, do: key
+
+    %{
+      state
+      | statuses: Map.drop(statuses, expired),
+        finished_at: Map.drop(finished_at, expired)
+    }
   end
 end
