@@ -78,7 +78,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
         Kjogvi.Legacy.Import.run(user, broadcast_key: key)
       end,
       message: "Legacy import in progress...",
-      timeout: 5 * 60
+      timeout: 5 * 60 * 1000
     )
 
     socket

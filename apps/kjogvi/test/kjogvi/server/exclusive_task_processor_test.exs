@@ -154,17 +154,17 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
     test "shuts a slow task down and records a :timeout failure", %{server: server} do
       key = {:job, 1}
 
-      # A 1-second timeout against a task that never returns until released. We
+      # A 100ms timeout against a task that never returns until released. We
       # never release it, so the timeout is what ends it.
       Processor.start_task(key, blocking_task(self(), {:ok, :never}),
         server: server,
-        timeout: 1
+        timeout: 100
       )
 
       assert_receive {:task_started, task_pid}
 
-      # The timeout is 1s; poll long enough to see it fire (300 × 5ms = 1.5s).
-      status = await_status(server, key, &(&1.failed != nil), 300)
+      # The timeout is 100ms; poll long enough to see it fire (100 × 5ms = 500ms).
+      status = await_status(server, key, &(&1.failed != nil))
       assert status.failed == :timeout
       refute status.loading
       refute Process.alive?(task_pid)
@@ -173,7 +173,7 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
     test "a task that finishes before its timeout is unaffected", %{server: server} do
       key = {:job, 1}
 
-      Processor.start_task(key, fn _key -> {:ok, :quick} end, server: server, timeout: 30)
+      Processor.start_task(key, fn _key -> {:ok, :quick} end, server: server, timeout: 30_000)
 
       assert await_status(server, key, & &1.ok?).result == :quick
     end
@@ -181,9 +181,13 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
     test "the timeout slot frees up so a later start_task runs fresh", %{server: server} do
       key = {:job, 1}
 
-      Processor.start_task(key, blocking_task(self(), {:ok, :never}), server: server, timeout: 1)
+      Processor.start_task(key, blocking_task(self(), {:ok, :never}),
+        server: server,
+        timeout: 100
+      )
+
       assert_receive {:task_started, _pid}
-      assert await_status(server, key, &(&1.failed == :timeout), 300)
+      assert await_status(server, key, &(&1.failed == :timeout))
 
       Processor.start_task(key, fn _key -> {:ok, :after} end, server: server)
       assert await_status(server, key, & &1.ok?).result == :after
@@ -210,54 +214,60 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
 
   describe "retention sweep" do
     test "evicts a finished status once it is older than the ttl" do
-      # ttl 0 makes any finished status immediately eligible; a fast sweep keeps
+      # ttl 0 makes any finished status immediately eligible; a 10ms sweep keeps
       # the test snappy. This server isn't the shared one — it carries the
       # retention overrides.
-      server = start_supervised!({Processor, name: nil, ttl: 0, sweep_interval: 1}, id: :ttl_zero)
+      server =
+        start_supervised!({Processor, name: nil, ttl: 0, sweep_interval: 10}, id: :ttl_zero)
+
       key = {:job, 1}
 
       Processor.start_task(key, fn _key -> {:ok, :done} end, server: server)
       assert await_status(server, key, & &1.ok?).result == :done
 
-      # The next sweep (≤1s away) should drop it, leaving a blank result.
-      await_status(server, key, &(&1 == %AsyncResult{}), 300)
+      # The next sweep (≤10ms away) should drop it, leaving a blank result.
+      await_status(server, key, &(&1 == %AsyncResult{}))
     end
 
     test "retains a finished status until the ttl elapses" do
       server =
-        start_supervised!({Processor, name: nil, ttl: 60, sweep_interval: 1}, id: :ttl_long)
+        start_supervised!({Processor, name: nil, ttl: 60_000, sweep_interval: 10}, id: :ttl_long)
 
       key = {:job, 1}
 
       Processor.start_task(key, fn _key -> {:ok, :done} end, server: server)
       assert await_status(server, key, & &1.ok?).result == :done
 
-      # Long enough for a sweep to have run; the status must survive it.
+      # Long enough for several sweeps to have run; the status must survive them.
       Process.sleep(50)
       assert Processor.get_status(key, server: server).result == :done
     end
 
     test "never evicts a still-loading task" do
       server =
-        start_supervised!({Processor, name: nil, ttl: 0, sweep_interval: 1}, id: :ttl_loading)
+        start_supervised!({Processor, name: nil, ttl: 0, sweep_interval: 10}, id: :ttl_loading)
 
       key = {:job, 1}
 
       Processor.start_task(key, blocking_task(self(), {:ok, :done}), server: server)
       assert_receive {:task_started, task_pid}
 
-      # A sweep would fire well within this window, but a loading task has no
-      # finish stamp, so it stays.
+      # Several sweeps fire within this window, but a loading task has no finish
+      # stamp, so it stays loading rather than being evicted to a blank result.
       Process.sleep(50)
       assert Processor.get_status(key, server: server).loading
 
+      # Don't assert the post-release result here: with ttl 0 the very next sweep
+      # evicts it the instant it finishes, which is the eviction path covered by
+      # the test above. This test's claim is only that *loading* is never swept.
       release(task_pid)
-      assert await_status(server, key, & &1.ok?).result == :done
     end
 
     test "an :infinity ttl never evicts" do
       server =
-        start_supervised!({Processor, name: nil, ttl: :infinity, sweep_interval: 1}, id: :ttl_inf)
+        start_supervised!({Processor, name: nil, ttl: :infinity, sweep_interval: 10},
+          id: :ttl_inf
+        )
 
       key = {:job, 1}
 
@@ -338,9 +348,12 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
     end
 
     test "broadcasts :error when the task times out", %{server: server, key: key} do
-      Processor.start_task(key, blocking_task(self(), {:ok, :never}), server: server, timeout: 1)
+      Processor.start_task(key, blocking_task(self(), {:ok, :never}),
+        server: server,
+        timeout: 100
+      )
 
-      assert_receive {:lifecycle, :error, ^key, %AsyncResult{failed: :timeout}}, 2_000
+      assert_receive {:lifecycle, :error, ^key, %AsyncResult{failed: :timeout}}, 500
     end
 
     test "does not broadcast a second :start while a task is loading", %{server: server, key: key} do

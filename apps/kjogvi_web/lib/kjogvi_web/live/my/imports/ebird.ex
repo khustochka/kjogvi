@@ -92,7 +92,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
         Ebird.Web.preload_new_checklists_for_user(user, broadcast_key: key)
       end,
       message: "eBird preload in progress...",
-      timeout: 2 * 60
+      timeout: 2 * 60 * 1000
     )
 
     socket

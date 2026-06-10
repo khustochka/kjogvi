@@ -1,13 +1,13 @@
 defmodule Kjogvi.Server.ExclusiveTaskProcessor do
-  # Default `:timeout` for `start_task/3,4`, in seconds. Defined before the
+  # Default `:timeout` for `start_task/3,4`, in milliseconds. Defined before the
   # moduledoc so it can be interpolated into the docs.
-  @default_timeout 5 * 60
+  @default_timeout 5 * 60 * 1000
 
   # How long a finished (ok/failed) status is retained before the periodic sweep
-  # evicts it, in seconds, and how often that sweep runs. Loading statuses are
-  # never swept.
-  @default_ttl 60 * 60
-  @default_sweep_interval 30 * 60
+  # evicts it, in milliseconds, and how often that sweep runs. Loading statuses
+  # are never swept.
+  @default_ttl 60 * 60 * 1000
+  @default_sweep_interval 30 * 60 * 1000
 
   @moduledoc """
   Runs long-running background tasks while guaranteeing that, per key, only one
@@ -77,8 +77,8 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
 
   ## Timeout
 
-  `start_task/3,4` accepts a `:timeout` option (seconds, or `:infinity` to
-  disable). It defaults to `#{div(@default_timeout, 60)} minutes`. When a task
+  `start_task/3,4` accepts a `:timeout` option (milliseconds, or `:infinity` to
+  disable). It defaults to `#{div(@default_timeout, 60_000)} minutes`. When a task
   runs longer than its timeout, the processor shuts it down via
   `Kjogvi.TaskSupervisor` and records a failure with reason `:timeout`,
   broadcasting the usual `{:lifecycle, :error, key, _}` event. This guarantees a
@@ -90,8 +90,8 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   observe the last result (see "Shared, observable status"). To stop these from
   accumulating forever, each terminal transition stamps the key with a finish
   time, and a periodic sweep evicts any finished status older than `:ttl`
-  seconds (default #{div(@default_ttl, 60)} minutes; `:infinity` disables it).
-  The sweep runs every `:sweep_interval` seconds. Only finished statuses are
+  milliseconds (default #{div(@default_ttl, 60_000)} minutes; `:infinity` disables
+  it). The sweep runs every `:sweep_interval` milliseconds. Only finished statuses are
   eligible: a loading task is never swept, and an evicted key behaves exactly
   like one that was never run (`get_status/1,2` returns a blank result and the
   next `start_task/3,4` runs fresh). `:ttl` and `:sweep_interval` can be
@@ -133,8 +133,8 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   # `opts` accepts `:server` (defaults to the singleton named process started by
   # the application supervisor; tests pass their own isolated instance),
   # `:message` (the initial loading status, shown until the task reports
-  # otherwise), and `:timeout` (seconds before the task is shut down and recorded
-  # as a `:timeout` failure, or `:infinity` to disable; defaults to
+  # otherwise), and `:timeout` (milliseconds before the task is shut down and
+  # recorded as a `:timeout` failure, or `:infinity` to disable; defaults to
   # `@default_timeout`).
 
   def get_status(key, opts \\ []) do
@@ -286,14 +286,14 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     |> broadcast_lifecycle(event, key)
   end
 
-  # Arms a per-task timer that fires `{:timeout, ref}` after `timeout` seconds.
-  # `:infinity` disables the timer. The timer ref is kept alongside the task pid
-  # so the timeout handler can shut the task down and `finish_task` can cancel a
-  # still-pending timer.
+  # Arms a per-task timer that fires `{:timeout, ref}` after `timeout`
+  # milliseconds. `:infinity` disables the timer. The timer ref is kept alongside
+  # the task pid so the timeout handler can shut the task down and `finish_task`
+  # can cancel a still-pending timer.
   defp schedule_timeout(state, _ref, _pid, :infinity), do: state
 
   defp schedule_timeout(%{timers: timers} = state, ref, pid, timeout) do
-    timer_ref = Process.send_after(self(), {:timeout, ref}, timeout * 1000)
+    timer_ref = Process.send_after(self(), {:timeout, ref}, timeout)
     %{state | timers: Map.put(timers, ref, {timer_ref, pid})}
   end
 
@@ -363,19 +363,19 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
 
   # Arms the next retention sweep.
   defp schedule_sweep(sweep_interval) do
-    Process.send_after(self(), :sweep, sweep_interval * 1000)
+    Process.send_after(self(), :sweep, sweep_interval)
   end
 
   # Drops every finished status whose age exceeds `:ttl`. A still-loading key has
   # no finish stamp, so it is never eligible. `:infinity` retains everything.
+  # `finished_at` and `:ttl` are both in milliseconds, so they compare directly.
   defp sweep_expired(%{ttl: :infinity} = state), do: state
 
   defp sweep_expired(%{finished_at: finished_at, statuses: statuses, ttl: ttl} = state) do
     now = System.monotonic_time(:millisecond)
-    cutoff = ttl * 1000
 
     expired =
-      for {key, at} <- finished_at, now - at >= cutoff, do: key
+      for {key, at} <- finished_at, now - at >= ttl, do: key
 
     %{
       state
