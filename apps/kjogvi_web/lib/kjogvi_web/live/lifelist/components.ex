@@ -111,8 +111,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         class="lifer-counter text-stone-400 text-sm col-span-1 justify-self-end tabular-nums"
         aria-hidden="true"
         data-value={@value}
-      >
-      </span>
+      ></span>
       <div class="mb-1 col-span-3 md:col-span-1">
         <.species_link species={@lifer.species_page} />
       </div>
@@ -200,8 +199,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         <span class={[
           "absolute top-0.5 left-0.5 size-4 lg:size-3.5 bg-white rounded-full shadow-sm transition-transform",
           if(@enabled, do: "translate-x-4 lg:translate-x-3.5")
-        ]}>
-        </span>
+        ]}></span>
       </span>
       <span
         class={[

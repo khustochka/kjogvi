@@ -112,6 +112,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     <div>
       <.main_flash id="ebird-preload-flash" flash={@flash} />
       <CoreComponents.simple_form
+        id="ebird-preload-form"
         for={nil}
         phx-submit="start_preload"
         phx-target={@myself}

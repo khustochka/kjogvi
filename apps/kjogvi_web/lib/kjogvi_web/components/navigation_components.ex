@@ -109,6 +109,7 @@ defmodule KjogviWeb.NavigationComponents do
     """
   end
 
+  attr :id, :string
   attr :action, :string, required: true
   attr :method, :string, default: "post"
   attr :class, :string
@@ -116,7 +117,7 @@ defmodule KjogviWeb.NavigationComponents do
 
   def form_as_link(assigns) do
     ~H"""
-    <form action={@action} method="post">
+    <form action={@action} method="post" id={@id}>
       <input type="hidden" name="_method" value={@method} />
       <input type="hidden" name="_csrf_token" value={Phoenix.Controller.get_csrf_token()} />
       <button class={@class}>

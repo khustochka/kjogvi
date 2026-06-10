@@ -92,6 +92,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     <div>
       <.main_flash id="legacy-import-flash" flash={@flash} />
       <CoreComponents.simple_form
+        id="legacy-import-form"
         for={nil}
         phx-submit="start_import"
         phx-target={@myself}
