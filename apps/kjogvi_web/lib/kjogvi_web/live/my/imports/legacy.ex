@@ -95,7 +95,6 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
         for={nil}
         phx-submit="start_import"
         phx-target={@myself}
-        action={~p"/my/imports/legacy"}
       >
         <:actions>
           <%= if @async_result.loading do %>

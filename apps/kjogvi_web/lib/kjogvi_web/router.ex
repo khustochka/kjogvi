@@ -88,7 +88,6 @@ defmodule KjogviWeb.Router do
     end
 
     post "/account/settings", UserController, :update
-    post "/imports/legacy", My.ImportsController, :legacy
   end
 
   # ADMIN ROUTES
