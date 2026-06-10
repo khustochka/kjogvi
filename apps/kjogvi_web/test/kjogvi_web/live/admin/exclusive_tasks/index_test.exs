@@ -59,7 +59,7 @@ defmodule KjogviWeb.Live.Admin.ExclusiveTasks.IndexTest do
       broadcast_lifecycle(:start, key, AsyncResult.loading(%{message: "warming up"}))
 
       assert has_element?(lv, "##{dom_id(key)}", "warming up")
-      assert has_element?(lv, "##{dom_id(key)}", "running")
+      assert has_element?(lv, "##{dom_id(key)}", "RUNNING")
     end
 
     test "a completed task updates the same row in place", %{lv: lv} do
@@ -71,15 +71,36 @@ defmodule KjogviWeb.Live.Admin.ExclusiveTasks.IndexTest do
       broadcast_lifecycle(:ok, key, AsyncResult.ok(%{message: "all done"}))
 
       assert has_element?(lv, "##{dom_id(key)}", "all done")
-      assert has_element?(lv, "##{dom_id(key)}", "ok")
+      assert has_element?(lv, "##{dom_id(key)}", "OK")
     end
 
-    test "a failed task shows the failure", %{lv: lv} do
+    test "a finish time appears only once the task completes", %{lv: lv} do
+      key = {:dashboard_test_finished_at, 1}
+
+      broadcast_lifecycle(:start, key, AsyncResult.loading(%{message: "running"}))
+      refute has_element?(lv, "##{dom_id(key)} time")
+
+      broadcast_lifecycle(:ok, key, AsyncResult.ok(%{message: "done"}))
+      assert has_element?(lv, "##{dom_id(key)} time")
+    end
+
+    test "a failed task shows the raw failure reason", %{lv: lv} do
       key = {:dashboard_test_fail, 1}
       broadcast_lifecycle(:error, key, AsyncResult.failed(%AsyncResult{}, :timeout))
 
-      assert has_element?(lv, "##{dom_id(key)}", "Timeout")
-      assert has_element?(lv, "##{dom_id(key)}", "failed")
+      assert has_element?(lv, "##{dom_id(key)}", ":timeout")
+      assert has_element?(lv, "##{dom_id(key)}", "FAILED")
+    end
+
+    test "the full term is rendered (hidden) for click-to-expand", %{lv: lv} do
+      key = {:dashboard_test_rich, 1}
+      broadcast_lifecycle(:ok, key, AsyncResult.ok(%AsyncResult{}, %{imported: 42, skipped: 3}))
+
+      # The pretty-inspected term lives in the hidden -full element so JS.toggle
+      # can reveal it client-side without a server round-trip.
+      assert lv
+             |> element("##{dom_id(key)}-full")
+             |> render() =~ "imported: 42"
     end
   end
 end
