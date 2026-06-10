@@ -91,7 +91,8 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
       fn key ->
         Ebird.Web.preload_new_checklists_for_user(user, broadcast_key: key)
       end,
-      message: "eBird preload in progress..."
+      message: "eBird preload in progress...",
+      timeout: 2 * 60
     )
 
     socket
@@ -184,5 +185,6 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   end
 
   defp result_message(%{message: message}, _default), do: message
+  defp result_message(:timeout, _default), do: "Timeout"
   defp result_message(_other, default), do: default
 end

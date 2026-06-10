@@ -150,6 +150,64 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
     end
   end
 
+  describe "timeout" do
+    test "shuts a slow task down and records a :timeout failure", %{server: server} do
+      key = {:job, 1}
+
+      # A 1-second timeout against a task that never returns until released. We
+      # never release it, so the timeout is what ends it.
+      Processor.start_task(key, blocking_task(self(), {:ok, :never}),
+        server: server,
+        timeout: 1
+      )
+
+      assert_receive {:task_started, task_pid}
+
+      # The timeout is 1s; poll long enough to see it fire (300 × 5ms = 1.5s).
+      status = await_status(server, key, &(&1.failed != nil), 300)
+      assert status.failed == :timeout
+      refute status.loading
+      refute Process.alive?(task_pid)
+    end
+
+    test "a task that finishes before its timeout is unaffected", %{server: server} do
+      key = {:job, 1}
+
+      Processor.start_task(key, fn _key -> {:ok, :quick} end, server: server, timeout: 30)
+
+      assert await_status(server, key, & &1.ok?).result == :quick
+    end
+
+    test "the timeout slot frees up so a later start_task runs fresh", %{server: server} do
+      key = {:job, 1}
+
+      Processor.start_task(key, blocking_task(self(), {:ok, :never}), server: server, timeout: 1)
+      assert_receive {:task_started, _pid}
+      assert await_status(server, key, &(&1.failed == :timeout), 300)
+
+      Processor.start_task(key, fn _key -> {:ok, :after} end, server: server)
+      assert await_status(server, key, & &1.ok?).result == :after
+    end
+
+    test "an :infinity timeout never fires", %{server: server} do
+      key = {:job, 1}
+
+      Processor.start_task(key, blocking_task(self(), {:ok, :done}),
+        server: server,
+        timeout: :infinity
+      )
+
+      assert_receive {:task_started, task_pid}
+
+      # Give a hypothetical timer time to misfire; the task must stay loading.
+      Process.sleep(50)
+      assert Processor.get_status(key, server: server).loading
+
+      release(task_pid)
+      assert await_status(server, key, & &1.ok?).result == :done
+    end
+  end
+
   describe "progress updates over PubSub" do
     test "merges a broadcast progress status into the tracked status", %{server: server} do
       key = {:job, 1}
@@ -216,6 +274,12 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
         assert_receive {:lifecycle, :error, ^key, %AsyncResult{failed: failed}}
         assert {%RuntimeError{message: "boom"}, _stacktrace} = failed
       end)
+    end
+
+    test "broadcasts :error when the task times out", %{server: server, key: key} do
+      Processor.start_task(key, blocking_task(self(), {:ok, :never}), server: server, timeout: 1)
+
+      assert_receive {:lifecycle, :error, ^key, %AsyncResult{failed: :timeout}}, 2_000
     end
 
     test "does not broadcast a second :start while a task is loading", %{server: server, key: key} do

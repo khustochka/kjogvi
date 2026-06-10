@@ -1,4 +1,8 @@
 defmodule Kjogvi.Server.ExclusiveTaskProcessor do
+  # Default `:timeout` for `start_task/3,4`, in seconds. Defined before the
+  # moduledoc so it can be interpolated into the docs.
+  @default_timeout 5 * 60
+
   @moduledoc """
   Runs long-running background tasks while guaranteeing that, per key, only one
   task runs at a time.
@@ -64,6 +68,15 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   failure (with reason `:malformed_result`) and logged, so a misbehaving task
   never leaves a status stuck in the loading state. Task crashes are caught via
   the monitor and recorded as failures with the exit reason.
+
+  ## Timeout
+
+  `start_task/3,4` accepts a `:timeout` option (seconds, or `:infinity` to
+  disable). It defaults to `#{div(@default_timeout, 60)} minutes`. When a task
+  runs longer than its timeout, the processor shuts it down via
+  `Kjogvi.TaskSupervisor` and records a failure with reason `:timeout`,
+  broadcasting the usual `{:lifecycle, :error, key, _}` event. This guarantees a
+  runaway task can't hold its key's exclusive slot forever.
   """
   use GenServer
 
@@ -79,14 +92,17 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
 
   @impl true
   def init(_init_arg) do
-    {:ok, %{refs: %{}, statuses: %{}}}
+    {:ok, %{refs: %{}, statuses: %{}, timers: %{}}}
   end
 
   # API
   #
   # `opts` accepts `:server` (defaults to the singleton named process started by
-  # the application supervisor; tests pass their own isolated instance) and
-  # `:message` (the initial loading status, shown until the task reports otherwise).
+  # the application supervisor; tests pass their own isolated instance),
+  # `:message` (the initial loading status, shown until the task reports
+  # otherwise), and `:timeout` (seconds before the task is shut down and recorded
+  # as a `:timeout` failure, or `:infinity` to disable; defaults to
+  # `@default_timeout`).
 
   def get_status(key, opts \\ []) do
     GenServer.call(server(opts), {:get_status, key})
@@ -94,7 +110,8 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
 
   def start_task(key, func, opts \\ []) when is_function(func, 1) do
     message = Keyword.get(opts, :message, "In progress...")
-    GenServer.cast(server(opts), {:start_task, key, message, func})
+    timeout = Keyword.get(opts, :timeout, @default_timeout)
+    GenServer.cast(server(opts), {:start_task, key, message, func, timeout})
   end
 
   defp server(opts), do: Keyword.get(opts, :server, __MODULE__)
@@ -111,18 +128,19 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   end
 
   @impl true
-  def handle_cast({:start_task, key, start_message, func}, %{statuses: statuses} = state) do
+  def handle_cast({:start_task, key, start_message, func, timeout}, %{statuses: statuses} = state) do
     status = statuses[key]
 
     new_state =
       if is_nil(status) or !status.loading do
         Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
 
-        %{ref: ref} =
+        %{ref: ref, pid: pid} =
           Task.Supervisor.async_nolink(Kjogvi.TaskSupervisor, fn -> func.(key) end)
 
         state
         |> put_ref(ref, key, AsyncResult.loading(%{message: start_message}))
+        |> schedule_timeout(ref, pid, timeout)
         |> broadcast_lifecycle(:start, key)
       else
         state
@@ -155,12 +173,29 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     {:noreply, finish_task(state, ref, :error, &AsyncResult.failed(&1, :malformed_result))}
   end
 
-  def handle_info({:DOWN, ref, :process, _pid, reason}, state)
-      when is_reference(ref) and reason != :normal do
+  def handle_info({:DOWN, ref, :process, _pid, reason}, %{refs: refs} = state)
+      when is_reference(ref) and is_map_key(refs, ref) and reason != :normal do
     {:noreply, finish_task(state, ref, :error, &AsyncResult.failed(&1, reason))}
   end
 
+  # An untracked `:DOWN` — a `:normal` exit (its result was already handled), or
+  # the shutdown of a task we just timed out and finished. Nothing left to do.
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
+    {:noreply, state}
+  end
+
+  # The task ran past its `:timeout`. Shut it down through the supervisor (the
+  # resulting `:DOWN` is then ignored, since `finish_task` drops the ref) and
+  # record the timeout as a failure. A stale timer for an already-finished task
+  # carries a ref we no longer track, so it's ignored.
+  def handle_info({:timeout, ref}, %{refs: refs, timers: timers} = state)
+      when is_map_key(refs, ref) do
+    {_timer_ref, pid} = Map.fetch!(timers, ref)
+    Task.Supervisor.terminate_child(Kjogvi.TaskSupervisor, pid)
+    {:noreply, finish_task(state, ref, :error, &AsyncResult.failed(&1, :timeout))}
+  end
+
+  def handle_info({:timeout, _ref}, state) do
     {:noreply, state}
   end
 
@@ -202,9 +237,34 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
 
     # Drops the ref pointing to task signature, but the task signature -> result stays.
     state
+    |> cancel_timeout(ref)
     |> update_ref(ref, fun)
     |> drop_ref(ref)
     |> broadcast_lifecycle(event, key)
+  end
+
+  # Arms a per-task timer that fires `{:timeout, ref}` after `timeout` seconds.
+  # `:infinity` disables the timer. The timer ref is kept alongside the task pid
+  # so the timeout handler can shut the task down and `finish_task` can cancel a
+  # still-pending timer.
+  defp schedule_timeout(state, _ref, _pid, :infinity), do: state
+
+  defp schedule_timeout(%{timers: timers} = state, ref, pid, timeout) do
+    timer_ref = Process.send_after(self(), {:timeout, ref}, timeout * 1000)
+    %{state | timers: Map.put(timers, ref, {timer_ref, pid})}
+  end
+
+  # Cancels and forgets a task's timer when it finishes (for any reason). Safe
+  # when no timer was armed (`:infinity`) or it already fired.
+  defp cancel_timeout(%{timers: timers} = state, ref) do
+    case Map.pop(timers, ref) do
+      {nil, _timers} ->
+        state
+
+      {{timer_ref, _pid}, timers} ->
+        Process.cancel_timer(timer_ref)
+        %{state | timers: timers}
+    end
   end
 
   # Registers a freshly started task: remember which key the ref belongs to
