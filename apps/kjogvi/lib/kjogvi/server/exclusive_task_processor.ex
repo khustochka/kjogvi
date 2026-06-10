@@ -105,6 +105,12 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   alias Kjogvi.Util.AsyncResult
   alias Kjogvi.Util.PubSubTopic
 
+  # A single PubSub topic carrying lifecycle/progress events for *every* key, so
+  # a global observer (the admin dashboard) can follow all tasks without knowing
+  # their keys in advance. Per-key topics (see `PubSubTopic.for_key/1`) remain the
+  # channel individual callers subscribe to; this is strictly additional.
+  @lifecycle_topic "exclusive_task_processor:lifecycle"
+
   def start_link(init_arg \\ []) do
     {name, init_arg} = Keyword.pop(init_arg, :name, __MODULE__)
     GenServer.start_link(__MODULE__, init_arg, name: name)
@@ -137,8 +143,24 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
   # recorded as a `:timeout` failure, or `:infinity` to disable; defaults to
   # `@default_timeout`).
 
+  @doc """
+  The PubSub topic carrying `{:lifecycle, event, key, async_result}` events for
+  every tracked key. Subscribe here to observe all tasks at once (e.g. the admin
+  dashboard); the snapshot to seed from is `list_statuses/1`.
+  """
+  def lifecycle_topic, do: @lifecycle_topic
+
   def get_status(key, opts \\ []) do
     GenServer.call(server(opts), {:get_status, key})
+  end
+
+  @doc """
+  Returns a snapshot of every tracked task as `%{key => %AsyncResult{}}`,
+  covering both loading and retained (finished) statuses. Used to seed an
+  observer before it starts following `lifecycle_topic/0`.
+  """
+  def list_statuses(opts \\ []) do
+    GenServer.call(server(opts), :list_statuses)
   end
 
   def start_task(key, func, opts \\ []) when is_function(func, 1) do
@@ -158,6 +180,11 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
       statuses[key] || %AsyncResult{},
       state
     }
+  end
+
+  @impl true
+  def handle_call(:list_statuses, _from, %{statuses: statuses} = state) do
+    {:reply, statuses, state}
   end
 
   @impl true
@@ -254,11 +281,18 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     current_result = Map.get(state.statuses, key)
 
     if current_result do
-      {:noreply,
-       %{
-         state
-         | statuses: Map.put(state.statuses, key, AsyncResult.loading(current_result, status))
-       }}
+      merged = AsyncResult.loading(current_result, status)
+
+      # Mirror the merged status onto the global lifecycle topic so dashboard-style
+      # observers see mid-task progress too (per-key subscribers already got the
+      # original `:progress` message directly).
+      Phoenix.PubSub.broadcast(
+        Kjogvi.PubSub,
+        @lifecycle_topic,
+        {:lifecycle, :progress, key, merged}
+      )
+
+      {:noreply, %{state | statuses: Map.put(state.statuses, key, merged)}}
     else
       {:noreply, state}
     end
@@ -342,15 +376,14 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessor do
     %{state | refs: Map.delete(refs, ref)}
   end
 
-  # Announces a status transition on the key's topic, carrying the `AsyncResult`
-  # exactly as stored, so subscribers can assign it without calling get_status/2.
-  # Returns the state unchanged for pipelining.
+  # Announces a status transition on the key's topic *and* the global lifecycle
+  # topic, carrying the `AsyncResult` exactly as stored, so subscribers can assign
+  # it without calling get_status/2. Returns the state unchanged for pipelining.
   defp broadcast_lifecycle(%{statuses: statuses} = state, event, key) do
-    Phoenix.PubSub.broadcast(
-      Kjogvi.PubSub,
-      PubSubTopic.for_key(key),
-      {:lifecycle, event, key, Map.fetch!(statuses, key)}
-    )
+    message = {:lifecycle, event, key, Map.fetch!(statuses, key)}
+
+    Phoenix.PubSub.broadcast(Kjogvi.PubSub, PubSubTopic.for_key(key), message)
+    Phoenix.PubSub.broadcast(Kjogvi.PubSub, @lifecycle_topic, message)
 
     state
   end

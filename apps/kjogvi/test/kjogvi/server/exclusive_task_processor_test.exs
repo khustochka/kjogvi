@@ -367,4 +367,65 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
       release(first_pid)
     end
   end
+
+  describe "list_statuses/1" do
+    test "is empty before any task runs", %{server: server} do
+      assert Processor.list_statuses(server: server) == %{}
+    end
+
+    test "includes loading and finished tasks keyed by their key", %{server: server} do
+      Processor.start_task({:job, 1}, blocking_task(self(), {:ok, :one}), server: server)
+      Processor.start_task({:job, 2}, fn _key -> {:ok, :two} end, server: server)
+
+      assert_receive {:task_started, loading_pid}
+      await_status(server, {:job, 2}, & &1.ok?)
+
+      statuses = Processor.list_statuses(server: server)
+      assert statuses[{:job, 1}].loading
+      assert statuses[{:job, 2}].result == :two
+
+      release(loading_pid)
+    end
+  end
+
+  describe "global lifecycle topic" do
+    # A single topic carries events for every key, so an observer (the admin
+    # dashboard) can follow all tasks without subscribing per key.
+    setup do
+      Phoenix.PubSub.subscribe(Kjogvi.PubSub, Processor.lifecycle_topic())
+      :ok
+    end
+
+    test "broadcasts :start / :ok for any key", %{server: server} do
+      key = {:job, 7}
+      Processor.start_task(key, fn _key -> {:ok, :done} end, server: server, message: "go")
+
+      assert_receive {:lifecycle, :start, ^key, %AsyncResult{loading: %{message: "go"}}}
+      assert_receive {:lifecycle, :ok, ^key, %AsyncResult{ok?: true, result: :done}}
+    end
+
+    test "broadcasts :error for a failing key", %{server: server} do
+      key = {:job, 8}
+      Processor.start_task(key, fn _key -> {:error, :nope} end, server: server)
+
+      assert_receive {:lifecycle, :error, ^key, %AsyncResult{failed: :nope}}
+    end
+
+    test "mirrors mid-task progress as a :progress lifecycle event", %{server: server} do
+      key = {:job, 9}
+      Processor.start_task(key, blocking_task(self(), {:ok, :done}), server: server)
+      assert_receive {:task_started, task_pid}
+      assert_receive {:lifecycle, :start, ^key, _}
+
+      Phoenix.PubSub.broadcast(
+        Kjogvi.PubSub,
+        PubSubTopic.for_key(key),
+        {:progress, key, %{message: "halfway"}}
+      )
+
+      assert_receive {:lifecycle, :progress, ^key, %AsyncResult{loading: %{message: "halfway"}}}
+
+      release(task_pid)
+    end
+  end
 end
