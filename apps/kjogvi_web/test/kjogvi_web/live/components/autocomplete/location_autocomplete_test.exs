@@ -1,5 +1,5 @@
 defmodule KjogviWeb.Live.Components.LocationAutocompleteTest do
-  use KjogviWeb.ConnCase
+  use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
 

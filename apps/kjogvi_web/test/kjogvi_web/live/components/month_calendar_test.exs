@@ -1,5 +1,5 @@
 defmodule KjogviWeb.Live.Components.MonthCalendarTest do
-  use KjogviWeb.ConnCase
+  use KjogviWeb.ConnCase, async: true
   import Phoenix.LiveViewTest
 
   alias Kjogvi.UsersFixtures
