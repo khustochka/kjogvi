@@ -37,26 +37,8 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
 
   defp handle_progress(_msg, socket), do: {:cont, socket}
 
-  def mount(socket) do
-    {
-      :ok,
-      socket
-      |> assign(:async_result, %AsyncResult{})
-    }
-  end
-
   def update(%{user: user}, socket) do
-    # FIXME: do not run on re-render
-    Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key({:legacy_import, user.id}))
-    current_status = ExclusiveTaskProcessor.get_status({:legacy_import, user.id})
-
-    {
-      :ok,
-      socket
-      |> assign(:user, user)
-      |> assign(:async_result, current_status)
-      |> derive_flash()
-    }
+    {:ok, socket |> assign(:user, user) |> subscribe_once()}
   end
 
   def update(%{async_result: async_result}, socket) do
@@ -65,6 +47,22 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
      |> clear_flash()
      |> assign(:async_result, async_result)
      |> derive_flash()}
+  end
+
+  # The PubSub subscription and initial status snapshot belong to the component's
+  # lifetime, not to each parent re-render. `assign_new` seeds `async_result` the
+  # first time the component is updated and is a no-op thereafter, so subsequent
+  # renders keep the live `async_result` maintained by the progress/lifecycle
+  # pushes instead of re-subscribing and clobbering it with a staler snapshot.
+  defp subscribe_once(%{assigns: %{user: user}} = socket) do
+    key = {:legacy_import, user.id}
+
+    socket
+    |> assign_new(:async_result, fn ->
+      Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
+      ExclusiveTaskProcessor.get_status(key)
+    end)
+    |> derive_flash()
   end
 
   def handle_event("start_import", _params, socket) do
