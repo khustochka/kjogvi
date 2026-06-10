@@ -17,15 +17,13 @@ defmodule Kjogvi.Legacy.Import.Observations do
         |> transform_keys(book_signature)
       end
 
-    _ = Repo.insert_all(Observation, obs)
-
-    # Imported records keep their original ids, so advance the sequence past the
-    # highest existing id (but never below @min_start_seq) to avoid id collisions
-    # on subsequently inserted cards.
-    _ =
-      Repo.query!(
-        "SELECT setval('observations_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM observations)));"
-      )
+    with {_, _} <- Repo.insert_all(Observation, obs),
+         {:ok, _} <-
+           Repo.query(
+             "SELECT setval('observations_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM observations)));"
+           ) do
+      :ok
+    end
   end
 
   def after_import do
@@ -43,7 +41,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
   end
 
   def cleanup do
-    _ = Kjogvi.Repo.query!("DELETE FROM observations WHERE import_source='legacy';")
+    Kjogvi.Repo.query("DELETE FROM observations WHERE import_source='legacy';")
   end
 
   defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs, book_signature) do

@@ -22,45 +22,47 @@ defmodule Kjogvi.Legacy.Import.Locations do
     five_mr_slugs = for loc <- locations, loc.is_5mr, do: loc.slug
     locations = Enum.map(locations, &Map.delete(&1, :is_5mr))
 
-    _ = Repo.insert_all(Location, locations)
+    with {_, _} <- Repo.insert_all(Location, locations),
+         {:ok, _} <-
+           Repo.query(
+             "SELECT setval('locations_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM locations)));"
+           ),
+         {:ok, _} <- fill_in_5mr(five_mr_slugs),
+         {:ok, _} <- fill_in_arabat_spit() do
+      :ok
+    end
+  end
 
-    # Imported records keep their original ids, so advance the sequence past the
-    # highest existing id (but never below @min_start_seq) to avoid id collisions
-    # on subsequently inserted cards.
-    _ =
-      Repo.query!(
-        "SELECT setval('locations_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM locations)));"
-      )
+  defp fill_in_5mr(five_mr_slugs) do
+    with five_mr_loc when not is_nil(five_mr_loc) <-
+           from(l in Location, where: l.slug == "5mr")
+           |> preload(:special_child_locations)
+           |> Repo.one(),
+         five_mr_children <-
+           from(l in Location, where: l.slug in ^five_mr_slugs)
+           |> Repo.all() do
+      five_mr_loc
+      |> Ecto.Changeset.change(%{special_child_locations: five_mr_children})
+      |> Repo.update()
+    end
+  end
 
-    five_mr_loc =
-      from(l in Location, where: l.slug == "5mr")
-      |> preload(:special_child_locations)
-      |> Repo.one()
-
-    five_mr_children =
-      from(l in Location, where: l.slug in ^five_mr_slugs)
-      |> Repo.all()
-
-    five_mr_loc
-    |> Ecto.Changeset.change(%{special_child_locations: five_mr_children})
-    |> Repo.update()
-
-    arabat_loc =
-      from(l in Location, where: l.slug == "arabat_spit")
-      |> preload(:special_child_locations)
-      |> Repo.one()
-
-    arabat_children =
-      from(l in Location, where: l.slug in ["arabatska_khersonska", "arabatska_krym"])
-      |> Repo.all()
-
-    arabat_loc
-    |> Ecto.Changeset.change(%{special_child_locations: arabat_children})
-    |> Repo.update()
+  defp fill_in_arabat_spit do
+    with arabat_loc when not is_nil(arabat_loc) <-
+           from(l in Location, where: l.slug == "arabat_spit")
+           |> preload(:special_child_locations)
+           |> Repo.one(),
+         arabat_children <-
+           from(l in Location, where: l.slug in ["arabatska_khersonska", "arabatska_krym"])
+           |> Repo.all() do
+      arabat_loc
+      |> Ecto.Changeset.change(%{special_child_locations: arabat_children})
+      |> Repo.update()
+    end
   end
 
   def cleanup do
-    _ = Kjogvi.Repo.query!("DELETE FROM locations WHERE import_source='legacy';")
+    Kjogvi.Repo.query("DELETE FROM locations WHERE import_source='legacy';")
   end
 
   defp convert_ancestry(%{ancestry: nil} = loc) do
