@@ -29,7 +29,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
 
   # Lifecycle events (:start / :ok / :error) carry the AsyncResult exactly as the
   # processor stores it, so it can be assigned as-is. The tagged event lets the
-  # component persist the freshly preloaded checklists once the task succeeds.
+  # component refresh its display once the task succeeds.
   defp handle_progress({:lifecycle, event, {:ebird_preload, _user_id}, async_result}, socket) do
     send_update(__MODULE__,
       id: @component_id,
@@ -52,18 +52,13 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     }
   end
 
-  # On success the task's result is the list of newly preloaded checklists.
-  # Persist them and refresh the displayed preload data, then surface a count in
-  # the flash via an AsyncResult carrying a message.
-  def update(%{lifecycle: :ok, async_result: async_result}, %{assigns: %{user: user}} = socket) do
-    checklists = async_result.result
-    Store.ChecklistPreload.store_checklists(user, checklists)
-
-    message = "eBird preload done: #{length(checklists)} new checklists."
-
+  # On success the task has already persisted the checklists to the store and its
+  # result carries the completion message. Refresh the displayed preload data
+  # from the store and surface that message in the flash.
+  def update(%{lifecycle: :ok, async_result: async_result}, socket) do
     {:ok,
      socket
-     |> assign(:async_result, AsyncResult.ok(async_result, %{message: message}))
+     |> assign(:async_result, async_result)
      |> assign_preloads_data()
      |> derive_flash()}
   end
@@ -89,7 +84,17 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     Kjogvi.Server.ExclusiveTaskProcessor.start_task(
       {:ebird_preload, user.id},
       fn key ->
-        Ebird.Web.preload_new_checklists_for_user(user, broadcast_key: key)
+        # Persist the checklists inside the task itself, so they are stored even
+        # if this LiveView is closed before the task finishes (the :ok lifecycle
+        # callback below only runs while a subscriber is alive). The store is the
+        # source of truth for the list, so the result only needs to carry the
+        # completion message that subscribers (this component, the admin
+        # dashboard) display.
+        with {:ok, checklists} <-
+               Ebird.Web.preload_new_checklists_for_user(user, broadcast_key: key) do
+          Store.ChecklistPreload.store_checklists(user, checklists)
+          {:ok, %{message: "eBird preload done: #{length(checklists)} new checklists."}}
+        end
       end,
       message: "eBird preload in progress...",
       timeout: 2 * 60 * 1000
@@ -170,7 +175,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
         put_flash(
           socket,
           :error,
-          "Legacy import failed: " <> result_message(async_result.failed, "Server error.")
+          "eBird preload failed: " <> result_message(async_result.failed, "Server error.")
         )
 
       async_result.loading ->
