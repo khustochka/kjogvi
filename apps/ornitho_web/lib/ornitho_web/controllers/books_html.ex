@@ -14,11 +14,11 @@ defmodule OrnithoWeb.BooksHTML do
       {assigns[:page_title]}
     </.header>
     <.simpler_table id="taxonomy-index-books" rows={@books} class="mb-10">
-      <:col :let={book} label="slug and version" class="w-2/10">
+      <:col :let={book} label="slug and version" class="w-48">
         <span class="font-mono text-xl font-semibold text-zinc-600">{book.slug}</span>
         <span class="font-mono text-lg text-zinc-500">{book.version}</span>
       </:col>
-      <:col :let={book} label="name" class="w-6/10">
+      <:col :let={book} label="name">
         <h3 class="text-2xl font-bold text-brand mb-4 opacity-75 hover:opacity-90">
           <a href={OrnithoWeb.LinkHelper.book_path(@conn, book)}>
             {book.name}
@@ -29,8 +29,8 @@ defmodule OrnithoWeb.BooksHTML do
           {Calendar.strftime(book.publication_date, "%-d %b %Y")}
         </p>
       </:col>
-      <:col :let={book} label="taxa" class="w-1/10">{book.taxa_count}</:col>
-      <:col :let={book} label="imported" class="w-1/10">
+      <:col :let={book} label="taxa" class="w-20">{book.taxa_count}</:col>
+      <:col :let={book} label="imported" class="w-36">
         <.datetime time={book.imported_at} />
         <.simple_form
           for={nil}
@@ -47,7 +47,8 @@ defmodule OrnithoWeb.BooksHTML do
                 "phx-submit-loading:opacity-75 rounded-lg",
                 "text-xs font-semibold leading-6 text-white active:text-white/80"
               ]}
-              oweb-disable-with="processing..."
+              oweb-disable-with="importing..."
+              data-processing-class="text-xs font-semibold leading-6 text-red-600"
             >
               Reimport
             </button>
@@ -60,11 +61,11 @@ defmodule OrnithoWeb.BooksHTML do
       <h2 class="text-xl font-semibold ">Available for import</h2>
 
       <.simpler_table id="taxonomy-index-importers" rows={@importers}>
-        <:col :let={importer} label="slug" class="w-2/10">
+        <:col :let={importer} label="slug" class="w-48">
           <span class="font-mono text-xl font-semibold text-zinc-600">{importer.slug()}</span>
           <span class="font-mono text-lg text-zinc-500">{importer.version()}</span>
         </:col>
-        <:col :let={importer} label="name" class="w-7/10">
+        <:col :let={importer} label="name">
           <h3 class="text-2xl font-bold text-zinc-600 opacity-90 mb-4">
             {importer.name()}
           </h3>
@@ -73,7 +74,7 @@ defmodule OrnithoWeb.BooksHTML do
             {Calendar.strftime(importer.publication_date(), "%-d %b %Y")}
           </p>
         </:col>
-        <:col :let={importer} label="import" class="w-1/10">
+        <:col :let={importer} label="import" class="w-36">
           <.simple_form
             for={nil}
             phx-submit="import"
@@ -81,7 +82,11 @@ defmodule OrnithoWeb.BooksHTML do
           >
             <input type="hidden" name="importer" value={importer} />
             <:actions>
-              <.button class="disabled:bg-zinc-500 import-btn" oweb-disable-with="processing...">
+              <.button
+                class="disabled:bg-zinc-500 import-btn"
+                oweb-disable-with="importing..."
+                data-processing-class="text-sm font-semibold leading-6 text-zinc-700"
+              >
                 Import
               </.button>
             </:actions>

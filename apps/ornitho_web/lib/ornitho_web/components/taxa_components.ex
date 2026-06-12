@@ -32,11 +32,15 @@ defmodule OrnithoWeb.TaxaComponents do
   def simpler_table(assigns) do
     ~H"""
     <div id={@id} class={["overflow-y-auto px-4 sm:overflow-visible sm:px-0", @class]}>
-      <table class="mt-6 w-160 sm:w-full">
+      <table class="mt-6 w-160 table-fixed sm:w-full">
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
-            <th class="relative p-0 pb-4"><span class="sr-only">{gettext("Actions")}</span></th>
+            <th :for={col <- @col} class={["p-0 pb-4 pr-6 font-normal", col[:class]]}>
+              {col[:label]}
+            </th>
+            <th :if={@action != []} class="relative p-0 pb-4 w-14">
+              <span class="sr-only">{gettext("Actions")}</span>
+            </th>
           </tr>
         </thead>
         <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">

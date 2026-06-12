@@ -9,8 +9,12 @@ document.addEventListener('DOMContentLoaded', function () {
     buttons.forEach(button => {
       button.disabled = true;
       if (clickedButton == button) {
-        button.dataset.originalText = button.textContent; // store current text
-        button.textContent = button.getAttribute('oweb-disable-with');
+        // Replace the button with a plain label, so it doesn't look like a
+        // disabled (still clickable-looking) button while the import runs.
+        const label = document.createElement('span');
+        label.className = button.dataset.processingClass || '';
+        label.textContent = button.getAttribute('oweb-disable-with');
+        button.replaceWith(label);
       }
     })
   };
