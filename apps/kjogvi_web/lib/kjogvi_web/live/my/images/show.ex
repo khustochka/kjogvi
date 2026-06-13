@@ -39,11 +39,16 @@ defmodule KjogviWeb.Live.My.Images.Show do
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
       <div class="md:col-span-2">
-        <div class="rounded-xl overflow-hidden bg-stone-100">
+        <div class={[
+          "rounded-xl overflow-hidden bg-stone-100 flex items-center justify-center",
+          small_image?(@image) && "p-8"
+        ]}>
           <img
             src={Images.url(@image, :medium)}
             alt={@image.title || @image.slug}
-            class="w-full h-auto"
+            width={image_width(@image)}
+            height={image_height(@image)}
+            class="max-w-full max-h-[90vh] w-auto h-auto object-contain"
           />
         </div>
 
@@ -137,6 +142,32 @@ defmodule KjogviWeb.Live.My.Images.Show do
     case Image.dimensions(image) do
       {w, h} -> "#{w} × #{h}"
       nil -> nil
+    end
+  end
+
+  defp image_width(image) do
+    case Image.dimensions(image) do
+      {w, _h} -> w
+      nil -> nil
+    end
+  end
+
+  defp image_height(image) do
+    case Image.dimensions(image) do
+      {_w, h} -> h
+      nil -> nil
+    end
+  end
+
+  # An image whose largest side is well under the display box is shown at its
+  # native size and floats with lots of empty space around it; padding the
+  # container gives it margins so it doesn't sit flush against the edges.
+  @small_image_threshold 500
+
+  defp small_image?(image) do
+    case Image.dimensions(image) do
+      {w, h} -> max(w, h) < @small_image_threshold
+      nil -> false
     end
   end
 

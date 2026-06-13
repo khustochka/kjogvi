@@ -61,16 +61,16 @@ defmodule KjogviWeb.Live.My.Images.Index do
 
       <ul
         id="images-grid"
-        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         aria-label="Image gallery"
       >
         <li :for={image <- @images} id={"images-#{image.id}"} class="group">
           <.link navigate={~p"/my/images/#{image.id}"} class="block no-underline">
-            <div class="aspect-square rounded-lg overflow-hidden bg-stone-100">
+            <div class="aspect-3/2 rounded-lg overflow-hidden bg-stone-100 flex items-center justify-center">
               <img
                 src={Images.url(image, :thumbnail)}
                 alt={image.title || image.slug}
-                class="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                class="max-w-full max-h-full object-contain"
                 loading="lazy"
               />
             </div>
