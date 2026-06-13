@@ -8,7 +8,7 @@ config :logger, :console, format: "[$level] $message\n"
 
 if config_env() == :dev do
   config :esbuild,
-    version: "0.28.0",
+    version: "0.28.1",
     ornitho_web: [
       args: ~w(
           js/app.js
@@ -25,13 +25,14 @@ if config_env() == :dev do
 
   # Configure tailwind (the version is required)
   config :tailwind,
-    version: "4.3.0",
+    version: "4.3.1",
     ornitho_web: [
       args: ~w(
         --input=css/app.css
         --output=../dist/css/app.css
       ),
-      cd: Path.expand("../assets", __DIR__)
+      cd: Path.expand("../assets", __DIR__),
+      env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
     ]
 end
 
