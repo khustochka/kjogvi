@@ -158,6 +158,7 @@ config :kjogvi, Kjogvi.Legacy.Import,
   hostname: System.get_env("LEGACY_HOSTNAME") || "localhost",
   username: System.get_env("LEGACY_USERNAME"),
   password: System.get_env("LEGACY_PASSWORD"),
+  query_timeout: String.to_integer(System.get_env("LEGACY_QUERY_TIMEOUT") || "30000"),
   image_storage_buckets: %{}
 
 # Import environment specific config. This must remain at the bottom

@@ -40,17 +40,20 @@ defmodule Kjogvi.Legacy.Import do
   defp import_all(opts) do
     :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(opts), fn ->
       result =
-        Kjogvi.Repo.transact(fn ->
-          with :ok <- prepare_import(opts),
-               :ok <- perform_import(:locations, opts),
-               :ok <- perform_import(:cards, opts),
-               :ok <- perform_import(:observations, opts),
-               # Images are imported last: they link back to observations
-               # (see Kjogvi.Legacy.Import.Images).
-               :ok <- perform_import(:images, opts) do
-            {:ok, %{message: "Legacy import done."}}
-          end
-        end)
+        Kjogvi.Repo.transact(
+          fn ->
+            with :ok <- prepare_import(opts),
+                 :ok <- perform_import(:locations, opts),
+                 :ok <- perform_import(:cards, opts),
+                 :ok <- perform_import(:observations, opts),
+                 # Images are imported last: they link back to observations
+                 # (see Kjogvi.Legacy.Import.Images).
+                 :ok <- perform_import(:images, opts) do
+              {:ok, %{message: "Legacy import done."}}
+            end
+          end,
+          timeout: query_timeout()
+        )
 
       {result, telemetry_metadata(opts)}
     end)
@@ -158,6 +161,12 @@ defmodule Kjogvi.Legacy.Import do
 
   def config do
     Application.get_env(:kjogvi, __MODULE__)
+  end
+
+  # Bounds the whole import transaction (`import_all/1`). Configured via
+  # `:query_timeout` (`LEGACY_QUERY_TIMEOUT`, default 30s in config.exs).
+  defp query_timeout do
+    Keyword.fetch!(config(), :query_timeout)
   end
 
   defp adapter do
