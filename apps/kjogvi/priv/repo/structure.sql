@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict y7QjoLfiVEtUaj2mJeVuIv4rn27imegCptyidCGbgHb7zvb6S9xOw1LD8jsxVdw
+\restrict GMGS6LzzsM4kCahIl2JgrZZn8ONmg4JMHDSycJjly1Fum3d9coTdMDPPK13nazM
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -137,7 +137,8 @@ CREATE TABLE public.images (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     import_source character varying(255),
-    legacy_url character varying(255)
+    legacy_url character varying(255),
+    multi_species boolean DEFAULT false NOT NULL
 );
 
 
@@ -896,7 +897,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict y7QjoLfiVEtUaj2mJeVuIv4rn27imegCptyidCGbgHb7zvb6S9xOw1LD8jsxVdw
+\unrestrict GMGS6LzzsM4kCahIl2JgrZZn8ONmg4JMHDSycJjly1Fum3d9coTdMDPPK13nazM
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -915,3 +916,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260603220042);
 INSERT INTO public."schema_migrations" (version) VALUES (20260606192436);
 INSERT INTO public."schema_migrations" (version) VALUES (20260607195437);
 INSERT INTO public."schema_migrations" (version) VALUES (20260608025435);
+INSERT INTO public."schema_migrations" (version) VALUES (20260612000000);
