@@ -26,6 +26,18 @@ defmodule Kjogvi.Images do
   end
 
   @doc """
+  Lists images from all users, newest first, as a paginated `Scrivener.Page`.
+
+  Used for the public gallery; the owning user is preloaded for display.
+  """
+  def list_public_images(%{page: page, page_size: page_size}) do
+    Image
+    |> order_by([i], desc: i.inserted_at, desc: i.id)
+    |> preload(:user)
+    |> Repo.paginate(page: page, page_size: page_size)
+  end
+
+  @doc """
   Fetches one of the user's images by id, raising if it is missing or owned by
   someone else.
   """
