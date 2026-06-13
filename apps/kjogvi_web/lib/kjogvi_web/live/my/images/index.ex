@@ -9,7 +9,7 @@ defmodule KjogviWeb.Live.My.Images.Index do
 
   alias Kjogvi.Images
 
-  @images_per_page 20
+  @images_per_page 24
 
   @impl true
   def mount(_params, _session, socket) do
