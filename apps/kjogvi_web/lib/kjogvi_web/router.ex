@@ -86,8 +86,6 @@ defmodule KjogviWeb.Router do
 
       live "/imports", Live.My.Imports.Index, :index
     end
-
-    post "/account/settings", UserController, :update
   end
 
   # ADMIN ROUTES

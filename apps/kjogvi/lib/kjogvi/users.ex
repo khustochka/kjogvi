@@ -254,7 +254,7 @@ defmodule Kjogvi.Users do
         Kjogvi.Birding.Logbook.Cache.invalidate(user.id)
         {:ok, user}
 
-      {:error, :user, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:error, changeset}
     end
   end

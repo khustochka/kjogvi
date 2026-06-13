@@ -12,6 +12,8 @@ defmodule Kjogvi.Users.User do
 
   schema "users" do
     field :email, :string
+    field :nickname, :string
+    field :display_name, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
@@ -51,9 +53,11 @@ defmodule Kjogvi.Users.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :nickname, :display_name])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> validate_nickname(opts)
+    |> validate_display_name()
     |> ensure_public_token()
   end
 
@@ -62,10 +66,13 @@ defmodule Kjogvi.Users.User do
   """
   def admin_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :nickname, :display_name])
+    |> maybe_put_nickname_from_email()
     |> put_change(:roles, [Kjogvi.Users.admin_role()])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> validate_nickname(opts)
+    |> validate_display_name()
     |> ensure_public_token()
   end
 
@@ -85,9 +92,11 @@ defmodule Kjogvi.Users.User do
   @doc """
   Changeset for user's extra settings.
   """
-  def settings_changeset(user, attrs, _opts \\ []) do
+  def settings_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:default_book_signature])
+    |> cast(attrs, [:nickname, :display_name, :default_book_signature])
+    |> validate_nickname(opts)
+    |> validate_display_name()
     |> cast_embed(:extras)
   end
 
@@ -98,6 +107,54 @@ defmodule Kjogvi.Users.User do
     |> validate_length(:email, max: 160)
     |> maybe_validate_unique_email(opts)
   end
+
+  # Derives the nickname from the part of the email before the @ sign,
+  # unless a nickname was explicitly provided.
+  defp maybe_put_nickname_from_email(changeset) do
+    with nil <- get_change(changeset, :nickname),
+         email when is_binary(email) <- get_change(changeset, :email) do
+      nickname = email |> String.split("@") |> List.first()
+      put_change(changeset, :nickname, nickname)
+    else
+      _ -> changeset
+    end
+  end
+
+  defp validate_nickname(changeset, opts) do
+    changeset
+    |> update_change(:nickname, &maybe_downcase/1)
+    |> validate_required([:nickname])
+    |> validate_length(:nickname, min: 3, max: 20)
+    |> validate_format(:nickname, ~r/^[a-z0-9_-]+$/,
+      message: "must contain only letters, digits, hyphens and underscores"
+    )
+    |> maybe_validate_unique_nickname(opts)
+  end
+
+  defp maybe_downcase(nil), do: nil
+  defp maybe_downcase(value), do: String.downcase(value)
+
+  defp maybe_validate_unique_nickname(changeset, opts) do
+    if Keyword.get(opts, :validate_nickname, true) do
+      changeset
+      |> unsafe_validate_unique(:nickname, Kjogvi.Repo)
+      |> unique_constraint(:nickname)
+    else
+      changeset
+    end
+  end
+
+  defp validate_display_name(changeset) do
+    changeset
+    |> update_change(:display_name, &maybe_trim/1)
+    |> validate_length(:display_name, max: 50)
+    |> validate_format(:display_name, ~r/^[\p{L}\p{M} '.\-]+$/u,
+      message: "must contain only letters, spaces and common punctuation"
+    )
+  end
+
+  defp maybe_trim(nil), do: nil
+  defp maybe_trim(value), do: String.trim(value)
 
   defp validate_password(changeset, opts) do
     changeset

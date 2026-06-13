@@ -31,19 +31,15 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
     assert has_element?(lv, "#logbook-empty-no-settings")
   end
 
-  test "when at least one list is enabled, the enable-lists callout is hidden", %{
-    conn: conn,
-    user: user
-  } do
-    post(conn, "/my/account/settings", %{
-      "user" => %{
+  test "when at least one list is enabled, the enable-lists callout is hidden", %{user: user} do
+    {:ok, _user} =
+      Kjogvi.Users.update_user_settings(user, %{
         "extras" => %{
           "logbook_settings" => %{
             "0" => %{"location_id" => "", "life" => "true", "year" => "false"}
           }
         }
-      }
-    })
+      })
 
     # Re-login the (unchanged) user to pick up updated extras in scope.
     conn = log_in_user(build_conn(), Kjogvi.Repo.get!(Kjogvi.Users.User, user.id))

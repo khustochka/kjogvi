@@ -86,9 +86,26 @@ defmodule KjogviWeb.Live.My.Account.Settings do
           <CoreComponents.simple_form
             for={@settings_form}
             id="settings_form"
-            action={~p"/my/account/settings"}
-            method="post"
+            phx-change="validate_settings"
+            phx-submit="update_settings"
           >
+            <CoreComponents.input
+              field={@settings_form[:nickname]}
+              type="text"
+              label="Nickname"
+              required
+            >
+              <:hint>3–20 characters: lowercase letters, digits, hyphens and underscores.</:hint>
+            </CoreComponents.input>
+
+            <CoreComponents.input
+              field={@settings_form[:display_name]}
+              type="text"
+              label="Display name"
+            >
+              <:hint>Up to 50 characters: letters, spaces and common punctuation.</:hint>
+            </CoreComponents.input>
+
             <CoreComponents.input
               field={@settings_form[:default_book_signature]}
               type="select"
@@ -235,6 +252,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
     socket =
       socket
+      |> assign(:page_title, "Account settings")
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
@@ -308,6 +326,42 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+    end
+  end
+
+  def handle_event("validate_settings", %{"user" => user_params}, socket) do
+    settings_form =
+      socket.assigns.current_scope.user
+      |> Kjogvi.Users.User.settings_changeset(user_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, settings_form: settings_form)}
+  end
+
+  def handle_event("update_settings", %{"user" => user_params}, socket) do
+    user = socket.assigns.current_scope.user
+
+    case Users.update_user_settings(user, user_params) do
+      {:ok, user} ->
+        settings_form =
+          user
+          |> Kjogvi.Users.User.settings_changeset(%{})
+          |> to_form()
+
+        scope = %{socket.assigns.current_scope | user: user}
+
+        socket =
+          socket
+          |> put_flash(:info, "User account updated.")
+          |> assign(:current_scope, scope)
+          |> assign(:settings_form, settings_form)
+          |> assign(:logbook_location_rows, build_logbook_location_rows(user))
+
+        {:noreply, socket}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, settings_form: to_form(Map.put(changeset, :action, :insert)))}
     end
   end
 

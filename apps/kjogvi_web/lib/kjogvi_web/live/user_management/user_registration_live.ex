@@ -36,6 +36,8 @@ Kjogvi.Config.with_multiuser do
 
           <CoreComponents.input field={@form[:email]} type="email" label="Email" required />
           <CoreComponents.input field={@form[:password]} type="password" label="Password" required />
+          <CoreComponents.input field={@form[:nickname]} type="text" label="Nickname" required />
+          <CoreComponents.input field={@form[:display_name]} type="text" label="Display name" />
 
           <:actions>
             <CoreComponents.button phx-disable-with="Creating account..." class="w-full">

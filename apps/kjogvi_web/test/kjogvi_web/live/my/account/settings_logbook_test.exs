@@ -33,8 +33,12 @@ defmodule KjogviWeb.Live.My.Account.SettingsLogbookTest do
         |> Phoenix.ConnTest.init_test_session(%{})
         |> Plug.Conn.put_session(:user_token, token)
 
-      post(conn, "/my/account/settings", %{
+      {:ok, lv, _html} = live(conn, ~p"/my/account/settings")
+
+      lv
+      |> form("#settings_form", %{
         "user" => %{
+          "nickname" => user.nickname,
           "extras" => %{
             "logbook_settings" => %{
               "0" => %{"location_id" => "", "life" => "true", "year" => "false"}
@@ -42,6 +46,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsLogbookTest do
           }
         }
       })
+      |> render_submit()
 
       user = Repo.get!(Kjogvi.Users.User, user.id)
       assert length(user.extras.logbook_settings) == 1

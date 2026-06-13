@@ -50,13 +50,53 @@ defmodule Kjogvi.UsersTest do
   end
 
   describe "register_user/1" do
-    test "requires email and password to be set" do
+    test "requires email, password and nickname to be set" do
       {:error, changeset} = Users.register_user(%{})
 
       assert %{
                password: ["can't be blank"],
-               email: ["can't be blank"]
+               email: ["can't be blank"],
+               nickname: ["can't be blank"]
              } = errors_on(changeset)
+    end
+
+    test "validates nickname format and length" do
+      {:error, changeset} = Users.register_user(%{nickname: "ab"})
+      assert "should be at least 3 character(s)" in errors_on(changeset).nickname
+
+      {:error, changeset} = Users.register_user(%{nickname: String.duplicate("a", 21)})
+      assert "should be at most 20 character(s)" in errors_on(changeset).nickname
+
+      {:error, changeset} = Users.register_user(%{nickname: "bad nick!"})
+
+      assert "must contain only letters, digits, hyphens and underscores" in errors_on(changeset).nickname
+    end
+
+    test "forces nickname to lowercase" do
+      {:ok, user} = Users.register_user(valid_user_attributes(nickname: "JohnDoe"))
+      assert user.nickname == "johndoe"
+    end
+
+    test "validates nickname uniqueness ignoring case" do
+      %{nickname: nickname} = user_fixture()
+
+      {:error, changeset} =
+        Users.register_user(valid_user_attributes(nickname: String.upcase(nickname)))
+
+      assert "has already been taken" in errors_on(changeset).nickname
+    end
+
+    test "accepts an optional display_name and validates its format" do
+      {:ok, user} = Users.register_user(valid_user_attributes(display_name: "Vitalii K."))
+      assert user.display_name == "Vitalii K."
+
+      {:ok, user} = Users.register_user(valid_user_attributes())
+      assert is_nil(user.display_name)
+
+      {:error, changeset} =
+        Users.register_user(valid_user_attributes(display_name: "no_underscores"))
+
+      assert "must contain only letters, spaces and common punctuation" in errors_on(changeset).display_name
     end
 
     test "validates email and password when given" do
@@ -104,10 +144,46 @@ defmodule Kjogvi.UsersTest do
     end
   end
 
+  describe "register_admin/1" do
+    test "derives the nickname from the part of the email before the @ sign when not given" do
+      {:ok, user} =
+        Users.register_admin(
+          valid_user_attributes(email: "alice@example.com")
+          |> Map.delete(:nickname)
+        )
+
+      assert user.nickname == "alice"
+    end
+
+    test "uses the nickname passed in the attributes when provided" do
+      {:ok, user} =
+        Users.register_admin(
+          valid_user_attributes(email: "bob@example.com", nickname: "someoneelse")
+        )
+
+      assert user.nickname == "someoneelse"
+    end
+
+    test "grants the admin role" do
+      {:ok, user} = Users.register_admin(valid_user_attributes(email: "carol@example.com"))
+      assert Kjogvi.Users.admin_role() in user.roles
+    end
+
+    test "validates the derived nickname format" do
+      {:error, changeset} =
+        Users.register_admin(
+          valid_user_attributes(email: "a.b@example.com")
+          |> Map.delete(:nickname)
+        )
+
+      assert "must contain only letters, digits, hyphens and underscores" in errors_on(changeset).nickname
+    end
+  end
+
   describe "change_user_registration/2" do
     test "returns a changeset" do
       assert %Ecto.Changeset{} = changeset = Users.change_user_registration(%User{})
-      assert changeset.required == [:password, :email]
+      assert changeset.required == [:nickname, :password, :email]
     end
 
     test "allows fields to be set" do

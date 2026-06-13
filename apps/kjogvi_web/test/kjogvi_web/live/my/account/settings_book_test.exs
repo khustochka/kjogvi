@@ -1,6 +1,8 @@
 defmodule KjogviWeb.Live.My.Account.SettingsBookTest do
   use KjogviWeb.ConnCase, async: true
 
+  import Phoenix.LiveViewTest
+
   alias Kjogvi.UsersFixtures
   alias Kjogvi.Repo
 
@@ -14,12 +16,16 @@ defmodule KjogviWeb.Live.My.Account.SettingsBookTest do
     conn =
       conn |> Phoenix.ConnTest.init_test_session(%{}) |> Plug.Conn.put_session(:user_token, token)
 
-    # Simulate the controller action directly
-    post(conn, "/my/account/settings", %{
-      "user" => %{"default_book_signature" => "#{book.slug}/#{book.version}"},
-      "email" => "test@example.com",
-      "password" => "secret"
+    {:ok, lv, _html} = live(conn, ~p"/my/account/settings")
+
+    lv
+    |> form("#settings_form", %{
+      "user" => %{
+        "nickname" => user.nickname,
+        "default_book_signature" => "#{book.slug}/#{book.version}"
+      }
     })
+    |> render_submit()
 
     # Reload user from DB and assert it's saved
     user = Repo.get!(Kjogvi.Users.User, user.id)

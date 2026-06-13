@@ -296,6 +296,8 @@ defmodule KjogviWeb.CoreComponents do
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
+  slot :hint, doc: "optional help text rendered under the field"
+
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
 
@@ -336,10 +338,11 @@ defmodule KjogviWeb.CoreComponents do
   def input(%{type: "select"} = assigns) do
     ~H"""
     <div>
-      <.label for={@id}>{@label}</.label>
+      <.label for={@id} required={@rest[:required]}>{@label}</.label>
       <select
         id={@id}
         name={@name}
+        aria-describedby={@hint != [] && "#{@id}_hint"}
         class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
         multiple={@multiple}
         {@rest}
@@ -347,6 +350,9 @@ defmodule KjogviWeb.CoreComponents do
         <option :if={@prompt} value="">{@prompt}</option>
         {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
+      <p :if={@hint != []} id={"#{@id}_hint"} class="text-sm text-zinc-500 mt-1">
+        {render_slot(@hint)}
+      </p>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -355,10 +361,11 @@ defmodule KjogviWeb.CoreComponents do
   def input(%{type: "textarea"} = assigns) do
     ~H"""
     <div>
-      <.label for={@id}>{@label}</.label>
+      <.label for={@id} required={@rest[:required]}>{@label}</.label>
       <textarea
         id={@id}
         name={@name}
+        aria-describedby={@hint != [] && "#{@id}_hint"}
         class={[
           "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 min-h-[6rem]",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
@@ -366,6 +373,9 @@ defmodule KjogviWeb.CoreComponents do
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+      <p :if={@hint != []} id={"#{@id}_hint"} class="text-sm text-zinc-500 mt-1">
+        {render_slot(@hint)}
+      </p>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -375,12 +385,13 @@ defmodule KjogviWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <div>
-      <.label for={@id}>{@label}</.label>
+      <.label for={@id} required={@rest[:required]}>{@label}</.label>
       <input
         type={@type}
         name={@name}
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        aria-describedby={@hint != [] && "#{@id}_hint"}
         class={[
           "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
@@ -388,6 +399,9 @@ defmodule KjogviWeb.CoreComponents do
         ]}
         {@rest}
       />
+      <p :if={@hint != []} id={"#{@id}_hint"} class="text-sm text-zinc-500 mt-1">
+        {render_slot(@hint)}
+      </p>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -397,12 +411,14 @@ defmodule KjogviWeb.CoreComponents do
   Renders a label.
   """
   attr :for, :string, default: nil
+  attr :required, :boolean, default: false
   slot :inner_block, required: true
 
   def label(assigns) do
     ~H"""
     <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
       {render_slot(@inner_block)}
+      <span :if={@required} class="text-rose-600" aria-hidden="true">*</span>
     </label>
     """
   end
