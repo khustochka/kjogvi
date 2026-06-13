@@ -578,15 +578,29 @@ defmodule Kjogvi.ImagesTest do
                     Path.join([__DIR__, "..", "support", "fixtures", "files", "sample_bird.jpg"])
                   )
 
-    test "reads dimensions and EXIF date from an uploaded file" do
+    test "reads dimensions, EXIF date, and content type from an uploaded file" do
       upload = %Plug.Upload{
         path: @sample_image,
         filename: "sample_bird.jpg",
         content_type: "image/jpeg"
       }
 
-      assert %{"width" => 60, "height" => 40, "exif_date" => "2021-07-15 09:30:00"} =
-               Images.extract_metadata(upload)
+      assert %{
+               "width" => 60,
+               "height" => 40,
+               "exif_date" => "2021-07-15 09:30:00",
+               "content_type" => "image/jpeg"
+             } = Images.extract_metadata(upload)
+    end
+
+    test "omits content type for the generic octet-stream fallback" do
+      upload = %Plug.Upload{
+        path: @sample_image,
+        filename: "sample_bird.jpg",
+        content_type: "application/octet-stream"
+      }
+
+      refute Map.has_key?(Images.extract_metadata(upload), "content_type")
     end
 
     test "returns an empty map for a non-upload" do
@@ -619,6 +633,18 @@ defmodule Kjogvi.ImagesTest do
     test "exif_date returns nil when absent or unparseable" do
       assert Image.exif_date(%Image{extras: %{}}) == nil
       assert Image.exif_date(%Image{extras: %{"exif_date" => "nonsense"}}) == nil
+    end
+  end
+
+  describe "Image.content_type/1 and Image.legacy_title/1" do
+    test "content_type reads the stored MIME type from extras" do
+      assert Image.content_type(%Image{extras: %{"content_type" => "image/jpeg"}}) == "image/jpeg"
+      assert Image.content_type(%Image{extras: %{}}) == nil
+    end
+
+    test "legacy_title reads the stored legacy title from extras" do
+      assert Image.legacy_title(%Image{extras: %{"legacy_title" => "Old Title"}}) == "Old Title"
+      assert Image.legacy_title(%Image{extras: %{}}) == nil
     end
   end
 end

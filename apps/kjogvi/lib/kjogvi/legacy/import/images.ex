@@ -70,7 +70,7 @@ defmodule Kjogvi.Legacy.Import.Images do
       id: id,
       slug: slug,
       title: nil,
-      description: media[:description],
+      description: blank_to_nil(media[:description]),
       sort_order: media[:index_num],
       multi_species: media[:multi_species] || false,
       extras: extras(media),
@@ -107,7 +107,7 @@ defmodule Kjogvi.Legacy.Import.Images do
     |> Enum.reduce(%{}, fn key, acc ->
       put_extra(acc, Atom.to_string(key), media[key])
     end)
-    |> put_extra("legacy_title", media[:title])
+    |> put_legacy_title(media[:title])
     |> put_meta(media[:meta])
   end
 
@@ -136,6 +136,26 @@ defmodule Kjogvi.Legacy.Import.Images do
   # Drop nils so legacy-absent columns don't litter `extras` with null values.
   defp put_extra(extras, _key, nil), do: extras
   defp put_extra(extras, key, value), do: Map.put(extras, key, value)
+
+  # The legacy `title` is often a blank/whitespace-only string rather than NULL;
+  # skip those so `extras` only carries a meaningful `legacy_title`.
+  defp put_legacy_title(extras, title) do
+    case blank_to_nil(title) do
+      nil -> extras
+      trimmed -> Map.put(extras, "legacy_title", trimmed)
+    end
+  end
+
+  # Legacy text columns are often blank/whitespace-only strings rather than NULL.
+  # Normalize those to `nil` and trim the rest.
+  defp blank_to_nil(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp blank_to_nil(value), do: value
 
   defp convert_timestamp(nil, fallback), do: fallback
 

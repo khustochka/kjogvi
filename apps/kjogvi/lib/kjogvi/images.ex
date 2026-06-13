@@ -370,13 +370,16 @@ defmodule Kjogvi.Images do
 
   Reads the file via `VixProcessor` and returns a map with string keys matching
   the `extras` jsonb column's round-trip representation; a non-upload (or a read
-  failure) yields `%{}`. Pass the result to `create_image/3` or
-  `replace_image_file/3` to avoid re-reading the file at save.
+  failure) yields `%{}`. The upload's MIME type is included as `"content_type"`
+  when present. Pass the result to `create_image/3` or `replace_image_file/3` to
+  avoid re-reading the file at save.
   """
-  def extract_metadata(%{path: path}) do
+  def extract_metadata(%{path: path} = upload) do
     case VixProcessor.extract_metadata(path) do
       {:ok, metadata} ->
-        Map.new(metadata, fn {key, value} -> {to_string(key), value} end)
+        metadata
+        |> Map.new(fn {key, value} -> {to_string(key), value} end)
+        |> maybe_put_content_type(upload)
 
       _ ->
         %{}
@@ -384,6 +387,13 @@ defmodule Kjogvi.Images do
   end
 
   def extract_metadata(_), do: %{}
+
+  defp maybe_put_content_type(extras, %{content_type: content_type})
+       when is_binary(content_type) and content_type != "application/octet-stream" do
+    Map.put(extras, "content_type", content_type)
+  end
+
+  defp maybe_put_content_type(extras, _upload), do: extras
 
   defp load_observations(_user_id, []), do: []
 

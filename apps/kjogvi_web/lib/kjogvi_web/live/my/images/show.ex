@@ -98,6 +98,14 @@ defmodule KjogviWeb.Live.My.Images.Show do
               <dt class="text-stone-500">Dimensions</dt>
               <dd class="text-stone-800">{dimensions(@image)}</dd>
             </div>
+            <div :if={Image.content_type(@image)}>
+              <dt class="text-stone-500">Content type</dt>
+              <dd class="font-mono text-stone-800">{Image.content_type(@image)}</dd>
+            </div>
+            <div :if={Image.legacy_title(@image)}>
+              <dt class="text-stone-500">Legacy title</dt>
+              <dd class="text-stone-800">{Image.legacy_title(@image)}</dd>
+            </div>
             <div :if={photo_date(@image)}>
               <dt class="text-stone-500">Photo date</dt>
               <dd class="text-stone-800">{photo_date(@image)}</dd>

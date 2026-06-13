@@ -69,6 +69,24 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
       assert image.extras["legacy_title"] == "Legacy Title"
     end
 
+    test "does not store a blank legacy title in extras" do
+      user = Kjogvi.UsersFixtures.user_fixture()
+
+      Images.import(@columns, [row(%{"title" => "   "})], user: user)
+
+      [image] = Repo.all(Image)
+      refute Map.has_key?(image.extras, "legacy_title")
+    end
+
+    test "leaves a blank description as nil" do
+      user = Kjogvi.UsersFixtures.user_fixture()
+
+      Images.import(@columns, [row(%{"description" => "   "})], user: user)
+
+      [image] = Repo.all(Image)
+      assert image.description == nil
+    end
+
     test "preserves unmapped legacy columns under extras" do
       user = Kjogvi.UsersFixtures.user_fixture()
 

@@ -145,4 +145,22 @@ defmodule Kjogvi.Images.Image do
   end
 
   def exif_date(_), do: nil
+
+  @doc """
+  MIME type recorded at upload (or import), or `nil` when unknown.
+  """
+  def content_type(%__MODULE__{extras: %{"content_type" => value}}) when is_binary(value) do
+    value
+  end
+
+  def content_type(_), do: nil
+
+  @doc """
+  Title carried over from the legacy system, or `nil` when absent.
+  """
+  def legacy_title(%__MODULE__{extras: %{"legacy_title" => value}}) when is_binary(value) do
+    value
+  end
+
+  def legacy_title(_), do: nil
 end

@@ -17,7 +17,13 @@ defmodule KjogviWeb.Live.My.Images.ShowTest do
       ImagesFixtures.image_fixture(
         user: user,
         title: "Sandhill Crane",
-        extras: %{"width" => 1200, "height" => 800, "exif_date" => "2025-05-25 18:50:14"}
+        extras: %{
+          "width" => 1200,
+          "height" => 800,
+          "exif_date" => "2025-05-25 18:50:14",
+          "content_type" => "image/jpeg",
+          "legacy_title" => "Grus canadensis"
+        }
       )
 
     {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}")
@@ -25,6 +31,8 @@ defmodule KjogviWeb.Live.My.Images.ShowTest do
     assert has_element?(live, "h1", "Sandhill Crane")
     assert has_element?(live, "dd", "1200 × 800")
     assert has_element?(live, "dd", "May 25, 2025 18:50")
+    assert has_element?(live, "dd", "image/jpeg")
+    assert has_element?(live, "dd", "Grus canadensis")
     assert has_element?(live, "a", "Original")
   end
 
