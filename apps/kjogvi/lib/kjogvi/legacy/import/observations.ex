@@ -1,8 +1,11 @@
 defmodule Kjogvi.Legacy.Import.Observations do
   @moduledoc false
 
+  alias Kjogvi.Legacy.Import.Utils
   alias Kjogvi.Repo
   alias Kjogvi.Birding.Observation
+
+  @blank_to_nil_columns [:quantity, :notes, :private_notes, :ebird_obs_id]
 
   @min_start_seq 100_000
 
@@ -66,24 +69,19 @@ defmodule Kjogvi.Legacy.Import.Observations do
       :private_notes
     ])
     |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
-    |> Map.put(:inserted_at, convert_timestamp(created_at))
-    |> Map.put(:updated_at, convert_timestamp(updated_at))
+    # TODO: many legacy observations have no created_at/updated_at, so these can
+    # be nil and the observations table allows null timestamps. In the future,
+    # select a default timestamp here (from card?) and make the columns NOT NULL.
+    |> Map.put(:inserted_at, Utils.convert_timestamp(created_at))
+    |> Map.put(:updated_at, Utils.convert_timestamp(updated_at))
     |> Map.put(:import_source, :legacy)
+    |> normalize_text_columns()
   end
 
-  defp convert_timestamp(nil) do
-    nil
-  end
-
-  defp convert_timestamp(%NaiveDateTime{} = time) do
-    {:ok, converted} = DateTime.from_naive(time, "Etc/UTC")
-    converted
-  end
-
-  defp convert_timestamp(time) when is_binary(time) do
-    {:ok, dt, _} = DateTime.from_iso8601(time)
-    {usec, _} = dt.microsecond
-    %{dt | microsecond: {usec, 6}}
+  defp normalize_text_columns(obs) do
+    Enum.reduce(@blank_to_nil_columns, obs, fn key, acc ->
+      Map.update(acc, key, nil, &Utils.blank_to_nil/1)
+    end)
   end
 
   defp book_signature!(opts) do

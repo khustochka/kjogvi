@@ -96,6 +96,35 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
       assert location.import_source == :legacy
     end
 
+    test "normalizes blank loc_type and iso_code to nil" do
+      rows = [
+        row(%{
+          "id" => 5,
+          "slug" => "blanks",
+          "name_en" => "Blanks",
+          "loc_type" => "  ",
+          "iso_code" => "  "
+        })
+      ]
+
+      Locations.import(@columns, rows, [])
+
+      location = Repo.get_by!(Location, slug: "blanks")
+      assert location.location_type == nil
+      assert location.iso_code == nil
+    end
+
+    test "trims and keeps a non-blank iso_code" do
+      rows = [
+        row(%{"id" => 6, "slug" => "withiso", "name_en" => "With ISO", "iso_code" => " UA "})
+      ]
+
+      Locations.import(@columns, rows, [])
+
+      location = Repo.get_by!(Location, slug: "withiso")
+      assert location.iso_code == "UA"
+    end
+
     test "advances the id sequence past @min_start_seq for new locations" do
       rows = [
         row(%{"id" => 1, "slug" => "5mr", "name_en" => "5MR"}),

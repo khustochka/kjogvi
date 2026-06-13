@@ -1,6 +1,10 @@
 defmodule Kjogvi.Legacy.Import.Cards do
   @moduledoc false
 
+  alias Kjogvi.Legacy.Import.Utils
+
+  @blank_to_nil_columns [:biotope, :weather, :observers, :notes, :kml_url, :ebird_id]
+
   @min_start_seq 20_000
 
   def import(columns_str, rows, opts) do
@@ -37,8 +41,8 @@ defmodule Kjogvi.Legacy.Import.Cards do
            observ_date: observ_date
          } = card
        ) do
-    inserted_at = convert_timestamp(created_at)
-    update_time = convert_timestamp(updated_at)
+    inserted_at = Utils.convert_timestamp(created_at)
+    update_time = Utils.convert_timestamp(updated_at)
     observ_date = convert_date(observ_date)
 
     card
@@ -50,6 +54,16 @@ defmodule Kjogvi.Legacy.Import.Cards do
     |> Map.put(:observ_date, observ_date)
     |> Map.put(:start_time, convert_start_time(start_time))
     |> Map.put(:import_source, :legacy)
+    |> normalize_text_columns()
+  end
+
+  defp normalize_text_columns(card) do
+    Enum.reduce(@blank_to_nil_columns, card, fn key, acc ->
+      case acc do
+        %{^key => value} -> Map.put(acc, key, Utils.blank_to_nil(value))
+        _ -> acc
+      end
+    end)
   end
 
   def convert_start_time(""), do: nil
@@ -59,17 +73,6 @@ defmodule Kjogvi.Legacy.Import.Cards do
     [hr, min] = String.split(str, ":")
     {:ok, time} = Time.new(String.to_integer(hr), String.to_integer(min), 0)
     time
-  end
-
-  defp convert_timestamp(%NaiveDateTime{} = time) do
-    {:ok, converted} = DateTime.from_naive(time, "Etc/UTC")
-    converted
-  end
-
-  defp convert_timestamp(time) when is_binary(time) do
-    {:ok, dt, _} = DateTime.from_iso8601(time)
-    {usec, _} = dt.microsecond
-    %{dt | microsecond: {usec, 6}}
   end
 
   defp convert_date(%Date{} = date) do

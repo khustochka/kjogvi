@@ -11,6 +11,7 @@ defmodule Kjogvi.Legacy.Import.Images do
   by the adapters) rebuilds `ImageObservation` join rows straight through.
   """
 
+  alias Kjogvi.Legacy.Import.Utils
   alias Kjogvi.Repo
   alias Kjogvi.Images.Image
   alias Kjogvi.Images.ImageObservation
@@ -31,7 +32,7 @@ defmodule Kjogvi.Legacy.Import.Images do
         columns |> Enum.zip(row) |> Map.new()
       end
 
-    images = Enum.map(media, &transform(&1, user, time))
+    images = Enum.map(media, &transform(&1, user))
     joins = Enum.flat_map(media, &observation_joins(&1, time))
 
     with {_, _} <- Repo.insert_all(Image, images),
@@ -65,12 +66,12 @@ defmodule Kjogvi.Legacy.Import.Images do
     end
   end
 
-  defp transform(%{id: id, slug: slug} = media, user, time) do
+  defp transform(%{id: id, slug: slug} = media, user) do
     %{
       id: id,
       slug: slug,
       title: nil,
-      description: blank_to_nil(media[:description]),
+      description: Utils.blank_to_nil(media[:description]),
       sort_order: media[:index_num],
       multi_species: media[:multi_species] || false,
       extras: extras(media),
@@ -79,8 +80,8 @@ defmodule Kjogvi.Legacy.Import.Images do
       token: Kjogvi.Util.Token.generate(),
       storage_backend: "legacy",
       import_source: :legacy,
-      inserted_at: convert_timestamp(media[:created_at], time),
-      updated_at: convert_timestamp(media[:updated_at], time)
+      inserted_at: Utils.convert_timestamp(media[:created_at]),
+      updated_at: Utils.convert_timestamp(media[:updated_at])
     }
   end
 
@@ -140,34 +141,10 @@ defmodule Kjogvi.Legacy.Import.Images do
   # The legacy `title` is often a blank/whitespace-only string rather than NULL;
   # skip those so `extras` only carries a meaningful `legacy_title`.
   defp put_legacy_title(extras, title) do
-    case blank_to_nil(title) do
+    case Utils.blank_to_nil(title) do
       nil -> extras
       trimmed -> Map.put(extras, "legacy_title", trimmed)
     end
-  end
-
-  # Legacy text columns are often blank/whitespace-only strings rather than NULL.
-  # Normalize those to `nil` and trim the rest.
-  defp blank_to_nil(value) when is_binary(value) do
-    case String.trim(value) do
-      "" -> nil
-      trimmed -> trimmed
-    end
-  end
-
-  defp blank_to_nil(value), do: value
-
-  defp convert_timestamp(nil, fallback), do: fallback
-
-  defp convert_timestamp(%NaiveDateTime{} = time, _fallback) do
-    {:ok, converted} = DateTime.from_naive(time, "Etc/UTC")
-    converted
-  end
-
-  defp convert_timestamp(time, _fallback) when is_binary(time) do
-    {:ok, dt, _} = DateTime.from_iso8601(time)
-    {usec, _} = dt.microsecond
-    %{dt | microsecond: {usec, 6}}
   end
 
   defp user!(opts) do

@@ -3,6 +3,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
 
   import Ecto.Query
 
+  alias Kjogvi.Legacy.Import.Utils
   alias Kjogvi.Repo
   alias Kjogvi.Geo.Location
 
@@ -87,11 +88,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
       if slug in ["5mr", "arabat_spit"] do
         "special"
       else
-        if loc_type == "" do
-          nil
-        else
-          loc_type
-        end
+        Utils.blank_to_nil(loc_type)
       end
 
     time = DateTime.utc_now()
@@ -111,6 +108,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
     |> Map.put(:location_type, location_type)
     |> Map.put(:is_private, loc.private_loc)
     |> Map.put(:cached_public_location_id, loc.cached_public_locus_id)
+    |> Map.update(:iso_code, nil, &Utils.blank_to_nil/1)
     |> Map.put(:inserted_at, time)
     |> Map.put(:updated_at, time)
     |> Map.put(:import_source, :legacy)
