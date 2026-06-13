@@ -145,6 +145,13 @@ config :ex_aws,
 
 # KJOGVI
 
+# Only relevant for Local import adapter
+config :kjogvi, Kjogvi.Legacy.Import,
+  image_storage_buckets: %{
+    "amazon" => System.get_env("LEGACY_PROD_BUCKET"),
+    "amazon_dev" => System.get_env("LEGACY_DEV_BUCKET")
+  }
+
 # config :kjogvi, Kjogvi.Legacy.Import,
 #   adapter: Kjogvi.Legacy.Adapters.Download,
 #   url: System.get_env("LEGACY_URL"),

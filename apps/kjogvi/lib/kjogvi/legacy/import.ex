@@ -2,7 +2,8 @@ defmodule Kjogvi.Legacy.Import do
   @moduledoc false
 
   def run(user, opts \\ []) do
-    with :ok <- validate(user) do
+    with :ok <- validate(user),
+         :ok <- validate_adapter_config() do
       opts
       |> Keyword.put(:user, user)
       |> import_all()
@@ -22,6 +23,20 @@ defmodule Kjogvi.Legacy.Import do
      }}
   end
 
+  # Lets the configured adapter check its own required config (DB connection,
+  # remote URL/API key, ...) up front, so a misconfiguration surfaces as a
+  # friendly `{:error, %{message: ...}}` instead of an opaque crash deep inside
+  # the import. Adapters that need nothing return `:ok` (the default).
+  defp validate_adapter_config do
+    adapter = adapter()
+
+    if function_exported?(adapter, :validate_config, 0) do
+      adapter.validate_config()
+    else
+      :ok
+    end
+  end
+
   defp import_all(opts) do
     :telemetry.span([:kjogvi, :legacy, :import], telemetry_metadata(opts), fn ->
       result =
@@ -29,7 +44,10 @@ defmodule Kjogvi.Legacy.Import do
           with :ok <- prepare_import(opts),
                :ok <- perform_import(:locations, opts),
                :ok <- perform_import(:cards, opts),
-               :ok <- perform_import(:observations, opts) do
+               :ok <- perform_import(:observations, opts),
+               # Images are imported last: they link back to observations
+               # (see Kjogvi.Legacy.Import.Images).
+               :ok <- perform_import(:images, opts) do
             {:ok, %{message: "Legacy import done."}}
           end
         end)
@@ -40,7 +58,8 @@ defmodule Kjogvi.Legacy.Import do
 
   def prepare_import(opts \\ []) do
     :telemetry.span([:kjogvi, :legacy, :import, :prepare], telemetry_metadata(opts), fn ->
-      with {:ok, _} <- Kjogvi.Legacy.Import.Observations.cleanup(),
+      with {:ok, _} <- Kjogvi.Legacy.Import.Images.cleanup(),
+           {:ok, _} <- Kjogvi.Legacy.Import.Observations.cleanup(),
            {:ok, _} <- Kjogvi.Legacy.Import.Cards.cleanup(),
            {:ok, _} <- Kjogvi.Legacy.Import.Locations.cleanup() do
         {:ok, telemetry_metadata(opts)}
@@ -48,7 +67,9 @@ defmodule Kjogvi.Legacy.Import do
     end)
   end
 
-  def perform_import(object_type, opts \\ []) do
+  def perform_import(object_type, opts \\ [])
+
+  def perform_import(object_type, opts) do
     :telemetry.span([:kjogvi, :legacy, :import, object_type], telemetry_metadata(opts), fn ->
       result = load(object_type, adapter().init(), {1, 0}, opts)
 
@@ -88,6 +109,10 @@ defmodule Kjogvi.Legacy.Import do
     Kjogvi.Legacy.Import.Observations.import(columns, rows, opts)
   end
 
+  defp put_loaded(:images, columns, rows, opts) do
+    Kjogvi.Legacy.Import.Images.import(columns, rows, opts)
+  end
+
   defp after_import(:locations, _opts) do
     # :telemetry.span(
     #   [:kjogvi, :legacy, :import, :locations, :after_import],
@@ -116,6 +141,19 @@ defmodule Kjogvi.Legacy.Import do
         {:ok, telemetry_metadata(opts)}
       end
     )
+  end
+
+  defp after_import(:images, _opts) do
+    # :telemetry.span(
+    #   [:kjogvi, :legacy, :import, :images, :after_import],
+    #   telemetry_metadata(opts),
+    #   fn ->
+    #     Kjogvi.Legacy.Import.Images.after_import()
+
+    #     {:ok, telemetry_metadata(opts)}
+    #   end
+    # )
+    :ok
   end
 
   def config do
