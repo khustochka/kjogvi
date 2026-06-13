@@ -58,7 +58,7 @@ defmodule KjogviWeb.Live.My.Images.IndexTest do
   end
 
   test "renders pagination links when there is more than one page", %{conn: conn, user: user} do
-    for _ <- 1..21, do: ImagesFixtures.image_fixture(user: user)
+    for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
 
     {:ok, _live, html} = live(conn, ~p"/my/images")
 
@@ -66,11 +66,11 @@ defmodule KjogviWeb.Live.My.Images.IndexTest do
   end
 
   test "shows a later page at its own route", %{conn: conn, user: user} do
-    for _ <- 1..21, do: ImagesFixtures.image_fixture(user: user)
+    for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
 
     {:ok, live, _html} = live(conn, ~p"/my/images/page/2")
 
-    # 21 images at 20 per page leaves exactly one on page 2.
+    # 25 images at 24 per page leaves exactly one on page 2.
     assert live |> element("#images-grid") |> render() =~ "images-"
     assert length(Regex.scan(~r/id="images-\d+"/, render(live))) == 1
   end
