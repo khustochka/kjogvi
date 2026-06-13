@@ -24,6 +24,9 @@ defmodule Kjogvi.Images.Image do
     field :sort_order, :integer, default: 100
     field :extras, :map, default: %{}
     field :storage_backend, :string, default: "local"
+    # Denormalized: true when more than one observation is attached. Kept in sync
+    # by `observations_changeset/2`; not set directly by callers.
+    field :multi_species, :boolean, default: false
 
     field :file, Kjogvi.Images.Uploader.Type
     field :legacy_url, :string
@@ -97,6 +100,11 @@ defmodule Kjogvi.Images.Image do
     image
     |> change()
     |> put_assoc(:observations, observations)
+    # force_change (not put_change): the in-memory struct may carry a stale
+    # multi_species that matches the new value yet differs from what's persisted
+    # (e.g. re-attaching to an image loaded before a prior change), so we always
+    # write the column.
+    |> force_change(:multi_species, length(observations) > 1)
     |> validate_at_least_one(observations)
     |> validate_same_card(observations)
   end

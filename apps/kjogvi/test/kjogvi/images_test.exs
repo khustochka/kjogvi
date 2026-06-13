@@ -327,6 +327,22 @@ defmodule Kjogvi.ImagesTest do
       assert obs_ids == Enum.sort([obs1.id, obs2.id])
     end
 
+    test "sets multi_species based on the number of attached observations" do
+      user = UsersFixtures.user_fixture()
+      image = ImagesFixtures.image_fixture(user: user)
+      card = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
+      obs1 = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "mallar1")
+      obs2 = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "canwoo1")
+
+      assert {:ok, updated} = Images.attach_observations(image, [obs1.id, obs2.id])
+      assert updated.multi_species == true
+      assert Kjogvi.Repo.reload(image).multi_species == true
+
+      assert {:ok, updated} = Images.attach_observations(image, [obs1.id])
+      assert updated.multi_species == false
+      assert Kjogvi.Repo.reload(image).multi_species == false
+    end
+
     test "returns an error changeset when observations span different cards" do
       user = UsersFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)

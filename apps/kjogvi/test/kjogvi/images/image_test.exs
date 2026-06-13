@@ -51,6 +51,20 @@ defmodule Kjogvi.Images.ImageTest do
       assert changeset.valid?
     end
 
+    test "sets multi_species when more than one observation is attached" do
+      image = %Image{observations: []}
+      observations = [%Observation{id: 1, card_id: 7}, %Observation{id: 2, card_id: 7}]
+
+      changeset = Image.observations_changeset(image, observations)
+      assert Ecto.Changeset.get_change(changeset, :multi_species) == true
+    end
+
+    test "clears multi_species for a single observation" do
+      image = %Image{observations: [], multi_species: true}
+      changeset = Image.observations_changeset(image, [%Observation{id: 1, card_id: 7}])
+      assert Ecto.Changeset.get_change(changeset, :multi_species) == false
+    end
+
     test "rejects an empty list" do
       changeset = Image.observations_changeset(%Image{observations: []}, [])
       refute changeset.valid?
