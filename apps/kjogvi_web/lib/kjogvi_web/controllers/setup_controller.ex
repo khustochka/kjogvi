@@ -37,13 +37,11 @@ defmodule KjogviWeb.SetupController do
         |> put_flash(:info, "Admin user set up.")
         |> redirect(to: ~p"/users/log_in")
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        form = Phoenix.Component.to_form(changeset, as: "user")
-
+      {:error, %Ecto.Changeset{} = _changeset} ->
         conn
-        |> assign(:check_errors, !changeset.valid?)
-        |> assign(:form, form)
-        |> render(:new)
+        |> delete_session(:setup_code)
+        |> put_flash(:error, "Something went wrong.")
+        |> redirect(to: ~p"/setup")
     end
   end
 
