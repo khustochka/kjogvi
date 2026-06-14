@@ -6,7 +6,7 @@ defmodule KjogviWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Kjogvi.Users
+  alias Kjogvi.Accounts
   alias Kjogvi.Scope
 
   # Make the remember me cookie valid for 60 days.
@@ -29,7 +29,7 @@ defmodule KjogviWeb.UserAuth do
   if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}) do
-    token = Users.generate_user_session_token(user)
+    token = Accounts.generate_user_session_token(user)
     user_return_to = get_session(conn, :user_return_to)
 
     conn
@@ -77,7 +77,7 @@ defmodule KjogviWeb.UserAuth do
   """
   def log_out_user(conn) do
     user_token = get_session(conn, :user_token)
-    user_token && Users.delete_user_session_token(user_token)
+    user_token && Accounts.delete_user_session_token(user_token)
 
     if live_socket_id = get_session(conn, :live_socket_id) do
       KjogviWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
@@ -95,7 +95,7 @@ defmodule KjogviWeb.UserAuth do
   """
   def fetch_current_scope(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
-    user = user_token && Users.get_user_by_session_token(user_token)
+    user = user_token && Accounts.get_user_by_session_token(user_token)
 
     scope = %Scope{user: user, main_user: Kjogvi.Settings.main_user()}
     assign(conn, :current_scope, scope)
@@ -175,7 +175,7 @@ defmodule KjogviWeb.UserAuth do
 
     socket.assigns.current_scope.user
     |> then(fn user ->
-      if user && Kjogvi.Users.admin?(user) do
+      if user && Kjogvi.Accounts.admin?(user) do
         {:cont, socket}
       else
         socket =
@@ -209,7 +209,7 @@ defmodule KjogviWeb.UserAuth do
     Phoenix.Component.assign_new(socket, :current_scope, fn ->
       user =
         if user_token = session["user_token"] do
-          Users.get_user_by_session_token(user_token)
+          Accounts.get_user_by_session_token(user_token)
         end
 
       %Scope{user: user, main_user: Kjogvi.Settings.main_user()}
@@ -253,7 +253,7 @@ defmodule KjogviWeb.UserAuth do
   def require_admin(conn, _opts) do
     conn.assigns.current_scope.user
     |> then(fn user ->
-      if user && Users.admin?(user) do
+      if user && Accounts.admin?(user) do
         conn
       else
         conn

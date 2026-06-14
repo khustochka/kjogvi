@@ -3,7 +3,7 @@ defmodule Kjogvi.Ebird.Web do
   Operations with eBird web.
   """
 
-  alias Kjogvi.Users.User
+  alias Kjogvi.Accounts.User
   alias Kjogvi.Ebird.Web.Client
   alias Kjogvi.Ebird.Web.Checklist
   alias Kjogvi.Birding

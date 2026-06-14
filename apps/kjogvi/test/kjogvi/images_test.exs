@@ -4,22 +4,22 @@ defmodule Kjogvi.ImagesTest do
   alias Kjogvi.Images
   alias Kjogvi.Images.Image
   alias Kjogvi.ImagesFixtures
-  alias Kjogvi.UsersFixtures
+  alias Kjogvi.AccountsFixtures
 
   describe "list_images/2" do
     @page %{page: 1, page_size: 20}
 
     test "returns only the given user's images" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
-      _other = ImagesFixtures.image_fixture(user: UsersFixtures.user_fixture())
+      _other = ImagesFixtures.image_fixture(user: AccountsFixtures.user_fixture())
 
       assert [returned] = Images.list_images(user, @page).entries
       assert returned.id == image.id
     end
 
     test "orders by inserted_at descending (newest first)" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       older = ImagesFixtures.image_fixture(user: user)
       newer = ImagesFixtures.image_fixture(user: user)
 
@@ -28,7 +28,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "paginates the results" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       for _ <- 1..3, do: ImagesFixtures.image_fixture(user: user)
 
       page = Images.list_images(user, %{page: 1, page_size: 2})
@@ -43,14 +43,14 @@ defmodule Kjogvi.ImagesTest do
 
   describe "get_image!/2" do
     test "returns the user's image" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
       assert Images.get_image!(user, image.id).id == image.id
     end
 
     test "raises when the image belongs to another user" do
-      user = UsersFixtures.user_fixture()
-      image = ImagesFixtures.image_fixture(user: UsersFixtures.user_fixture())
+      user = AccountsFixtures.user_fixture()
+      image = ImagesFixtures.image_fixture(user: AccountsFixtures.user_fixture())
 
       assert_raise Ecto.NoResultsError, fn ->
         Images.get_image!(user, image.id)
@@ -95,7 +95,7 @@ defmodule Kjogvi.ImagesTest do
 
   describe "slug uniqueness" do
     test "rejects a duplicate slug for the same user" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       ImagesFixtures.image_fixture(user: user, slug: "shared-slug")
 
       attrs = ImagesFixtures.valid_image_attributes(user: user, slug: "shared-slug")
@@ -105,8 +105,8 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "allows the same slug for different users" do
-      ImagesFixtures.image_fixture(user: UsersFixtures.user_fixture(), slug: "shared-slug")
-      other = UsersFixtures.user_fixture()
+      ImagesFixtures.image_fixture(user: AccountsFixtures.user_fixture(), slug: "shared-slug")
+      other = AccountsFixtures.user_fixture()
 
       assert %Image{} = ImagesFixtures.image_fixture(user: other, slug: "shared-slug")
     end
@@ -158,13 +158,13 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "prefers the stored file over the legacy URL" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       image = %{image_with_file(user, "s3_dev") | legacy_url: "https://old.example.com/x.jpg"}
       assert Images.url(image) =~ "https://dev-bucket.s3.example.com/"
     end
 
     test "builds an absolute URL against the image's own backend host" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       url = Images.url(image_with_file(user, "s3_prod"), :medium)
 
       assert url ==
@@ -174,7 +174,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "uses the backend recorded on the image, not the running env's backend" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       # The env uploads with s3_dev (see setup), but a prod image still resolves
       # to the prod host.
@@ -183,20 +183,20 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "local images get a host-relative path served by the endpoint" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       url = Images.url(image_with_file(user, "local"), :medium)
       assert String.starts_with?(url, "/uploads/images/")
       refute url =~ "://"
     end
 
     test "names the original without a version suffix and variants with one" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       assert Images.url(image_with_file(user, "s3_dev"), :original) =~ "/pileated.jpg?"
       assert Images.url(image_with_file(user, "s3_dev"), :thumbnail) =~ "/pileated_thumbnail.jpg?"
     end
 
     test "appends the upload timestamp as a cache-buster" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       assert Images.url(image_with_file(user, "s3_dev")) =~ "?#{expected_unix()}"
     end
 
@@ -213,7 +213,7 @@ defmodule Kjogvi.ImagesTest do
                   )
 
     setup do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       {:ok, image} =
         Images.create_image(user, %{
@@ -315,7 +315,7 @@ defmodule Kjogvi.ImagesTest do
 
   describe "attach_observations/2" do
     test "links observations from the same card" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
       card = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
       obs1 = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "mallar1")
@@ -328,7 +328,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "sets multi_species based on the number of attached observations" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
       card = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
       obs1 = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "mallar1")
@@ -344,7 +344,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "returns an error changeset when observations span different cards" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
       card1 = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
       card2 = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
@@ -356,7 +356,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "returns an error changeset (and keeps existing links) for an empty list" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
       card = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
       obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "mallar1")
@@ -372,8 +372,8 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "ignores observation ids belonging to another user's cards" do
-      user = UsersFixtures.user_fixture()
-      other_user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
+      other_user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
 
       mine = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
@@ -391,8 +391,8 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "errors when every id belongs to another user (nothing left to link)" do
-      user = UsersFixtures.user_fixture()
-      other_user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
+      other_user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
 
       theirs =
@@ -407,7 +407,7 @@ defmodule Kjogvi.ImagesTest do
 
   describe "list_images_for_card/1" do
     test "returns images linked to the card's observations" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       card = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
       obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "mallar1")
       image = ImagesFixtures.image_fixture(user: user)
@@ -417,7 +417,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "excludes images from other cards" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       card1 = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
       card2 = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
       obs2 = Kjogvi.Factory.insert(:observation, card: card2, taxon_key: "mallar1")
@@ -430,7 +430,7 @@ defmodule Kjogvi.ImagesTest do
 
   describe "get_observations_for_display/2" do
     test "hydrates observations with taxon, card, and location, preserving id order" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       location = Kjogvi.Factory.insert(:location)
       card = Kjogvi.Factory.insert(:card, user: user, location: location)
       obs1 = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "mallar1")
@@ -445,7 +445,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "excludes observations belonging to another user" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       other_card = Kjogvi.Factory.insert(:card, location: Kjogvi.Factory.insert(:location))
       other_obs = Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "mallar1")
 
@@ -453,7 +453,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "returns an empty list for an empty id list" do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       assert Images.get_observations_for_display(user, []) == []
     end
   end
@@ -470,8 +470,8 @@ defmodule Kjogvi.ImagesTest do
       )
 
       {:ok, user} =
-        UsersFixtures.user_fixture()
-        |> Kjogvi.Users.update_user_settings(%{"default_book_signature" => "ebird/v2024"})
+        AccountsFixtures.user_fixture()
+        |> Kjogvi.Accounts.update_user_settings(%{"default_book_signature" => "ebird/v2024"})
 
       %{user: user}
     end
@@ -562,7 +562,7 @@ defmodule Kjogvi.ImagesTest do
     end
 
     test "excludes another user's observations", %{user: user} do
-      other_user = UsersFixtures.user_fixture()
+      other_user = AccountsFixtures.user_fixture()
 
       card =
         Kjogvi.Factory.insert(:card, user: other_user, location: Kjogvi.Factory.insert(:location))

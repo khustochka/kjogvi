@@ -42,7 +42,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
 
   describe "import/3" do
     test "maps legacy media columns onto the image" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       Images.import(@columns, [row()], user: user)
 
@@ -60,7 +60,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
     end
 
     test "leaves title blank and stashes the legacy title in extras" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       Images.import(@columns, [row()], user: user)
 
@@ -70,7 +70,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
     end
 
     test "does not store a blank legacy title in extras" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       Images.import(@columns, [row(%{"title" => "   "})], user: user)
 
@@ -79,7 +79,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
     end
 
     test "leaves a blank description as nil" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       Images.import(@columns, [row(%{"description" => "   "})], user: user)
 
@@ -88,7 +88,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
     end
 
     test "preserves unmapped legacy columns under extras" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       Images.import(@columns, [row()], user: user)
 
@@ -100,7 +100,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
     end
 
     test "converts legacy timestamps into the image timestamps" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       Images.import(@columns, [row()], user: user)
 
@@ -110,7 +110,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
     end
 
     test "rebuilds image<->observation join rows from observation_ids" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
       card = insert(:card, user: user)
       obs1 = insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
       obs2 = insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
@@ -130,7 +130,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
     end
 
     test "creates no join rows when observation_ids is empty" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       Images.import(@columns, [row(%{"observation_ids" => []})], user: user)
 
@@ -146,7 +146,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
 
   describe "cleanup/0" do
     test "deletes legacy-imported images and their join rows" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
       card = insert(:card, user: user)
       obs = insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
 

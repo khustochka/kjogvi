@@ -5,16 +5,16 @@ Kjogvi.Config.with_multiuser do
     use KjogviWeb.ConnCase, async: true
 
     import Phoenix.LiveViewTest
-    import Kjogvi.UsersFixtures
+    import Kjogvi.AccountsFixtures
 
-    alias Kjogvi.Users
+    alias Kjogvi.Accounts
 
     setup do
       user = user_fixture()
 
       token =
         extract_user_token(fn url ->
-          Users.deliver_user_reset_password_instructions(user, url)
+          Accounts.deliver_user_reset_password_instructions(user, url)
         end)
 
       %{token: token, user: user}
@@ -68,7 +68,7 @@ Kjogvi.Config.with_multiuser do
 
         refute get_session(conn, :user_token)
         assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password reset successfully"
-        assert Users.get_user_by_email_and_password(user.email, "new valid password")
+        assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
       end
 
       test "does not reset password on invalid data", %{conn: conn, token: token} do

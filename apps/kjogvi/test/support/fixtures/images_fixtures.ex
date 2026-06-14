@@ -7,7 +7,7 @@ defmodule Kjogvi.ImagesFixtures do
   alias Kjogvi.Repo
 
   def valid_image_attributes(attrs \\ %{}) do
-    user = attrs[:user] || Kjogvi.UsersFixtures.user_fixture()
+    user = attrs[:user] || Kjogvi.AccountsFixtures.user_fixture()
 
     Enum.into(attrs, %{
       slug: "test-image-#{System.unique_integer([:positive])}",

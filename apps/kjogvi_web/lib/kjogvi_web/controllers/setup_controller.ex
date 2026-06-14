@@ -3,8 +3,8 @@ defmodule KjogviWeb.SetupController do
 
   require Logger
 
-  alias Kjogvi.Users
-  alias Kjogvi.Users.User
+  alias Kjogvi.Accounts
+  alias Kjogvi.Accounts.User
 
   @rand_size 32
 
@@ -19,7 +19,7 @@ defmodule KjogviWeb.SetupController do
 
   def form(conn, _params) do
     form =
-      Users.change_user_registration(%User{})
+      Accounts.change_user_registration(%User{})
       |> Phoenix.Component.to_form(as: "user")
 
     conn
@@ -30,7 +30,7 @@ defmodule KjogviWeb.SetupController do
   end
 
   def create(conn, %{"user" => user_params}) do
-    case Users.register_admin(user_params) do
+    case Accounts.register_admin(user_params) do
       {:ok, _} ->
         conn
         |> delete_session(:setup_code)

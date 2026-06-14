@@ -2,7 +2,7 @@ defmodule KjogviWeb.Live.My.Images.ShowTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Images
   alias Kjogvi.ImagesFixtures

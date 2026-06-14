@@ -1,14 +1,14 @@
-defmodule Kjogvi.Users do
+defmodule Kjogvi.Accounts do
   @moduledoc """
-  The Users context.
+  The Accounts context.
   """
 
   import Ecto.Query, warn: false
   alias Kjogvi.Repo
 
-  alias Kjogvi.Users.User
-  alias Kjogvi.Users.UserToken
-  alias Kjogvi.Users.UserNotifier
+  alias Kjogvi.Accounts.User
+  alias Kjogvi.Accounts.UserToken
+  alias Kjogvi.Accounts.UserNotifier
 
   @admin_role "admin"
 

@@ -302,7 +302,7 @@ defmodule Kjogvi.GeoTest do
     test "returns private location for authenticated scope with private_view" do
       location = insert(:location, slug: "private-loc", is_private: true)
 
-      import Kjogvi.UsersFixtures
+      import Kjogvi.AccountsFixtures
       user = user_fixture()
       scope = %Kjogvi.Scope{user: user, private_view: true}
 
@@ -313,7 +313,7 @@ defmodule Kjogvi.GeoTest do
     test "does not return private location for authenticated scope without private_view" do
       insert(:location, slug: "private-loc", is_private: true)
 
-      import Kjogvi.UsersFixtures
+      import Kjogvi.AccountsFixtures
       user = user_fixture()
       scope = %Kjogvi.Scope{user: user, private_view: false}
 

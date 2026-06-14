@@ -1,4 +1,4 @@
-defmodule Kjogvi.Users.UserNotifier do
+defmodule Kjogvi.Accounts.UserNotifier do
   @moduledoc """
   Sending emails to users.
   """

@@ -3,13 +3,13 @@ defmodule KjogviWeb.Live.My.Account.SettingsLogbookTest do
 
   import Phoenix.LiveViewTest
 
-  alias Kjogvi.UsersFixtures
+  alias Kjogvi.AccountsFixtures
   alias Kjogvi.Repo
 
   describe "logbook settings" do
     test "settings page renders logbook settings section", %{conn: conn} do
-      user = UsersFixtures.user_fixture()
-      token = Kjogvi.Users.generate_user_session_token(user)
+      user = AccountsFixtures.user_fixture()
+      token = Kjogvi.Accounts.generate_user_session_token(user)
 
       conn =
         conn
@@ -25,8 +25,8 @@ defmodule KjogviWeb.Live.My.Account.SettingsLogbookTest do
     end
 
     test "saving logbook settings persists them", %{conn: conn} do
-      user = UsersFixtures.user_fixture()
-      token = Kjogvi.Users.generate_user_session_token(user)
+      user = AccountsFixtures.user_fixture()
+      token = Kjogvi.Accounts.generate_user_session_token(user)
 
       conn =
         conn
@@ -48,7 +48,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsLogbookTest do
       })
       |> render_submit()
 
-      user = Repo.get!(Kjogvi.Users.User, user.id)
+      user = Repo.get!(Kjogvi.Accounts.User, user.id)
       assert length(user.extras.logbook_settings) == 1
 
       setting = hd(user.extras.logbook_settings)

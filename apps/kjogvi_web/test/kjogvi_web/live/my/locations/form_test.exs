@@ -2,7 +2,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Geo
   alias Kjogvi.Geo.Location

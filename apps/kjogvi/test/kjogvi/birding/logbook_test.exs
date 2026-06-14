@@ -1,7 +1,7 @@
 defmodule Kjogvi.Birding.LogbookTest do
   use Kjogvi.DataCase, async: true
 
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Birding.Logbook
   alias Kjogvi.Birding.Lifelist
@@ -14,7 +14,7 @@ defmodule Kjogvi.Birding.LogbookTest do
   # Persist logbook_settings on the user through the real changeset path.
   defp put_logbook_settings(user, settings) do
     {:ok, user} =
-      Kjogvi.Users.update_user_settings(user, %{extras: %{logbook_settings: settings}})
+      Kjogvi.Accounts.update_user_settings(user, %{extras: %{logbook_settings: settings}})
 
     user
   end

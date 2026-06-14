@@ -42,7 +42,7 @@ defmodule Kjogvi.Birding.Card do
     field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
 
     has_many(:observations, Kjogvi.Birding.Observation, on_replace: :delete)
-    belongs_to(:user, Kjogvi.Users.User)
+    belongs_to(:user, Kjogvi.Accounts.User)
 
     # Generated
     field :cached_year, :integer

@@ -13,7 +13,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
   describe "import/3" do
     test "builds taxon_key from the user's default_book_signature" do
       user =
-        Kjogvi.UsersFixtures.user_fixture()
+        Kjogvi.AccountsFixtures.user_fixture()
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
         |> Repo.update!()
 
@@ -33,7 +33,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
 
     test "marks imported observations with the :legacy import source" do
       user =
-        Kjogvi.UsersFixtures.user_fixture()
+        Kjogvi.AccountsFixtures.user_fixture()
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
         |> Repo.update!()
 
@@ -53,7 +53,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
 
     test "normalizes blank text columns to nil" do
       user =
-        Kjogvi.UsersFixtures.user_fixture()
+        Kjogvi.AccountsFixtures.user_fixture()
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
         |> Repo.update!()
 
@@ -73,7 +73,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
     end
 
     test "raises when user has no default_book_signature" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       assert_raise ArgumentError, ~r/default_book_signature/, fn ->
         Observations.import(

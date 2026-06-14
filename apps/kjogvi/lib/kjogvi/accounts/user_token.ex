@@ -1,11 +1,11 @@
-defmodule Kjogvi.Users.UserToken do
+defmodule Kjogvi.Accounts.UserToken do
   @moduledoc """
   A schema representing tokens generated for User.
   """
 
   use Kjogvi.Schema
   import Ecto.Query
-  alias Kjogvi.Users.UserToken
+  alias Kjogvi.Accounts.UserToken
 
   @hash_algorithm :sha256
   @rand_size 32
@@ -21,7 +21,7 @@ defmodule Kjogvi.Users.UserToken do
     field :token, :binary
     field :context, :string
     field :sent_to, :string
-    belongs_to :user, Kjogvi.Users.User
+    belongs_to :user, Kjogvi.Accounts.User
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end

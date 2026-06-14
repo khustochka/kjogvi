@@ -30,7 +30,7 @@
         Imports
       </.link>
     </.admin_menu_item>
-    <%= if Kjogvi.Users.admin?(@current_user) do %>
+    <%= if Kjogvi.Accounts.admin?(@current_user) do %>
       <.admin_menu_item>
         <.link href={~p"/admin/taxonomy"} class="no-underline hover:underline">
           Taxonomy

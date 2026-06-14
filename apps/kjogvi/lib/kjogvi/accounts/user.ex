@@ -1,4 +1,4 @@
-defmodule Kjogvi.Users.User do
+defmodule Kjogvi.Accounts.User do
   @moduledoc """
   A schema representing user.
   """
@@ -8,7 +8,7 @@ defmodule Kjogvi.Users.User do
 
   @type t :: %__MODULE__{}
 
-  alias Kjogvi.Users.User.Extras
+  alias Kjogvi.Accounts.User.Extras
 
   schema "users" do
     field :email, :string
@@ -68,7 +68,7 @@ defmodule Kjogvi.Users.User do
     user
     |> cast(attrs, [:email, :password, :nickname, :display_name])
     |> maybe_put_nickname_from_email()
-    |> put_change(:roles, [Kjogvi.Users.admin_role()])
+    |> put_change(:roles, [Kjogvi.Accounts.admin_role()])
     |> validate_email(opts)
     |> validate_password(opts)
     |> validate_nickname(opts)
@@ -242,7 +242,7 @@ defmodule Kjogvi.Users.User do
   If there is no user or the user doesn't have a password, we call
   `Bcrypt.no_user_verify/0` to avoid timing attacks.
   """
-  def valid_password?(%Kjogvi.Users.User{hashed_password: hashed_password}, password)
+  def valid_password?(%Kjogvi.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
     Bcrypt.verify_pass(password, hashed_password)
   end

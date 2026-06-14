@@ -5,7 +5,7 @@ Kjogvi.Config.with_multiuser do
     use KjogviWeb.ConnCase, async: true
 
     import Phoenix.LiveViewTest
-    import Kjogvi.UsersFixtures
+    import Kjogvi.AccountsFixtures
 
     describe "Registration page" do
       test "renders registration page", %{conn: conn} do

@@ -1,9 +1,9 @@
 defmodule KjogviWeb.Live.My.Account.SettingsTest do
   use KjogviWeb.ConnCase, async: true
 
-  alias Kjogvi.Users
+  alias Kjogvi.Accounts
   import Phoenix.LiveViewTest
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do
@@ -51,7 +51,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
         |> render_submit()
 
       assert result =~ "User account updated."
-      assert Kjogvi.Repo.get!(Kjogvi.Users.User, user.id).nickname == "newnick"
+      assert Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id).nickname == "newnick"
     end
 
     test "shows an error and does not save an invalid nickname", %{conn: conn, user: user} do
@@ -63,7 +63,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
         |> render_submit()
 
       assert result =~ "must contain only letters, digits, hyphens and underscores"
-      assert Kjogvi.Repo.get!(Kjogvi.Users.User, user.id).nickname == user.nickname
+      assert Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id).nickname == user.nickname
     end
 
     test "shows nickname errors on change", %{conn: conn} do
@@ -110,7 +110,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       })
       |> render_submit()
 
-      assert Kjogvi.Repo.get!(Kjogvi.Users.User, user.id).display_name == "Jane Doe"
+      assert Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id).display_name == "Jane Doe"
     end
 
     test "shows an error and does not save an invalid display name", %{conn: conn, user: user} do
@@ -124,7 +124,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
         |> render_submit()
 
       assert result =~ "must contain only letters, spaces and common punctuation"
-      assert Kjogvi.Repo.get!(Kjogvi.Users.User, user.id).display_name == user.display_name
+      assert Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id).display_name == user.display_name
     end
   end
 
@@ -149,7 +149,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
         |> render_submit()
 
       assert result =~ "A link to confirm your email"
-      assert Users.get_user_by_email(user.email)
+      assert Accounts.get_user_by_email(user.email)
     end
 
     test "renders errors with invalid data (phx-change)", %{conn: conn} do
@@ -218,7 +218,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       assert Phoenix.Flash.get(new_password_conn.assigns.flash, :info) =~
                "Password updated successfully"
 
-      assert Users.get_user_by_email_and_password(user.email, new_password)
+      assert Accounts.get_user_by_email_and_password(user.email, new_password)
     end
 
     test "renders errors with invalid data (phx-change)", %{conn: conn} do
@@ -268,7 +268,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
 
       token =
         extract_user_token(fn url ->
-          Users.deliver_user_update_email_instructions(%{user | email: email}, user.email, url)
+          Accounts.deliver_user_update_email_instructions(%{user | email: email}, user.email, url)
         end)
 
       %{conn: log_in_user(conn, user), token: token, email: email, user: user}
@@ -281,8 +281,8 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       assert path == ~p"/my/account/settings"
       assert %{"info" => message} = flash
       assert message == "Email changed successfully."
-      refute Users.get_user_by_email(user.email)
-      assert Users.get_user_by_email(email)
+      refute Accounts.get_user_by_email(user.email)
+      assert Accounts.get_user_by_email(email)
 
       # use confirm token again
       {:error, redirect} = live(conn, ~p"/my/account/settings/confirm_email/#{token}")
@@ -298,7 +298,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       assert path == ~p"/my/account/settings"
       assert %{"error" => message} = flash
       assert message == "Email change link is invalid or it has expired."
-      assert Users.get_user_by_email(user.email)
+      assert Accounts.get_user_by_email(user.email)
     end
 
     test "redirects if user is not logged in", %{token: token} do

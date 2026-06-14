@@ -3,7 +3,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   alias Kjogvi.Birding.Lifelist
   use Kjogvi.DataCase, async: true
 
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   describe "years/1" do
     test "returns years that have cards and observation" do
@@ -748,7 +748,7 @@ defmodule Kjogvi.Birding.LifelistTest do
     end
 
     test "returns lifelist scope for public view with main_user" do
-      import Kjogvi.UsersFixtures
+      import Kjogvi.AccountsFixtures
       main_user = user_fixture()
       app_scope = %Kjogvi.Scope{user: nil, main_user: main_user, private_view: false}
 

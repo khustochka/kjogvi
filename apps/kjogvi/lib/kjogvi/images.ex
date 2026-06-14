@@ -316,7 +316,7 @@ defmodule Kjogvi.Images do
     |> Enum.join()
   end
 
-  defp maybe_preload_user(%Image{user: %Kjogvi.Users.User{}} = image), do: image
+  defp maybe_preload_user(%Image{user: %Kjogvi.Accounts.User{}} = image), do: image
   defp maybe_preload_user(%Image{} = image), do: Repo.preload(image, :user)
 
   # The host prefix for the image's backend. `local` has no host: its files are

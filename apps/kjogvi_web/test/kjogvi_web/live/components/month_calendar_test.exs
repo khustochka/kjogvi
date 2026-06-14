@@ -2,11 +2,11 @@ defmodule KjogviWeb.Live.Components.MonthCalendarTest do
   use KjogviWeb.ConnCase, async: true
   import Phoenix.LiveViewTest
 
-  alias Kjogvi.UsersFixtures
+  alias Kjogvi.AccountsFixtures
   alias KjogviWeb.Live.Components.MonthCalendar
 
   defp conn_for_user(user) do
-    token = Kjogvi.Users.generate_user_session_token(user)
+    token = Kjogvi.Accounts.generate_user_session_token(user)
 
     build_conn()
     |> Phoenix.ConnTest.init_test_session(%{})
@@ -43,7 +43,7 @@ defmodule KjogviWeb.Live.Components.MonthCalendarTest do
 
   describe "calendar rendering on card form" do
     setup do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       conn = conn_for_user(user)
       {:ok, conn: conn, user: user}
     end

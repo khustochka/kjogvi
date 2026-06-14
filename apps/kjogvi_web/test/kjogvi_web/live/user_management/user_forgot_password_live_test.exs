@@ -5,9 +5,9 @@ Kjogvi.Config.with_multiuser do
     use KjogviWeb.ConnCase, async: true
 
     import Phoenix.LiveViewTest
-    import Kjogvi.UsersFixtures
+    import Kjogvi.AccountsFixtures
 
-    alias Kjogvi.Users
+    alias Kjogvi.Accounts
     alias Kjogvi.Repo
 
     describe "Forgot password page" do
@@ -46,7 +46,7 @@ Kjogvi.Config.with_multiuser do
 
         assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
 
-        assert Repo.get_by!(Users.UserToken, user_id: user.id).context ==
+        assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context ==
                  "reset_password"
       end
 
@@ -60,7 +60,7 @@ Kjogvi.Config.with_multiuser do
           |> follow_redirect(conn, "/")
 
         assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
-        assert Repo.all(Users.UserToken) == []
+        assert Repo.all(Accounts.UserToken) == []
       end
     end
   end

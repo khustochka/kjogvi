@@ -5,9 +5,9 @@ Kjogvi.Config.with_multiuser do
     use KjogviWeb.ConnCase, async: true
 
     import Phoenix.LiveViewTest
-    import Kjogvi.UsersFixtures
+    import Kjogvi.AccountsFixtures
 
-    alias Kjogvi.Users
+    alias Kjogvi.Accounts
     alias Kjogvi.Repo
 
     setup do
@@ -32,11 +32,11 @@ Kjogvi.Config.with_multiuser do
         assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                  "If your email is in our system"
 
-        assert Repo.get_by!(Users.UserToken, user_id: user.id).context == "confirm"
+        assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "confirm"
       end
 
       test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
-        Repo.update!(Users.User.confirm_changeset(user))
+        Repo.update!(Accounts.User.confirm_changeset(user))
 
         {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
@@ -49,7 +49,7 @@ Kjogvi.Config.with_multiuser do
         assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                  "If your email is in our system"
 
-        refute Repo.get_by(Users.UserToken, user_id: user.id)
+        refute Repo.get_by(Accounts.UserToken, user_id: user.id)
       end
 
       test "does not send confirmation token if email is invalid", %{conn: conn} do
@@ -64,7 +64,7 @@ Kjogvi.Config.with_multiuser do
         assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                  "If your email is in our system"
 
-        assert Repo.all(Users.UserToken) == []
+        assert Repo.all(Accounts.UserToken) == []
       end
     end
   end

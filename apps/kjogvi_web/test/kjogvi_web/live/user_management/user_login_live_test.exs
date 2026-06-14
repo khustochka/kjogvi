@@ -4,7 +4,7 @@ defmodule KjogviWeb.UserLoginLiveTest do
   require Kjogvi.Config
 
   import Phoenix.LiveViewTest
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do

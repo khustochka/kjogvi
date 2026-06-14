@@ -5,9 +5,9 @@ Kjogvi.Config.with_multiuser do
     use KjogviWeb.ConnCase, async: true
 
     import Phoenix.LiveViewTest
-    import Kjogvi.UsersFixtures
+    import Kjogvi.AccountsFixtures
 
-    alias Kjogvi.Users
+    alias Kjogvi.Accounts
     alias Kjogvi.Repo
 
     setup do
@@ -23,7 +23,7 @@ Kjogvi.Config.with_multiuser do
       test "confirms the given token once", %{conn: conn, user: user} do
         token =
           extract_user_token(fn url ->
-            Users.deliver_user_confirmation_instructions(user, url)
+            Accounts.deliver_user_confirmation_instructions(user, url)
           end)
 
         {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
@@ -39,9 +39,9 @@ Kjogvi.Config.with_multiuser do
         assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                  "User confirmed successfully"
 
-        assert Users.get_user!(user.id).confirmed_at
+        assert Accounts.get_user!(user.id).confirmed_at
         refute get_session(conn, :user_token)
-        assert Repo.all(Users.UserToken) == []
+        assert Repo.all(Accounts.UserToken) == []
 
         # when not logged in
         {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
@@ -86,7 +86,7 @@ Kjogvi.Config.with_multiuser do
         assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
                  "User confirmation link is invalid or it has expired"
 
-        refute Users.get_user!(user.id).confirmed_at
+        refute Accounts.get_user!(user.id).confirmed_at
       end
     end
   end

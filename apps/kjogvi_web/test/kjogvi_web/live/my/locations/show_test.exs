@@ -2,7 +2,7 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   setup %{conn: conn} do
     %{conn: log_in_user(conn, user_fixture())}

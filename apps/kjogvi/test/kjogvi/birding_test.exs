@@ -1,7 +1,7 @@
 defmodule Kjogvi.BirdingTest do
   use Kjogvi.DataCase, async: true
 
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Birding
   alias Kjogvi.Birding.Card

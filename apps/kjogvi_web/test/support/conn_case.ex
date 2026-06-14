@@ -49,7 +49,7 @@ defmodule KjogviWeb.ConnCase do
   Setup helper that registers a "main user".
   """
   def register_main_user(tags) do
-    Kjogvi.UsersFixtures.admin_fixture()
+    Kjogvi.AccountsFixtures.admin_fixture()
     tags
   end
 
@@ -62,7 +62,7 @@ defmodule KjogviWeb.ConnCase do
   test context.
   """
   def register_and_log_in_user(%{conn: conn} = context) do
-    user = Kjogvi.UsersFixtures.user_fixture()
+    user = Kjogvi.AccountsFixtures.user_fixture()
     %{context | conn: log_in_user(conn, user), user: user}
   end
 
@@ -72,7 +72,7 @@ defmodule KjogviWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user) do
-    token = Kjogvi.Users.generate_user_session_token(user)
+    token = Kjogvi.Accounts.generate_user_session_token(user)
 
     conn
     |> Phoenix.ConnTest.init_test_session(%{})

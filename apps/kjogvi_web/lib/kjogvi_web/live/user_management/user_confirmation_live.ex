@@ -4,7 +4,7 @@ Kjogvi.Config.with_multiuser do
   defmodule KjogviWeb.UserConfirmationLive do
     use KjogviWeb, :live_view
 
-    alias Kjogvi.Users
+    alias Kjogvi.Accounts
 
     def render(%{live_action: :edit} = assigns) do
       ~H"""
@@ -36,7 +36,7 @@ Kjogvi.Config.with_multiuser do
     # Do not log in the user after confirmation to avoid a
     # leaked token giving the user access to the account.
     def handle_event("confirm_account", %{"user" => %{"token" => token}}, socket) do
-      case Users.confirm_user(token) do
+      case Accounts.confirm_user(token) do
         {:ok, _} ->
           {:noreply,
            socket

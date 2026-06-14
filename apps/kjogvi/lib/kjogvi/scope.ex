@@ -16,7 +16,7 @@ defmodule Kjogvi.Scope do
   growing application requirements.
   """
 
-  # alias Kjogvi.Users.User
+  # alias Kjogvi.Accounts.User
 
   defstruct user: nil, main_user: nil, private_view: false
 

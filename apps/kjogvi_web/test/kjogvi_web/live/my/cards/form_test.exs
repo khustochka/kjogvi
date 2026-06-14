@@ -2,7 +2,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
   use KjogviWeb.ConnCase, async: true
   import Phoenix.LiveViewTest
 
-  alias Kjogvi.UsersFixtures
+  alias Kjogvi.AccountsFixtures
   alias Kjogvi.GeoFixtures
   alias Kjogvi.Geo
   alias Kjogvi.Birding
@@ -11,10 +11,10 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
   defp create_user_with_book do
     book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
 
-    user = UsersFixtures.user_fixture()
+    user = AccountsFixtures.user_fixture()
 
     {:ok, user} =
-      Kjogvi.Users.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
+      Kjogvi.Accounts.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
 
     {user, book}
   end
@@ -24,7 +24,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
   end
 
   defp conn_for_user(user) do
-    token = Kjogvi.Users.generate_user_session_token(user)
+    token = Kjogvi.Accounts.generate_user_session_token(user)
 
     build_conn()
     |> Phoenix.ConnTest.init_test_session(%{})
@@ -45,7 +45,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
   describe "card form" do
     setup do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       conn = conn_for_user(user)
       {:ok, conn: conn, user: user}
     end
@@ -220,7 +220,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
   describe "location selection and form submission" do
     setup do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       conn = conn_for_user(user)
       location = GeoFixtures.location_fixture(name_en: "Test Park")
       {:ok, conn: conn, user: user, location: location}
@@ -542,7 +542,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
   describe "editing existing card" do
     setup do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       conn = conn_for_user(user)
 
       location1 = GeoFixtures.location_fixture(name_en: "Original Park")
@@ -746,7 +746,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
   describe "double submit protection" do
     setup do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       conn = conn_for_user(user)
       location = GeoFixtures.location_fixture(name_en: "Test Park")
       {:ok, conn: conn, user: user, location: location}

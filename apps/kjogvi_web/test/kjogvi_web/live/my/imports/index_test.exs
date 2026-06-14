@@ -16,7 +16,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     test "renders both import cards", %{conn: conn} do
       {:ok, _lv, html} =
         conn
-        |> log_in_user(Kjogvi.UsersFixtures.user_fixture())
+        |> log_in_user(Kjogvi.AccountsFixtures.user_fixture())
         |> live(~p"/my/imports")
 
       assert html =~ "Import Tasks"
@@ -58,7 +58,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
   describe "legacy progress over PubSub" do
     setup %{conn: conn} do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       {:ok, lv, _html} =
         conn
@@ -83,7 +83,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
   describe "eBird progress over PubSub" do
     setup %{conn: conn} do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       {:ok, lv, _html} =
         conn
@@ -136,7 +136,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     test "on failure nothing is stored and an error flash is shown",
          %{conn: conn} do
       # A bare fixture has no eBird username/password configured.
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
       key = {:ebird_preload, user.id}
 
       # Subscribe first so we can deterministically wait for the task to finish

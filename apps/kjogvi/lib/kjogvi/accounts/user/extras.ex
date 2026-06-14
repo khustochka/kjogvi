@@ -1,4 +1,4 @@
-defmodule Kjogvi.Users.User.Extras do
+defmodule Kjogvi.Accounts.User.Extras do
   @moduledoc """
   A schema representing user's extra settings.
   """
@@ -6,7 +6,7 @@ defmodule Kjogvi.Users.User.Extras do
   use Kjogvi.Schema
   import Ecto.Changeset
 
-  alias Kjogvi.Users.User.Extras.LogbookSetting
+  alias Kjogvi.Accounts.User.Extras.LogbookSetting
 
   @primary_key false
   embedded_schema do

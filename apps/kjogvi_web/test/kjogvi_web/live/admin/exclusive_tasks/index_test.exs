@@ -25,7 +25,7 @@ defmodule KjogviWeb.Live.Admin.ExclusiveTasks.IndexTest do
   end
 
   setup %{conn: conn} do
-    %{conn: log_in_user(conn, Kjogvi.UsersFixtures.admin_fixture())}
+    %{conn: log_in_user(conn, Kjogvi.AccountsFixtures.admin_fixture())}
   end
 
   describe "page rendering" do
@@ -40,7 +40,7 @@ defmodule KjogviWeb.Live.Admin.ExclusiveTasks.IndexTest do
     end
 
     test "is not found for a non-admin user" do
-      conn = log_in_user(build_conn(), Kjogvi.UsersFixtures.user_fixture())
+      conn = log_in_user(build_conn(), Kjogvi.AccountsFixtures.user_fixture())
 
       assert_error_sent :not_found, fn ->
         live(conn, ~p"/admin/exclusive-tasks")

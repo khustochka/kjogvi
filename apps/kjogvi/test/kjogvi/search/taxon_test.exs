@@ -2,13 +2,13 @@ defmodule Kjogvi.Search.TaxonTest do
   use Kjogvi.DataCase
 
   alias Kjogvi.Search.Taxon
-  alias Kjogvi.UsersFixtures
+  alias Kjogvi.AccountsFixtures
   alias Kjogvi.GeoFixtures
   alias Kjogvi.BirdingFixtures
 
   describe "search_taxa/2" do
     setup do
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       {:ok, user: user}
     end
 
@@ -18,7 +18,7 @@ defmodule Kjogvi.Search.TaxonTest do
     end
 
     test "returns empty list when user has no default book", %{user: _user} do
-      user_no_book = UsersFixtures.user_fixture(%{default_book_signature: nil})
+      user_no_book = AccountsFixtures.user_fixture(%{default_book_signature: nil})
       results = Taxon.search_taxa("grebe", user_no_book)
       assert results == []
     end
@@ -63,10 +63,10 @@ defmodule Kjogvi.Search.TaxonTest do
           name_sci: "Otis tarda"
         )
 
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       {:ok, user} =
-        Kjogvi.Users.update_user_settings(user, %{
+        Kjogvi.Accounts.update_user_settings(user, %{
           "default_book_signature" => "ebird/v2024"
         })
 
@@ -120,10 +120,10 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Larus delawarensis"
       )
 
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       {:ok, user} =
-        Kjogvi.Users.update_user_settings(user, %{
+        Kjogvi.Accounts.update_user_settings(user, %{
           "default_book_signature" => "ebird/v2024"
         })
 
@@ -145,10 +145,10 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Callipepla gambelii"
       )
 
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       {:ok, user} =
-        Kjogvi.Users.update_user_settings(user, %{
+        Kjogvi.Accounts.update_user_settings(user, %{
           "default_book_signature" => "ebird/v2024"
         })
 
@@ -168,10 +168,10 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Glareola pratincola/maldivarum"
       )
 
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       {:ok, user} =
-        Kjogvi.Users.update_user_settings(user, %{
+        Kjogvi.Accounts.update_user_settings(user, %{
           "default_book_signature" => "ebird/v2024"
         })
 
@@ -192,10 +192,10 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Columba palumbus"
       )
 
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       {:ok, user} =
-        Kjogvi.Users.update_user_settings(user, %{
+        Kjogvi.Accounts.update_user_settings(user, %{
           "default_book_signature" => "ebird/v2024"
         })
 
@@ -224,10 +224,10 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Acrocephalus arundinaceus"
       )
 
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       {:ok, user} =
-        Kjogvi.Users.update_user_settings(user, %{
+        Kjogvi.Accounts.update_user_settings(user, %{
           "default_book_signature" => "ebird/v2024"
         })
 
@@ -258,10 +258,10 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Phacellodomus sibilatrix"
       )
 
-      user = UsersFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
 
       {:ok, user} =
-        Kjogvi.Users.update_user_settings(user, %{
+        Kjogvi.Accounts.update_user_settings(user, %{
           "default_book_signature" => "ebird/v2024"
         })
 

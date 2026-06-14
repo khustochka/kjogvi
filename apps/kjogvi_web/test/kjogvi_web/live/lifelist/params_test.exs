@@ -53,7 +53,7 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   end
 
   test "private location unavailable in public view" do
-    user = Kjogvi.UsersFixtures.user_fixture()
+    user = Kjogvi.AccountsFixtures.user_fixture()
 
     insert(:location,
       slug: "ukraine",
@@ -84,7 +84,7 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   end
 
   test "private location available in private view for user" do
-    user = Kjogvi.UsersFixtures.user_fixture()
+    user = Kjogvi.AccountsFixtures.user_fixture()
 
     ukraine =
       insert(:location,

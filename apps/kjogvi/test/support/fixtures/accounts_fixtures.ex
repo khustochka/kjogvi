@@ -1,7 +1,7 @@
-defmodule Kjogvi.UsersFixtures do
+defmodule Kjogvi.AccountsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `Kjogvi.Users` context.
+  entities via the `Kjogvi.Accounts` context.
   """
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
@@ -20,7 +20,7 @@ defmodule Kjogvi.UsersFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Kjogvi.Users.register_user()
+      |> Kjogvi.Accounts.register_user()
 
     user
   end
@@ -29,7 +29,7 @@ defmodule Kjogvi.UsersFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Kjogvi.Users.register_admin()
+      |> Kjogvi.Accounts.register_admin()
 
     user
   end

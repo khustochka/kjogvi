@@ -2,7 +2,7 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Factory
   alias Kjogvi.GeoFixtures
@@ -33,7 +33,7 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
 
   test "when at least one list is enabled, the enable-lists callout is hidden", %{user: user} do
     {:ok, _user} =
-      Kjogvi.Users.update_user_settings(user, %{
+      Kjogvi.Accounts.update_user_settings(user, %{
         "extras" => %{
           "logbook_settings" => %{
             "0" => %{"location_id" => "", "life" => "true", "year" => "false"}
@@ -42,7 +42,7 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
       })
 
     # Re-login the (unchanged) user to pick up updated extras in scope.
-    conn = log_in_user(build_conn(), Kjogvi.Repo.get!(Kjogvi.Users.User, user.id))
+    conn = log_in_user(build_conn(), Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id))
 
     {:ok, lv, _html} = live(conn, ~p"/my/logbook")
 

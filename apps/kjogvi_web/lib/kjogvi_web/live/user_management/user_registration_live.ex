@@ -4,8 +4,8 @@ Kjogvi.Config.with_multiuser do
   defmodule KjogviWeb.UserRegistrationLive do
     use KjogviWeb, :live_view
 
-    alias Kjogvi.Users
-    alias Kjogvi.Users.User
+    alias Kjogvi.Accounts
+    alias Kjogvi.Accounts.User
 
     def render(assigns) do
       ~H"""
@@ -50,7 +50,7 @@ Kjogvi.Config.with_multiuser do
     end
 
     def mount(_params, _session, socket) do
-      changeset = Users.change_user_registration(%User{})
+      changeset = Accounts.change_user_registration(%User{})
 
       socket =
         socket
@@ -61,15 +61,15 @@ Kjogvi.Config.with_multiuser do
     end
 
     def handle_event("save", %{"user" => user_params}, socket) do
-      case Users.register_user(user_params) do
+      case Accounts.register_user(user_params) do
         {:ok, user} ->
           {:ok, _} =
-            Users.deliver_user_confirmation_instructions(
+            Accounts.deliver_user_confirmation_instructions(
               user,
               &url(~p"/users/confirm/#{&1}")
             )
 
-          changeset = Users.change_user_registration(user)
+          changeset = Accounts.change_user_registration(user)
           {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
 
         {:error, %Ecto.Changeset{} = changeset} ->
@@ -78,7 +78,7 @@ Kjogvi.Config.with_multiuser do
     end
 
     def handle_event("validate", %{"user" => user_params}, socket) do
-      changeset = Users.change_user_registration(%User{}, user_params)
+      changeset = Accounts.change_user_registration(%User{}, user_params)
       {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
     end
 

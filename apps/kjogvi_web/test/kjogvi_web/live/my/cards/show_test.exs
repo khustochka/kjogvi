@@ -2,7 +2,7 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   setup %{conn: conn} do
     user = user_fixture()

@@ -1,7 +1,7 @@
-defmodule Kjogvi.Users.User.ExtrasTest do
+defmodule Kjogvi.Accounts.User.ExtrasTest do
   use Kjogvi.DataCase, async: true
 
-  alias Kjogvi.Users.User.Extras
+  alias Kjogvi.Accounts.User.Extras
 
   describe "changeset/2" do
     test "casts logbook_settings" do

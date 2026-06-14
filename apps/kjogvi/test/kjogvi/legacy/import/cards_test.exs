@@ -44,7 +44,7 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
 
   describe "import/3" do
     test "marks imported cards with the :legacy import source" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
       location = insert(:location)
 
       Cards.import(@columns, [row(%{"id" => 1, "locus_id" => location.id})], user: user)
@@ -54,7 +54,7 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
     end
 
     test "keeps the original id of imported cards" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
       location = insert(:location)
 
       Cards.import(@columns, [row(%{"id" => 42, "locus_id" => location.id})], user: user)
@@ -64,7 +64,7 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
     end
 
     test "normalizes blank text columns to nil" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
       location = insert(:location)
 
       Cards.import(@columns, [row(%{"id" => 1, "locus_id" => location.id})], user: user)
@@ -75,7 +75,7 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
     end
 
     test "advances the id sequence past @min_start_seq for new cards" do
-      user = Kjogvi.UsersFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture()
       location = insert(:location)
 
       Cards.import(@columns, [row(%{"id" => 42, "locus_id" => location.id})], user: user)

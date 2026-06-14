@@ -1,7 +1,7 @@
 defmodule KjogviWeb.UserSessionControllerTest do
   use KjogviWeb.ConnCase, async: true
 
-  import Kjogvi.UsersFixtures
+  import Kjogvi.AccountsFixtures
 
   setup do
     %{user: user_fixture()}

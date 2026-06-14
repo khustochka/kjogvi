@@ -4,7 +4,7 @@ Kjogvi.Config.with_multiuser do
   defmodule KjogviWeb.UserResetPasswordLive do
     use KjogviWeb, :live_view
 
-    alias Kjogvi.Users
+    alias Kjogvi.Accounts
 
     def render(assigns) do
       ~H"""
@@ -49,7 +49,7 @@ Kjogvi.Config.with_multiuser do
       form_source =
         case socket.assigns do
           %{user: user} ->
-            Users.change_user_password(user)
+            Accounts.change_user_password(user)
 
           _ ->
             %{}
@@ -61,7 +61,7 @@ Kjogvi.Config.with_multiuser do
     # Do not log in the user after reset password to avoid a
     # leaked token giving the user access to the account.
     def handle_event("reset_password", %{"user" => user_params}, socket) do
-      case Users.reset_user_password(socket.assigns.user, user_params) do
+      case Accounts.reset_user_password(socket.assigns.user, user_params) do
         {:ok, _} ->
           {:noreply,
            socket
@@ -74,12 +74,12 @@ Kjogvi.Config.with_multiuser do
     end
 
     def handle_event("validate", %{"user" => user_params}, socket) do
-      changeset = Users.change_user_password(socket.assigns.user, user_params)
+      changeset = Accounts.change_user_password(socket.assigns.user, user_params)
       {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
     end
 
     defp assign_user_and_token(socket, %{"token" => token}) do
-      if user = Users.get_user_by_reset_password_token(token) do
+      if user = Accounts.get_user_by_reset_password_token(token) do
         assign(socket, user: user, token: token)
       else
         socket

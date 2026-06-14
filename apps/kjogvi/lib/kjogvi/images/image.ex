@@ -33,7 +33,7 @@ defmodule Kjogvi.Images.Image do
 
     field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
 
-    belongs_to :user, Kjogvi.Users.User
+    belongs_to :user, Kjogvi.Accounts.User
 
     many_to_many :observations, Kjogvi.Birding.Observation,
       join_through: Kjogvi.Images.ImageObservation,

@@ -6,10 +6,10 @@ defmodule Kjogvi.BirdingFixtures do
 
   alias Kjogvi.Birding.Card
   alias Kjogvi.Repo
-  alias Kjogvi.UsersFixtures
+  alias Kjogvi.AccountsFixtures
 
   def valid_card_attributes(attrs \\ %{}) do
-    user = attrs[:user] || UsersFixtures.user_fixture()
+    user = attrs[:user] || AccountsFixtures.user_fixture()
 
     Enum.into(attrs, %{
       user_id: user.id,

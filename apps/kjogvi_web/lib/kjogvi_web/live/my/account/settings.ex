@@ -3,7 +3,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
   use KjogviWeb, :live_view
 
-  alias Kjogvi.Users
+  alias Kjogvi.Accounts
   alias Kjogvi.Geo
 
   def render(assigns) do
@@ -226,7 +226,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Users.update_user_email(socket.assigns.current_scope.user, token) do
+      case Accounts.update_user_email(socket.assigns.current_scope.user, token) do
         :ok ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -239,9 +239,9 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_scope.user
-    email_changeset = Users.change_user_email(user)
-    password_changeset = Users.change_user_password(user)
-    settings_changeset = Kjogvi.Users.User.settings_changeset(user, %{})
+    email_changeset = Accounts.change_user_email(user)
+    password_changeset = Accounts.change_user_password(user)
+    settings_changeset = Kjogvi.Accounts.User.settings_changeset(user, %{})
 
     books = Ornitho.Finder.Book.all()
 
@@ -272,7 +272,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
     email_form =
       socket.assigns.current_scope.user
-      |> Users.change_user_email(user_params)
+      |> Accounts.change_user_email(user_params)
       |> Map.put(:action, :validate)
       |> to_form()
 
@@ -283,9 +283,9 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_scope.user
 
-    case Users.apply_user_email(user, password, user_params) do
+    case Accounts.apply_user_email(user, password, user_params) do
       {:ok, applied_user} ->
-        Users.deliver_user_update_email_instructions(
+        Accounts.deliver_user_update_email_instructions(
           applied_user,
           user.email,
           &url(~p"/my/account/settings/confirm_email/#{&1}")
@@ -304,7 +304,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
     password_form =
       socket.assigns.current_scope.user
-      |> Users.change_user_password(user_params)
+      |> Accounts.change_user_password(user_params)
       |> Map.put(:action, :validate)
       |> to_form()
 
@@ -315,11 +315,11 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_scope.user
 
-    case Users.update_user_password(user, password, user_params) do
+    case Accounts.update_user_password(user, password, user_params) do
       {:ok, user} ->
         password_form =
           user
-          |> Users.change_user_password(user_params)
+          |> Accounts.change_user_password(user_params)
           |> to_form()
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
@@ -332,7 +332,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
   def handle_event("validate_settings", %{"user" => user_params}, socket) do
     settings_form =
       socket.assigns.current_scope.user
-      |> Kjogvi.Users.User.settings_changeset(user_params)
+      |> Kjogvi.Accounts.User.settings_changeset(user_params)
       |> Map.put(:action, :validate)
       |> to_form()
 
@@ -342,11 +342,11 @@ defmodule KjogviWeb.Live.My.Account.Settings do
   def handle_event("update_settings", %{"user" => user_params}, socket) do
     user = socket.assigns.current_scope.user
 
-    case Users.update_user_settings(user, user_params) do
+    case Accounts.update_user_settings(user, user_params) do
       {:ok, user} ->
         settings_form =
           user
-          |> Kjogvi.Users.User.settings_changeset(%{})
+          |> Kjogvi.Accounts.User.settings_changeset(%{})
           |> to_form()
 
         scope = %{socket.assigns.current_scope | user: user}
