@@ -58,6 +58,38 @@ defmodule Kjogvi.Accounts do
   end
 
   @doc """
+  Lists users ordered by the size of their public life list (number of distinct
+  species observed in reportable, non-hidden observations), descending.
+
+  Each returned user has a virtual `lifelist_size` field set. Only users that
+  have at least one public species are included.
+
+  ## Options
+
+    * `:limit` - the maximum number of users to return. Defaults to `10`.
+  """
+  def list_users_by_lifelist_size(opts \\ []) do
+    limit = Keyword.get(opts, :limit, 10)
+
+    counts =
+      from o in Kjogvi.Birding.Observation,
+        join: c in assoc(o, :card),
+        join: stm in assoc(o, :species_taxa_mapping),
+        where: o.unreported == false and o.hidden == false,
+        group_by: c.user_id,
+        select: %{user_id: c.user_id, lifelist_size: count(stm.species_page_id, :distinct)}
+
+    from(u in User,
+      join: counts in subquery(counts),
+      on: counts.user_id == u.id,
+      order_by: [desc: counts.lifelist_size, asc: u.nickname],
+      limit: ^limit,
+      select: %{u | lifelist_size: counts.lifelist_size}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a user by email and password.
 
   ## Examples

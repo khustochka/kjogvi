@@ -6,16 +6,36 @@
   <p class="text-lg font-medium">No birders yet</p>
 </div>
 
-<ul id="users-list" class="divide-y divide-stone-200" aria-label="Birders">
-  <li :for={user <- @users} id={"user-#{user.id}"}>
-    <.link
-      navigate={~p"/users/#{user.nickname}"}
-      class="flex items-baseline gap-2 py-3 no-underline hover:bg-stone-50 px-2 -mx-2 rounded"
-    >
-      <span class="font-header font-semibold text-blue-menu">
-        {user.display_name || user.nickname}
-      </span>
-      <span :if={user.display_name} class="text-sm text-stone-500">@{user.nickname}</span>
-    </.link>
-  </li>
-</ul>
+<div :if={@users != []} class="md:w-1/2">
+  <div
+    class="flex items-baseline gap-2 pl-10 pr-2 pb-1 text-xs font-medium uppercase tracking-wide text-stone-400"
+    aria-hidden="true"
+  >
+    <span class="grow">Birder</span>
+    <span>Species</span>
+  </div>
+
+  <ol
+    id="users-list"
+    class="list-decimal pl-10 marker:text-sm marker:tabular-nums marker:text-stone-400 divide-y divide-stone-200"
+    aria-label="Birders"
+  >
+    <li :for={user <- @users} id={"user-#{user.id}"} class="ps-1">
+      <div class="flex items-baseline gap-2 py-3">
+        <.link navigate={~p"/users/#{user.nickname}"} class="grow no-underline">
+          <span class="font-header font-semibold text-blue-menu">
+            {user.display_name || user.nickname}
+          </span>
+          <span :if={user.display_name} class="text-sm text-stone-500">@{user.nickname}</span>
+        </.link>
+        <.link
+          navigate={~p"/users/#{user.nickname}/lifelist"}
+          class="text-sm tabular-nums no-underline"
+          aria-label={"#{user.lifelist_size} species observed by #{user.display_name || user.nickname}"}
+        >
+          {user.lifelist_size}
+        </.link>
+      </div>
+    </li>
+  </ol>
+</div>

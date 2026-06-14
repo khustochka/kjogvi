@@ -65,6 +65,73 @@ defmodule Kjogvi.UsersTest do
     end
   end
 
+  describe "list_users_by_lifelist_size/1" do
+    defp observe_species(user, taxon) do
+      card = insert(:card, user: user)
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+    end
+
+    test "orders users by number of distinct public species, descending" do
+      {taxon1, _} = create_species_taxon_with_page()
+      {taxon2, _} = create_species_taxon_with_page()
+
+      one_species = user_fixture(nickname: "one")
+      observe_species(one_species, taxon1)
+
+      two_species = user_fixture(nickname: "two")
+      observe_species(two_species, taxon1)
+      observe_species(two_species, taxon2)
+
+      assert [%{nickname: "two", lifelist_size: 2}, %{nickname: "one", lifelist_size: 1}] =
+               Accounts.list_users_by_lifelist_size()
+    end
+
+    test "counts each species once even with multiple observations" do
+      {taxon, _} = create_species_taxon_with_page()
+      user = user_fixture()
+      observe_species(user, taxon)
+      observe_species(user, taxon)
+
+      assert [%{id: id, lifelist_size: 1}] = Accounts.list_users_by_lifelist_size()
+      assert id == user.id
+    end
+
+    test "excludes unreported and hidden observations" do
+      {taxon, _} = create_species_taxon_with_page()
+      {visible_taxon, _} = create_species_taxon_with_page()
+      user = user_fixture()
+      card = insert(:card, user: user)
+
+      insert(:observation,
+        card: card,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon),
+        unreported: true
+      )
+
+      insert(:observation,
+        card: card,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon),
+        hidden: true
+      )
+
+      observe_species(user, visible_taxon)
+
+      assert [%{lifelist_size: 1}] = Accounts.list_users_by_lifelist_size()
+    end
+
+    test "omits users with no public species" do
+      user_fixture()
+      assert Accounts.list_users_by_lifelist_size() == []
+    end
+
+    test "respects the :limit option" do
+      {taxon, _} = create_species_taxon_with_page()
+      for n <- 1..3, do: observe_species(user_fixture(nickname: "birder#{n}"), taxon)
+
+      assert length(Accounts.list_users_by_lifelist_size(limit: 2)) == 2
+    end
+  end
+
   describe "register_user/1" do
     test "requires email, password and nickname to be set" do
       {:error, changeset} = Accounts.register_user(%{})

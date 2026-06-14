@@ -26,6 +26,9 @@ defmodule Kjogvi.Accounts.User do
     embeds_one :extras, Extras, on_replace: :update, defaults_to_struct: true
 
     timestamps(type: :utc_datetime_usec)
+
+    # Public life list size, populated by `Accounts.list_users_by_lifelist_size/1`.
+    field :lifelist_size, :integer, virtual: true
   end
 
   @doc """
