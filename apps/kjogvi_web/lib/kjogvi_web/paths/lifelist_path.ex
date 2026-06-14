@@ -44,39 +44,33 @@ defmodule KjogviWeb.Paths.LifelistPath do
     |> then(&{year, location, &1})
   end
 
-  defp lifelist_gen_path(scope, year, location, query) do
-    if scope.private_view do
-      lifelist_p(:my, year, location, query)
-    else
-      lifelist_p(:public, year, location, query)
-    end
+  # Routes the lifelist link to the section's own URL space. The private
+  # (`:private`/`:admin`) lifelist lives under /my; a specific user's public
+  # lifelist under /users/:username.
+  defp lifelist_gen_path(%{section: section} = _scope, year, location, query)
+       when section in [:private, :admin] do
+    my_lifelist_p(year, location, query)
   end
 
-  defp lifelist_p(publicity, nil = _year, nil = _location, query) do
-    case publicity do
-      :public -> ~p"/lifelist?#{query}"
-      :my -> ~p"/my/lifelist?#{query}"
-    end
+  defp lifelist_gen_path(%{section: :user, subject_user: %{nickname: nickname}}, _year, _location, query) do
+    # The user lifelist currently has a single route with no year/location
+    # filtering; year/location are carried as query params only.
+    ~p"/users/#{nickname}/lifelist?#{query}"
   end
 
-  defp lifelist_p(publicity, year, nil = _location, query) do
-    case publicity do
-      :public -> ~p"/lifelist/#{year}?#{query}"
-      :my -> ~p"/my/lifelist/#{year}?#{query}"
-    end
+  defp my_lifelist_p(nil = _year, nil = _location, query) do
+    ~p"/my/lifelist?#{query}"
   end
 
-  defp lifelist_p(publicity, nil = _year, location, query) do
-    case publicity do
-      :public -> ~p"/lifelist/#{location}?#{query}"
-      :my -> ~p"/my/lifelist/#{location}?#{query}"
-    end
+  defp my_lifelist_p(year, nil = _location, query) do
+    ~p"/my/lifelist/#{year}?#{query}"
   end
 
-  defp lifelist_p(publicity, year, location, query) do
-    case publicity do
-      :public -> ~p"/lifelist/#{year}/#{location}?#{query}"
-      :my -> ~p"/my/lifelist/#{year}/#{location}?#{query}"
-    end
+  defp my_lifelist_p(nil = _year, location, query) do
+    ~p"/my/lifelist/#{location}?#{query}"
+  end
+
+  defp my_lifelist_p(year, location, query) do
+    ~p"/my/lifelist/#{year}/#{location}?#{query}"
   end
 end

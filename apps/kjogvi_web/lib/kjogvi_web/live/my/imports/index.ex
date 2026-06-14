@@ -29,7 +29,7 @@ defmodule KjogviWeb.Live.My.Imports.Index do
         class="border border-slate-300 rounded-lg p-6 mb-8 lg:mb-0 lg:basis-15/31 lg:grow-0"
       >
         <.h2>{header}</.h2>
-        <.live_component module={module} user={@current_scope.user} id={id} />
+        <.live_component module={module} user={@current_scope.current_user} id={id} />
       </div>
     </div>
     """

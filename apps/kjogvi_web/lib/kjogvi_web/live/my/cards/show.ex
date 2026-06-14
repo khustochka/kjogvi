@@ -18,7 +18,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _url, %{assigns: assigns} = socket) do
-    card = Birding.fetch_card_with_observations(assigns.current_scope.user, id)
+    card = Birding.fetch_card_with_observations(assigns.current_scope.current_user, id)
 
     {
       :noreply,

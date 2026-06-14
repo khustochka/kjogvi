@@ -1,6 +1,4 @@
 defmodule KjogviWeb.Router do
-  require Kjogvi.Config
-
   use KjogviWeb, :router
 
   import KjogviWeb.UserAuth
@@ -16,28 +14,24 @@ defmodule KjogviWeb.Router do
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {KjogviWeb.Layouts, :root}
+    plug :put_layout, html: {KjogviWeb.Layouts, :public}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-
+    
     plug :fetch_current_scope
-
-    Kjogvi.Config.with_single_user do
-      plug :verify_main_user
-    end
   end
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
-  Kjogvi.Config.with_single_user do
-    scope "/setup", KjogviWeb do
-      pipe_through [:browser]
+  # TODO: check for admin presence
+  scope "/setup", KjogviWeb do
+    pipe_through [:browser]
 
-      get "/", SetupController, :enter
-      post "/register", SetupController, :form
-      post "/", SetupController, :create
-    end
+    get "/", SetupController, :enter
+    post "/register", SetupController, :form
+    post "/", SetupController, :create
   end
 
   scope "/", KjogviWeb do
@@ -47,15 +41,66 @@ defmodule KjogviWeb.Router do
     get "/species/:slug", SpeciesController, :show
   end
 
+  ## Authentication routes
+  # TODO: change to /account? or just plain /login etc.
+
+  scope "/", KjogviWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    live_session :redirect_if_user_is_authenticated,
+      on_mount: [
+        {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}
+      ] do
+      live "/users/log_in", UserLoginLive, :new
+
+      live "/users/register", UserRegistrationLive, :new
+      live "/users/reset_password", UserForgotPasswordLive, :new
+      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+    end
+
+    post "/users/log_in", UserSessionController, :create
+  end
+
+  scope "/", KjogviWeb do
+    pipe_through [:browser]
+
+    delete "/users/log_out", UserSessionController, :delete
+
+    live_session :current_user,
+      on_mount: [
+        {KjogviWeb.UserAuth, :mount_current_scope}
+      ] do
+      live "/users/confirm/:token", UserConfirmationLive, :edit
+      live "/users/confirm", UserConfirmationInstructionsLive, :new
+    end
+  end
+
+  # PUBLIC USER ROUTES
+
+  scope "/users/:username", KjogviWeb do
+    pipe_through [:browser, :put_section_user]
+
+    live_session :section_user,
+      on_mount: [
+        {KjogviWeb.UserAuth, :mount_section_user}
+      ] do
+      live "/", Live.Users.Show
+      live "/lifelist", Live.Lifelist.Index
+      live "/photos", Live.Photos.Index, :index
+      live "/photos/page/:page", Live.Photos.Index, :index
+    end
+  end
+
   # AUTHENTICATED USER ROUTES
 
   scope "/my", KjogviWeb do
-    pipe_through [:browser, :set_private_view, :require_authenticated_user]
+    pipe_through [:browser, :require_authenticated_user, :put_section_private]
 
     live_session :require_authenticated_user,
+      layout: {KjogviWeb.Layouts, :private},
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_authenticated},
-        {KjogviWeb.UserAuth, :mount_private_view}
+        {KjogviWeb.UserAuth, :mount_section_private}
       ] do
       live "/locations", Live.My.Locations.Index, :index
       live "/locations/countries", Live.My.Countries.Index, :index
@@ -91,22 +136,23 @@ defmodule KjogviWeb.Router do
   # ADMIN ROUTES
 
   scope "/admin", KjogviWeb do
-    pipe_through [:browser, :set_private_view, :require_admin]
+    pipe_through [:browser, :require_admin, :put_section_admin]
 
     live_session :admin_paths,
+      layout: {KjogviWeb.Layouts, :private},
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.UserAuth, :mount_private_view}
+        {KjogviWeb.UserAuth, :mount_section_admin}
       ] do
       live "/exclusive-tasks", Live.Admin.ExclusiveTasks.Index, :index
     end
 
     ornitho_web "/taxonomy",
       root_layout: {KjogviWeb.Layouts, :root},
-      app_layout: {KjogviWeb.Layouts, :app},
+      app_layout: {KjogviWeb.Layouts, :private},
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.UserAuth, :mount_private_view}
+        {KjogviWeb.UserAuth, :mount_section_admin}
       ]
 
     live_dashboard "/dashboard",
@@ -122,78 +168,41 @@ defmodule KjogviWeb.Router do
       ],
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.UserAuth, :mount_private_view}
+        {KjogviWeb.UserAuth, :mount_section_admin}
       ]
   end
 
   # PUBLIC ROUTES
 
-  scope "/lifelist", KjogviWeb do
-    pipe_through [:browser]
+  # scope "/lifelist", KjogviWeb do
+  #   pipe_through [:browser]
 
-    live_session :open_current_user,
-      on_mount: [
-        {KjogviWeb.UserAuth, :mount_current_scope}
-      ] do
-      live "/", Live.Lifelist.Index, :public_view
-      live "/:year_or_location", Live.Lifelist.Index, :public_view
-      live "/:year/:location", Live.Lifelist.Index, :public_view
-    end
-  end
+  #   live_session :open_current_user,
+  #     on_mount: [
+  #       {KjogviWeb.UserAuth, :mount_current_scope}
+  #     ] do
+  #     live "/", Live.Lifelist.Index, :public_view
+  #     live "/:year_or_location", Live.Lifelist.Index, :public_view
+  #     live "/:year/:location", Live.Lifelist.Index, :public_view
+  #   end
+  # end
 
-  scope "/photos", KjogviWeb do
-    pipe_through [:browser]
+  # scope "/photos", KjogviWeb do
+  #   pipe_through [:browser]
 
-    live_session :public_photos,
-      on_mount: [
-        {KjogviWeb.UserAuth, :mount_current_scope}
-      ] do
-      live "/", Live.Photos.Index, :index
-      live "/page/:page", Live.Photos.Index, :index
-    end
-  end
+  #   live_session :public_photos,
+  #     on_mount: [
+  #       {KjogviWeb.UserAuth, :mount_current_scope}
+  #     ] do
+  #     live "/", Live.Photos.Index, :index
+  #     live "/page/:page", Live.Photos.Index, :index
+  #   end
+  # end
 
   # Other scopes may use custom stacks.
   # scope "/api", KjogviWeb do
   #   pipe_through :api
   # end
-
-  ## Authentication routes
-
-  scope "/", KjogviWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
-
-    live_session :redirect_if_user_is_authenticated,
-      on_mount: [
-        {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}
-      ] do
-      live "/users/log_in", UserLoginLive, :new
-
-      Kjogvi.Config.with_multiuser do
-        live "/users/register", UserRegistrationLive, :new
-        live "/users/reset_password", UserForgotPasswordLive, :new
-        live "/users/reset_password/:token", UserResetPasswordLive, :edit
-      end
-    end
-
-    post "/users/log_in", UserSessionController, :create
-  end
-
-  scope "/", KjogviWeb do
-    pipe_through [:browser]
-
-    delete "/users/log_out", UserSessionController, :delete
-
-    Kjogvi.Config.with_multiuser do
-      live_session :current_user,
-        on_mount: [
-          {KjogviWeb.UserAuth, :mount_current_scope}
-        ] do
-        live "/users/confirm/:token", UserConfirmationLive, :edit
-        live "/users/confirm", UserConfirmationInstructionsLive, :new
-      end
-    end
-  end
 
   # DEV ROUTES
 

@@ -26,33 +26,53 @@ defmodule KjogviWeb.Plug do
     end
   end
 
-  def verify_main_user(
-        %{request_path: "/setup" <> _, assigns: %{current_scope: scope}} = conn,
+  @doc """
+  Refines the scope into the `:private` section: the logged-in user views their
+  own data, including private records. Mirrors `mount_section_private/4`.
+  """
+  def put_section_private(%{assigns: %{current_scope: scope}} = conn, _opts) do
+    conn
+    |> assign(:current_scope, %{scope | section: :private, subject_user: scope.current_user})
+    |> apply_layout()
+  end
+
+  @doc """
+  Refines the scope into the `:admin` section. Like `:private` it shows the
+  admin's own data under the private chrome, but the distinct section value lets
+  admin-only code branch on it. Mirrors `mount_section_admin/4`.
+  """
+  def put_section_admin(%{assigns: %{current_scope: scope}} = conn, _opts) do
+    conn
+    |> assign(:current_scope, %{scope | section: :admin, subject_user: scope.current_user})
+    |> apply_layout()
+  end
+
+  # Sets the app layout from the (already-established) section. Layout is derived
+  # from the scope, never chosen by the controller itself.
+  defp apply_layout(%{assigns: %{current_scope: scope}} = conn) do
+    put_layout(conn, html: {KjogviWeb.Layouts, KjogviWeb.Layouts.for_scope(scope)})
+  end
+
+  @doc """
+  Refines the scope into the `:user` section: resolves `:username` to a user and
+  assigns it as `subject_user`. Renders 404 if no user matches the nickname.
+  """
+  def put_section_user(
+        %{assigns: %{current_scope: scope}, params: %{"username" => username}} = conn,
         _opts
       ) do
-    if scope.main_user do
-      conn
-      |> put_status(:not_found)
-      |> put_view(Application.get_env(:kjogvi_web, KjogviWeb.Endpoint)[:render_errors][:formats])
-      |> render(:"404")
-      |> halt()
-    else
-      conn
-    end
-  end
+    case Kjogvi.Accounts.get_user_by_nickname(username) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(KjogviWeb.ErrorHTML)
+        |> render(:"404")
+        |> halt()
 
-  def verify_main_user(%{assigns: %{current_scope: scope}} = conn, _opts) do
-    if scope.main_user do
-      conn
-    else
-      conn
-      |> redirect(to: ~p"/setup")
-      |> halt()
+      subject_user ->
+        conn
+        |> assign(:current_scope, %{scope | section: :user, subject_user: subject_user})
+        |> apply_layout()
     end
-  end
-
-  def set_private_view(%{assigns: %{current_scope: scope}} = conn, _opts) do
-    conn
-    |> assign(:current_scope, %{scope | private_view: true})
   end
 end

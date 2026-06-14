@@ -16,18 +16,22 @@ defmodule Kjogvi.Scope do
   growing application requirements.
   """
 
-  # alias Kjogvi.Accounts.User
+  @typedoc """
+  The section the request operates in. It determines whose data is visible and
+  whether private data is included:
 
-  defstruct user: nil, main_user: nil, private_view: false
+    * `:community` - aggregate public data across all users (the default section).
+    * `:user` - the public data of a specific `subject_user`.
+    * `:private` - all data, including private, of the logged-in `current_user`.
+    * `:admin` - administrative section.
+  """
+  @type section() :: :community | :user | :private | :admin
 
-  # @doc """
-  # Creates a scope for the given user.
+  @type t() :: %__MODULE__{
+          current_user: Kjogvi.Accounts.User.t() | nil,
+          section: section(),
+          subject_user: Kjogvi.Accounts.User.t() | nil
+        }
 
-  # Returns nil if no user is given.
-  # """
-  # def for_user(%User{} = user) do
-  #   %__MODULE__{user: user}
-  # end
-
-  # def for_user(nil), do: nil
+  defstruct current_user: nil, section: :community, subject_user: nil
 end

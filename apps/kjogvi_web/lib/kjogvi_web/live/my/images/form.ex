@@ -89,7 +89,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
   end
 
   defp mount_action(socket, :new, _params) do
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope.current_user
 
     socket
     |> assign(:page_title, "Add Image")
@@ -104,7 +104,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
   end
 
   defp mount_action(socket, :edit, %{"id" => id}) do
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope.current_user
     image = user |> Images.get_image!(id) |> Repo.preload(:observations)
 
     ids = Enum.map(image.observations, & &1.id)
@@ -222,7 +222,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
           <.live_component
             module={ImageObservations}
             id="image-observations"
-            current_user={@current_scope.user}
+            current_user={@current_scope.current_user}
             date={@observation_date}
             selected={@selected_observations}
           />
@@ -409,7 +409,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
   end
 
   defp save(socket, :new, %{"image" => params}) do
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope.current_user
 
     cond do
       not match?(%Plug.Upload{}, socket.assigns.upload) ->
@@ -510,7 +510,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
 
   @impl true
   def handle_info({:image_observations_changed, ids}, socket) do
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope.current_user
 
     {:noreply,
      socket

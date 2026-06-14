@@ -1,20 +1,21 @@
 <.h1>
-  Birding diary
+  Birders
 </.h1>
 
-<div class="md:grid md:grid-cols-2 md:gap-x-14 md:gap-y-8">
-  <.top_n_list
-    :for={{header, lifelist} <- @lists}
-    list={lifelist.list}
-    total={lifelist.total}
-    href={lifelist_path(@current_scope, lifelist.filter)}
-    class="mb-8 md:mb-0"
-  >
-    <:header>{header}</:header>
-  </.top_n_list>
+<div :if={@users == []} id="users-empty" class="text-center py-16 text-stone-500">
+  <p class="text-lg font-medium">No birders yet</p>
 </div>
 
-<div :if={@logbook_entries != []}>
-  <.h2 class="mt-12">Recent additions</.h2>
-  <.logbook logbook_entries={@logbook_entries} current_scope={@current_scope} />
-</div>
+<ul id="users-list" class="divide-y divide-stone-200" aria-label="Birders">
+  <li :for={user <- @users} id={"user-#{user.id}"}>
+    <.link
+      navigate={~p"/users/#{user.nickname}"}
+      class="flex items-baseline gap-2 py-3 no-underline hover:bg-stone-50 px-2 -mx-2 rounded"
+    >
+      <span class="font-header font-semibold text-blue-menu">
+        {user.display_name || user.nickname}
+      </span>
+      <span :if={user.display_name} class="text-sm text-stone-500">@{user.nickname}</span>
+    </.link>
+  </li>
+</ul>

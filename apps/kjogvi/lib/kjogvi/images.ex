@@ -38,6 +38,23 @@ defmodule Kjogvi.Images do
   end
 
   @doc """
+  Lists images for the gallery, choosing which images to show from the scope's
+  section:
+
+    * `:user` - the images of the scope's `subject_user`.
+    * `:community` - images from all users.
+
+  The query is derived from the section, not chosen by the caller.
+  """
+  def list_images_for_scope(%{section: :user, subject_user: subject_user}, pagination) do
+    list_images(subject_user, pagination)
+  end
+
+  def list_images_for_scope(%{section: :community}, pagination) do
+    list_public_images(pagination)
+  end
+
+  @doc """
   Fetches one of the user's images by id, raising if it is missing or owned by
   someone else.
   """

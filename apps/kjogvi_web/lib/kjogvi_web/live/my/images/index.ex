@@ -27,7 +27,7 @@ defmodule KjogviWeb.Live.My.Images.Index do
 
     images =
       Images.list_images(
-        socket.assigns.current_scope.user,
+        socket.assigns.current_scope.current_user,
         %{page: page, page_size: @images_per_page}
       )
 

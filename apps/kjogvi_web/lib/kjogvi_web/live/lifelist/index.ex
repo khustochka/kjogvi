@@ -312,7 +312,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <div class="mb-8">
           <.lifers_list
             id="lifelist-table"
-            show_private_details={@current_scope.private_view}
+            show_private_details={@lifelist_scope.include_private}
             groups={@lifer_groups}
             location_field={@location_field}
             sort={@filter.sort}
@@ -326,7 +326,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
           <.lifers_list
             id="lifelist-heard-only-table"
-            show_private_details={@current_scope.private_view}
+            show_private_details={@lifelist_scope.include_private}
             groups={@heard_only_groups}
             location_field={@location_field}
             sort={@filter.sort}
@@ -352,7 +352,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     socket
     |> assign(
       :location_field,
-      if assigns.current_scope.private_view do
+      if assigns.lifelist_scope.include_private do
         :location
       else
         :public_location
@@ -371,7 +371,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   # Private view not indexed
-  defp derive_robots(%{assigns: %{current_scope: %{private_view: true}}} = socket) do
+  defp derive_robots(%{assigns: %{lifelist_scope: %{include_private: true}}} = socket) do
     socket
     |> assign(:robots, [:noindex])
   end

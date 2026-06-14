@@ -66,7 +66,7 @@ defmodule KjogviWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {KjogviWeb.Layouts, :app}
+        layout: {KjogviWeb.Layouts, :public}
 
       unquote(html_helpers())
     end

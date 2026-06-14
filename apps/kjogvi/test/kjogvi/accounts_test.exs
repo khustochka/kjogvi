@@ -18,6 +18,22 @@ defmodule Kjogvi.UsersTest do
     end
   end
 
+  describe "get_user_by_nickname/1" do
+    test "does not return the user if the nickname does not exist" do
+      refute Accounts.get_user_by_nickname("unknown")
+    end
+
+    test "returns the user if the nickname exists" do
+      %{id: id} = user_fixture(nickname: "birder")
+      assert %User{id: ^id} = Accounts.get_user_by_nickname("birder")
+    end
+
+    test "matches case-insensitively against the downcased nickname" do
+      %{id: id} = user_fixture(nickname: "birder")
+      assert %User{id: ^id} = Accounts.get_user_by_nickname("BiRdEr")
+    end
+  end
+
   describe "get_user_by_email_and_password/2" do
     test "does not return the user if the email does not exist" do
       refute Accounts.get_user_by_email_and_password("unknown@example.com", "hello world!")

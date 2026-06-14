@@ -5,38 +5,38 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   alias Kjogvi.Birding.Lifelist.Filter
 
   test "no parameters" do
-    result = Params.to_filter(%{user: nil}, %{})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{})
     assert result == {:ok, Filter.discombo!([])}
   end
 
   test "unknown keys are discarded" do
-    result = Params.to_filter(%{user: nil}, %{"a" => "b"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"a" => "b"})
     assert result == {:ok, Filter.discombo!([])}
   end
 
   test "only valid year" do
-    result = Params.to_filter(%{user: nil}, %{"year_or_location" => "2024"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"year_or_location" => "2024"})
     assert result == {:ok, Filter.discombo!(year: 2024)}
   end
 
   test "valid month parameter" do
-    result = Params.to_filter(%{user: nil}, %{"month" => "6"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"month" => "6"})
     assert result == {:ok, Filter.discombo!(month: 6)}
   end
 
   test "invalid numeric month parameter" do
-    result = Params.to_filter(%{user: nil}, %{"month" => "13"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"month" => "13"})
     assert {:error, _} = result
   end
 
   test "invalid string month parameter" do
-    result = Params.to_filter(%{user: nil}, %{"month" => "abc"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"month" => "abc"})
     assert {:error, _} = result
   end
 
   test "only public location" do
     ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
-    result = Params.to_filter(%{user: nil}, %{"year_or_location" => "ukraine"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"year_or_location" => "ukraine"})
     assert result == {:ok, Filter.discombo!(location: ukraine)}
   end
 
@@ -48,7 +48,7 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
       is_private: true
     )
 
-    result = Params.to_filter(%{user: nil}, %{"year_or_location" => "ukraine"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"year_or_location" => "ukraine"})
     assert {:error, _} = result
   end
 
@@ -63,23 +63,23 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
     )
 
     result =
-      Params.to_filter(%{user: user, private_view: false}, %{"year_or_location" => "ukraine"})
+      Params.to_filter(%{current_user: user, section: :user}, %{"year_or_location" => "ukraine"})
 
     assert {:error, _} = result
   end
 
   test "sort=taxonomy parameter" do
-    result = Params.to_filter(%{user: nil}, %{"sort" => "taxonomy"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"sort" => "taxonomy"})
     assert result == {:ok, Filter.discombo!(sort: :taxonomy)}
   end
 
   test "sort=date parameter (explicit default)" do
-    result = Params.to_filter(%{user: nil}, %{"sort" => "date"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"sort" => "date"})
     assert result == {:ok, Filter.discombo!([])}
   end
 
   test "invalid sort parameter" do
-    result = Params.to_filter(%{user: nil}, %{"sort" => "bogus"})
+    result = Params.to_filter(%{current_user: nil, section: :community}, %{"sort" => "bogus"})
     assert {:error, _} = result
   end
 
@@ -95,7 +95,7 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
       )
 
     result =
-      Params.to_filter(%{user: user, private_view: true}, %{"year_or_location" => "ukraine"})
+      Params.to_filter(%{current_user: user, section: :private}, %{"year_or_location" => "ukraine"})
 
     assert result == {:ok, Filter.discombo!(location: ukraine)}
   end

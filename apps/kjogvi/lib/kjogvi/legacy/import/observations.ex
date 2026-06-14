@@ -29,18 +29,15 @@ defmodule Kjogvi.Legacy.Import.Observations do
     end
   end
 
-  def after_import do
+  def after_import(opts) do
+    # Legacy imports bypass `Kjogvi.Birding.create_card/2`, so the per-write
+    # logbook cache invalidation doesn't run. Evict the user's logbook cache.
+    Kjogvi.Birding.Logbook.Cache.invalidate(opts[:user].id)
+
     # Promoting
     Kjogvi.Pages.Promotion.promote_observations_by_query(Observation)
 
-    # Legacy imports bypass `Kjogvi.Birding.create_card/2`, so the per-write
-    # logbook cache invalidation doesn't run. Evict the main user's logbook cache
-    # once at the tail of the pipeline — legacy imports target the
-    # single-user site owner.
-    case Kjogvi.Settings.main_user() do
-      nil -> :ok
-      user -> Kjogvi.Birding.Logbook.Cache.invalidate(user.id)
-    end
+    :ok
   end
 
   def cleanup do
@@ -69,7 +66,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
       :private_notes
     ])
     |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
-    # TODO: many legacy observations have no created_at/updated_at, so these can
+    # FIXME: many legacy observations have no created_at/updated_at, so these can
     # be nil and the observations table allows null timestamps. In the future,
     # select a default timestamp here (from card?) and make the columns NOT NULL.
     |> Map.put(:inserted_at, Utils.convert_timestamp(created_at))

@@ -19,13 +19,6 @@ defmodule Kjogvi.Factory do
     }
   end
 
-  def main_user_card_factory do
-    struct!(
-      card_factory(),
-      %{user: Kjogvi.Settings.main_user()}
-    )
-  end
-
   def observation_factory do
     %Kjogvi.Birding.Observation{
       card: build(:card)

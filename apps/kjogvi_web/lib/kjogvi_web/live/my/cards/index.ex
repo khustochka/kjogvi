@@ -42,7 +42,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, %{assigns: assigns} = socket) do
-    card = Birding.fetch_card_for_edit(assigns.current_scope.user, id)
+    card = Birding.fetch_card_for_edit(assigns.current_scope.current_user, id)
 
     case Birding.delete_card(card) do
       {:ok, _card} ->
@@ -133,7 +133,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
 
   defp load_cards(%{assigns: assigns} = socket) do
     cards =
-      Birding.search_cards(assigns.current_scope.user, assigns.filter, %{
+      Birding.search_cards(assigns.current_scope.current_user, assigns.filter, %{
         page: assigns.page,
         page_size: @cards_per_page
       })
@@ -153,7 +153,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
 
     <CardSearchFilter.card_search_filter
       filter={@filter}
-      user={@current_scope.user}
+      user={@current_scope.current_user}
       taxon_label={@taxon_label}
     />
 

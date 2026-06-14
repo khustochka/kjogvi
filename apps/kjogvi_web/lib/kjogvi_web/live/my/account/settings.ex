@@ -123,7 +123,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                   field={ebird_form[:username]}
                   label="Username"
                   id="ebird_username"
-                  value={@current_scope.user.extras.ebird.username}
+                  value={@current_scope.current_user.extras.ebird.username}
                 />
                 <div>
                   <.input
@@ -131,7 +131,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
                     type="password"
                     label="Password"
                     id="ebird_password"
-                    value={@current_scope.user.extras.ebird.password}
+                    value={@current_scope.current_user.extras.ebird.password}
                   />
                 </div>
               </.inputs_for>
@@ -226,7 +226,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Accounts.update_user_email(socket.assigns.current_scope.user, token) do
+      case Accounts.update_user_email(socket.assigns.current_scope.current_user, token) do
         :ok ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -238,7 +238,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
   end
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope.current_user
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
     settings_changeset = Kjogvi.Accounts.User.settings_changeset(user, %{})
@@ -271,7 +271,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     %{"current_password" => password, "user" => user_params} = params
 
     email_form =
-      socket.assigns.current_scope.user
+      socket.assigns.current_scope.current_user
       |> Accounts.change_user_email(user_params)
       |> Map.put(:action, :validate)
       |> to_form()
@@ -281,7 +281,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
   def handle_event("update_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope.current_user
 
     case Accounts.apply_user_email(user, password, user_params) do
       {:ok, applied_user} ->
@@ -303,7 +303,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
     %{"current_password" => password, "user" => user_params} = params
 
     password_form =
-      socket.assigns.current_scope.user
+      socket.assigns.current_scope.current_user
       |> Accounts.change_user_password(user_params)
       |> Map.put(:action, :validate)
       |> to_form()
@@ -313,7 +313,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
 
   def handle_event("update_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope.current_user
 
     case Accounts.update_user_password(user, password, user_params) do
       {:ok, user} ->
@@ -330,17 +330,24 @@ defmodule KjogviWeb.Live.My.Account.Settings do
   end
 
   def handle_event("validate_settings", %{"user" => user_params}, socket) do
-    settings_form =
-      socket.assigns.current_scope.user
+    changeset =
+      socket.assigns.current_scope.current_user
       |> Kjogvi.Accounts.User.settings_changeset(user_params)
       |> Map.put(:action, :validate)
-      |> to_form()
 
-    {:noreply, assign(socket, settings_form: settings_form)}
+    # Rebuild the logbook rows from the in-progress edits (not the saved user) so
+    # the checkboxes reflect what was just clicked; otherwise `checked={row.life}`
+    # snaps back to the stored value on every change.
+    edited_user = Ecto.Changeset.apply_changes(changeset)
+
+    {:noreply,
+     socket
+     |> assign(:settings_form, to_form(changeset))
+     |> assign(:logbook_location_rows, build_logbook_location_rows(edited_user))}
   end
 
   def handle_event("update_settings", %{"user" => user_params}, socket) do
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope.current_user
 
     case Accounts.update_user_settings(user, user_params) do
       {:ok, user} ->
@@ -349,7 +356,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
           |> Kjogvi.Accounts.User.settings_changeset(%{})
           |> to_form()
 
-        scope = %{socket.assigns.current_scope | user: user}
+        scope = %{socket.assigns.current_scope | current_user: user}
 
         socket =
           socket

@@ -97,8 +97,7 @@ defmodule KjogviWeb.UserAuth do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
 
-    scope = %Scope{user: user, main_user: Kjogvi.Settings.main_user()}
-    assign(conn, :current_scope, scope)
+    assign(conn, :current_scope, %Scope{current_user: user})
   end
 
   defp ensure_user_token(conn) do
@@ -158,7 +157,7 @@ defmodule KjogviWeb.UserAuth do
   def on_mount(:ensure_authenticated, _params, session, socket) do
     socket = mount_current_scope(socket, session)
 
-    if socket.assigns.current_scope.user do
+    if socket.assigns.current_scope.current_user do
       {:cont, socket}
     else
       socket =
@@ -173,7 +172,7 @@ defmodule KjogviWeb.UserAuth do
   def on_mount(:ensure_admin, _params, session, socket) do
     socket = mount_current_scope(socket, session)
 
-    socket.assigns.current_scope.user
+    socket.assigns.current_scope.current_user
     |> then(fn user ->
       if user && Kjogvi.Accounts.admin?(user) do
         {:cont, socket}
@@ -190,19 +189,59 @@ defmodule KjogviWeb.UserAuth do
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket = mount_current_scope(socket, session)
 
-    if socket.assigns.current_scope.user do
+    if socket.assigns.current_scope.current_user do
       {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
     else
       {:cont, socket}
     end
   end
 
-  def on_mount(:mount_private_view, _params, _session, socket) do
+  def on_mount(:mount_section_private, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
     scope = socket.assigns.current_scope
 
     {:cont,
      socket
-     |> Phoenix.Component.assign(:current_scope, %{scope | private_view: true})}
+     |> Phoenix.Component.assign(:current_scope, %{
+       scope
+       | section: :private,
+         subject_user: scope.current_user
+     })}
+  end
+
+  def on_mount(:mount_section_admin, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
+    scope = socket.assigns.current_scope
+
+    {:cont,
+     socket
+     |> Phoenix.Component.assign(:current_scope, %{
+       scope
+       | section: :admin,
+         subject_user: scope.current_user
+     })}
+  end
+
+  def on_mount(:mount_section_user, %{"username" => username}, session, socket) do
+    socket = mount_current_scope(socket, session)
+
+    case Accounts.get_user_by_nickname(username) do
+      nil ->
+        {:halt,
+         socket
+         |> Phoenix.LiveView.put_flash(:error, "User not found.")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
+
+      subject_user ->
+        scope = socket.assigns.current_scope
+
+        {:cont,
+         Phoenix.Component.assign(
+           socket,
+           :current_scope,
+           %{scope | section: :user, subject_user: subject_user}
+         )}
+    end
   end
 
   defp mount_current_scope(socket, session) do
@@ -212,7 +251,7 @@ defmodule KjogviWeb.UserAuth do
           Accounts.get_user_by_session_token(user_token)
         end
 
-      %Scope{user: user, main_user: Kjogvi.Settings.main_user()}
+      %Scope{current_user: user}
     end)
   end
 
@@ -220,7 +259,7 @@ defmodule KjogviWeb.UserAuth do
   Used for routes that require the user to not be authenticated.
   """
   def redirect_if_user_is_authenticated(conn, _opts) do
-    if conn.assigns.current_scope.user do
+    if conn.assigns.current_scope.current_user do
       conn
       |> redirect(to: signed_in_path(conn))
       |> halt()
@@ -236,7 +275,7 @@ defmodule KjogviWeb.UserAuth do
   they use the application at all, here would be a good place.
   """
   def require_authenticated_user(conn, _opts) do
-    if conn.assigns.current_scope.user do
+    if conn.assigns.current_scope.current_user do
       conn
     else
       conn
@@ -251,7 +290,7 @@ defmodule KjogviWeb.UserAuth do
   Used for routes that require admin.
   """
   def require_admin(conn, _opts) do
-    conn.assigns.current_scope.user
+    conn.assigns.current_scope.current_user
     |> then(fn user ->
       if user && Accounts.admin?(user) do
         conn

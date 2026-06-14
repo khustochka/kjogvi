@@ -87,7 +87,7 @@ defmodule KjogviWeb.UserAuthTest do
     test "authenticates user from session", %{conn: conn, user: user} do
       user_token = Accounts.generate_user_session_token(user)
       conn = conn |> put_session(:user_token, user_token) |> UserAuth.fetch_current_scope([])
-      assert conn.assigns.current_scope.user.id == user.id
+      assert conn.assigns.current_scope.current_user.id == user.id
     end
 
     test "authenticates user from cookies", %{conn: conn, user: user} do
@@ -102,7 +102,7 @@ defmodule KjogviWeb.UserAuthTest do
         |> put_req_cookie(@remember_me_cookie, signed_token)
         |> UserAuth.fetch_current_scope([])
 
-      assert conn.assigns.current_scope.user.id == user.id
+      assert conn.assigns.current_scope.current_user.id == user.id
       assert get_session(conn, :user_token) == user_token
 
       assert get_session(conn, :live_socket_id) ==
@@ -113,7 +113,7 @@ defmodule KjogviWeb.UserAuthTest do
       _ = Accounts.generate_user_session_token(user)
       conn = UserAuth.fetch_current_scope(conn, [])
       refute get_session(conn, :user_token)
-      refute conn.assigns.current_scope.user
+      refute conn.assigns.current_scope.current_user
     end
   end
 
@@ -125,7 +125,7 @@ defmodule KjogviWeb.UserAuthTest do
       {:cont, updated_socket} =
         UserAuth.on_mount(:mount_current_scope, %{}, session, %LiveView.Socket{})
 
-      assert updated_socket.assigns.current_scope.user.id == user.id
+      assert updated_socket.assigns.current_scope.current_user.id == user.id
     end
 
     test "assigns nil to current_user assign if there isn't a valid user_token", %{conn: conn} do
@@ -135,7 +135,7 @@ defmodule KjogviWeb.UserAuthTest do
       {:cont, updated_socket} =
         UserAuth.on_mount(:mount_current_scope, %{}, session, %LiveView.Socket{})
 
-      assert updated_socket.assigns.current_scope.user == nil
+      assert updated_socket.assigns.current_scope.current_user == nil
     end
 
     test "assigns nil to current_user assign if there isn't a user_token", %{conn: conn} do
@@ -144,7 +144,7 @@ defmodule KjogviWeb.UserAuthTest do
       {:cont, updated_socket} =
         UserAuth.on_mount(:mount_current_scope, %{}, session, %LiveView.Socket{})
 
-      assert updated_socket.assigns.current_scope.user == nil
+      assert updated_socket.assigns.current_scope.current_user == nil
     end
   end
 
@@ -156,7 +156,7 @@ defmodule KjogviWeb.UserAuthTest do
       {:cont, updated_socket} =
         UserAuth.on_mount(:ensure_authenticated, %{}, session, %LiveView.Socket{})
 
-      assert updated_socket.assigns.current_scope.user.id == user.id
+      assert updated_socket.assigns.current_scope.current_user.id == user.id
     end
 
     test "redirects to login page if there isn't a valid user_token", %{conn: conn} do
@@ -169,7 +169,7 @@ defmodule KjogviWeb.UserAuthTest do
       }
 
       {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
-      assert updated_socket.assigns.current_scope.user == nil
+      assert updated_socket.assigns.current_scope.current_user == nil
     end
 
     test "redirects to login page if there isn't a user_token", %{conn: conn} do
@@ -181,7 +181,7 @@ defmodule KjogviWeb.UserAuthTest do
       }
 
       {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
-      assert updated_socket.assigns.current_scope.user == nil
+      assert updated_socket.assigns.current_scope.current_user == nil
     end
   end
 
@@ -214,7 +214,7 @@ defmodule KjogviWeb.UserAuthTest do
 
   describe "redirect_if_user_is_authenticated/2" do
     test "redirects if user is authenticated", %{conn: conn, user: user} do
-      scope = %Kjogvi.Scope{user: user}
+      scope = %Kjogvi.Scope{current_user: user}
 
       conn =
         conn |> assign(:current_scope, scope) |> UserAuth.redirect_if_user_is_authenticated([])
@@ -284,7 +284,7 @@ defmodule KjogviWeb.UserAuthTest do
     end
 
     test "does not redirect if user is authenticated", %{conn: conn, user: user} do
-      scope = %Kjogvi.Scope{user: user}
+      scope = %Kjogvi.Scope{current_user: user}
 
       conn = conn |> assign(:current_scope, scope) |> UserAuth.require_authenticated_user([])
       refute conn.halted

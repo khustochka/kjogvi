@@ -738,22 +738,36 @@ defmodule Kjogvi.Birding.LifelistTest do
   end
 
   describe "Lifelist.Scope.from_scope/1" do
-    test "returns lifelist scope for private view" do
+    test "returns the current user's list with private observations for the :private section" do
       user = user_fixture()
-      app_scope = %Kjogvi.Scope{user: user, main_user: user, private_view: true}
+      app_scope = %Kjogvi.Scope{current_user: user, section: :private}
 
       lifelist_scope = Lifelist.Scope.from_scope(app_scope)
       assert lifelist_scope.user == user
       assert lifelist_scope.include_private == true
     end
 
-    test "returns lifelist scope for public view with main_user" do
-      import Kjogvi.AccountsFixtures
-      main_user = user_fixture()
-      app_scope = %Kjogvi.Scope{user: nil, main_user: main_user, private_view: false}
+    test "returns the current user's list with private observations for the :admin section" do
+      user = user_fixture()
+      app_scope = %Kjogvi.Scope{current_user: user, section: :admin}
 
       lifelist_scope = Lifelist.Scope.from_scope(app_scope)
-      assert lifelist_scope.user == main_user
+      assert lifelist_scope.user == user
+      assert lifelist_scope.include_private == true
+    end
+
+    test "returns the subject user's public list for the :user section" do
+      current_user = user_fixture()
+      subject_user = user_fixture()
+
+      app_scope = %Kjogvi.Scope{
+        current_user: current_user,
+        section: :user,
+        subject_user: subject_user
+      }
+
+      lifelist_scope = Lifelist.Scope.from_scope(app_scope)
+      assert lifelist_scope.user == subject_user
       assert lifelist_scope.include_private == false
     end
   end

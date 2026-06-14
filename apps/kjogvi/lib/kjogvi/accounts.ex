@@ -31,6 +31,33 @@ defmodule Kjogvi.Accounts do
   end
 
   @doc """
+  Gets a user by nickname.
+
+  Nicknames are stored downcased, so the lookup downcases its argument to match.
+
+  ## Examples
+
+      iex> get_user_by_nickname("birder")
+      %User{}
+
+      iex> get_user_by_nickname("unknown")
+      nil
+
+  """
+  def get_user_by_nickname(nickname) when is_binary(nickname) do
+    Repo.get_by(User, nickname: String.downcase(nickname))
+  end
+
+  @doc """
+  Lists all users, ordered by nickname, for the public user directory.
+  """
+  def list_users do
+    User
+    |> order_by([u], asc: u.nickname)
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a user by email and password.
 
   ## Examples
@@ -93,16 +120,7 @@ defmodule Kjogvi.Accounts do
   def register_admin(attrs) do
     %User{}
     |> User.admin_changeset(attrs)
-    |> maybe_mark_main_user()
     |> Repo.insert()
-  end
-
-  defp maybe_mark_main_user(changeset) do
-    if Repo.exists?(main_user_query()) do
-      changeset
-    else
-      Ecto.Changeset.put_change(changeset, :is_main_user, true)
-    end
   end
 
   @doc """
@@ -246,9 +264,6 @@ defmodule Kjogvi.Accounts do
     |> Repo.update()
     |> case do
       {:ok, user} ->
-        # The main user projection (Kjogvi.Settings.main_user/0) includes
-        # settings fields; evict so the next read reflects the update.
-        if admin?(user), do: Kjogvi.Settings.invalidate_main_user()
         # logbook_settings drives Logbook.recent_entries/2; evict cached logbook feed
         # so it's recomputed against the new settings on next read.
         Kjogvi.Birding.Logbook.Cache.invalidate(user.id)
@@ -413,23 +428,5 @@ defmodule Kjogvi.Accounts do
 
   def admins do
     from u in User, where: ^admin_role() in u.roles
-  end
-
-  @doc """
-  Queryable for the main user.
-  """
-  def main_user_query do
-    from u in User, where: u.is_main_user
-  end
-
-  @doc """
-  Returns the full main user record, or raises if none is set.
-
-  Unlike `Kjogvi.Settings.main_user/0`, this is not cached and returns
-  a full `%User{}` — use it when you need fields beyond the cached
-  projection (e.g. `default_book_signature`).
-  """
-  def main_user!() do
-    Repo.one!(main_user_query())
   end
 end

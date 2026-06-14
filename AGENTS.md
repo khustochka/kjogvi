@@ -11,7 +11,6 @@
   - `ornithologue`: Ornithological taxonomy library (reusable package)
   - `ornitho_web`: Taxonomy dashboard UI (composable into `kjogvi_web`)
 - **Dual repositories**: Main app repo + separate OrnithoRepo for taxonomy data
-- **Single-user mode** by default (configurable via `Kjogvi.Config.with_single_user/1` macro)
 
 ## Critical Development Workflows
 
@@ -37,7 +36,7 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 
 ## Project-Specific Patterns
 
-- **Router**: Routes in `:require_authenticated_user` pipeline; use `:as` option for scopes. Single-user mode via `Kjogvi.Config.with_single_user/1`
+- **Router**: Routes in `:require_authenticated_user` pipeline; use `:as` option for scopes. 
 - **Forms**: Use `to_form(changeset)` in LiveView, access via `@form[:field]` in templates. Never pass `@changeset` to templates
 - **Components**: Use `<.icon>`, `<.input>`, `<.link>` components
 - **Icons**: Heroicons via the `<.icon>` component (e.g. `name="hero-star-solid"`); the bicycle is a bundled inline-SVG variant: `<.icon name="bicycle" />`
@@ -79,7 +78,6 @@ mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
 - Add and update tests for all code changes before committing
 - Update module and function documentation when making changes
 - Run `mix lint.fix` to auto-fix formatting + linting before commits
-- Single-user mode is default (wrap multi-user routes in `Kjogvi.Config.with_multiuser/1`)
 - Coordinate changes across `kjogvi` and `ornithologue` apps when adding features
 - Examine existing LiveViews in `apps/kjogvi_web/lib/kjogvi_web/live/` for patterns
 - When designing frontend, always make it responsive (check on smaller screen sizes)

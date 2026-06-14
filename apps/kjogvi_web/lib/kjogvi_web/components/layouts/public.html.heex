@@ -1,0 +1,51 @@
+<%!-- Public view --%>
+<div class="flex min-h-screen flex-col">
+  <div class="bg-neutral-800 text-sm md:text-[0.8125rem] font-semibold py-1 px-1 md:px-2 text-center">
+    <.access_control user={@current_scope.current_user}>
+      <:guest_access>
+        <.login_menu />
+      </:guest_access>
+    </.access_control>
+
+    <.admin_menu current_user={@current_scope.current_user} />
+  </div>
+
+  <header class="bg-bg-beige border-b border-menu-border px-4 sm:px-6 lg:px-8 py-5">
+    <nav aria-label="Main" class="mx-auto max-w-5xl">
+      <ul class="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+        <li>
+          <.link
+            href={~p"/"}
+            class="font-header text-xl font-semibold text-blue-menu no-underline border-b-2 border-transparent pb-0.5 hover:border-blue-menu-border hover:text-blue-menu-hover"
+          >
+            Home
+          </.link>
+        </li>
+        <li>
+          <.link
+            href={~p"/lifelist"}
+            class="font-header text-xl font-semibold text-blue-menu no-underline border-b-2 border-transparent pb-0.5 hover:border-blue-menu-border hover:text-blue-menu-hover"
+          >
+            Lifelist
+          </.link>
+        </li>
+        <li>
+          <.link
+            href={~p"/photos"}
+            class="font-header text-xl font-semibold text-blue-menu no-underline border-b-2 border-transparent pb-0.5 hover:border-blue-menu-border hover:text-blue-menu-hover"
+          >
+            Photos
+          </.link>
+        </li>
+      </ul>
+    </nav>
+  </header>
+  <main class="flex flex-1 flex-col px-4 pb-4 sm:px-6 lg:px-8">
+    <div class={["mx-auto mt-4 w-full grow", assigns[:container_class] || "max-w-5xl"]}>
+      <.main_flash flash={@flash} />
+      {@inner_content}
+      <hr class="hidden" />
+      <.hidden_flash />
+    </div>
+  </main>
+</div>

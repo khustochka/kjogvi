@@ -13,7 +13,7 @@ defmodule KjogviWeb.Live.My.Images.Show do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     image =
-      socket.assigns.current_scope.user
+      socket.assigns.current_scope.current_user
       |> Images.get_image!(id)
       |> Repo.preload(observations: [card: :location])
 

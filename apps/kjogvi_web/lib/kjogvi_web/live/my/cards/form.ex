@@ -31,7 +31,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   @impl true
   def handle_params(%{"id" => id}, _url, %{assigns: assigns} = socket) do
-    card = Birding.fetch_card_for_edit(assigns.current_scope.user, id)
+    card = Birding.fetch_card_for_edit(assigns.current_scope.current_user, id)
     # Preload taxa on observations for display
     observations_with_taxa = Birding.preload_taxa_and_species(card.observations)
     card = %{card | observations: observations_with_taxa}
@@ -46,7 +46,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   end
 
   def handle_params(_params, _url, %{assigns: assigns} = socket) do
-    card = Birding.new_card(assigns.current_scope.user)
+    card = Birding.new_card(assigns.current_scope.current_user)
     card = %{card | observations: [Birding.new_observation()]}
 
     {
@@ -114,7 +114,12 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   end
 
   def handle_event("save", %{"card" => card_params}, %{assigns: assigns} = socket) do
-    case do_save_card(assigns.action, assigns.card, card_params, assigns.current_scope.user) do
+    case do_save_card(
+           assigns.action,
+           assigns.card,
+           card_params,
+           assigns.current_scope.current_user
+         ) do
       {:ok, card} ->
         {
           :noreply,
@@ -248,7 +253,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
               obs_form={obs_form}
               obs={Enum.at(@card.observations, obs_form.index)}
               is_marked_for_deletion={MapSet.member?(@marked_for_deletion, obs_form.index)}
-              current_user={@current_scope.user}
+              current_user={@current_scope.current_user}
             />
           </.inputs_for>
         </div>

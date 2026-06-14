@@ -117,20 +117,10 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   defp after_import(:locations, _opts) do
-    # :telemetry.span(
-    #   [:kjogvi, :legacy, :import, :locations, :after_import],
-    #   telemetry_metadata(opts),
-    #   fn ->
-    #     Kjogvi.Legacy.Import.Locations.after_import()
-
-    #     {:ok, telemetry_metadata(opts)}
-    #   end
-    # )
     :ok
   end
 
   defp after_import(:cards, _opts) do
-    # Kjogvi.Legacy.Import.Cards.after_import()
     :ok
   end
 
@@ -139,23 +129,14 @@ defmodule Kjogvi.Legacy.Import do
       [:kjogvi, :legacy, :import, :observations, :after_import],
       telemetry_metadata(opts),
       fn ->
-        Kjogvi.Legacy.Import.Observations.after_import()
+        result = Kjogvi.Legacy.Import.Observations.after_import(opts)
 
-        {:ok, telemetry_metadata(opts)}
+        {result, telemetry_metadata(opts)}
       end
     )
   end
 
   defp after_import(:images, _opts) do
-    # :telemetry.span(
-    #   [:kjogvi, :legacy, :import, :images, :after_import],
-    #   telemetry_metadata(opts),
-    #   fn ->
-    #     Kjogvi.Legacy.Import.Images.after_import()
-
-    #     {:ok, telemetry_metadata(opts)}
-    #   end
-    # )
     :ok
   end
 

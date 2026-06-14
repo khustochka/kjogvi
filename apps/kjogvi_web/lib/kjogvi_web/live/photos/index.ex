@@ -27,7 +27,10 @@ defmodule KjogviWeb.Live.Photos.Index do
       |> String.to_integer()
 
     images =
-      Images.list_public_images(%{page: page, page_size: @images_per_page})
+      Images.list_images_for_scope(
+        socket.assigns.current_scope,
+        %{page: page, page_size: @images_per_page}
+      )
 
     {:noreply,
      socket
@@ -66,13 +69,24 @@ defmodule KjogviWeb.Live.Photos.Index do
       </ul>
 
       <div class="mt-6">
-        {paginate(@socket, @images, paginated_photos_path(), [:index], live: true)}
+        {paginate(@socket, @images, paginated_photos_path(@current_scope), [:index], live: true)}
       </div>
     </div>
     """
   end
 
-  defp paginated_photos_path() do
+  # Pagination links resolve against the section's base path: the public gallery
+  # under /photos, a user's gallery under /users/:username/photos.
+  defp paginated_photos_path(%{section: :user, subject_user: %{nickname: nickname}}) do
+    fn _conn, _action, page, _params ->
+      case page do
+        1 -> ~p"/users/#{nickname}/photos"
+        n -> ~p"/users/#{nickname}/photos/page/#{n}"
+      end
+    end
+  end
+
+  defp paginated_photos_path(%{section: :community}) do
     fn _conn, _action, page, _params ->
       case page do
         1 -> ~p"/photos"

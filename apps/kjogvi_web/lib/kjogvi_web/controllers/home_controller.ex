@@ -1,53 +1,11 @@
 defmodule KjogviWeb.HomeController do
   use KjogviWeb, :controller
 
-  @top_lifelist_num 5
-  @default_countries ["canada", "ukraine"]
-
-  alias Kjogvi.Birding
-  alias Kjogvi.Birding.Logbook
-  alias Kjogvi.Birding.Lifelist
-  alias KjogviWeb.Live
-
   @spec home(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def home(%{assigns: assigns} = conn, _params) do
-    lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
-
-    primary_lists = [
-      {
-        "Last 5 lifers",
-        Birding.Lifelist.top(lifelist_scope, @top_lifelist_num)
-      },
-      {
-        Live.Lifelist.Presenter.title(year: 2026),
-        Birding.Lifelist.top(lifelist_scope, @top_lifelist_num, year: 2026)
-      }
-    ]
-
-    country_lists =
-      @default_countries
-      |> Enum.reduce([], fn slug, acc ->
-        loc = Kjogvi.Geo.location_by_slug(slug)
-
-        if loc do
-          acc ++
-            [
-              {
-                Live.Lifelist.Presenter.title(location: loc),
-                Birding.Lifelist.top(lifelist_scope, @top_lifelist_num, location: loc)
-              }
-            ]
-        else
-          acc
-        end
-      end)
-
-    logbook_entries = Logbook.recent_entries(lifelist_scope)
-
+  def home(conn, _params) do
     conn
-    |> assign(:page_title, "Birding highlights")
-    |> assign(:lists, primary_lists ++ country_lists)
-    |> assign(:logbook_entries, logbook_entries)
+    |> assign(:page_title, "Birders")
+    |> assign(:users, Kjogvi.Accounts.list_users())
     |> render(:home)
   end
 end

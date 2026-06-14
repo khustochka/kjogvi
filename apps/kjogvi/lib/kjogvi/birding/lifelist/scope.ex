@@ -12,20 +12,23 @@ defmodule Kjogvi.Birding.Lifelist.Scope do
 
   defstruct user: nil, include_private: false
 
-  def from_scope(scope) do
-    %{
-      user: user,
-      main_user: main_user,
-      private_view: private_view
-    } = scope
+  @doc """
+  Builds the lifelist scope from the application `Kjogvi.Scope`.
 
-    observer =
-      if private_view do
-        user
-      else
-        main_user
-      end
+  The observed user and private visibility are derived from the section:
 
-    %Lifelist.Scope{user: observer, include_private: private_view}
+    * `:private` / `:admin` - the logged-in user views their own list,
+      including private observations.
+    * `:user` - the public list of the scope's `subject_user`.
+
+  Aggregate (`:community`) lifelists are not supported yet.
+  """
+  def from_scope(%{section: section, current_user: user})
+      when section in [:private, :admin] do
+    %Lifelist.Scope{user: user, include_private: true}
+  end
+
+  def from_scope(%{section: :user, subject_user: subject_user}) do
+    %Lifelist.Scope{user: subject_user, include_private: false}
   end
 end

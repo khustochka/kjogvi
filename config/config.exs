@@ -145,9 +145,6 @@ config :ornithologue, Ornitho.StreamImporter,
 
 # KJOGVI
 
-# Compile time env var
-config :kjogvi, multiuser: System.get_env("MULTI_USER") in ~w[1 true]
-
 config :kjogvi, :cache, enabled: false
 
 config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@kjogvi.local"}
