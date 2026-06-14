@@ -52,7 +52,12 @@ defmodule KjogviWeb.Paths.LifelistPath do
     my_lifelist_p(year, location, query)
   end
 
-  defp lifelist_gen_path(%{section: :user, subject_user: %{nickname: nickname}}, _year, _location, query) do
+  defp lifelist_gen_path(
+         %{section: :user, subject_user: %{nickname: nickname}},
+         _year,
+         _location,
+         query
+       ) do
     # The user lifelist currently has a single route with no year/location
     # filtering; year/location are carried as query params only.
     ~p"/users/#{nickname}/lifelist?#{query}"

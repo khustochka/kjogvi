@@ -15,7 +15,9 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   end
 
   test "only valid year" do
-    result = Params.to_filter(%{current_user: nil, section: :community}, %{"year_or_location" => "2024"})
+    result =
+      Params.to_filter(%{current_user: nil, section: :community}, %{"year_or_location" => "2024"})
+
     assert result == {:ok, Filter.discombo!(year: 2024)}
   end
 
@@ -36,7 +38,12 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
 
   test "only public location" do
     ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
-    result = Params.to_filter(%{current_user: nil, section: :community}, %{"year_or_location" => "ukraine"})
+
+    result =
+      Params.to_filter(%{current_user: nil, section: :community}, %{
+        "year_or_location" => "ukraine"
+      })
+
     assert result == {:ok, Filter.discombo!(location: ukraine)}
   end
 
@@ -48,7 +55,11 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
       is_private: true
     )
 
-    result = Params.to_filter(%{current_user: nil, section: :community}, %{"year_or_location" => "ukraine"})
+    result =
+      Params.to_filter(%{current_user: nil, section: :community}, %{
+        "year_or_location" => "ukraine"
+      })
+
     assert {:error, _} = result
   end
 
@@ -95,7 +106,9 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
       )
 
     result =
-      Params.to_filter(%{current_user: user, section: :private}, %{"year_or_location" => "ukraine"})
+      Params.to_filter(%{current_user: user, section: :private}, %{
+        "year_or_location" => "ukraine"
+      })
 
     assert result == {:ok, Filter.discombo!(location: ukraine)}
   end

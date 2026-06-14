@@ -17,7 +17,7 @@ defmodule KjogviWeb.Router do
     plug :put_layout, html: {KjogviWeb.Layouts, :public}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    
+
     plug :fetch_current_scope
   end
 

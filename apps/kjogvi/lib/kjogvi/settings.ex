@@ -11,6 +11,5 @@ defmodule Kjogvi.Settings do
   alias Kjogvi.Repo
   alias Kjogvi.Accounts
 
-
   defp key(key), do: @prefix <> key
 end
