@@ -268,6 +268,10 @@ defmodule Kjogvi.Accounts.User do
     end
   end
 
+  def display_name(%{display_name: display_name, nickname: nickname}) do
+    display_name || nickname
+  end
+
   @doc """
   Determines if the user is configured for sync eBird update: has username, can ask for password.
   """

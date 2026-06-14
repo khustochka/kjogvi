@@ -24,14 +24,13 @@
       <div class="flex items-baseline gap-2 py-3">
         <.link navigate={~p"/users/#{user.nickname}"} class="grow no-underline">
           <span class="font-header font-semibold text-blue-menu">
-            {user.display_name || user.nickname}
+            {User.display_name(user)}
           </span>
-          <span :if={user.display_name} class="text-sm text-stone-500">@{user.nickname}</span>
         </.link>
         <.link
           navigate={~p"/users/#{user.nickname}/lifelist"}
           class="text-sm tabular-nums no-underline"
-          aria-label={"#{user.lifelist_size} species observed by #{user.display_name || user.nickname}"}
+          aria-label={"#{user.lifelist_size} species observed by #{User.display_name(user)}"}
         >
           {user.lifelist_size}
         </.link>

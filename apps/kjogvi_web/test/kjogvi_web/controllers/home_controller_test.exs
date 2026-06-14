@@ -26,11 +26,12 @@ defmodule KjogviWeb.HomeControllerTest do
 
     html = conn |> get(~p"/") |> html_response(200)
 
-    assert html =~ "2 species"
-    assert html =~ "1 species"
+    # The count is exposed on each user's lifelist link aria-label.
+    assert html =~ "2 species observed by leader"
+    assert html =~ "1 species observed by runnerup"
     # The leader (2 species) is rendered before the runner-up (1 species).
     assert :binary.match(html, "leader") |> elem(0) <
-             (:binary.match(html, "runnerup") |> elem(0))
+             :binary.match(html, "runnerup") |> elem(0)
   end
 
   test "omits users with no public species", %{conn: conn} do
