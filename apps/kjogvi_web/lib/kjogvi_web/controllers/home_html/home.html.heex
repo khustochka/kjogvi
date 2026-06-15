@@ -29,7 +29,7 @@
         </.link>
         <.link
           navigate={~p"/users/#{user.nickname}/lifelist"}
-          class="text-sm tabular-nums no-underline"
+          class="text-sm tabular-nums font-medium text-blue-menu underline decoration-blue-menu/30 underline-offset-2 hover:decoration-blue-menu hover:text-blue-menu-hover"
           aria-label={"#{user.lifelist_size} species observed by #{User.display_name(user)}"}
         >
           {user.lifelist_size}

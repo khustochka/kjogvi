@@ -234,6 +234,74 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert has_element?(view, "#lifelist-location-selector span.font-bold", "World")
   end
 
+  test "location selector only lists locations with observations", %{conn: conn, user: user} do
+    ukraine =
+      insert(:location,
+        slug: "ukraine",
+        name_en: "Ukraine",
+        location_type: "country",
+        public_index: 1
+      )
+
+    # Lifelist location with no observations at all — must not appear.
+    insert(:location,
+      slug: "usa",
+      name_en: "United States",
+      location_type: "country",
+      public_index: 2
+    )
+
+    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+    {taxon, _} = Factory.create_species_taxon_with_page()
+    card = insert(:card, user: user, location: brovary)
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
+
+    assert has_element?(view, "#lifelist-location-selector a", "Ukraine")
+    refute has_element?(view, "#lifelist-location-selector a", "United States")
+  end
+
+  test "location pill is present but inactive when outside the current filter", %{
+    conn: conn,
+    user: user
+  } do
+    ukraine =
+      insert(:location,
+        slug: "ukraine",
+        name_en: "Ukraine",
+        location_type: "country",
+        public_index: 1
+      )
+
+    usa =
+      insert(:location,
+        slug: "usa",
+        name_en: "United States",
+        location_type: "country",
+        public_index: 2
+      )
+
+    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+    # Ukraine has a 2022 observation; USA only has a 2023 one.
+    {taxon1, _} = Factory.create_species_taxon_with_page()
+    card1 = insert(:card, user: user, observ_date: ~D"2022-05-01", location: brovary)
+    insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    {taxon2, _} = Factory.create_species_taxon_with_page()
+    card2 = insert(:card, user: user, observ_date: ~D"2023-05-01", location: usa)
+    insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+    # Filtering by 2022: USA still renders (has observations overall) but is
+    # inactive, so it shows as a non-link span rather than a clickable link.
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist/2022")
+
+    assert has_element?(view, "#lifelist-location-selector a", "Ukraine")
+    refute has_element?(view, "#lifelist-location-selector a", "United States")
+    assert has_element?(view, "#lifelist-location-selector span", "United States")
+  end
+
   test "lifelist with valid year and invalid location", %{conn: conn, user: user} do
     assert_error_sent :bad_request, fn ->
       get(conn, "/users/#{user.nickname}/lifelist/2022/testtest")
