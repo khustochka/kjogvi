@@ -52,11 +52,11 @@ defmodule KjogviWeb.Router do
       on_mount: [
         {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}
       ] do
-      live "/users/log_in", UserLoginLive, :new
+      live "/users/log_in", Accounts.UserLogin, :new
 
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+      live "/users/register", Accounts.UserRegistration, :new
+      live "/users/reset_password", Accounts.UserForgotPassword, :new
+      live "/users/reset_password/:token", Accounts.UserResetPassword, :edit
     end
 
     post "/users/log_in", UserSessionController, :create
@@ -71,8 +71,8 @@ defmodule KjogviWeb.Router do
       on_mount: [
         {KjogviWeb.UserAuth, :mount_current_scope}
       ] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
+      live "/users/confirm/:token", Accounts.UserConfirmation, :edit
+      live "/users/confirm", Accounts.UserConfirmationInstructions, :new
     end
   end
 

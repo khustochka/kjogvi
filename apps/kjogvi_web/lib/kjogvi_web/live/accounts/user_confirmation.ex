@@ -1,4 +1,6 @@
-defmodule KjogviWeb.UserConfirmationLive do
+defmodule KjogviWeb.Accounts.UserConfirmation do
+  @moduledoc false
+  
   use KjogviWeb, :live_view
 
   alias Kjogvi.Accounts

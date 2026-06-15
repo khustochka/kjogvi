@@ -1,4 +1,6 @@
-defmodule KjogviWeb.UserResetPasswordLive do
+defmodule KjogviWeb.Accounts.UserResetPassword do
+  @moduledoc false
+
   use KjogviWeb, :live_view
 
   alias Kjogvi.Accounts

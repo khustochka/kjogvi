@@ -1,4 +1,4 @@
-defmodule KjogviWeb.UserConfirmationLiveTest do
+defmodule KjogviWeb.Accounts.UserConfirmationTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest

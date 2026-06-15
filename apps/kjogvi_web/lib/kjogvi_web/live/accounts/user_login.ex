@@ -1,4 +1,6 @@
-defmodule KjogviWeb.UserLoginLive do
+defmodule KjogviWeb.Accounts.UserLogin do
+  @moduledoc false
+  
   use KjogviWeb, :live_view
 
   def render(assigns) do

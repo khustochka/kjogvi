@@ -1,4 +1,6 @@
-defmodule KjogviWeb.UserRegistrationLive do
+defmodule KjogviWeb.Accounts.UserRegistration do
+  @moduledoc false
+  
   use KjogviWeb, :live_view
 
   alias Kjogvi.Accounts
