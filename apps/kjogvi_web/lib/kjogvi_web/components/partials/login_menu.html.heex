@@ -1,13 +1,13 @@
 <ul class="flex justify-center py-0.5">
   <.admin_menu_item :if={not Kjogvi.Settings.registration_disabled?()}>
-    <.link href={~p"/users/register"} class="no-underline hover:underline">
+    <.link href={~p"/account/register"} class="no-underline hover:underline">
       Register
     </.link>
   </.admin_menu_item>
 
   <.admin_menu_item>
     <.link
-      href={~p"/users/log_in"}
+      href={~p"/account/log_in"}
       class="no-underline font-normal text-[0.95rem] text-zinc-900 bg-slate-50 py-1.5 px-2 leading-8 md:leading-6"
     >
       Log in

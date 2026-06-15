@@ -45,34 +45,34 @@ defmodule KjogviWeb.Router do
   ## Authentication routes
   # TODO: change to /account? or just plain /login etc.
 
-  scope "/", KjogviWeb do
+  scope "/account", KjogviWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [
         {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}
       ] do
-      live "/users/log_in", Accounts.UserLogin, :new
+      live "/log_in", Accounts.UserLogin, :new
 
-      live "/users/register", Accounts.UserRegistration, :new
-      live "/users/reset_password", Accounts.UserForgotPassword, :new
-      live "/users/reset_password/:token", Accounts.UserResetPassword, :edit
+      live "/register", Accounts.UserRegistration, :new
+      live "/reset_password", Accounts.UserForgotPassword, :new
+      live "/reset_password/:token", Accounts.UserResetPassword, :edit
     end
 
-    post "/users/log_in", UserSessionController, :create
+    post "/log_in", UserSessionController, :create
   end
 
-  scope "/", KjogviWeb do
+  scope "/account", KjogviWeb do
     pipe_through [:browser]
 
-    delete "/users/log_out", UserSessionController, :delete
+    delete "/log_out", UserSessionController, :delete
 
     live_session :current_user,
       on_mount: [
         {KjogviWeb.UserAuth, :mount_current_scope}
       ] do
-      live "/users/confirm/:token", Accounts.UserConfirmation, :edit
-      live "/users/confirm", Accounts.UserConfirmationInstructions, :new
+      live "/confirm/:token", Accounts.UserConfirmation, :edit
+      live "/confirm", Accounts.UserConfirmationInstructions, :new
     end
   end
 

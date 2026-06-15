@@ -20,7 +20,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       assert {:error, redirect} = live(conn, ~p"/my/account/settings")
 
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/log_in"
+      assert path == ~p"/account/log_in"
       assert %{"error" => "You must log in to access this page."} = flash
     end
   end
@@ -305,7 +305,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       conn = build_conn()
       {:error, redirect} = live(conn, ~p"/my/account/settings/confirm_email/#{token}")
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/log_in"
+      assert path == ~p"/account/log_in"
       assert %{"error" => message} = flash
       assert message == "You must log in to access this page."
     end

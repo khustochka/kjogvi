@@ -27,7 +27,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     test "redirects when not logged in", %{conn: conn} do
       assert {:error, redirect} = live(conn, ~p"/my/imports")
       assert {:redirect, %{to: path}} = redirect
-      assert path == ~p"/users/log_in"
+      assert path == ~p"/account/log_in"
     end
   end
 

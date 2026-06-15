@@ -94,7 +94,7 @@ defmodule KjogviWeb.SetupControllerTest do
           "setup_code" => "abc123"
         })
 
-      assert redirected_to(conn) == ~p"/users/log_in"
+      assert redirected_to(conn) == ~p"/account/log_in"
     end
   end
 end

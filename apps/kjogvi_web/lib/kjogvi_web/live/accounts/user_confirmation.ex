@@ -1,6 +1,6 @@
 defmodule KjogviWeb.Accounts.UserConfirmation do
   @moduledoc false
-  
+
   use KjogviWeb, :live_view
 
   alias Kjogvi.Accounts
@@ -21,9 +21,9 @@ defmodule KjogviWeb.Accounts.UserConfirmation do
 
       <p class="text-center mt-4">
         <span :if={not Kjogvi.Settings.registration_disabled?()}>
-          <.link href={~p"/users/register"}>Register</.link> |
+          <.link href={~p"/account/register"}>Register</.link> |
         </span>
-        <.link href={~p"/users/log_in"}>Log in</.link>
+        <.link href={~p"/account/log_in"}>Log in</.link>
       </p>
     </div>
     """

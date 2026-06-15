@@ -1,6 +1,6 @@
 defmodule KjogviWeb.Accounts.UserForgotPassword do
   @moduledoc false
-  
+
   use KjogviWeb, :live_view
 
   alias Kjogvi.Accounts
@@ -23,9 +23,9 @@ defmodule KjogviWeb.Accounts.UserForgotPassword do
       </CoreComponents.simple_form>
       <p class="text-center text-sm mt-4">
         <span :if={not Kjogvi.Settings.registration_disabled?()}>
-          <.link href={~p"/users/register"}>Register</.link> |
+          <.link href={~p"/account/register"}>Register</.link> |
         </span>
-        <.link href={~p"/users/log_in"}>Log in</.link>
+        <.link href={~p"/account/log_in"}>Log in</.link>
       </p>
     </div>
     """
@@ -39,7 +39,7 @@ defmodule KjogviWeb.Accounts.UserForgotPassword do
     if user = Accounts.get_user_by_email(email) do
       Accounts.deliver_user_reset_password_instructions(
         user,
-        &url(~p"/users/reset_password/#{&1}")
+        &url(~p"/account/reset_password/#{&1}")
       )
     end
 
