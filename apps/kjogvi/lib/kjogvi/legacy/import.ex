@@ -1,6 +1,8 @@
 defmodule Kjogvi.Legacy.Import do
   @moduledoc false
 
+  require Logger
+
   def run(user, opts \\ []) do
     with :ok <- validate(user),
          :ok <- validate_adapter_config() do
@@ -50,6 +52,14 @@ defmodule Kjogvi.Legacy.Import do
                  # (see Kjogvi.Legacy.Import.Images).
                  :ok <- perform_import(:images, opts) do
               {:ok, %{message: "Legacy import done."}}
+            else
+              {:error, error} = err ->
+                Logger.error("""
+                #{inspect(__MODULE__)}: failed with error:
+                #{inspect(error)}
+                """)
+
+                err
             end
           end,
           timeout: query_timeout()
@@ -61,12 +71,15 @@ defmodule Kjogvi.Legacy.Import do
 
   def prepare_import(opts \\ []) do
     :telemetry.span([:kjogvi, :legacy, :import, :prepare], telemetry_metadata(opts), fn ->
-      with {:ok, _} <- Kjogvi.Legacy.Import.Images.cleanup(),
-           {:ok, _} <- Kjogvi.Legacy.Import.Observations.cleanup(),
-           {:ok, _} <- Kjogvi.Legacy.Import.Cards.cleanup(),
-           {:ok, _} <- Kjogvi.Legacy.Import.Locations.cleanup() do
-        {:ok, telemetry_metadata(opts)}
-      end
+      result =
+        with {:ok, _} <- Kjogvi.Legacy.Import.Images.cleanup(),
+             {:ok, _} <- Kjogvi.Legacy.Import.Observations.cleanup(),
+             {:ok, _} <- Kjogvi.Legacy.Import.Cards.cleanup(),
+             {:ok, _} <- Kjogvi.Legacy.Import.Locations.cleanup() do
+          :ok
+        end
+
+      {result, telemetry_metadata(opts)}
     end)
   end
 

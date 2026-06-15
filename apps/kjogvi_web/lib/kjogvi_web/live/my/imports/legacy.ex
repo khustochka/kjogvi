@@ -129,7 +129,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     end
   end
 
-  defp result_message(%{message: message}, _default), do: message
+  defp result_message(%{message: message}, _default) when not is_nil(message), do: message
   defp result_message(:timeout, _default), do: "Timeout"
   defp result_message(_other, default), do: default
 end
