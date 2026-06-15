@@ -13,7 +13,7 @@ defmodule KjogviWeb.Accounts.UserForgotPassword do
         <:subtitle>We'll send a password reset link to your inbox</:subtitle>
       </CoreComponents.header>
 
-      <CoreComponents.simple_form for={@form} id="reset_password_form" phx-submit="send_email">
+      <CoreComponents.simple_form for={@form} id="reset-password-form" phx-submit="send_email">
         <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
         <:actions>
           <CoreComponents.button phx-disable-with="Sending..." class="w-full">
@@ -25,7 +25,7 @@ defmodule KjogviWeb.Accounts.UserForgotPassword do
         <span :if={not Kjogvi.Settings.registration_disabled?()}>
           <.link href={~p"/account/register"}>Register</.link> |
         </span>
-        <.link href={~p"/account/log_in"}>Log in</.link>
+        <.link href={~p"/account/login"}>Log in</.link>
       </p>
     </div>
     """
@@ -39,7 +39,7 @@ defmodule KjogviWeb.Accounts.UserForgotPassword do
     if user = Accounts.get_user_by_email(email) do
       Accounts.deliver_user_reset_password_instructions(
         user,
-        &url(~p"/account/reset_password/#{&1}")
+        &url(~p"/account/reset-password/#{&1}")
       )
     end
 

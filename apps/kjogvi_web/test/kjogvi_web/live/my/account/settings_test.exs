@@ -9,7 +9,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
     test "renders settings page", %{conn: conn} do
       {:ok, _lv, html} =
         conn
-        |> log_in_user(user_fixture())
+        |> login_user(user_fixture())
         |> live(~p"/my/account/settings")
 
       assert html =~ "Change Email"
@@ -20,7 +20,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       assert {:error, redirect} = live(conn, ~p"/my/account/settings")
 
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/account/log_in"
+      assert path == ~p"/account/login"
       assert %{"error" => "You must log in to access this page."} = flash
     end
   end
@@ -28,7 +28,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
   describe "update user settings form" do
     setup %{conn: conn} do
       user = user_fixture()
-      %{conn: log_in_user(conn, user), user: user}
+      %{conn: login_user(conn, user), user: user}
     end
 
     test "renders the nickname field prefilled with the current nickname", %{
@@ -78,14 +78,14 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
     end
 
     test "renders hints for the nickname and display name fields", %{conn: conn, user: user} do
-      {:ok, _lv, html} = conn |> log_in_user(user) |> live(~p"/my/account/settings")
+      {:ok, _lv, html} = conn |> login_user(user) |> live(~p"/my/account/settings")
 
       assert html =~ "lowercase letters, digits, hyphens and underscores"
       assert html =~ "letters, spaces and common punctuation"
     end
 
     test "marks the required nickname field with an asterisk", %{conn: conn, user: user} do
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/my/account/settings")
+      {:ok, lv, _html} = conn |> login_user(user) |> live(~p"/my/account/settings")
 
       assert lv |> element("label[for=user_nickname]") |> render() =~ "*"
     end
@@ -94,7 +94,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       user = user_fixture(%{display_name: "Jane Doe"})
 
       {:ok, lv, _html} =
-        conn |> log_in_user(user) |> live(~p"/my/account/settings")
+        conn |> login_user(user) |> live(~p"/my/account/settings")
 
       assert lv
              |> element("#user_display_name")
@@ -132,7 +132,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
     setup %{conn: conn} do
       password = valid_user_password()
       user = user_fixture(%{password: password})
-      %{conn: log_in_user(conn, user), user: user, password: password}
+      %{conn: login_user(conn, user), user: user, password: password}
     end
 
     test "updates the user email", %{conn: conn, password: password, user: user} do
@@ -189,7 +189,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
     setup %{conn: conn} do
       password = valid_user_password()
       user = user_fixture(%{password: password})
-      %{conn: log_in_user(conn, user), user: user, password: password}
+      %{conn: login_user(conn, user), user: user, password: password}
     end
 
     test "updates the user password", %{conn: conn, user: user, password: password} do
@@ -271,7 +271,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
           Accounts.deliver_user_update_email_instructions(%{user | email: email}, user.email, url)
         end)
 
-      %{conn: log_in_user(conn, user), token: token, email: email, user: user}
+      %{conn: login_user(conn, user), token: token, email: email, user: user}
     end
 
     test "updates the user email once", %{conn: conn, user: user, token: token, email: email} do
@@ -305,7 +305,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
       conn = build_conn()
       {:error, redirect} = live(conn, ~p"/my/account/settings/confirm_email/#{token}")
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/account/log_in"
+      assert path == ~p"/account/login"
       assert %{"error" => message} = flash
       assert message == "You must log in to access this page."
     end

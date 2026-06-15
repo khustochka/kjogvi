@@ -6,7 +6,7 @@ defmodule KjogviWeb.Accounts.UserLoginTest do
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/account/log_in")
+      {:ok, _lv, html} = live(conn, ~p"/account/login")
 
       assert html =~ "Log in"
       # assert html =~ "Register"
@@ -16,8 +16,8 @@ defmodule KjogviWeb.Accounts.UserLoginTest do
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
-        |> log_in_user(user_fixture())
-        |> live(~p"/account/log_in")
+        |> login_user(user_fixture())
+        |> live(~p"/account/login")
         |> follow_redirect(conn, "/")
 
       assert {:ok, _conn} = result
@@ -29,7 +29,7 @@ defmodule KjogviWeb.Accounts.UserLoginTest do
       password = "123456789abcd"
       user = user_fixture(%{password: password})
 
-      {:ok, lv, _html} = live(conn, ~p"/account/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/account/login")
 
       form =
         form(lv, "#login_form", user: %{email: user.email, password: password, remember_me: true})
@@ -42,7 +42,7 @@ defmodule KjogviWeb.Accounts.UserLoginTest do
     test "redirects to login page with a flash error if there are no valid credentials", %{
       conn: conn
     } do
-      {:ok, lv, _html} = live(conn, ~p"/account/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/account/login")
 
       form =
         form(lv, "#login_form",
@@ -53,13 +53,13 @@ defmodule KjogviWeb.Accounts.UserLoginTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
 
-      assert redirected_to(conn) == "/account/log_in"
+      assert redirected_to(conn) == "/account/login"
     end
   end
 
   describe "login navigation" do
     test "redirects to registration page when the Register button is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/account/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/account/login")
 
       {:ok, _login_live, login_html} =
         lv
@@ -73,13 +73,13 @@ defmodule KjogviWeb.Accounts.UserLoginTest do
     test "redirects to forgot password page when the Forgot Password button is clicked", %{
       conn: conn
     } do
-      {:ok, lv, _html} = live(conn, ~p"/account/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/account/login")
 
       {:ok, conn} =
         lv
         |> element("main a", "Forgot your password?")
         |> render_click()
-        |> follow_redirect(conn, ~p"/account/reset_password")
+        |> follow_redirect(conn, ~p"/account/reset-password")
 
       assert conn.resp_body =~ "Forgot your password?"
     end

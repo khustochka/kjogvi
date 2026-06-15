@@ -429,13 +429,13 @@ defmodule Kjogvi.Accounts do
 
   ## Examples
 
-      iex> deliver_user_reset_password_instructions(user, &url(~p"/account/reset_password/#{&1}"))
+      iex> deliver_user_reset_password_instructions(user, &url(~p"/account/reset-password/#{&1}"))
       {:ok, %{to: ..., body: ...}}
 
   """
   def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
+    {encoded_token, user_token} = UserToken.build_email_token(user, "reset-password")
     Repo.insert!(user_token)
     UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
   end
@@ -453,7 +453,7 @@ defmodule Kjogvi.Accounts do
 
   """
   def get_user_by_reset_password_token(token) do
-    with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "reset-password"),
          %User{} = user <- Repo.one(query) do
       user
     else

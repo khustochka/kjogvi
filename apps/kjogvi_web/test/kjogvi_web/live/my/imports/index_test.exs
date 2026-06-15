@@ -16,7 +16,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     test "renders both import cards", %{conn: conn} do
       {:ok, _lv, html} =
         conn
-        |> log_in_user(Kjogvi.AccountsFixtures.user_fixture())
+        |> login_user(Kjogvi.AccountsFixtures.user_fixture())
         |> live(~p"/my/imports")
 
       assert html =~ "Import Tasks"
@@ -27,7 +27,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     test "redirects when not logged in", %{conn: conn} do
       assert {:error, redirect} = live(conn, ~p"/my/imports")
       assert {:redirect, %{to: path}} = redirect
-      assert path == ~p"/account/log_in"
+      assert path == ~p"/account/login"
     end
   end
 
@@ -62,7 +62,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       {:ok, lv, _html} =
         conn
-        |> log_in_user(user)
+        |> login_user(user)
         |> live(~p"/my/imports")
 
       %{lv: lv, user: user}
@@ -87,7 +87,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       {:ok, lv, _html} =
         conn
-        |> log_in_user(user)
+        |> login_user(user)
         |> live(~p"/my/imports")
 
       %{lv: lv, user: user}
@@ -145,7 +145,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       {:ok, lv, _html} =
         conn
-        |> log_in_user(user)
+        |> login_user(user)
         |> live(~p"/my/imports")
 
       lv

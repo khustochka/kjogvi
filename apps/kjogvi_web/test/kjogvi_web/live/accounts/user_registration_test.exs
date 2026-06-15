@@ -16,7 +16,7 @@ defmodule KjogviWeb.Accounts.UserRegistrationTest do
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
-        |> log_in_user(user_fixture())
+        |> login_user(user_fixture())
         |> live(~p"/account/register")
         |> follow_redirect(conn, "/")
 
@@ -152,7 +152,7 @@ defmodule KjogviWeb.Accounts.UserRegistrationTest do
         lv
         |> element("main a", "Log in")
         |> render_click()
-        |> follow_redirect(conn, ~p"/account/log_in")
+        |> follow_redirect(conn, ~p"/account/login")
 
       assert login_html =~ "Log in"
     end

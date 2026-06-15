@@ -6,7 +6,7 @@ defmodule KjogviWeb.Live.My.Cards.IndexTest do
 
   setup %{conn: conn} do
     user = user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+    %{conn: login_user(conn, user), user: user}
   end
 
   test "renders with no cards", %{conn: conn} do

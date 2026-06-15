@@ -57,7 +57,7 @@ defmodule KjogviWeb.Accounts.UserConfirmationTest do
       # when logged in
       conn =
         build_conn()
-        |> log_in_user(user)
+        |> login_user(user)
 
       {:ok, lv, _html} = live(conn, ~p"/account/confirm/#{token}")
 

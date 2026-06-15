@@ -13,7 +13,7 @@ defmodule KjogviWeb.Accounts.UserRegistration do
         Register for an account
         <:subtitle>
           Already registered?
-          <.link navigate={~p"/account/log_in"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/account/login"} class="font-semibold text-brand hover:underline">
             Log in
           </.link>
           to your account now.
@@ -38,7 +38,7 @@ defmodule KjogviWeb.Accounts.UserRegistration do
         Register for an account
         <:subtitle>
           Already registered?
-          <.link navigate={~p"/account/log_in"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/account/login"} class="font-semibold text-brand hover:underline">
             Log in
           </.link>
           to your account now.

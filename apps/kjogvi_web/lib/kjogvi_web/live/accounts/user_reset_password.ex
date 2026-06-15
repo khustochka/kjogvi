@@ -12,8 +12,8 @@ defmodule KjogviWeb.Accounts.UserResetPassword do
 
       <CoreComponents.simple_form
         for={@form}
-        id="reset_password_form"
-        phx-submit="reset_password"
+        id="reset-password-form"
+        phx-submit="reset-password"
         phx-change="validate"
       >
         <CoreComponents.error :if={@form.errors != []}>
@@ -38,7 +38,7 @@ defmodule KjogviWeb.Accounts.UserResetPassword do
         <span :if={not Kjogvi.Settings.registration_disabled?()}>
           <.link href={~p"/account/register"}>Register</.link> |
         </span>
-        <.link href={~p"/account/log_in"}>Log in</.link>
+        <.link href={~p"/account/login"}>Log in</.link>
       </p>
     </div>
     """
@@ -61,13 +61,13 @@ defmodule KjogviWeb.Accounts.UserResetPassword do
 
   # Do not log in the user after reset password to avoid a
   # leaked token giving the user access to the account.
-  def handle_event("reset_password", %{"user" => user_params}, socket) do
+  def handle_event("reset-password", %{"user" => user_params}, socket) do
     case Accounts.reset_user_password(socket.assigns.user, user_params) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Password reset successfully.")
-         |> redirect(to: ~p"/account/log_in")}
+         |> redirect(to: ~p"/account/login")}
 
       {:error, changeset} ->
         {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}

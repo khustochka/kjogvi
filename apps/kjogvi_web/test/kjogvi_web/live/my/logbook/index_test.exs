@@ -9,7 +9,7 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
 
   setup %{conn: conn} do
     user = user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+    %{conn: login_user(conn, user), user: user}
   end
 
   test "renders the logbook page", %{conn: conn} do
@@ -42,7 +42,7 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
       })
 
     # Re-login the (unchanged) user to pick up updated extras in scope.
-    conn = log_in_user(build_conn(), Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id))
+    conn = login_user(build_conn(), Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id))
 
     {:ok, lv, _html} = live(conn, ~p"/my/logbook")
 

@@ -28,7 +28,7 @@ defmodule KjogviWeb.UserAuth do
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
   """
-  def log_in_user(conn, user, params \\ %{}) do
+  def login_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
     user_return_to = get_session(conn, :user_return_to)
 
@@ -75,7 +75,7 @@ defmodule KjogviWeb.UserAuth do
 
   It clears all session data for safety. See renew_session.
   """
-  def log_out_user(conn) do
+  def logout_user(conn) do
     user_token = get_session(conn, :user_token)
     user_token && Accounts.delete_user_session_token(user_token)
 
@@ -163,7 +163,7 @@ defmodule KjogviWeb.UserAuth do
       socket =
         socket
         |> Phoenix.LiveView.put_flash(:error, "You must log in to access this page.")
-        |> Phoenix.LiveView.redirect(to: ~p"/account/log_in")
+        |> Phoenix.LiveView.redirect(to: ~p"/account/login")
 
       {:halt, socket}
     end
@@ -281,7 +281,7 @@ defmodule KjogviWeb.UserAuth do
       conn
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/account/log_in")
+      |> redirect(to: ~p"/account/login")
       |> halt()
     end
   end

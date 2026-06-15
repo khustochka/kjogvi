@@ -622,7 +622,7 @@ defmodule Kjogvi.UsersTest do
       assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
-      assert user_token.context == "reset_password"
+      assert user_token.context == "reset-password"
     end
   end
 

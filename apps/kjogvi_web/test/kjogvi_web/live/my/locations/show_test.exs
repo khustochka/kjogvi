@@ -5,7 +5,7 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   import Kjogvi.AccountsFixtures
 
   setup %{conn: conn} do
-    %{conn: log_in_user(conn, user_fixture())}
+    %{conn: login_user(conn, user_fixture())}
   end
 
   test "renders location name and slug", %{conn: conn} do

@@ -24,7 +24,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
   setup %{conn: conn} do
     user = user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+    %{conn: login_user(conn, user), user: user}
   end
 
   describe "new" do

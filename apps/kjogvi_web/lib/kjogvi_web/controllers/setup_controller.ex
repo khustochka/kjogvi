@@ -34,7 +34,7 @@ defmodule KjogviWeb.SetupController do
         conn
         |> delete_session(:setup_code)
         |> put_flash(:info, "Admin user set up.")
-        |> redirect(to: ~p"/account/log_in")
+        |> redirect(to: ~p"/account/login")
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         conn

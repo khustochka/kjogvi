@@ -27,6 +27,7 @@ defmodule KjogviWeb.Router do
     plug :accepts, ["json"]
   end
 
+  ## Setup administrator
   scope "/setup", KjogviWeb do
     pipe_through [:browser, :require_no_admin]
 
@@ -43,8 +44,6 @@ defmodule KjogviWeb.Router do
   end
 
   ## Authentication routes
-  # TODO: change to /account? or just plain /login etc.
-
   scope "/account", KjogviWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
@@ -52,21 +51,21 @@ defmodule KjogviWeb.Router do
       on_mount: [
         {KjogviWeb.UserAuth, :redirect_if_user_is_authenticated}
       ] do
-      live "/log_in", Accounts.UserLogin, :new
+      live "/login", Accounts.UserLogin, :new
 
       live "/register", Accounts.UserRegistration, :new
-      live "/reset_password", Accounts.UserForgotPassword, :new
-      live "/reset_password/:token", Accounts.UserResetPassword, :edit
+      live "/reset-password", Accounts.UserForgotPassword, :new
+      live "/reset-password/:token", Accounts.UserResetPassword, :edit
     end
 
     post "/register", Accounts.UserRegistrationController, :create
-    post "/log_in", UserSessionController, :create
+    post "/login", UserSessionController, :create
   end
 
   scope "/account", KjogviWeb do
     pipe_through [:browser]
 
-    delete "/log_out", UserSessionController, :delete
+    delete "/logout", UserSessionController, :delete
 
     live_session :current_user,
       on_mount: [

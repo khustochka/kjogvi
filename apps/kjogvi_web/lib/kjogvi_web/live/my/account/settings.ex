@@ -41,7 +41,7 @@ defmodule KjogviWeb.Live.My.Account.Settings do
         <CoreComponents.simple_form
           for={@password_form}
           id="password_form"
-          action={~p"/account/log_in?_action=password_updated"}
+          action={~p"/account/login?_action=password_updated"}
           method="post"
           phx-change="validate_password"
           phx-submit="update_password"

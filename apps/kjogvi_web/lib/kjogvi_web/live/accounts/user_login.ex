@@ -20,7 +20,7 @@ defmodule KjogviWeb.Accounts.UserLogin do
       <CoreComponents.simple_form
         for={@form}
         id="login_form"
-        action={~p"/account/log_in"}
+        action={~p"/account/login"}
         phx-update="ignore"
       >
         <CoreComponents.input
@@ -44,7 +44,7 @@ defmodule KjogviWeb.Accounts.UserLogin do
         <:actions>
           <CoreComponents.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
 
-          <.link href={~p"/account/reset_password"} class="text-sm font-semibold">
+          <.link href={~p"/account/reset-password"} class="text-sm font-semibold">
             Forgot your password?
           </.link>
         </:actions>

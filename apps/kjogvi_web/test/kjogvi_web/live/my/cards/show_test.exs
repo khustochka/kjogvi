@@ -6,7 +6,7 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
 
   setup %{conn: conn} do
     user = user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+    %{conn: login_user(conn, user), user: user}
   end
 
   test "renders breadcrumbs with link to cards index", %{conn: conn, user: user} do

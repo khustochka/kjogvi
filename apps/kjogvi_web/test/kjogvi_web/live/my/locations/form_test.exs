@@ -9,7 +9,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
   alias Kjogvi.Repo
 
   setup %{conn: conn} do
-    %{conn: log_in_user(conn, user_fixture())}
+    %{conn: login_user(conn, user_fixture())}
   end
 
   defp build_chain do

@@ -26,7 +26,7 @@ defmodule KjogviWeb.Accounts.UserRegistrationController do
 
         conn
         |> put_flash(:info, "Account created successfully!")
-        |> UserAuth.log_in_user(user, user_params)
+        |> UserAuth.login_user(user, user_params)
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn

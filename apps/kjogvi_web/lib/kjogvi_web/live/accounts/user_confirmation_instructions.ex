@@ -30,7 +30,7 @@ defmodule KjogviWeb.Accounts.UserConfirmationInstructions do
         <span :if={not Kjogvi.Settings.registration_disabled?()}>
           <.link href={~p"/account/register"}>Register</.link> |
         </span>
-        <.link href={~p"/account/log_in"}>Log in</.link>
+        <.link href={~p"/account/login"}>Log in</.link>
       </p>
     </div>
     """

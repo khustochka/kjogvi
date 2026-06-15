@@ -8,7 +8,7 @@ defmodule KjogviWeb.Live.My.Images.IndexTest do
 
   setup %{conn: conn} do
     user = user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+    %{conn: login_user(conn, user), user: user}
   end
 
   test "renders the heading and add button", %{conn: conn} do

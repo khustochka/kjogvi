@@ -56,14 +56,14 @@ defmodule KjogviWeb.ConnCase do
   @doc """
   Setup helper that registers and logs in users.
 
-      setup :register_and_log_in_user
+      setup :register_and_login_user
 
   It stores an updated connection and a registered user in the
   test context.
   """
-  def register_and_log_in_user(%{conn: conn} = context) do
+  def register_and_login_user(%{conn: conn} = context) do
     user = Kjogvi.AccountsFixtures.user_fixture()
-    %{context | conn: log_in_user(conn, user), user: user}
+    %{context | conn: login_user(conn, user), user: user}
   end
 
   @doc """
@@ -71,7 +71,7 @@ defmodule KjogviWeb.ConnCase do
 
   It returns an updated `conn`.
   """
-  def log_in_user(conn, user) do
+  def login_user(conn, user) do
     token = Kjogvi.Accounts.generate_user_session_token(user)
 
     conn

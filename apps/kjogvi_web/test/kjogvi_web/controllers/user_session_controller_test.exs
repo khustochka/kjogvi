@@ -7,10 +7,10 @@ defmodule KjogviWeb.UserSessionControllerTest do
     %{user: user_fixture()}
   end
 
-  describe "POST /account/log_in" do
+  describe "POST /account/login" do
     test "logs the user in", %{conn: conn, user: user} do
       conn =
-        post(conn, ~p"/account/log_in", %{
+        post(conn, ~p"/account/login", %{
           "user" => %{"email" => user.email, "password" => valid_user_password()}
         })
 
@@ -22,12 +22,12 @@ defmodule KjogviWeb.UserSessionControllerTest do
       response = html_response(conn, 200)
       assert response =~ user.email
       assert response =~ ~p"/my/account/settings"
-      assert response =~ ~p"/account/log_out"
+      assert response =~ ~p"/account/logout"
     end
 
     test "logs the user in with remember me", %{conn: conn, user: user} do
       conn =
-        post(conn, ~p"/account/log_in", %{
+        post(conn, ~p"/account/login", %{
           "user" => %{
             "email" => user.email,
             "password" => valid_user_password(),
@@ -43,7 +43,7 @@ defmodule KjogviWeb.UserSessionControllerTest do
       conn =
         conn
         |> init_test_session(user_return_to: "/foo/bar")
-        |> post(~p"/account/log_in", %{
+        |> post(~p"/account/login", %{
           "user" => %{
             "email" => user.email,
             "password" => valid_user_password()
@@ -57,7 +57,7 @@ defmodule KjogviWeb.UserSessionControllerTest do
     test "login following registration", %{conn: conn, user: user} do
       conn =
         conn
-        |> post(~p"/account/log_in", %{
+        |> post(~p"/account/login", %{
           "_action" => "registered",
           "user" => %{
             "email" => user.email,
@@ -72,7 +72,7 @@ defmodule KjogviWeb.UserSessionControllerTest do
     test "login following password update", %{conn: conn, user: user} do
       conn =
         conn
-        |> post(~p"/account/log_in", %{
+        |> post(~p"/account/login", %{
           "_action" => "password_updated",
           "user" => %{
             "email" => user.email,
@@ -86,25 +86,25 @@ defmodule KjogviWeb.UserSessionControllerTest do
 
     test "redirects to login page with invalid credentials", %{conn: conn} do
       conn =
-        post(conn, ~p"/account/log_in", %{
+        post(conn, ~p"/account/login", %{
           "user" => %{"email" => "invalid@email.com", "password" => "invalid_password"}
         })
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
-      assert redirected_to(conn) == ~p"/account/log_in"
+      assert redirected_to(conn) == ~p"/account/login"
     end
   end
 
-  describe "DELETE /account/log_out" do
+  describe "DELETE /account/logout" do
     test "logs the user out", %{conn: conn, user: user} do
-      conn = conn |> log_in_user(user) |> delete(~p"/account/log_out")
+      conn = conn |> login_user(user) |> delete(~p"/account/logout")
       assert redirected_to(conn) == ~p"/"
       refute get_session(conn, :user_token)
       # assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Logged out successfully"
     end
 
     test "succeeds even if the user is not logged in", %{conn: conn} do
-      conn = delete(conn, ~p"/account/log_out")
+      conn = delete(conn, ~p"/account/logout")
       assert redirected_to(conn) == ~p"/"
       refute get_session(conn, :user_token)
       # assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Logged out successfully"
