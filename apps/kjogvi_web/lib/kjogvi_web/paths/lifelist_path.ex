@@ -54,13 +54,11 @@ defmodule KjogviWeb.Paths.LifelistPath do
 
   defp lifelist_gen_path(
          %{section: :user, subject_user: %{nickname: nickname}},
-         _year,
-         _location,
+         year,
+         location,
          query
        ) do
-    # The user lifelist currently has a single route with no year/location
-    # filtering; year/location are carried as query params only.
-    ~p"/users/#{nickname}/lifelist?#{query}"
+    user_lifelist_p(nickname, year, location, query)
   end
 
   defp my_lifelist_p(nil = _year, nil = _location, query) do
@@ -77,5 +75,21 @@ defmodule KjogviWeb.Paths.LifelistPath do
 
   defp my_lifelist_p(year, location, query) do
     ~p"/my/lifelist/#{year}/#{location}?#{query}"
+  end
+
+  defp user_lifelist_p(nickname, nil = _year, nil = _location, query) do
+    ~p"/users/#{nickname}/lifelist?#{query}"
+  end
+
+  defp user_lifelist_p(nickname, year, nil = _location, query) do
+    ~p"/users/#{nickname}/lifelist/#{year}?#{query}"
+  end
+
+  defp user_lifelist_p(nickname, nil = _year, location, query) do
+    ~p"/users/#{nickname}/lifelist/#{location}?#{query}"
+  end
+
+  defp user_lifelist_p(nickname, year, location, query) do
+    ~p"/users/#{nickname}/lifelist/#{year}/#{location}?#{query}"
   end
 end

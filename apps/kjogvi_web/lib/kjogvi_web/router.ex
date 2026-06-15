@@ -86,7 +86,9 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :mount_section_user}
       ] do
       live "/", Live.Users.Show
-      live "/lifelist", Live.Lifelist.Index
+      live "/lifelist", Live.Lifelist.Index, :index
+      live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
+      live "/lifelist/:year/:location", Live.Lifelist.Index, :index
       live "/photos", Live.Photos.Index, :index
       live "/photos/page/:page", Live.Photos.Index, :index
     end

@@ -54,7 +54,6 @@ defmodule KjogviWeb.NavigationComponents do
   ## Examples
 
       <.breadcrumb_link href={~p"/my/locations"}>All locations</.breadcrumb_link>
-      <.breadcrumb_link patch={~p"/lifelist"}>World</.breadcrumb_link>
   """
   attr :navigate, :string, default: nil
   attr :patch, :string, default: nil

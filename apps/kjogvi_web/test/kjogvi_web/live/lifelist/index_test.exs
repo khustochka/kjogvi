@@ -4,6 +4,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   import Phoenix.LiveViewTest
 
+  setup do
+    %{user: Kjogvi.AccountsFixtures.user_fixture()}
+  end
+
   def get_number_of_species(html) do
     {:ok, doc} = Floki.parse_document(html)
 
@@ -11,57 +15,57 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     |> length()
   end
 
-  test "renders with no observations", %{conn: conn} do
-    {:ok, _index_live, html} = live(conn, ~p"/lifelist")
+  test "renders with no observations", %{conn: conn, user: user} do
+    {:ok, _index_live, html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
     assert get_number_of_species(html) == 0
   end
 
-  test "renders with species observation", %{conn: conn} do
+  test "renders with species observation", %{conn: conn, user: user} do
     {taxon, _} = Factory.create_species_taxon_with_page()
 
     insert(:observation,
       taxon_key: Ornitho.Schema.Taxon.key(taxon),
-      card: insert(:main_user_card)
+      card: insert(:card, user: user)
     )
 
-    {:ok, _index_live, html} = live(conn, ~p"/lifelist")
+    {:ok, _index_live, html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
     assert get_number_of_species(html) == 1
   end
 
-  test "renders with spuh observation", %{conn: conn} do
+  test "renders with spuh observation", %{conn: conn, user: user} do
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
 
     insert(:observation,
       taxon_key: Ornitho.Schema.Taxon.key(taxon),
-      card: insert(:main_user_card)
+      card: insert(:card, user: user)
     )
 
-    {:ok, _index_live, html} = live(conn, ~p"/lifelist")
+    {:ok, _index_live, html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
     assert get_number_of_species(html) == 0
   end
 
-  test "renders with subspecies observation", %{conn: conn} do
+  test "renders with subspecies observation", %{conn: conn, user: user} do
     {taxon, _} = Factory.create_subspecies_taxon_with_page()
 
     insert(:observation,
       taxon_key: Ornitho.Schema.Taxon.key(taxon),
-      card: insert(:main_user_card)
+      card: insert(:card, user: user)
     )
 
-    {:ok, _index_live, html} = live(conn, ~p"/lifelist")
+    {:ok, _index_live, html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
     assert get_number_of_species(html) == 1
   end
 
-  test "filters by year", %{conn: conn} do
+  test "filters by year", %{conn: conn, user: user} do
     {species1, _} = Factory.create_species_taxon_with_page()
     {species2, _} = Factory.create_species_taxon_with_page()
 
-    card1 = insert(:main_user_card, observ_date: ~D[2023-06-07])
+    card1 = insert(:card, user: user, observ_date: ~D[2023-06-07])
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(species1))
-    card2 = insert(:main_user_card, observ_date: ~D[2022-04-03])
+    card2 = insert(:card, user: user, observ_date: ~D[2022-04-03])
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(species2))
 
-    {:ok, _index_live, html} = live(conn, ~p"/lifelist/2022")
+    {:ok, _index_live, html} = live(conn, ~p"/users/#{user.nickname}/lifelist/2022")
 
     assert html =~ species2.name_en
     assert not (html =~ species1.name_en)
@@ -69,24 +73,22 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   @tag skip: "Not implemented yet"
   # See branch empty_lifelist_404
-  test "empty year lifelist returns Not Found, but still renders", %{conn: conn} do
-    conn = get(conn, "/lifelist/2022")
+  test "empty year lifelist returns Not Found, but still renders", %{conn: conn, user: user} do
+    conn = get(conn, "/users/#{user.nickname}/lifelist/2022")
     resp = html_response(conn, 404)
 
     assert get_number_of_species(resp) == 0
   end
 
-  test "non-empty year list is indexed by robots", %{conn: conn} do
+  test "non-empty year list is indexed by robots", %{conn: conn, user: user} do
     {species, _} = Factory.create_species_taxon_with_page()
-    card = insert(:card, observ_date: ~D[2023-06-07])
 
     insert(:observation,
-      card: card,
       taxon_key: Ornitho.Schema.Taxon.key(species),
-      card: insert(:main_user_card)
+      card: insert(:card, user: user, observ_date: ~D[2023-06-07])
     )
 
-    conn = get(conn, "/lifelist/2023")
+    conn = get(conn, "/users/#{user.nickname}/lifelist/2023")
     resp = html_response(conn, 200)
 
     {:ok, html} = Floki.parse_document(resp)
@@ -94,8 +96,8 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert html |> Floki.find("meta[name=robots]") |> Enum.empty?()
   end
 
-  test "empty year list is not indexed by robots", %{conn: conn} do
-    conn = get(conn, "/lifelist/2022")
+  test "empty year list is not indexed by robots", %{conn: conn, user: user} do
+    conn = get(conn, "/users/#{user.nickname}/lifelist/2022")
     resp = html_response(conn, 200)
 
     {:ok, html} = Floki.parse_document(resp)
@@ -104,12 +106,15 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   @tag skip: "False negative test (passing when it should fail)"
-  test "noindex disappears when navigating from empty to non-empty year list", %{conn: conn} do
+  test "noindex disappears when navigating from empty to non-empty year list", %{
+    conn: conn,
+    user: user
+  } do
     {species, _} = Factory.create_species_taxon_with_page()
-    card = insert(:main_user_card, observ_date: ~D[2023-06-07])
+    card = insert(:card, user: user, observ_date: ~D[2023-06-07])
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(species))
 
-    {:ok, index_live, doc} = live(conn, ~p"/lifelist/2022")
+    {:ok, index_live, doc} = live(conn, ~p"/users/#{user.nickname}/lifelist/2022")
     {:ok, html} = Floki.parse_document(doc)
 
     assert Floki.attribute(html, "meta[name=robots]", "content") == ["noindex"]
@@ -121,7 +126,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert html2 |> Floki.find("meta[name=robots]") |> Enum.empty?()
   end
 
-  test "lifelist filtered by location", %{conn: conn} do
+  test "lifelist filtered by location", %{conn: conn, user: user} do
     ukraine =
       insert(:location,
         slug: "ukraine",
@@ -141,19 +146,19 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
-    card1 = insert(:main_user_card, location: brovary)
+    card1 = insert(:card, user: user, location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     {taxon2, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:main_user_card, location: usa)
+    card2 = insert(:card, user: user, location: usa)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
-    conn = get(conn, "/lifelist/ukraine")
+    conn = get(conn, "/users/#{user.nickname}/lifelist/ukraine")
     resp = html_response(conn, 200)
 
     assert get_number_of_species(resp) == 1
   end
 
-  test "lifelist filtered by year and location", %{conn: conn} do
+  test "lifelist filtered by year and location", %{conn: conn, user: user} do
     ukraine =
       insert(:location,
         slug: "ukraine",
@@ -173,22 +178,22 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
-    card1 = insert(:main_user_card, observ_date: ~D"2022-11-18", location: brovary)
+    card1 = insert(:card, user: user, observ_date: ~D"2022-11-18", location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     {taxon2, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:main_user_card, observ_date: ~D"2023-07-16", location: brovary)
+    card2 = insert(:card, user: user, observ_date: ~D"2023-07-16", location: brovary)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
     {taxon3, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:main_user_card, observ_date: ~D"2022-07-16", location: usa)
+    card2 = insert(:card, user: user, observ_date: ~D"2022-07-16", location: usa)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
-    conn = get(conn, "/lifelist/2022/ukraine")
+    conn = get(conn, "/users/#{user.nickname}/lifelist/2022/ukraine")
     resp = html_response(conn, 200)
 
     assert get_number_of_species(resp) == 1
   end
 
-  test "location card shows breadcrumb with ancestors when filtered", %{conn: conn} do
+  test "location card shows breadcrumb with ancestors when filtered", %{conn: conn, user: user} do
     europe =
       insert(:location,
         slug: "europe",
@@ -210,10 +215,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
       insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [europe.id, ukraine.id])
 
     {taxon, _} = Factory.create_species_taxon_with_page()
-    card = insert(:main_user_card, location: brovary)
+    card = insert(:card, user: user, location: brovary)
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, view, _html} = live(conn, ~p"/lifelist/ukraine")
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist/ukraine")
 
     assert has_element?(view, "#lifelist-location-selector")
     # Breadcrumb shows World and Europe as links
@@ -223,115 +228,117 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert has_element?(view, "#lifelist-location-selector span.font-bold", "Ukraine")
   end
 
-  test "location card shows World as bold when no location filter", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/lifelist")
+  test "location card shows World as bold when no location filter", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
 
     assert has_element?(view, "#lifelist-location-selector span.font-bold", "World")
   end
 
-  test "lifelist with valid year and invalid location", %{conn: conn} do
+  test "lifelist with valid year and invalid location", %{conn: conn, user: user} do
     assert_error_sent :bad_request, fn ->
-      get(conn, "/lifelist/2022/testtest")
+      get(conn, "/users/#{user.nickname}/lifelist/2022/testtest")
     end
   end
 
-  test "each row has an anchor id matching its rank", %{conn: conn} do
+  test "each row has an anchor id matching its rank", %{conn: conn, user: user} do
     {taxon1, _} = Factory.create_species_taxon_with_page()
     {taxon2, _} = Factory.create_species_taxon_with_page()
 
-    card1 = insert(:main_user_card, observ_date: ~D"2023-01-01")
+    card1 = insert(:card, user: user, observ_date: ~D"2023-01-01")
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    card2 = insert(:main_user_card, observ_date: ~D"2023-06-01")
+    card2 = insert(:card, user: user, observ_date: ~D"2023-06-01")
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
-    {:ok, view, _html} = live(conn, ~p"/lifelist")
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
 
     # 2 species total; most recent is rank 2, oldest is rank 1
     assert has_element?(view, "#lifer-2")
     assert has_element?(view, "#lifer-1")
   end
 
-  test "sorting taxonomically reorders species", %{conn: conn} do
+  test "sorting taxonomically reorders species", %{conn: conn, user: user} do
     {taxon1, _} = Factory.create_species_taxon_with_page()
     {taxon2, _} = Factory.create_species_taxon_with_page()
 
     # taxon1 created first ⇒ lower sort_order; observed earlier
-    card1 = insert(:main_user_card, observ_date: ~D"2020-01-01")
+    card1 = insert(:card, user: user, observ_date: ~D"2020-01-01")
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    card2 = insert(:main_user_card, observ_date: ~D"2024-01-01")
+    card2 = insert(:card, user: user, observ_date: ~D"2024-01-01")
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     pos = fn html, taxon ->
       :binary.match(html, taxon.name_en) |> elem(0)
     end
 
-    {:ok, _view, taxonomy_html} = live(conn, ~p"/lifelist?sort=taxonomy")
+    {:ok, _view, taxonomy_html} =
+      live(conn, ~p"/users/#{user.nickname}/lifelist?sort=taxonomy")
+
     # Taxonomic (sort_order asc): taxon1 first
     assert pos.(taxonomy_html, taxon1) < pos.(taxonomy_html, taxon2)
 
-    {:ok, _view, date_html} = live(conn, ~p"/lifelist")
+    {:ok, _view, date_html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
     # Date desc: taxon2 (more recent) first
     assert pos.(date_html, taxon2) < pos.(date_html, taxon1)
   end
 
-  test "date sort groups lifers by year of first encounter", %{conn: conn} do
+  test "date sort groups lifers by year of first encounter", %{conn: conn, user: user} do
     {taxon1, _} = Factory.create_species_taxon_with_page()
     {taxon2, _} = Factory.create_species_taxon_with_page()
     {taxon3, _} = Factory.create_species_taxon_with_page()
 
-    card1 = insert(:main_user_card, observ_date: ~D"2021-05-01")
+    card1 = insert(:card, user: user, observ_date: ~D"2021-05-01")
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    card2 = insert(:main_user_card, observ_date: ~D"2023-04-01")
+    card2 = insert(:card, user: user, observ_date: ~D"2023-04-01")
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
-    card3 = insert(:main_user_card, observ_date: ~D"2023-09-01")
+    card3 = insert(:card, user: user, observ_date: ~D"2023-09-01")
     insert(:observation, card: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
-    {:ok, view, _html} = live(conn, ~p"/lifelist")
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
 
     assert has_element?(view, "#first-record-2023")
     assert has_element?(view, "#first-record-2021")
     assert has_element?(view, "#lifelist-table h3", "First recorded in")
   end
 
-  test "year header is omitted when filtered by year", %{conn: conn} do
+  test "year header is omitted when filtered by year", %{conn: conn, user: user} do
     {taxon, _} = Factory.create_species_taxon_with_page()
-    card = insert(:main_user_card, observ_date: ~D"2023-05-01")
+    card = insert(:card, user: user, observ_date: ~D"2023-05-01")
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, view, _html} = live(conn, ~p"/lifelist/2023")
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist/2023")
 
     refute has_element?(view, "#first-record-2023")
     refute has_element?(view, "#lifelist-table h3", "First recorded in")
   end
 
-  test "year header is omitted when sorting taxonomically", %{conn: conn} do
+  test "year header is omitted when sorting taxonomically", %{conn: conn, user: user} do
     {taxon1, _} = Factory.create_species_taxon_with_page()
     {taxon2, _} = Factory.create_species_taxon_with_page()
 
-    card1 = insert(:main_user_card, observ_date: ~D"2021-05-01")
+    card1 = insert(:card, user: user, observ_date: ~D"2021-05-01")
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    card2 = insert(:main_user_card, observ_date: ~D"2023-04-01")
+    card2 = insert(:card, user: user, observ_date: ~D"2023-04-01")
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
-    {:ok, view, _html} = live(conn, ~p"/lifelist?sort=taxonomy")
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist?sort=taxonomy")
 
     refute has_element?(view, "#first-record-2023")
     refute has_element?(view, "#lifelist-table h3", "First recorded in")
   end
 
-  test "sort selector links toggle between date and taxonomy", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/lifelist")
+  test "sort selector links toggle between date and taxonomy", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
 
     assert has_element?(view, "ul[aria-label=Sort] a", "Taxonomic")
     assert has_element?(view, "ul[aria-label=Sort] span", "By date")
 
-    {:ok, view2, _html2} = live(conn, ~p"/lifelist?sort=taxonomy")
+    {:ok, view2, _html2} = live(conn, ~p"/users/#{user.nickname}/lifelist?sort=taxonomy")
 
     assert has_element?(view2, "ul[aria-label=Sort] span", "Taxonomic")
     assert has_element?(view2, "ul[aria-label=Sort] a", "By date")
   end
 
-  test "correct links for guest user", %{conn: conn} do
+  test "correct links for guest user", %{conn: conn, user: user} do
     ukraine =
       insert(:location,
         slug: "ukraine",
@@ -343,19 +350,19 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
-    card1 = insert(:main_user_card, observ_date: ~D"2022-11-18", location: brovary)
+    card1 = insert(:card, user: user, observ_date: ~D"2022-11-18", location: brovary)
     insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     {taxon2, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:main_user_card, observ_date: ~D"2023-07-16", location: brovary)
+    card2 = insert(:card, user: user, observ_date: ~D"2023-07-16", location: brovary)
     insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
-    conn = get(conn, "/lifelist")
+    conn = get(conn, "/users/#{user.nickname}/lifelist")
     resp = html_response(conn, 200)
 
     {:ok, doc} = Floki.parse_document(resp)
     links = Floki.find(doc, "li a") |> Enum.flat_map(&Floki.attribute(&1, "href"))
 
-    assert ~p"/lifelist/2022" in links
-    assert ~p"/lifelist/2023" in links
+    assert ~p"/users/#{user.nickname}/lifelist/2022" in links
+    assert ~p"/users/#{user.nickname}/lifelist/2023" in links
   end
 end
