@@ -40,6 +40,9 @@
       </ul>
     </nav>
   </header>
+
+  <.subject_user_menu scope={@current_scope} />
+
   <main class="flex flex-1 flex-col px-4 pb-4 sm:px-6 lg:px-8">
     <div class={["mx-auto mt-4 w-full grow", assigns[:container_class] || "max-w-5xl"]}>
       <.main_flash flash={@flash} />
