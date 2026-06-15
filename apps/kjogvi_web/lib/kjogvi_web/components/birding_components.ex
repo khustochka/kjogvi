@@ -173,7 +173,14 @@ defmodule KjogviWeb.BirdingComponents do
 
         <%!-- Actions --%>
         <div class="flex shrink-0 items-center gap-4">
-          <.ebird_link :if={@card.ebird_id} ebird_id={@card.ebird_id} class="text-base" />
+          <span :if={@card.ebird_id} class="inline-flex items-center gap-1">
+            <.ebird_link ebird_id={@card.ebird_id} class="text-base" />
+            <.ebird_completeness_badge ebird_complete={@card.ebird_complete} short />
+          </span>
+          <.ebird_completeness_badge
+            :if={!@card.ebird_id && not is_nil(@card.ebird_complete)}
+            ebird_complete={@card.ebird_complete}
+          />
           <.link
             navigate={~p"/my/cards/#{@card.id}/edit"}
             class="inline-flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-0.5 text-sm font-medium text-stone-700 no-underline hover:border-forest-400 hover:text-forest-700"
@@ -347,6 +354,79 @@ defmodule KjogviWeb.BirdingComponents do
     >
       <.ebird_wordmark /><span class="sr-only"> checklist (opens in new tab)</span>
     </.link>
+    """
+  end
+
+  @doc """
+  Renders a panel linking to a card's eBird checklist.
+
+  The whole panel is the link and shows the eBird wordmark, the checklist id and,
+  when `ebird_complete` is set, a badge indicating whether the checklist is
+  complete. A `nil` `ebird_complete` renders no badge.
+  """
+  attr :ebird_id, :string, required: true
+  attr :ebird_complete, :boolean, default: nil
+  attr :class, :string, default: nil
+
+  def ebird_panel(assigns) do
+    ~H"""
+    <.link
+      href={ebird_checklist_url(@ebird_id)}
+      target="_blank"
+      rel="noopener"
+      title="eBird checklist"
+      class={[
+        "group inline-flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-4 py-2 no-underline hover:border-forest-500 hover:bg-stone-50",
+        @class
+      ]}
+    >
+      <.ebird_wordmark class="text-lg" />
+      <span class="font-mono text-sm text-stone-600">{@ebird_id}</span>
+      <.ebird_completeness_badge ebird_complete={@ebird_complete} />
+      <span class="sr-only"> (opens in new tab)</span>
+    </.link>
+    """
+  end
+
+  @doc """
+  Renders a badge indicating whether an eBird checklist is complete.
+
+  Renders nothing when `ebird_complete` is `nil`. With `short`, shows only the
+  first letter (no icon) while keeping the same styling.
+  """
+  attr :ebird_complete, :boolean, default: nil
+  attr :short, :boolean, default: false
+
+  def ebird_completeness_badge(assigns) do
+    ~H"""
+    <span
+      :if={@ebird_complete == true}
+      title="eBird checklist complete"
+      class={[
+        "inline-flex items-center rounded-md text-xs font-medium ring-1 ring-inset bg-forest-100 text-forest-800 ring-forest-200",
+        if(@short, do: "justify-center px-1.5 py-0.5", else: "gap-1 px-2 py-0.5")
+      ]}
+    >
+      <%= if @short do %>
+        C<span class="sr-only">omplete</span>
+      <% else %>
+        <.icon name="hero-check-circle" class="h-4 w-4" /> Complete
+      <% end %>
+    </span>
+    <span
+      :if={@ebird_complete == false}
+      title="eBird checklist incomplete"
+      class={[
+        "inline-flex items-center rounded-md text-xs font-medium ring-1 ring-inset bg-stone-100 text-stone-600 ring-stone-200",
+        if(@short, do: "justify-center px-1.5 py-0.5", else: "gap-1 px-2 py-0.5")
+      ]}
+    >
+      <%= if @short do %>
+        I<span class="sr-only">ncomplete</span>
+      <% else %>
+        <.icon name="hero-minus-circle" class="h-4 w-4" /> Incomplete
+      <% end %>
+    </span>
     """
   end
 

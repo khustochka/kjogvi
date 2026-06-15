@@ -201,7 +201,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                 size={length(@effort_types)}
               />
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 flex-1">
               <CoreComponents.input
                 type="time"
                 field={@form[:start_time]}
@@ -226,6 +226,40 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                 label="Area (acres)"
                 step="0.1"
               />
+
+              <fieldset>
+                <legend class="block text-sm font-semibold leading-6 text-zinc-800">
+                  eBird Complete
+                </legend>
+                <div class="mt-2 inline-flex overflow-hidden rounded-lg border border-gray-300">
+                  <label class={[
+                    "cursor-pointer px-5 py-1.5 text-sm font-semibold select-none",
+                    @form[:ebird_complete].value == true && "bg-blue-100 text-blue-800",
+                    @form[:ebird_complete].value != true && "bg-white text-gray-500 hover:bg-gray-50"
+                  ]}>
+                    <input
+                      type="radio"
+                      name="card[ebird_complete]"
+                      value="true"
+                      checked={@form[:ebird_complete].value == true}
+                      class="sr-only"
+                    /> YES
+                  </label>
+                  <label class={[
+                    "cursor-pointer border-l border-gray-300 px-5 py-1.5 text-sm font-semibold select-none",
+                    @form[:ebird_complete].value == false && "bg-blue-100 text-blue-800",
+                    @form[:ebird_complete].value != false && "bg-white text-gray-500 hover:bg-gray-50"
+                  ]}>
+                    <input
+                      type="radio"
+                      name="card[ebird_complete]"
+                      value="false"
+                      checked={@form[:ebird_complete].value == false}
+                      class="sr-only"
+                    /> NO
+                  </label>
+                </div>
+              </fieldset>
             </div>
           </div>
         </div>
@@ -436,6 +470,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
         biotope: params["biotope"],
         weather: params["weather"],
         observers: params["observers"],
+        ebird_complete: parse_tristate_bool(params["ebird_complete"]),
         notes: params["notes"],
         motorless: params["motorless"] == "true",
         resolved: params["resolved"] == "true",
@@ -488,6 +523,10 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       {:error, _} -> nil
     end
   end
+
+  defp parse_tristate_bool("true"), do: true
+  defp parse_tristate_bool("false"), do: false
+  defp parse_tristate_bool(_), do: nil
 
   defp parse_int(nil), do: nil
   defp parse_int(""), do: nil

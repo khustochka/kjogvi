@@ -72,6 +72,7 @@ defmodule Kjogvi.Birding.Card do
       :biotope,
       :weather,
       :observers,
+      :ebird_complete,
       :notes,
       :kml_url,
       :motorless,
