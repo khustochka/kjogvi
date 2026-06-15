@@ -5,7 +5,7 @@ defmodule Kjogvi.Legacy.Import.Cards do
 
   @blank_to_nil_columns [:biotope, :weather, :observers, :notes, :kml_url, :ebird_id]
 
-  @min_start_seq 20_000
+  @min_start_seq 100_000
 
   def import(columns_str, rows, opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)

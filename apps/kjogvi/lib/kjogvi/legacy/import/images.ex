@@ -16,7 +16,7 @@ defmodule Kjogvi.Legacy.Import.Images do
   alias Kjogvi.Images.Image
   alias Kjogvi.Images.ImageObservation
 
-  @min_start_seq 2_000
+  @min_start_seq 10_000
 
   # Legacy `media` columns moved verbatim into `extras` (under string keys), in
   # addition to `title` -> `extras["legacy_title"]` handled below.
