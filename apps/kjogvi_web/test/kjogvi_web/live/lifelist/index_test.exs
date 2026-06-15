@@ -365,4 +365,44 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert ~p"/users/#{user.nickname}/lifelist/2022" in links
     assert ~p"/users/#{user.nickname}/lifelist/2023" in links
   end
+
+  describe "community lifelist" do
+    test "aggregates species across all users", %{conn: conn, user: user} do
+      other_user = Kjogvi.AccountsFixtures.user_fixture()
+
+      {taxon1, _} = Factory.create_species_taxon_with_page()
+      {taxon2, _} = Factory.create_species_taxon_with_page()
+
+      insert(:observation,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon1),
+        card: insert(:card, user: user)
+      )
+
+      insert(:observation,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon2),
+        card: insert(:card, user: other_user)
+      )
+
+      {:ok, _index_live, html} = live(conn, ~p"/community/lifelist")
+
+      assert get_number_of_species(html) == 2
+      assert html =~ taxon1.name_en
+      assert html =~ taxon2.name_en
+    end
+
+    test "filter links point back to the community URL space", %{conn: conn, user: user} do
+      insert(:observation,
+        taxon_key: Ornitho.Schema.Taxon.key(elem(Factory.create_species_taxon_with_page(), 0)),
+        card: insert(:card, user: user, observ_date: ~D"2023-07-16")
+      )
+
+      conn = get(conn, ~p"/community/lifelist")
+      resp = html_response(conn, 200)
+
+      {:ok, doc} = Floki.parse_document(resp)
+      links = Floki.find(doc, "li a") |> Enum.flat_map(&Floki.attribute(&1, "href"))
+
+      assert ~p"/community/lifelist/2023" in links
+    end
+  end
 end

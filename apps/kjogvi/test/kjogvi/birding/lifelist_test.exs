@@ -425,6 +425,48 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert Enum.map(result.list, & &1.species_page.name_sci) == [taxon2.name_sci]
     end
 
+    test "community scope aggregates observations across all users" do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      scope = %Lifelist.Scope{user: nil, include_private: false}
+
+      {taxon1, _} = Factory.create_species_taxon_with_page()
+      {taxon2, _} = Factory.create_species_taxon_with_page()
+
+      card1 = insert(:card, user: user1)
+      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card2 = insert(:card, user: user2)
+      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      result = Kjogvi.Birding.Lifelist.generate(scope)
+
+      name_scis = Enum.map(result.list, & &1.species_page.name_sci)
+      assert length(result.list) == 2
+      assert taxon1.name_sci in name_scis
+      assert taxon2.name_sci in name_scis
+    end
+
+    test "community scope excludes hidden observations" do
+      user = user_fixture()
+      scope = %Lifelist.Scope{user: nil, include_private: false}
+
+      {taxon1, _} = Factory.create_species_taxon_with_page()
+      {taxon2, _} = Factory.create_species_taxon_with_page()
+      card = insert(:card, user: user)
+
+      insert(:observation,
+        card: card,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon1),
+        hidden: true
+      )
+
+      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+
+      result = Kjogvi.Birding.Lifelist.generate(scope)
+
+      assert Enum.map(result.list, & &1.species_page.name_sci) == [taxon2.name_sci]
+    end
+
     test "works with private locations" do
       public_loc = insert(:location)
 
@@ -768,6 +810,14 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       lifelist_scope = Lifelist.Scope.from_scope(app_scope)
       assert lifelist_scope.user == subject_user
+      assert lifelist_scope.include_private == false
+    end
+
+    test "returns the aggregate public list with no user for the :community section" do
+      app_scope = %Kjogvi.Scope{section: :community}
+
+      lifelist_scope = Lifelist.Scope.from_scope(app_scope)
+      assert lifelist_scope.user == nil
       assert lifelist_scope.include_private == false
     end
   end

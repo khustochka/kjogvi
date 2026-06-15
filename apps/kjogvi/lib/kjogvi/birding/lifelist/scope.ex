@@ -6,9 +6,10 @@ defmodule Kjogvi.Birding.Lifelist.Scope do
 
   alias Kjogvi.Birding.Lifelist
 
-  @type t() :: %__MODULE__{user: %{id: integer(), extras: map()}, include_private: boolean()}
-
-  @enforce_keys [:user]
+  @type t() :: %__MODULE__{
+          user: %{id: integer(), extras: map()} | nil,
+          include_private: boolean()
+        }
 
   defstruct user: nil, include_private: false
 
@@ -20,8 +21,7 @@ defmodule Kjogvi.Birding.Lifelist.Scope do
     * `:private` / `:admin` - the logged-in user views their own list,
       including private observations.
     * `:user` - the public list of the scope's `subject_user`.
-
-  Aggregate (`:community`) lifelists are not supported yet.
+    * `:community` - the aggregate public list across all users (no `user`).
   """
   def from_scope(%{section: section, current_user: user})
       when section in [:private, :admin] do
@@ -30,5 +30,9 @@ defmodule Kjogvi.Birding.Lifelist.Scope do
 
   def from_scope(%{section: :user, subject_user: subject_user}) do
     %Lifelist.Scope{user: subject_user, include_private: false}
+  end
+
+  def from_scope(%{section: :community}) do
+    %Lifelist.Scope{user: nil, include_private: false}
   end
 end

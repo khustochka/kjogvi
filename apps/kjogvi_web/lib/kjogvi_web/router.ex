@@ -177,18 +177,20 @@ defmodule KjogviWeb.Router do
 
   # PUBLIC ROUTES
 
-  # scope "/lifelist", KjogviWeb do
-  #   pipe_through [:browser]
+  # Community section: aggregate public data across all users. The default
+  # `:community` scope from the `:browser` pipeline drives it.
+  scope "/community", KjogviWeb do
+    pipe_through [:browser]
 
-  #   live_session :open_current_user,
-  #     on_mount: [
-  #       {KjogviWeb.UserAuth, :mount_current_scope}
-  #     ] do
-  #     live "/", Live.Lifelist.Index, :public_view
-  #     live "/:year_or_location", Live.Lifelist.Index, :public_view
-  #     live "/:year/:location", Live.Lifelist.Index, :public_view
-  #   end
-  # end
+    live_session :community,
+      on_mount: [
+        {KjogviWeb.UserAuth, :mount_current_scope}
+      ] do
+      live "/lifelist", Live.Lifelist.Index, :index
+      live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
+      live "/lifelist/:year/:location", Live.Lifelist.Index, :index
+    end
+  end
 
   # scope "/photos", KjogviWeb do
   #   pipe_through [:browser]
