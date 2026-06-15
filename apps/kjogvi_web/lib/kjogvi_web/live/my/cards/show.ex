@@ -92,7 +92,6 @@ defmodule KjogviWeb.Live.My.Cards.Show do
       </div>
 
       <div class="flex shrink-0 items-center gap-4 sm:mt-6">
-        <.ebird_link :if={@card.ebird_id} ebird_id={@card.ebird_id} class="text-xl" />
         <.action_button navigate={~p"/my/cards/#{@card.id}/edit"} icon="hero-pencil-square">
           Edit
         </.action_button>
@@ -118,10 +117,19 @@ defmodule KjogviWeb.Live.My.Cards.Show do
       </div>
     </header>
 
+    <%!-- eBird details --%>
+    <section :if={@card.ebird_id} id="card-ebird-details" class="mt-6">
+      <.ebird_panel ebird_id={@card.ebird_id} ebird_complete={@card.ebird_complete} />
+    </section>
+
     <%!-- Effort (left) + counts (bottom right) --%>
     <div class="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
       <div class="flex min-w-0 flex-wrap items-center gap-x-8 gap-y-3">
         <.effort_badge effort_type={@card.effort_type} class="px-4 py-1.5 text-xl" />
+        <.ebird_completeness_badge
+          :if={!@card.ebird_id && not is_nil(@card.ebird_complete)}
+          ebird_complete={@card.ebird_complete}
+        />
         <dl class="flex flex-wrap items-center gap-x-8 gap-y-3">
           <.detail :if={@card.start_time} label="Start time">{format_time(@card.start_time)}</.detail>
           <.detail :if={@card.duration_minutes} label="Duration">

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict rUDeaLxjzbAfw8XLJmlpwnfO0skaeHZh4YlPzjrMeO21bjfV9UCA6NZTodMQh31
+\restrict bMGR2nQrH1Qpa0jFdS8WwocjaEl3wgCYd4hCvNFITsaWLq6jWIVRbdTD88cYCEL
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -64,7 +64,8 @@ CREATE TABLE public.cards (
     user_id bigint NOT NULL,
     cached_year integer GENERATED ALWAYS AS (EXTRACT(year FROM observ_date)) STORED,
     cached_month integer GENERATED ALWAYS AS (EXTRACT(month FROM observ_date)) STORED,
-    import_source character varying(255)
+    import_source character varying(255),
+    ebird_complete boolean
 );
 
 
@@ -898,7 +899,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict rUDeaLxjzbAfw8XLJmlpwnfO0skaeHZh4YlPzjrMeO21bjfV9UCA6NZTodMQh31
+\unrestrict bMGR2nQrH1Qpa0jFdS8WwocjaEl3wgCYd4hCvNFITsaWLq6jWIVRbdTD88cYCEL
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -920,3 +921,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260608025435);
 INSERT INTO public."schema_migrations" (version) VALUES (20260612000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260613120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260614120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260615170413);

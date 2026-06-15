@@ -102,6 +102,45 @@ defmodule KjogviWeb.Live.My.Cards.IndexTest do
     refute has_element?(index_live, ~s{#card-#{card.id} a[href^="https://ebird.org/checklist/"]})
   end
 
+  test "panel shows Complete badge when ebird_complete is true", %{conn: conn, user: user} do
+    card = insert(:card, user: user, ebird_id: "S1", ebird_complete: true)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+    assert has_element?(index_live, "#card-#{card.id}", "Complete")
+  end
+
+  test "panel shows Incomplete badge when ebird_complete is false", %{conn: conn, user: user} do
+    card = insert(:card, user: user, ebird_id: "S1", ebird_complete: false)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+    assert has_element?(index_live, "#card-#{card.id}", "Incomplete")
+  end
+
+  test "panel shows no completeness badge when ebird_complete is nil", %{conn: conn, user: user} do
+    card = insert(:card, user: user, ebird_id: "S1", ebird_complete: nil)
+
+    {:ok, index_live, html} = live(conn, ~p"/my/cards")
+
+    panel = render(element(index_live, "#card-#{card.id}"))
+    refute panel =~ "Complete"
+    refute panel =~ "Incomplete"
+    assert html =~ "S1"
+  end
+
+  test "panel shows completeness badge when ebird_id is absent", %{
+    conn: conn,
+    user: user
+  } do
+    card = insert(:card, user: user, ebird_id: nil, ebird_complete: true)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/cards")
+
+    assert has_element?(index_live, "#card-#{card.id}", "Complete")
+    refute has_element?(index_live, ~s{#card-#{card.id} a[href^="https://ebird.org/checklist/"]})
+  end
+
   test "deletes a card with no observations", %{conn: conn, user: user} do
     card = insert(:card, user: user)
 

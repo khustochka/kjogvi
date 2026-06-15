@@ -7,7 +7,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
   alias Kjogvi.Repo
   alias Kjogvi.Geo.Location
 
-  @min_start_seq 2_000
+  @min_start_seq 10_000
 
   def import(columns_str, rows, _opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)

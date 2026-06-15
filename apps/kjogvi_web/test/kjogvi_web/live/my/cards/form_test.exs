@@ -325,6 +325,86 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       assert card.resolved == false
     end
+
+    test "ebird_complete defaults to nil with neither switch option selected", %{
+      conn: conn,
+      user: user,
+      location: location
+    } do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      refute has_element?(lv, ~s(input[name="card[ebird_complete]"][value="true"][checked]))
+      refute has_element?(lv, ~s(input[name="card[ebird_complete]"][value="false"][checked]))
+
+      search_and_select_location(lv, "Test")
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "INCIDENTAL",
+          "location_id" => to_string(location.id)
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      card =
+        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+
+      assert card.ebird_complete == nil
+    end
+
+    test "saves ebird_complete as true when YES selected", %{
+      conn: conn,
+      user: user,
+      location: location
+    } do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      search_and_select_location(lv, "Test")
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "INCIDENTAL",
+          "location_id" => to_string(location.id),
+          "ebird_complete" => "true"
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      card =
+        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+
+      assert card.ebird_complete == true
+    end
+
+    test "saves ebird_complete as false when NO selected", %{
+      conn: conn,
+      user: user,
+      location: location
+    } do
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      search_and_select_location(lv, "Test")
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "INCIDENTAL",
+          "location_id" => to_string(location.id),
+          "ebird_complete" => "false"
+        }
+      }
+
+      lv |> render_submit("save", form_data)
+
+      card =
+        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+
+      assert card.ebird_complete == false
+    end
   end
 
   describe "observation with taxon selection" do
