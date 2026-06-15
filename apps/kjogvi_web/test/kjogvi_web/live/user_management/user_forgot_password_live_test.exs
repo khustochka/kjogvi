@@ -1,67 +1,63 @@
-require Kjogvi.Config
+defmodule KjogviWeb.UserForgotPasswordLiveTest do
+  use KjogviWeb.ConnCase, async: true
 
-Kjogvi.Config.with_multiuser do
-  defmodule KjogviWeb.UserForgotPasswordLiveTest do
-    use KjogviWeb.ConnCase, async: true
+  import Phoenix.LiveViewTest
+  import Kjogvi.AccountsFixtures
 
-    import Phoenix.LiveViewTest
-    import Kjogvi.AccountsFixtures
+  alias Kjogvi.Accounts
+  alias Kjogvi.Repo
 
-    alias Kjogvi.Accounts
-    alias Kjogvi.Repo
+  describe "Forgot password page" do
+    test "renders email page", %{conn: conn} do
+      {:ok, lv, html} = live(conn, ~p"/users/reset_password")
 
-    describe "Forgot password page" do
-      test "renders email page", %{conn: conn} do
-        {:ok, lv, html} = live(conn, ~p"/users/reset_password")
-
-        assert html =~ "Forgot your password?"
-        assert has_element?(lv, ~s|a[href="#{~p"/users/register"}"]|, "Register")
-        assert has_element?(lv, ~s|a[href="#{~p"/users/log_in"}"]|, "Log in")
-      end
-
-      test "redirects if already logged in", %{conn: conn} do
-        result =
-          conn
-          |> log_in_user(user_fixture())
-          |> live(~p"/users/reset_password")
-          |> follow_redirect(conn, ~p"/")
-
-        assert {:ok, _conn} = result
-      end
+      assert html =~ "Forgot your password?"
+      assert has_element?(lv, ~s|a[href="#{~p"/users/register"}"]|, "Register")
+      assert has_element?(lv, ~s|a[href="#{~p"/users/log_in"}"]|, "Log in")
     end
 
-    describe "Reset link" do
-      setup do
-        %{user: user_fixture()}
-      end
+    test "redirects if already logged in", %{conn: conn} do
+      result =
+        conn
+        |> log_in_user(user_fixture())
+        |> live(~p"/users/reset_password")
+        |> follow_redirect(conn, ~p"/")
 
-      test "sends a new reset password token", %{conn: conn, user: user} do
-        {:ok, lv, _html} = live(conn, ~p"/users/reset_password")
+      assert {:ok, _conn} = result
+    end
+  end
 
-        {:ok, conn} =
-          lv
-          |> form("#reset_password_form", user: %{"email" => user.email})
-          |> render_submit()
-          |> follow_redirect(conn, "/")
+  describe "Reset link" do
+    setup do
+      %{user: user_fixture()}
+    end
 
-        assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+    test "sends a new reset password token", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/users/reset_password")
 
-        assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context ==
-                 "reset_password"
-      end
+      {:ok, conn} =
+        lv
+        |> form("#reset_password_form", user: %{"email" => user.email})
+        |> render_submit()
+        |> follow_redirect(conn, "/")
 
-      test "does not send reset password token if email is invalid", %{conn: conn} do
-        {:ok, lv, _html} = live(conn, ~p"/users/reset_password")
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
 
-        {:ok, conn} =
-          lv
-          |> form("#reset_password_form", user: %{"email" => "unknown@example.com"})
-          |> render_submit()
-          |> follow_redirect(conn, "/")
+      assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context ==
+               "reset_password"
+    end
 
-        assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
-        assert Repo.all(Accounts.UserToken) == []
-      end
+    test "does not send reset password token if email is invalid", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/reset_password")
+
+      {:ok, conn} =
+        lv
+        |> form("#reset_password_form", user: %{"email" => "unknown@example.com"})
+        |> render_submit()
+        |> follow_redirect(conn, "/")
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+      assert Repo.all(Accounts.UserToken) == []
     end
   end
 end

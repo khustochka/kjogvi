@@ -46,7 +46,8 @@ defmodule KjogviWeb.UserConfirmationLive do
         # by some automation or by the user themselves, so we redirect without
         # a warning message.
         case socket.assigns do
-          %{current_user: %{confirmed_at: confirmed_at}} when not is_nil(confirmed_at) ->
+          %{current_scope: %{current_user: %{confirmed_at: confirmed_at}}}
+          when not is_nil(confirmed_at) ->
             {:noreply, redirect(socket, to: ~p"/")}
 
           %{} ->

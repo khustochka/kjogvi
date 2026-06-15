@@ -1,8 +1,6 @@
 defmodule KjogviWeb.UserLoginLiveTest do
   use KjogviWeb.ConnCase, async: true
 
-  require Kjogvi.Config
-
   import Phoenix.LiveViewTest
   import Kjogvi.AccountsFixtures
 
@@ -59,33 +57,31 @@ defmodule KjogviWeb.UserLoginLiveTest do
     end
   end
 
-  Kjogvi.Config.with_multiuser do
-    describe "login navigation" do
-      test "redirects to registration page when the Register button is clicked", %{conn: conn} do
-        {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+  describe "login navigation" do
+    test "redirects to registration page when the Register button is clicked", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
 
-        {:ok, _login_live, login_html} =
-          lv
-          |> element("main a", "Sign up")
-          |> render_click()
-          |> follow_redirect(conn, ~p"/users/register")
+      {:ok, _login_live, login_html} =
+        lv
+        |> element("main a", "Sign up")
+        |> render_click()
+        |> follow_redirect(conn, ~p"/users/register")
 
-        assert login_html =~ "Register"
-      end
+      assert login_html =~ "Register"
+    end
 
-      test "redirects to forgot password page when the Forgot Password button is clicked", %{
-        conn: conn
-      } do
-        {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+    test "redirects to forgot password page when the Forgot Password button is clicked", %{
+      conn: conn
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
 
-        {:ok, conn} =
-          lv
-          |> element("main a", "Forgot your password?")
-          |> render_click()
-          |> follow_redirect(conn, ~p"/users/reset_password")
+      {:ok, conn} =
+        lv
+        |> element("main a", "Forgot your password?")
+        |> render_click()
+        |> follow_redirect(conn, ~p"/users/reset_password")
 
-        assert conn.resp_body =~ "Forgot your password?"
-      end
+      assert conn.resp_body =~ "Forgot your password?"
     end
   end
 end
