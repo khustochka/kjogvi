@@ -7,13 +7,13 @@ defmodule KjogviWeb.Live.Photos.IndexTest do
   alias Kjogvi.ImagesFixtures
 
   test "renders the heading", %{conn: conn} do
-    {:ok, live, _html} = live(conn, ~p"/photos")
+    {:ok, live, _html} = live(conn, ~p"/community/photos")
 
     assert has_element?(live, "h1", "Photos")
   end
 
   test "shows an empty state when there are no images", %{conn: conn} do
-    {:ok, live, _html} = live(conn, ~p"/photos")
+    {:ok, live, _html} = live(conn, ~p"/community/photos")
 
     assert has_element?(live, "#photos-empty")
   end
@@ -22,7 +22,7 @@ defmodule KjogviWeb.Live.Photos.IndexTest do
     image_one = ImagesFixtures.image_fixture(user: user_fixture(), title: "Sandhill Crane")
     image_two = ImagesFixtures.image_fixture(user: user_fixture(), title: "Tundra Swan")
 
-    {:ok, live, _html} = live(conn, ~p"/photos")
+    {:ok, live, _html} = live(conn, ~p"/community/photos")
 
     refute has_element?(live, "#photos-empty")
     assert has_element?(live, "#photos-#{image_one.id}")
@@ -33,7 +33,7 @@ defmodule KjogviWeb.Live.Photos.IndexTest do
     older = ImagesFixtures.image_fixture(user: user_fixture())
     newer = ImagesFixtures.image_fixture(user: user_fixture())
 
-    {:ok, _live, html} = live(conn, ~p"/photos")
+    {:ok, _live, html} = live(conn, ~p"/community/photos")
 
     [first, second] =
       Regex.scan(~r/id="photos-(\d+)"/, html, capture: :all_but_first)
@@ -48,16 +48,16 @@ defmodule KjogviWeb.Live.Photos.IndexTest do
     user = user_fixture()
     for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
 
-    {:ok, _live, html} = live(conn, ~p"/photos")
+    {:ok, _live, html} = live(conn, ~p"/community/photos")
 
-    assert html =~ "/photos/page/2"
+    assert html =~ "/community/photos/page/2"
   end
 
   test "shows a later page at its own route", %{conn: conn} do
     user = user_fixture()
     for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
 
-    {:ok, live, _html} = live(conn, ~p"/photos/page/2")
+    {:ok, live, _html} = live(conn, ~p"/community/photos/page/2")
 
     # 25 images at 24 per page leaves exactly one on page 2.
     assert length(Regex.scan(~r/id="photos-\d+"/, render(live))) == 1

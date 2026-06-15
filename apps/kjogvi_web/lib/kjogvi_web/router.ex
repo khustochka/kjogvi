@@ -189,20 +189,10 @@ defmodule KjogviWeb.Router do
       live "/lifelist", Live.Lifelist.Index, :index
       live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
       live "/lifelist/:year/:location", Live.Lifelist.Index, :index
+      live "/photos", Live.Photos.Index, :index
+      live "/photos/page/:page", Live.Photos.Index, :index
     end
   end
-
-  # scope "/photos", KjogviWeb do
-  #   pipe_through [:browser]
-
-  #   live_session :public_photos,
-  #     on_mount: [
-  #       {KjogviWeb.UserAuth, :mount_current_scope}
-  #     ] do
-  #     live "/", Live.Photos.Index, :index
-  #     live "/page/:page", Live.Photos.Index, :index
-  #   end
-  # end
 
   # Other scopes may use custom stacks.
   # scope "/api", KjogviWeb do

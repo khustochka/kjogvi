@@ -75,8 +75,8 @@ defmodule KjogviWeb.Live.Photos.Index do
     """
   end
 
-  # Pagination links resolve against the section's base path: the public gallery
-  # under /photos, a user's gallery under /users/:username/photos.
+  # Pagination links resolve against the section's base path: the community
+  # gallery under /community/photos, a user's gallery under /users/:username/photos.
   defp paginated_photos_path(%{section: :user, subject_user: %{nickname: nickname}}) do
     fn _conn, _action, page, _params ->
       case page do
@@ -89,8 +89,8 @@ defmodule KjogviWeb.Live.Photos.Index do
   defp paginated_photos_path(%{section: :community}) do
     fn _conn, _action, page, _params ->
       case page do
-        1 -> ~p"/photos"
-        n -> ~p"/photos/page/#{n}"
+        1 -> ~p"/community/photos"
+        n -> ~p"/community/photos/page/#{n}"
       end
     end
   end
