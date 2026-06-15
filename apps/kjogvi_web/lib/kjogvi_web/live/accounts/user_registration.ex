@@ -60,8 +60,6 @@ defmodule KjogviWeb.Accounts.UserRegistration do
 
         <CoreComponents.input field={@form[:email]} type="email" label="Email" required />
         <CoreComponents.input field={@form[:password]} type="password" label="Password" required />
-        <CoreComponents.input field={@form[:nickname]} type="text" label="Nickname" required />
-        <CoreComponents.input field={@form[:display_name]} type="text" label="Display name" />
 
         <:actions>
           <CoreComponents.button phx-disable-with="Creating account..." class="w-full">
@@ -95,7 +93,7 @@ defmodule KjogviWeb.Accounts.UserRegistration do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.register_user(user_params) do
+    case Accounts.register_user(put_suggested_nickname(user_params)) do
       {:ok, user} ->
         {:ok, _} =
           Accounts.deliver_user_confirmation_instructions(
@@ -112,9 +110,18 @@ defmodule KjogviWeb.Accounts.UserRegistration do
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accounts.change_user_registration(%User{}, user_params)
+    changeset = Accounts.change_user_registration(%User{}, put_suggested_nickname(user_params))
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
   end
+
+  # The nickname is no longer entered on the form; derive it from the email so
+  # the changeset stays valid and the user gets a sensible default.
+  defp put_suggested_nickname(%{"email" => email} = user_params)
+       when is_binary(email) and email != "" do
+    Map.put(user_params, "nickname", Accounts.suggest_nickname_from_email(email))
+  end
+
+  defp put_suggested_nickname(user_params), do: user_params
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     form = to_form(changeset, as: "user")

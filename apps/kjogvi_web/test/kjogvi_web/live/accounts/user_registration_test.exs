@@ -41,7 +41,12 @@ defmodule KjogviWeb.Accounts.UserRegistrationTest do
       {:ok, lv, _html} = live(conn, ~p"/account/register")
 
       email = unique_user_email()
-      form = form(lv, "#registration_form", user: valid_user_attributes(email: email))
+
+      form =
+        form(lv, "#registration_form",
+          user: %{"email" => email, "password" => valid_user_password()}
+        )
+
       render_submit(form)
       conn = follow_trigger_action(form, conn)
 
@@ -52,6 +57,23 @@ defmodule KjogviWeb.Accounts.UserRegistrationTest do
       response = html_response(conn, 200)
       assert response =~ email
       assert response =~ "Log out"
+    end
+
+    test "derives the nickname from the email when none is entered", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/account/register")
+
+      email = "john.doe#{System.unique_integer([:positive])}@example.com"
+
+      form =
+        form(lv, "#registration_form",
+          user: %{"email" => email, "password" => valid_user_password()}
+        )
+
+      render_submit(form)
+      follow_trigger_action(form, conn)
+
+      user = Kjogvi.Accounts.get_user_by_email(email)
+      assert user.nickname =~ ~r/^john_doe/
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

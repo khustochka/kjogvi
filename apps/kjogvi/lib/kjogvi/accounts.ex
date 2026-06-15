@@ -49,6 +49,24 @@ defmodule Kjogvi.Accounts do
   end
 
   @doc """
+  Suggests an unused nickname derived from an email address.
+
+  Used to prefill the registration form. The suggestion is checked against
+  existing users and a random numeric suffix is appended until it is free.
+
+  ## Examples
+
+      iex> suggest_nickname_from_email("john.doe@example.com")
+      "john_doe"
+
+  """
+  def suggest_nickname_from_email(email) when is_binary(email) do
+    User.suggest_nickname_from_email(email, fn nickname ->
+      not is_nil(get_user_by_nickname(nickname))
+    end)
+  end
+
+  @doc """
   Lists all users, ordered by nickname, for the public user directory.
   """
   def list_users do

@@ -122,6 +122,55 @@ defmodule Kjogvi.Accounts.User do
     end
   end
 
+  @nickname_suffix_range 10_000..99_999
+
+  @doc """
+  Suggests a nickname derived from the local part of an email address.
+
+  The part before the `@` is downcased and every character that is not a
+  letter, digit, hyphen or underscore is replaced with an underscore, so the
+  result satisfies the nickname format. When the suggestion is too short or too
+  long it is padded or truncated to fit the allowed length.
+
+  `taken?` is invoked with each candidate; while it returns `true` a random
+  numeric suffix (separated by a hyphen) is appended and a fresh candidate is
+  tried, guaranteeing the returned nickname is free.
+  """
+  def suggest_nickname_from_email(email, taken?)
+      when is_binary(email) and is_function(taken?, 1) do
+    base =
+      email
+      |> String.split("@")
+      |> List.first()
+      |> String.downcase()
+      |> String.replace(~r/[^a-z0-9_-]/, "_")
+      |> normalize_nickname_length()
+
+    if taken?.(base) do
+      suggest_with_suffix(base, taken?)
+    else
+      base
+    end
+  end
+
+  # Reserve room for a hyphen and a 5-digit suffix so the suffixed nickname
+  # still fits within the 20-character maximum.
+  defp normalize_nickname_length(base) do
+    base
+    |> String.slice(0, 14)
+    |> String.pad_trailing(3, "_")
+  end
+
+  defp suggest_with_suffix(base, taken?) do
+    candidate = "#{base}-#{Enum.random(@nickname_suffix_range)}"
+
+    if taken?.(candidate) do
+      suggest_with_suffix(base, taken?)
+    else
+      candidate
+    end
+  end
+
   defp validate_nickname(changeset, opts) do
     changeset
     |> update_change(:nickname, &maybe_downcase/1)

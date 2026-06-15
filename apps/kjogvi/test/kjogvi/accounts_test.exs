@@ -34,6 +34,29 @@ defmodule Kjogvi.UsersTest do
     end
   end
 
+  describe "suggest_nickname_from_email/1" do
+    test "uses the downcased local part of the email" do
+      assert Accounts.suggest_nickname_from_email("BirdNerd@example.com") == "birdnerd"
+    end
+
+    test "replaces illegal characters with underscores" do
+      assert Accounts.suggest_nickname_from_email("john.doe+tag@example.com") == "john_doe_tag"
+    end
+
+    test "appends a numeric suffix when the nickname is already taken" do
+      user_fixture(nickname: "birder")
+
+      nickname = Accounts.suggest_nickname_from_email("birder@example.com")
+
+      assert nickname =~ ~r/^birder-\d{5}$/
+      refute Accounts.get_user_by_nickname(nickname)
+    end
+
+    test "pads a too-short local part to the minimum length" do
+      assert Accounts.suggest_nickname_from_email("ab@example.com") == "ab_"
+    end
+  end
+
   describe "get_user_by_email_and_password/2" do
     test "does not return the user if the email does not exist" do
       refute Accounts.get_user_by_email_and_password("unknown@example.com", "hello world!")
