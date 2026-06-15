@@ -19,9 +19,7 @@ defmodule KjogviWeb.Paths.LifelistPath do
   end
 
   def lifelist_path(scope, path_opts) when is_map(path_opts) do
-    path_opts
-    |> Map.to_list()
-    |> lifelist_path(scope)
+    lifelist_path(scope, Map.to_list(path_opts))
   end
 
   def lifelist_path(scope, path_opts) do
