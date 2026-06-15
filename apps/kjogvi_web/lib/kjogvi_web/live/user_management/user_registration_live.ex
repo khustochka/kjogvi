@@ -1,5 +1,3 @@
-require Kjogvi.Config
-
 defmodule KjogviWeb.UserRegistrationLive do
   use KjogviWeb, :live_view
 

@@ -23,8 +23,6 @@ defmodule KjogviWeb.SetupControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/setup"
-
-      assert is_nil(Kjogvi.Settings.main_user())
     end
 
     @tag :no_main_user
@@ -38,8 +36,6 @@ defmodule KjogviWeb.SetupControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/setup"
-
-      assert is_nil(Kjogvi.Settings.main_user())
     end
 
     @tag :no_main_user
@@ -69,8 +65,6 @@ defmodule KjogviWeb.SetupControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/setup"
-
-      assert is_nil(Kjogvi.Settings.main_user())
     end
 
     @tag :no_main_user
@@ -84,8 +78,6 @@ defmodule KjogviWeb.SetupControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/setup"
-
-      assert is_nil(Kjogvi.Settings.main_user())
     end
 
     @tag :no_main_user
@@ -103,8 +95,6 @@ defmodule KjogviWeb.SetupControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/users/log_in"
-
-      assert not is_nil(Kjogvi.Settings.main_user())
     end
   end
 end

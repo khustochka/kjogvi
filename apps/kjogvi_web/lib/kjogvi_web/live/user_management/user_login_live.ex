@@ -1,8 +1,6 @@
 defmodule KjogviWeb.UserLoginLive do
   use KjogviWeb, :live_view
 
-  require Kjogvi.Config
-
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
