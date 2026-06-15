@@ -30,6 +30,9 @@ defmodule Kjogvi.Birding.Card do
     field :weather, :string
     field :observers, :string
 
+    # can be nil, in which case it is considered unset
+    field :ebird_complete, :boolean
+
     field :notes, :string
     field :kml_url, :string
     field :motorless, :boolean, default: false
