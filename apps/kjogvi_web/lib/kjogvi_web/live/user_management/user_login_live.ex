@@ -6,7 +6,7 @@ defmodule KjogviWeb.UserLoginLive do
     <div class="mx-auto max-w-sm">
       <CoreComponents.header class="text-center">
         Log in to account
-        <:subtitle>
+        <:subtitle :if={not Kjogvi.Settings.registration_disabled?()}>
           Don't have an account?
           <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
             Sign up

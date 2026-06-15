@@ -4,6 +4,31 @@ defmodule KjogviWeb.UserRegistrationLive do
   alias Kjogvi.Accounts
   alias Kjogvi.Accounts.User
 
+  def render(%{registration_disabled: true} = assigns) do
+    ~H"""
+    <div class="mx-auto max-w-sm">
+      <CoreComponents.header class="text-center">
+        Register for an account
+        <:subtitle>
+          Already registered?
+          <.link navigate={~p"/users/log_in"} class="font-semibold text-brand hover:underline">
+            Log in
+          </.link>
+          to your account now.
+        </:subtitle>
+      </CoreComponents.header>
+
+      <div
+        role="alert"
+        class="mt-6 flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-300"
+      >
+        <.icon name="hero-exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+        <p>Registration is temporarily disabled. Please check back later.</p>
+      </div>
+    </div>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
@@ -47,14 +72,24 @@ defmodule KjogviWeb.UserRegistrationLive do
   end
 
   def mount(_params, _session, socket) do
-    changeset = Accounts.change_user_registration(%User{})
+    if Kjogvi.Settings.registration_disabled?() do
+      {:ok, assign(socket, registration_disabled: true)}
+    else
+      changeset = Accounts.change_user_registration(%User{})
 
-    socket =
-      socket
-      |> assign(trigger_submit: false, check_errors: false)
-      |> assign_form(changeset)
+      socket =
+        socket
+        |> assign(registration_disabled: false, trigger_submit: false, check_errors: false)
+        |> assign_form(changeset)
 
-    {:ok, socket, temporary_assigns: [form: nil]}
+      {:ok, socket, temporary_assigns: [form: nil]}
+    end
+  end
+
+  # Defense in depth: even if a client submits the form (e.g. the kill switch
+  # flipped while mounted, or a crafted event), never create a user.
+  def handle_event("save", _params, %{assigns: %{registration_disabled: true}} = socket) do
+    {:noreply, socket}
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do

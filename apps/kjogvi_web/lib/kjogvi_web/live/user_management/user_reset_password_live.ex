@@ -33,8 +33,10 @@ defmodule KjogviWeb.UserResetPasswordLive do
       </CoreComponents.simple_form>
 
       <p class="text-center text-sm mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Log in</.link>
+        <span :if={not Kjogvi.Settings.registration_disabled?()}>
+          <.link href={~p"/users/register"}>Register</.link> |
+        </span>
+        <.link href={~p"/users/log_in"}>Log in</.link>
       </p>
     </div>
     """

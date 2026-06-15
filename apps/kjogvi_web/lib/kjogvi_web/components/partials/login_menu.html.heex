@@ -1,5 +1,5 @@
 <ul class="flex justify-center py-0.5">
-  <.admin_menu_item>
+  <.admin_menu_item :if={not Kjogvi.Settings.registration_disabled?()}>
     <.link href={~p"/users/register"} class="no-underline hover:underline">
       Register
     </.link>
