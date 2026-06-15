@@ -23,7 +23,6 @@ defmodule KjogviWeb.SetupController do
       |> Phoenix.Component.to_form(as: "user")
 
     conn
-    |> assign(:check_errors, false)
     |> assign(:form, form)
     |> assign(:setup_code, get_session(conn, :setup_code))
     |> render(:form)

@@ -157,9 +157,21 @@ defmodule Kjogvi.Accounts do
   """
   def register_user(attrs) do
     %User{}
-    |> User.registration_changeset(attrs)
+    |> User.registration_changeset(put_suggested_nickname(attrs))
     |> Repo.insert()
   end
+
+  # Generate a free nickname from the email when none is given.
+  defp put_suggested_nickname(%{"nickname" => nickname} = attrs)
+       when is_binary(nickname) and nickname != "",
+       do: attrs
+
+  defp put_suggested_nickname(%{"email" => email} = attrs)
+       when is_binary(email) and email != "" do
+    Map.put(attrs, "nickname", suggest_nickname_from_email(email))
+  end
+
+  defp put_suggested_nickname(attrs), do: attrs
 
   @doc """
   Register an admin user.
@@ -182,8 +194,20 @@ defmodule Kjogvi.Accounts do
       %Ecto.Changeset{data: %User{}}
 
   """
-  def change_user_registration(%User{} = user, attrs \\ %{}) do
-    User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
+  def change_user_registration(%User{} = user, attrs \\ %{}, opts \\ []) do
+    opts = Keyword.merge([hash_password: false, validate_email: false], opts)
+    User.registration_changeset(user, attrs, opts)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for live-validating the registration form.
+
+  Unlike `change_user_registration/3` it skips the nickname, which is generated
+  from the email by `register_user/1` rather than entered on the form.
+  """
+  def change_user_registration_validation(%User{} = user, attrs \\ %{}, opts \\ []) do
+    opts = Keyword.merge([validate_email: false], opts)
+    User.registration_validation_changeset(user, attrs, opts)
   end
 
   ## Settings

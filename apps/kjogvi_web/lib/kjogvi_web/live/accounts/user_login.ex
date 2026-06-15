@@ -23,8 +23,23 @@ defmodule KjogviWeb.Accounts.UserLogin do
         action={~p"/account/log_in"}
         phx-update="ignore"
       >
-        <CoreComponents.input field={@form[:email]} type="email" label="Email" required />
-        <CoreComponents.input field={@form[:password]} type="password" label="Password" required />
+        <CoreComponents.input
+          field={@form[:email]}
+          type="email"
+          label="Email"
+          autocomplete="username"
+          spellcheck="false"
+          required
+          phx-mounted={JS.focus()}
+        />
+        <CoreComponents.input
+          field={@form[:password]}
+          type="password"
+          label="Password"
+          autocomplete="current-password"
+          spellcheck="false"
+          required
+        />
 
         <:actions>
           <CoreComponents.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />

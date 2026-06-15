@@ -52,6 +52,11 @@ defmodule Kjogvi.Accounts.User do
       using this changeset for validations on a LiveView form before
       submitting the form), this option can be set to `false`.
       Defaults to `true`.
+
+    * `:validate_email_format` - Validates the email format (presence of an `@`
+      sign and no spaces). Set to `false` to defer this check until submit, so a
+      LiveView form does not flag an in-progress email as malformed on every
+      keystroke. Defaults to `true`.
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
@@ -61,6 +66,20 @@ defmodule Kjogvi.Accounts.User do
     |> validate_nickname(opts)
     |> validate_display_name()
     |> ensure_public_token()
+  end
+
+  @doc """
+  A changeset for live-validating the registration form.
+
+  Covers only email and password; the nickname is generated from the email by
+  `Kjogvi.Accounts.register_user/1`. Supports the same `:validate_email` and
+  `:validate_email_format` options as `registration_changeset/3`.
+  """
+  def registration_validation_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :password])
+    |> validate_email(opts)
+    |> validate_password(Keyword.put(opts, :hash_password, false))
   end
 
   @doc """
@@ -105,9 +124,19 @@ defmodule Kjogvi.Accounts.User do
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+    |> maybe_validate_email_format(opts)
     |> validate_length(:email, max: 160)
     |> maybe_validate_unique_email(opts)
+  end
+
+  defp maybe_validate_email_format(changeset, opts) do
+    if Keyword.get(opts, :validate_email_format, true) do
+      validate_format(changeset, :email, ~r/^[^\s]+@[^\s]+$/,
+        message: "must have the @ sign and no spaces"
+      )
+    else
+      changeset
+    end
   end
 
   # Derives the nickname from the part of the email before the @ sign,

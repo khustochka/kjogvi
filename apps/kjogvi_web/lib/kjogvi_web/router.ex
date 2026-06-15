@@ -59,6 +59,7 @@ defmodule KjogviWeb.Router do
       live "/reset_password/:token", Accounts.UserResetPassword, :edit
     end
 
+    post "/register", Accounts.UserRegistrationController, :create
     post "/log_in", UserSessionController, :create
   end
 

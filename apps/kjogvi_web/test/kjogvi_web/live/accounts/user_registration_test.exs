@@ -10,6 +10,7 @@ defmodule KjogviWeb.Accounts.UserRegistrationTest do
 
       assert html =~ "Register"
       assert html =~ "Log in"
+      assert html =~ "Use at least 12 characters."
     end
 
     test "redirects if already logged in", %{conn: conn} do
@@ -22,17 +23,55 @@ defmodule KjogviWeb.Accounts.UserRegistrationTest do
       assert {:ok, _conn} = result
     end
 
-    test "renders errors for invalid data", %{conn: conn} do
+    test "does not flag a malformed email while typing", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/account/register")
 
+      # Live validation must not surface the email-format error on change.
       result =
         lv
         |> element("#registration_form")
         |> render_change(user: %{"email" => "with spaces", "password" => "too short"})
 
-      assert result =~ "Register"
-      assert result =~ "must have the @ sign and no spaces"
+      refute result =~ "must have the @ sign and no spaces"
+      # Other field errors still appear live.
       assert result =~ "should be at least 12 character"
+    end
+
+    test "flags a malformed email once the field is blurred", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/account/register")
+
+      result =
+        lv
+        |> element("#user_email")
+        |> render_blur(value: "with spaces")
+
+      assert result =~ "must have the @ sign and no spaces"
+    end
+
+    test "flags a malformed email on submit", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/account/register")
+
+      result =
+        lv
+        |> form("#registration_form",
+          user: %{"email" => "with spaces", "password" => "too short"}
+        )
+        |> render_submit()
+
+      assert result =~ "must have the @ sign and no spaces"
+    end
+
+    test "flags an already-taken email once the field is blurred", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, lv, _html} = live(conn, ~p"/account/register")
+
+      result =
+        lv
+        |> element("#user_email")
+        |> render_blur(value: user.email)
+
+      assert result =~ "has already been taken"
     end
   end
 
@@ -76,19 +115,32 @@ defmodule KjogviWeb.Accounts.UserRegistrationTest do
       assert user.nickname =~ ~r/^john_doe/
     end
 
-    test "renders errors for duplicated email", %{conn: conn} do
+    test "renders inline error for duplicated email on submit", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/account/register")
 
-      user = user_fixture(%{email: "test@email.com"})
+      user = user_fixture()
 
       result =
         lv
         |> form("#registration_form",
-          user: %{"email" => user.email, "password" => "valid_password"}
+          user: %{"email" => user.email, "password" => valid_user_password()}
         )
         |> render_submit()
 
       assert result =~ "has already been taken"
+    end
+
+    test "renders inline error for a too-short password on submit", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/account/register")
+
+      result =
+        lv
+        |> form("#registration_form",
+          user: %{"email" => unique_user_email(), "password" => "short"}
+        )
+        |> render_submit()
+
+      assert result =~ "should be at least 12 character"
     end
   end
 

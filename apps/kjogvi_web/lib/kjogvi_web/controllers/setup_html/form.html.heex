@@ -4,10 +4,6 @@
   </CoreComponents.header>
 
   <CoreComponents.simple_form for={@form} id="registration_form" action={~p"/setup"} method="post">
-    <CoreComponents.error :if={@check_errors}>
-      Oops, something went wrong! Please check the errors below.
-    </CoreComponents.error>
-
     <CoreComponents.input field={@form[:email]} type="email" label="Email" required />
     <CoreComponents.input field={@form[:password]} type="password" label="Password" required />
 
