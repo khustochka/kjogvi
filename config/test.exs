@@ -3,6 +3,10 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
+# Don't latch `Accounts.admin_exists?/0` so each call hits the per-test
+# sandboxed database, keeping concurrent tests isolated.
+config :kjogvi, :latch_admin_exists, false
+
 # Store uploaded images under a throwaway tmp dir in tests, so they never land
 # in the dev static folder (priv/static/uploads) alongside real uploads.
 config :waffle,

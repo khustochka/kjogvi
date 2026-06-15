@@ -19,15 +19,16 @@ defmodule KjogviWeb.Router do
     plug :put_secure_browser_headers
 
     plug :fetch_current_scope
+
+    plug :require_setup
   end
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
-  # TODO: check for admin presence
   scope "/setup", KjogviWeb do
-    pipe_through [:browser]
+    pipe_through [:browser, :require_no_admin]
 
     get "/", SetupController, :enter
     post "/register", SetupController, :form

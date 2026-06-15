@@ -31,8 +31,8 @@ defmodule KjogviWeb.ConnCase do
       import Kjogvi.Factory
 
       setup tags do
-        if !tags[:no_main_user] do
-          KjogviWeb.ConnCase.register_main_user(tags)
+        if !tags[:no_admin_user] do
+          KjogviWeb.ConnCase.register_admin(tags)
         end
 
         tags
@@ -46,9 +46,9 @@ defmodule KjogviWeb.ConnCase do
   end
 
   @doc """
-  Setup helper that registers a "main user".
+  Setup helper that registers an admin user.
   """
-  def register_main_user(tags) do
+  def register_admin(tags) do
     Kjogvi.AccountsFixtures.admin_fixture()
     tags
   end

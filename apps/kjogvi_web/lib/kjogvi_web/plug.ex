@@ -6,6 +6,40 @@ defmodule KjogviWeb.Plug do
   use KjogviWeb, :controller
 
   @doc """
+  Redirects to `/setup` while no admin user exists, so the app forces initial
+  setup before anything else can be reached. The setup routes themselves are
+  exempt to avoid a redirect loop. Once an admin exists this is a no-op (see
+  `Kjogvi.Accounts.admin_exists?/0`).
+  """
+  def require_setup(%{path_info: ["setup" | _]} = conn, _opts), do: conn
+
+  def require_setup(conn, _opts) do
+    if Kjogvi.Accounts.admin_exists?() do
+      conn
+    else
+      conn
+      |> redirect(to: ~p"/setup")
+      |> halt()
+    end
+  end
+
+  @doc """
+  Makes the setup routes available only while no admin user exists. Once an
+  admin exists they respond with 404.
+  """
+  def require_no_admin(conn, _opts) do
+    if Kjogvi.Accounts.admin_exists?() do
+      conn
+      |> put_status(:not_found)
+      |> put_view(KjogviWeb.ErrorHTML)
+      |> render(:"404")
+      |> halt()
+    else
+      conn
+    end
+  end
+
+  @doc """
   If a non-root URL ends with a slash '/', do a permanent redirect to a URL that
   removes it.
 

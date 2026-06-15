@@ -461,4 +461,34 @@ defmodule Kjogvi.Accounts do
   def admins do
     from u in User, where: ^admin_role() in u.roles
   end
+
+  @admin_exists_key {__MODULE__, :admin_exists}
+
+  @doc """
+  Whether at least one admin user exists. Gates the initial setup flow.
+
+  The positive result is latched in `:persistent_term` on first success and
+  never recomputed: once an admin exists it is assumed to exist forever (admin
+  deletion is not accounted for). Until then the database is queried on every
+  call, so the first admin created during setup flips the result.
+
+  Latching is skipped when the `:latch_admin_exists` config is `false` (the test
+  setting), so every call hits the per-test sandboxed database and concurrent
+  tests stay isolated despite the latch being process-global.
+  """
+  def admin_exists? do
+    :persistent_term.get(@admin_exists_key, false) || refresh_admin_exists()
+  end
+
+  defp refresh_admin_exists do
+    if Repo.exists?(admins()) do
+      if Application.get_env(:kjogvi, :latch_admin_exists, true) do
+        :persistent_term.put(@admin_exists_key, true)
+      end
+
+      true
+    else
+      false
+    end
+  end
 end

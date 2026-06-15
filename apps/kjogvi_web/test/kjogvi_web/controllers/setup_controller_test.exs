@@ -2,20 +2,20 @@ defmodule KjogviWeb.SetupControllerTest do
   use KjogviWeb.ConnCase, async: true
 
   describe "GET /setup" do
-    @tag :no_main_user
-    test "if there is no main user it redirects to /setup", %{conn: conn} do
+    @tag :no_admin_user
+    test "if there is no admin user it redirects to /setup", %{conn: conn} do
       conn = get(conn, ~p"/")
       assert redirected_to(conn) == ~p"/setup"
     end
 
-    test "if there is main user, setup paths are unavailable", %{conn: conn} do
+    test "if there is an admin user, setup paths are unavailable", %{conn: conn} do
       conn = get(conn, ~p"/setup")
       assert html_response(conn, 404)
     end
   end
 
   describe "POST /setup/register" do
-    @tag :no_main_user
+    @tag :no_admin_user
     test "returns to setup if setup code is not set in session", %{conn: conn} do
       conn =
         post(conn, ~p"/setup/register", %{
@@ -25,7 +25,7 @@ defmodule KjogviWeb.SetupControllerTest do
       assert redirected_to(conn) == ~p"/setup"
     end
 
-    @tag :no_main_user
+    @tag :no_admin_user
     test "returms to setup if setup code is not provided", %{conn: conn} do
       conn =
         conn
@@ -38,7 +38,7 @@ defmodule KjogviWeb.SetupControllerTest do
       assert redirected_to(conn) == ~p"/setup"
     end
 
-    @tag :no_main_user
+    @tag :no_admin_user
     test "renders registration form if the correct setup code is provided", %{conn: conn} do
       conn =
         conn
@@ -57,7 +57,7 @@ defmodule KjogviWeb.SetupControllerTest do
   end
 
   describe "POST /setup" do
-    @tag :no_main_user
+    @tag :no_admin_user
     test "cannot create admin if setup code is not set in session", %{conn: conn} do
       conn =
         post(conn, ~p"/setup", %{
@@ -67,7 +67,7 @@ defmodule KjogviWeb.SetupControllerTest do
       assert redirected_to(conn) == ~p"/setup"
     end
 
-    @tag :no_main_user
+    @tag :no_admin_user
     test "cannot create admin if setup code is not provided", %{conn: conn} do
       conn =
         conn
@@ -80,7 +80,7 @@ defmodule KjogviWeb.SetupControllerTest do
       assert redirected_to(conn) == ~p"/setup"
     end
 
-    @tag :no_main_user
+    @tag :no_admin_user
     test "creates admin if the correct setup code is provided", %{conn: conn} do
       conn =
         conn
