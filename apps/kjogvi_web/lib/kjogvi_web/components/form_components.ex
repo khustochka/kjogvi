@@ -82,7 +82,7 @@ defmodule KjogviWeb.FormComponents do
             class="hover:cursor-pointer text-zinc-400 absolute pe-3 end-0 inset-y-2 pt-[3px]"
           >
             <.icon name="hero-eye" class="w-5 h-5 block" />
-            <.icon name="hero-eye-slash" class="w-5 h-5 block hidden" />
+            <.icon name="hero-eye-slash" class="w-5 h-5 hidden" />
             <span class="sr-only">Show/hide password</span>
           </span>
         </div>
