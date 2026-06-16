@@ -3,57 +3,63 @@ defmodule KjogviWeb.Live.Accounts.Login do
 
   use KjogviWeb, :live_view
 
+  alias KjogviWeb.LoginRegistrationComponents
+
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
-      <CoreComponents.header class="text-center">
-        Log in to account
-        <:subtitle :if={not Kjogvi.Settings.registration_disabled?()}>
+    <div class="mx-auto lg:max-w-lg max-w-md">
+      <LoginRegistrationComponents.header>
+        Log into your account
+        <:subheader :if={not Kjogvi.Settings.registration_disabled?()}>
           Don't have an account?
-          <.link navigate={~p"/account/register"} class="font-semibold text-brand hover:underline">
-            Sign up
-          </.link>
-          for an account now.
-        </:subtitle>
-      </CoreComponents.header>
+          <.link
+            navigate={~p"/account/register"}
+            class="text-forest-500 hover:underline"
+          >Sign up</.link>
+          now!
+        </:subheader>
+      </LoginRegistrationComponents.header>
 
-      <CoreComponents.simple_form
+      <.form
+        :let={f}
         for={@form}
         id="login_form"
         action={~p"/account/login"}
         phx-update="ignore"
+        class="mx-auto max-w-sm mt-8 space-y-4"
       >
-        <CoreComponents.input
-          field={@form[:email]}
-          type="email"
+        <LoginRegistrationComponents.email_input
+          field={f[:email]}
           label="Email"
           autocomplete="username"
           spellcheck="false"
           required
-          phx-mounted={JS.focus()}
         />
-        <CoreComponents.input
-          field={@form[:password]}
-          type="password"
+        <LoginRegistrationComponents.password_input
+          field={f[:password]}
           label="Password"
           autocomplete="current-password"
           spellcheck="false"
           required
         />
 
-        <:actions>
-          <CoreComponents.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
+        <div class="mt-2 flex items-center justify-between gap-6">
+          <CoreComponents.input
+            field={f[:remember_me]}
+            type="checkbox"
+            label="Keep me logged in"
+          />
 
-          <.link href={~p"/account/reset-password"} class="text-sm font-semibold">
+          <.link href={~p"/account/reset-password"} class="text-sm font-medium">
             Forgot your password?
           </.link>
-        </:actions>
-        <:actions>
-          <CoreComponents.button phx-disable-with="Signing in..." class="w-full">
-            Log in <span aria-hidden="true">→</span>
+        </div>
+        <div class="text-center">
+          <CoreComponents.button class="w-1/2 py-4 text-xl font-header" phx-disable-with>
+            Log in
           </CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+        </div>
+      </.form>
     </div>
     """
   end
@@ -61,6 +67,10 @@ defmodule KjogviWeb.Live.Accounts.Login do
   def mount(_params, _session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
-    {:ok, assign(socket, form: form), temporary_assigns: [form: form]}
+
+    {:ok,
+     socket
+     |> assign(page_title: "Log into your account")
+     |> assign(form: form)}
   end
 end

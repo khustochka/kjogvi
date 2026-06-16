@@ -72,23 +72,42 @@ defmodule KjogviWeb.FormComponents do
             ]}
             {@rest}
           />
-          <span
-            :if={@password_toggle}
-            phx-click={
-              JS.toggle_attribute({:type, :password, :text}, to: "input##{@id}")
-              |> JS.toggle(to: {:inner, "span.hero-eye"})
-              |> JS.toggle(to: {:inner, "span.hero-eye-slash"})
-            }
-            class="hover:cursor-pointer text-zinc-400 absolute pe-3 end-0 inset-y-2 pt-[3px]"
-          >
-            <.icon name="hero-eye" class="w-5 h-5 block" />
-            <.icon name="hero-eye-slash" class="w-5 h-5 hidden" />
-            <span class="sr-only">Show/hide password</span>
-          </span>
+          <.password_visibility_toggle :if={@password_toggle} for={@id} />
         </div>
       </label>
       <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
     </fieldset>
+    """
+  end
+
+  @doc """
+  An eye icon that toggles the visibility of a password input.
+
+  Pass the target input's id via `for`. Clicking the toggle does not move focus
+  off the input.
+  """
+  attr :for, :string, required: true, doc: "the id of the password input to toggle"
+
+  def password_visibility_toggle(assigns) do
+    ~H"""
+    <span
+      onmousedown="event.preventDefault()"
+      phx-click={
+        JS.toggle_attribute({:type, :password, :text}, to: "input##{@for}")
+        |> JS.toggle(to: {:inner, ".js-show-label"})
+        |> JS.toggle(to: {:inner, ".js-hide-label"})
+      }
+      class="hover:cursor-pointer text-zinc-400 absolute pe-3 end-0 inset-y-2 pt-[3px]"
+    >
+      <span class="js-show-label" title="Show password">
+        <.icon name="hero-eye" class="w-5 h-5 block" />
+        <span class="sr-only">Show password</span>
+      </span>
+      <span class="js-hide-label hidden" title="Hide password">
+        <.icon name="hero-eye-slash" class="w-5 h-5 block" />
+        <span class="sr-only">Hide password</span>
+      </span>
+    </span>
     """
   end
 end

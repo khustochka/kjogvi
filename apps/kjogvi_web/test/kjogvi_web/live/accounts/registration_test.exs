@@ -10,7 +10,7 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
 
       assert html =~ "Register"
       assert html =~ "Log in"
-      assert html =~ "Use at least 12 characters."
+      assert html =~ "Should be 12–72 characters."
     end
 
     test "redirects if already logged in", %{conn: conn} do
@@ -32,9 +32,9 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
         |> element("#registration_form")
         |> render_change(user: %{"email" => "with spaces", "password" => "too short"})
 
-      refute result =~ "must have the @ sign and no spaces"
-      # Other field errors still appear live.
-      assert result =~ "should be at least 12 character"
+      refute result =~ "Must have the @ sign and no spaces."
+      # A too-short password reddens the hint instead of listing a separate error.
+      assert has_element?(lv, "#registration_form_password_hint.text-rose-600")
     end
 
     test "flags a malformed email once the field is blurred", %{conn: conn} do
@@ -42,10 +42,10 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
 
       result =
         lv
-        |> element("#user_email")
+        |> element("#registration_form_email")
         |> render_blur(value: "with spaces")
 
-      assert result =~ "must have the @ sign and no spaces"
+      assert result =~ "Must have the @ sign and no spaces."
     end
 
     test "flags a malformed email on submit", %{conn: conn} do
@@ -58,7 +58,7 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
         )
         |> render_submit()
 
-      assert result =~ "must have the @ sign and no spaces"
+      assert result =~ "Must have the @ sign and no spaces."
     end
 
     test "flags an already-taken email once the field is blurred", %{conn: conn} do
@@ -68,7 +68,7 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
 
       result =
         lv
-        |> element("#user_email")
+        |> element("#registration_form_email")
         |> render_blur(value: user.email)
 
       assert result =~ "has already been taken"
@@ -130,17 +130,16 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
       assert result =~ "has already been taken"
     end
 
-    test "renders inline error for a too-short password on submit", %{conn: conn} do
+    test "reddens the password hint for a too-short password on submit", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/account/register")
 
-      result =
-        lv
-        |> form("#registration_form",
-          user: %{"email" => unique_user_email(), "password" => "short"}
-        )
-        |> render_submit()
+      lv
+      |> form("#registration_form",
+        user: %{"email" => unique_user_email(), "password" => "short"}
+      )
+      |> render_submit()
 
-      assert result =~ "should be at least 12 character"
+      assert has_element?(lv, "#registration_form_password_hint.text-rose-600")
     end
   end
 

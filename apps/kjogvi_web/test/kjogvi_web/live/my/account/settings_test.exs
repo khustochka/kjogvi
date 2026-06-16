@@ -165,7 +165,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
         })
 
       assert result =~ "Change Email"
-      assert result =~ "must have the @ sign and no spaces"
+      assert result =~ "Must have the @ sign and no spaces."
     end
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn, user: user} do
@@ -236,7 +236,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
         })
 
       assert result =~ "Change Password"
-      assert result =~ "should be at least 12 character(s)"
+      assert result =~ "should be 12–72 characters."
       assert result =~ "does not match password"
     end
 
@@ -255,7 +255,7 @@ defmodule KjogviWeb.Live.My.Account.SettingsTest do
         |> render_submit()
 
       assert result =~ "Change Password"
-      assert result =~ "should be at least 12 character(s)"
+      assert result =~ "should be 12–72 characters."
       assert result =~ "does not match password"
       assert result =~ "is not valid"
     end

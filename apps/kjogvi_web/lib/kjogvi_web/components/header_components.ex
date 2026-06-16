@@ -29,19 +29,20 @@ defmodule KjogviWeb.HeaderComponents do
   @doc """
   Renders an header element, potentially with subheader.
 
-  To override any of the default styles add ! at the start, e.g. !font-medium
+  To override any of the default styles add ! at the end, e.g. font-medium!
   """
   attr :id, :string, default: nil
   attr :class, :any, default: "", doc: "String or list"
+  attr :wrapper_class, :any, default: "", doc: "String or list"
 
   slot :inner_block, required: true
   slot :subheader
 
   def header_with_subheader(assigns) do
     ~H"""
-    <div id={@id} class="mb-6">
+    <div id={@id} class={@wrapper_class || "mb-6"}>
       <.h1 class={[
-        "!mb-0",
+        "mb-0!",
         @class
       ]}>
         {render_slot(@inner_block)}

@@ -3,89 +3,90 @@ defmodule KjogviWeb.Live.Accounts.Registration do
 
   use KjogviWeb, :live_view
 
+  alias KjogviWeb.LoginRegistrationComponents
+
   alias Kjogvi.Accounts
   alias Kjogvi.Accounts.User
-
-  def render(%{registration_disabled: true} = assigns) do
-    ~H"""
-    <div class="mx-auto max-w-sm">
-      <CoreComponents.header class="text-center">
-        Register for an account
-        <:subtitle>
-          Already registered?
-          <.link navigate={~p"/account/login"} class="font-semibold text-brand hover:underline">
-            Log in
-          </.link>
-          to your account now.
-        </:subtitle>
-      </CoreComponents.header>
-
-      <div
-        role="alert"
-        class="mt-6 flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-300"
-      >
-        <.icon name="hero-exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
-        <p>Registration is temporarily disabled. Please check back later.</p>
-      </div>
-    </div>
-    """
-  end
 
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <CoreComponents.header class="text-center">
-        Register for an account
-        <:subtitle>
+      <LoginRegistrationComponents.header header_class="sm:mb-3 mb-2 sm:text-4xl text-2xl">
+        Sign up for an account
+        <:subheader>
           Already registered?
-          <.link navigate={~p"/account/login"} class="font-semibold text-brand hover:underline">
-            Log in
-          </.link>
-          to your account now.
-        </:subtitle>
-      </CoreComponents.header>
+          <.link navigate={~p"/account/login"} class="text-forest-500 hover:underline">Log in</.link>
+          now!
+        </:subheader>
+      </LoginRegistrationComponents.header>
 
-      <CoreComponents.simple_form
-        for={@form}
-        id="registration_form"
-        phx-submit="save"
-        phx-change="validate"
-        phx-trigger-action={@trigger_submit}
-        action={~p"/account/register"}
-        method="post"
-      >
-        <CoreComponents.input
-          field={@form[:email]}
-          type="email"
-          label="Email"
-          phx-blur="validate_email"
-          phx-debounce="500"
-          autocomplete="username"
-          spellcheck="false"
-          required
-        />
-        <CoreComponents.input
-          field={@form[:password]}
-          type="password"
-          label="Password"
-          autocomplete="new-password"
-          spellcheck="false"
-          required
-        >
-          <:hint>Use at least 12 characters.</:hint>
-        </CoreComponents.input>
-
-        <:actions>
-          <CoreComponents.button phx-disable-with="Creating account..." class="w-full">
-            Create an account
-          </CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+      {render_form(assigns)}
     </div>
     """
   end
 
+  defp render_form(%{registration_disabled: true} = assigns) do
+    ~H"""
+    <div
+      role="alert"
+      class="mt-6 flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-300"
+    >
+      <.icon name="hero-exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+      <p>Registration is temporarily disabled. Please check back later.</p>
+    </div>
+    """
+  end
+
+  defp render_form(assigns) do
+    ~H"""
+    <.form
+      :let={f}
+      for={@form}
+      id="registration_form"
+      phx-submit="save"
+      phx-change="validate"
+      phx-trigger-action={@trigger_submit}
+      action={~p"/account/register"}
+      method="post"
+      class="mx-auto max-w-sm mt-8 space-y-4"
+    >
+      <LoginRegistrationComponents.email_input
+        field={f[:email]}
+        label="Email"
+        phx-blur="validate_email"
+        phx-debounce="500"
+        autocomplete="username"
+        spellcheck="false"
+        show_required
+        required
+      />
+      <LoginRegistrationComponents.password_input
+        field={f[:password]}
+        label="Password"
+        autocomplete="new-password"
+        spellcheck="false"
+        show_required
+        hint_as_error
+        required
+      >
+        <:hint>Should be 12–72 characters.</:hint>
+      </LoginRegistrationComponents.password_input>
+
+      <div class="text-center">
+        <CoreComponents.button
+          phx-disable-with
+          class="w-1/2 py-4 text-xl font-header"
+        >
+          Submit
+        </CoreComponents.button>
+      </div>
+    </.form>
+    """
+  end
+
   def mount(_params, _session, socket) do
+    socket = assign(socket, page_title: "Sign up an account")
+
     if Kjogvi.Settings.registration_disabled?() do
       {:ok, assign(socket, registration_disabled: true)}
     else
