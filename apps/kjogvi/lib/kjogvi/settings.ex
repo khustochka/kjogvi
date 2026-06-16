@@ -20,6 +20,13 @@ defmodule Kjogvi.Settings do
     get(:registration_disabled, false)
   end
 
+  @doc """
+  Whether the forgot/reset password flow is closed.
+  """
+  def forgot_reset_password_disabled? do
+    get(:forgot_reset_password_disabled, false)
+  end
+
   # Resolution layer. The only place that knows where settings come from --
   # swap this for a DB lookup later without touching any public function.
   defp get(key, default) do

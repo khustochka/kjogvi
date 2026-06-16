@@ -10,29 +10,7 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
     <div class="mx-auto max-w-sm">
       <CoreComponents.header class="text-center">Reset Password</CoreComponents.header>
 
-      <CoreComponents.simple_form
-        for={@form}
-        id="reset-password-form"
-        phx-submit="reset-password"
-        phx-change="validate"
-      >
-        <CoreComponents.error :if={@form.errors != []}>
-          Oops, something went wrong! Please check the errors below.
-        </CoreComponents.error>
-
-        <CoreComponents.input field={@form[:password]} type="password" label="New password" required />
-        <CoreComponents.input
-          field={@form[:password_confirmation]}
-          type="password"
-          label="Confirm new password"
-          required
-        />
-        <:actions>
-          <CoreComponents.button phx-disable-with="Resetting..." class="w-full">
-            Reset Password
-          </CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+      {render_form(assigns)}
 
       <p class="text-center text-sm mt-4">
         <span :if={not Kjogvi.Settings.registration_disabled?()}>
@@ -44,19 +22,75 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
     """
   end
 
+  defp render_form(%{forgot_reset_password_disabled: true} = assigns) do
+    ~H"""
+    <div
+      role="alert"
+      class="mt-6 flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-300"
+    >
+      <.icon name="hero-exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+      <p>Password reset is temporarily disabled. Please check back later.</p>
+    </div>
+    """
+  end
+
+  defp render_form(assigns) do
+    ~H"""
+    <CoreComponents.simple_form
+      for={@form}
+      id="reset-password-form"
+      phx-submit="reset-password"
+      phx-change="validate"
+    >
+      <CoreComponents.error :if={@form.errors != []}>
+        Oops, something went wrong! Please check the errors below.
+      </CoreComponents.error>
+
+      <CoreComponents.input field={@form[:password]} type="password" label="New password" required />
+      <CoreComponents.input
+        field={@form[:password_confirmation]}
+        type="password"
+        label="Confirm new password"
+        required
+      />
+      <:actions>
+        <CoreComponents.button phx-disable-with="Resetting..." class="w-full">
+          Reset Password
+        </CoreComponents.button>
+      </:actions>
+    </CoreComponents.simple_form>
+    """
+  end
+
   def mount(params, _session, socket) do
-    socket = assign_user_and_token(socket, params)
+    if Kjogvi.Settings.forgot_reset_password_disabled?() do
+      {:ok, assign(socket, forgot_reset_password_disabled: true)}
+    else
+      socket =
+        socket
+        |> assign(forgot_reset_password_disabled: false)
+        |> assign_user_and_token(params)
 
-    form_source =
-      case socket.assigns do
-        %{user: user} ->
-          Accounts.change_user_password(user)
+      form_source =
+        case socket.assigns do
+          %{user: user} ->
+            Accounts.change_user_password(user)
 
-        _ ->
-          %{}
-      end
+          _ ->
+            %{}
+        end
 
-    {:ok, assign_form(socket, form_source), temporary_assigns: [form: nil]}
+      {:ok, assign_form(socket, form_source), temporary_assigns: [form: nil]}
+    end
+  end
+
+  # Never reset a password once the flow is disabled, even if a client submits.
+  def handle_event(
+        "reset-password",
+        _params,
+        %{assigns: %{forgot_reset_password_disabled: true}} = socket
+      ) do
+    {:noreply, socket}
   end
 
   # Do not log in the user after reset password to avoid a

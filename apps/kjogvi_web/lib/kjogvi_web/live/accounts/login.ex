@@ -50,7 +50,11 @@ defmodule KjogviWeb.Live.Accounts.Login do
             label="Keep me logged in"
           />
 
-          <.link href={~p"/account/reset-password"} class="text-sm font-medium">
+          <.link
+            :if={not Kjogvi.Settings.forgot_reset_password_disabled?()}
+            href={~p"/account/reset-password"}
+            class="text-sm font-medium"
+          >
             Forgot your password?
           </.link>
         </div>

@@ -13,14 +13,8 @@ defmodule KjogviWeb.Live.Accounts.ForgotPassword do
         <:subtitle>We'll send a password reset link to your inbox</:subtitle>
       </CoreComponents.header>
 
-      <CoreComponents.simple_form for={@form} id="reset-password-form" phx-submit="send_email">
-        <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
-        <:actions>
-          <CoreComponents.button phx-disable-with="Sending..." class="w-full">
-            Send password reset instructions
-          </CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+      {render_form(assigns)}
+
       <p class="text-center text-sm mt-4">
         <span :if={not Kjogvi.Settings.registration_disabled?()}>
           <.link href={~p"/account/register"}>Register</.link> |
@@ -31,8 +25,46 @@ defmodule KjogviWeb.Live.Accounts.ForgotPassword do
     """
   end
 
+  defp render_form(%{forgot_reset_password_disabled: true} = assigns) do
+    ~H"""
+    <div
+      role="alert"
+      class="mt-6 flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-300"
+    >
+      <.icon name="hero-exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+      <p>Password reset is temporarily disabled. Please check back later.</p>
+    </div>
+    """
+  end
+
+  defp render_form(assigns) do
+    ~H"""
+    <CoreComponents.simple_form for={@form} id="reset-password-form" phx-submit="send_email">
+      <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
+      <:actions>
+        <CoreComponents.button phx-disable-with="Sending..." class="w-full">
+          Send password reset instructions
+        </CoreComponents.button>
+      </:actions>
+    </CoreComponents.simple_form>
+    """
+  end
+
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"))}
+    if Kjogvi.Settings.forgot_reset_password_disabled?() do
+      {:ok, assign(socket, forgot_reset_password_disabled: true)}
+    else
+      {:ok, assign(socket, forgot_reset_password_disabled: false, form: to_form(%{}, as: "user"))}
+    end
+  end
+
+  # Never send reset instructions once the flow is disabled, even if a client submits.
+  def handle_event(
+        "send_email",
+        _params,
+        %{assigns: %{forgot_reset_password_disabled: true}} = socket
+      ) do
+    {:noreply, socket}
   end
 
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do
