@@ -87,8 +87,10 @@ defmodule KjogviWeb.FlashComponents do
   @doc """
   Renders a connection-status popup (internet disconnection / server error).
 
-  Sticks to the top of the viewport, horizontally centered, with a sand
-  background and bold black text.
+  A full-width bar pinned to the top of the viewport, signifying connection error
+  or server error. The page content is pushed down (rather
+  than overlapped) via the `.phx-client-error` / `.phx-server-error` body
+  padding defined in `app.css`, so the bar can stay at the end of the DOM.
 
   ## Examples
 
@@ -109,10 +111,10 @@ defmodule KjogviWeb.FlashComponents do
       id={@id}
       role="alert"
       class={[
-        "fixed top-1 left-1/2 -translate-x-1/2 z-50 w-fit max-w-[90vw]",
-        "px-8 py-4 border shadow-lg text-black text-sm leading-6",
-        @variant == :warning && "bg-amber-100 border-orange-400",
-        @variant == :error && "bg-rose-100 border-rose-400"
+        "fixed top-0 left-0 z-50 w-full",
+        "px-8 py-2 text-black text-sm leading-6 text-center",
+        @variant == :warning && "bg-amber-100",
+        @variant == :error && "bg-rose-100"
       ]}
       {@rest}
     >
