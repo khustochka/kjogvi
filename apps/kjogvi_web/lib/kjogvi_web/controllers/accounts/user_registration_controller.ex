@@ -18,11 +18,13 @@ defmodule KjogviWeb.Accounts.UserRegistrationController do
   defp register(conn, user_params) do
     case Accounts.register_user(user_params) do
       {:ok, user} ->
-        {:ok, _} =
-          Accounts.deliver_user_confirmation_instructions(
-            user,
-            &url(~p"/account/confirm/#{&1}")
-          )
+        unless Kjogvi.Settings.confirmation_disabled?() do
+          {:ok, _} =
+            Accounts.deliver_user_confirmation_instructions(
+              user,
+              &url(~p"/account/confirm/#{&1}")
+            )
+        end
 
         conn
         |> put_flash(:info, "Account created successfully!")

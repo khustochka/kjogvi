@@ -13,18 +13,7 @@ defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
         <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
       </CoreComponents.header>
 
-      <CoreComponents.simple_form
-        for={@form}
-        id="resend_confirmation_form"
-        phx-submit="send_instructions"
-      >
-        <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
-        <:actions>
-          <CoreComponents.button phx-disable-with="Sending..." class="w-full">
-            Resend confirmation instructions
-          </CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+      {render_form(assigns)}
 
       <p class="text-center mt-4">
         <span :if={not Kjogvi.Settings.registration_disabled?()}>
@@ -36,8 +25,50 @@ defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
     """
   end
 
+  defp render_form(%{confirmation_disabled: true} = assigns) do
+    ~H"""
+    <div
+      role="alert"
+      class="mt-6 flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-300"
+    >
+      <.icon name="hero-exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+      <p>Account confirmation is temporarily disabled. Please check back later.</p>
+    </div>
+    """
+  end
+
+  defp render_form(assigns) do
+    ~H"""
+    <CoreComponents.simple_form
+      for={@form}
+      id="resend_confirmation_form"
+      phx-submit="send_instructions"
+    >
+      <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
+      <:actions>
+        <CoreComponents.button phx-disable-with="Sending..." class="w-full">
+          Resend confirmation instructions
+        </CoreComponents.button>
+      </:actions>
+    </CoreComponents.simple_form>
+    """
+  end
+
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"))}
+    if Kjogvi.Settings.confirmation_disabled?() do
+      {:ok, assign(socket, confirmation_disabled: true, form: nil)}
+    else
+      {:ok, assign(socket, confirmation_disabled: false, form: to_form(%{}, as: "user"))}
+    end
+  end
+
+  # Never send confirmation instructions once the flow is disabled.
+  def handle_event(
+        "send_instructions",
+        _params,
+        %{assigns: %{confirmation_disabled: true}} = socket
+      ) do
+    {:noreply, socket}
   end
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
