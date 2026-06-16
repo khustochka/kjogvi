@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Accounts.UserForgotPassword do
+defmodule KjogviWeb.Live.Accounts.ForgotPassword do
   @moduledoc false
 
   use KjogviWeb, :live_view

@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Accounts.UserLogin do
+defmodule KjogviWeb.Live.Accounts.Login do
   @moduledoc false
 
   use KjogviWeb, :live_view

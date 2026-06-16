@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Accounts.UserForgotPasswordTest do
+defmodule KjogviWeb.Live.Accounts.ForgotPasswordTest do
   use KjogviWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest

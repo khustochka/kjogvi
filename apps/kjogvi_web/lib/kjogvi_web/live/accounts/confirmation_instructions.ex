@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Accounts.UserConfirmationInstructions do
+defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
   @moduledoc false
 
   use KjogviWeb, :live_view
