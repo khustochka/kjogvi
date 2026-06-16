@@ -151,8 +151,11 @@ defmodule OrnithoWeb.CoreComponents do
         id="client-error"
         kind={:error}
         title={gettext("We can't find the internet")}
-        phx-disconnected={show(".phx-client-error #client-error")}
-        phx-connected={hide("#client-error")}
+        phx-disconnected={
+          show(".phx-client-error #client-error")
+          |> JS.remove_attribute("hidden", to: ".phx-client-error #client-error")
+        }
+        phx-connected={hide("#client-error") |> JS.set_attribute({"hidden", ""})}
         hidden
       >
         {gettext("Attempting to reconnect")}
@@ -163,8 +166,11 @@ defmodule OrnithoWeb.CoreComponents do
         id="server-error"
         kind={:error}
         title={gettext("Something went wrong!")}
-        phx-disconnected={show(".phx-server-error #server-error")}
-        phx-connected={hide("#server-error")}
+        phx-disconnected={
+          show(".phx-server-error #server-error")
+          |> JS.remove_attribute("hidden", to: ".phx-server-error #server-error")
+        }
+        phx-connected={hide("#server-error") |> JS.set_attribute({"hidden", ""})}
         hidden
       >
         {gettext("Hang in there while we get back on track")}
