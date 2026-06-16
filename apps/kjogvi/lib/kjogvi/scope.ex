@@ -17,21 +17,21 @@ defmodule Kjogvi.Scope do
   """
 
   @typedoc """
-  The section the request operates in. It determines whose data is visible and
+  The area the request operates in. It determines whose data is visible and
   whether private data is included:
 
-    * `:community` - aggregate public data across all users (the default section).
+    * `:community` - aggregate public data across all users (the default area).
     * `:user` - the public data of a specific `subject_user`.
     * `:private` - all data, including private, of the logged-in `current_user`.
-    * `:admin` - administrative section.
+    * `:admin` - administrative area.
   """
-  @type section() :: :community | :user | :private | :admin
+  @type area() :: :community | :user | :private | :admin
 
   @type t() :: %__MODULE__{
           current_user: Kjogvi.Accounts.User.t() | nil,
-          section: section(),
+          area: area(),
           subject_user: Kjogvi.Accounts.User.t() | nil
         }
 
-  defstruct current_user: nil, section: :community, subject_user: nil
+  defstruct current_user: nil, area: :community, subject_user: nil
 end

@@ -782,7 +782,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   describe "Lifelist.Scope.from_scope/1" do
     test "returns the current user's list with private observations for the :private section" do
       user = user_fixture()
-      app_scope = %Kjogvi.Scope{current_user: user, section: :private}
+      app_scope = %Kjogvi.Scope{current_user: user, area: :private}
 
       lifelist_scope = Lifelist.Scope.from_scope(app_scope)
       assert lifelist_scope.user == user
@@ -791,7 +791,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "returns the current user's list with private observations for the :admin section" do
       user = user_fixture()
-      app_scope = %Kjogvi.Scope{current_user: user, section: :admin}
+      app_scope = %Kjogvi.Scope{current_user: user, area: :admin}
 
       lifelist_scope = Lifelist.Scope.from_scope(app_scope)
       assert lifelist_scope.user == user
@@ -804,7 +804,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       app_scope = %Kjogvi.Scope{
         current_user: current_user,
-        section: :user,
+        area: :user,
         subject_user: subject_user
       }
 
@@ -814,7 +814,7 @@ defmodule Kjogvi.Birding.LifelistTest do
     end
 
     test "returns the aggregate public list with no user for the :community section" do
-      app_scope = %Kjogvi.Scope{section: :community}
+      app_scope = %Kjogvi.Scope{area: :community}
 
       lifelist_scope = Lifelist.Scope.from_scope(app_scope)
       assert lifelist_scope.user == nil

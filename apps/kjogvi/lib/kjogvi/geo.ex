@@ -189,7 +189,7 @@ defmodule Kjogvi.Geo do
   end
 
   def location_by_slug_scope(scope, slug) do
-    if is_nil(scope.current_user) or scope.section != :private do
+    if is_nil(scope.current_user) or scope.area != :private do
       Location |> Location.Query.only_public()
     else
       Location

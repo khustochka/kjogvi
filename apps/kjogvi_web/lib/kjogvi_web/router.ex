@@ -79,11 +79,11 @@ defmodule KjogviWeb.Router do
   # PUBLIC USER ROUTES
 
   scope "/users/:username", KjogviWeb do
-    pipe_through [:browser, :put_section_user]
+    pipe_through [:browser, :put_area_user]
 
-    live_session :section_user,
+    live_session :area_user,
       on_mount: [
-        {KjogviWeb.UserAuth, :mount_section_user}
+        {KjogviWeb.UserAuth, :mount_area_user}
       ] do
       live "/", Live.Users.Show
       live "/lifelist", Live.Lifelist.Index, :index
@@ -97,13 +97,13 @@ defmodule KjogviWeb.Router do
   # AUTHENTICATED USER ROUTES
 
   scope "/my", KjogviWeb do
-    pipe_through [:browser, :require_authenticated_user, :put_section_private]
+    pipe_through [:browser, :require_authenticated_user, :put_area_private]
 
     live_session :require_authenticated_user,
       layout: {KjogviWeb.Layouts, :private},
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_authenticated},
-        {KjogviWeb.UserAuth, :mount_section_private}
+        {KjogviWeb.UserAuth, :mount_area_private}
       ] do
       live "/locations", Live.My.Locations.Index, :index
       live "/locations/countries", Live.My.Countries.Index, :index
@@ -139,13 +139,13 @@ defmodule KjogviWeb.Router do
   # ADMIN ROUTES
 
   scope "/admin", KjogviWeb do
-    pipe_through [:browser, :require_admin, :put_section_admin]
+    pipe_through [:browser, :require_admin, :put_area_admin]
 
     live_session :admin_paths,
       layout: {KjogviWeb.Layouts, :private},
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.UserAuth, :mount_section_admin}
+        {KjogviWeb.UserAuth, :mount_area_admin}
       ] do
       live "/exclusive-tasks", Live.Admin.ExclusiveTasks.Index, :index
     end
@@ -155,7 +155,7 @@ defmodule KjogviWeb.Router do
       app_layout: {KjogviWeb.Layouts, :private},
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.UserAuth, :mount_section_admin}
+        {KjogviWeb.UserAuth, :mount_area_admin}
       ]
 
     live_dashboard "/dashboard",
@@ -171,13 +171,13 @@ defmodule KjogviWeb.Router do
       ],
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
-        {KjogviWeb.UserAuth, :mount_section_admin}
+        {KjogviWeb.UserAuth, :mount_area_admin}
       ]
   end
 
   # PUBLIC ROUTES
 
-  # Community section: aggregate public data across all users. The default
+  # Community area: aggregate public data across all users. The default
   # `:community` scope from the `:browser` pipeline drives it.
   scope "/community", KjogviWeb do
     pipe_through [:browser]

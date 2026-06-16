@@ -7,7 +7,7 @@ defmodule KjogviWeb.Paths.LifelistTest do
 
   describe "lifelist_path/2 for the :community section" do
     setup do
-      %{scope: %Scope{section: :community}}
+      %{scope: %Scope{area: :community}}
     end
 
     test "no filter", %{scope: scope} do
@@ -38,13 +38,13 @@ defmodule KjogviWeb.Paths.LifelistTest do
   describe "lifelist_path/2 routes by section" do
     test "the :user section points to the public user URL space" do
       user = Kjogvi.AccountsFixtures.user_fixture()
-      scope = %Scope{section: :user, subject_user: user}
+      scope = %Scope{area: :user, subject_user: user}
 
       assert lifelist_path(scope) == "/users/#{user.nickname}/lifelist"
     end
 
     test "the :private section points to the /my URL space" do
-      scope = %Scope{section: :private}
+      scope = %Scope{area: :private}
 
       assert lifelist_path(scope) == "/my/lifelist"
     end

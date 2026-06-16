@@ -16,23 +16,23 @@ defmodule Kjogvi.Birding.Lifelist.Scope do
   @doc """
   Builds the lifelist scope from the application `Kjogvi.Scope`.
 
-  The observed user and private visibility are derived from the section:
+  The observed user and private visibility are derived from the area:
 
     * `:private` / `:admin` - the logged-in user views their own list,
       including private observations.
     * `:user` - the public list of the scope's `subject_user`.
     * `:community` - the aggregate public list across all users (no `user`).
   """
-  def from_scope(%{section: section, current_user: user})
-      when section in [:private, :admin] do
+  def from_scope(%{area: area, current_user: user})
+      when area in [:private, :admin] do
     %Lifelist.Scope{user: user, include_private: true}
   end
 
-  def from_scope(%{section: :user, subject_user: subject_user}) do
+  def from_scope(%{area: :user, subject_user: subject_user}) do
     %Lifelist.Scope{user: subject_user, include_private: false}
   end
 
-  def from_scope(%{section: :community}) do
+  def from_scope(%{area: :community}) do
     %Lifelist.Scope{user: nil, include_private: false}
   end
 end

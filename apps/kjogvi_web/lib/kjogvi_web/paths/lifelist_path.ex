@@ -42,16 +42,16 @@ defmodule KjogviWeb.Paths.LifelistPath do
     |> then(&{year, location, &1})
   end
 
-  # Routes the lifelist link to the section's own URL space. The private
+  # Routes the lifelist link to the area's own URL space. The private
   # (`:private`/`:admin`) lifelist lives under /my; a specific user's public
   # lifelist under /users/:username; the community lifelist under /lifelist.
-  defp lifelist_gen_path(%{section: section} = _scope, year, location, query)
-       when section in [:private, :admin] do
+  defp lifelist_gen_path(%{area: area} = _scope, year, location, query)
+       when area in [:private, :admin] do
     my_lifelist_p(year, location, query)
   end
 
   defp lifelist_gen_path(
-         %{section: :user, subject_user: %{nickname: nickname}},
+         %{area: :user, subject_user: %{nickname: nickname}},
          year,
          location,
          query
@@ -59,7 +59,7 @@ defmodule KjogviWeb.Paths.LifelistPath do
     user_lifelist_p(nickname, year, location, query)
   end
 
-  defp lifelist_gen_path(%{section: :community} = _scope, year, location, query) do
+  defp lifelist_gen_path(%{area: :community} = _scope, year, location, query) do
     community_lifelist_p(year, location, query)
   end
 

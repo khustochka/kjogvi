@@ -286,7 +286,7 @@ defmodule Kjogvi.GeoTest do
   describe "location_by_slug_scope/2" do
     test "returns public location for anonymous scope" do
       location = insert(:location, slug: "public-loc", is_private: false)
-      scope = %Kjogvi.Scope{current_user: nil, section: :community}
+      scope = %Kjogvi.Scope{current_user: nil, area: :community}
 
       result = Geo.location_by_slug_scope(scope, "public-loc")
       assert result.id == location.id
@@ -294,7 +294,7 @@ defmodule Kjogvi.GeoTest do
 
     test "does not return private location for anonymous scope" do
       insert(:location, slug: "private-loc", is_private: true)
-      scope = %Kjogvi.Scope{current_user: nil, section: :community}
+      scope = %Kjogvi.Scope{current_user: nil, area: :community}
 
       assert Geo.location_by_slug_scope(scope, "private-loc") == nil
     end
@@ -304,7 +304,7 @@ defmodule Kjogvi.GeoTest do
 
       import Kjogvi.AccountsFixtures
       user = user_fixture()
-      scope = %Kjogvi.Scope{current_user: user, section: :private}
+      scope = %Kjogvi.Scope{current_user: user, area: :private}
 
       result = Geo.location_by_slug_scope(scope, "private-loc")
       assert result.id == location.id
@@ -315,7 +315,7 @@ defmodule Kjogvi.GeoTest do
 
       import Kjogvi.AccountsFixtures
       user = user_fixture()
-      scope = %Kjogvi.Scope{current_user: user, section: :community}
+      scope = %Kjogvi.Scope{current_user: user, area: :community}
 
       assert Geo.location_by_slug_scope(scope, "private-loc") == nil
     end

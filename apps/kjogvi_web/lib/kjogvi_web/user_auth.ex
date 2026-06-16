@@ -196,7 +196,7 @@ defmodule KjogviWeb.UserAuth do
     end
   end
 
-  def on_mount(:mount_section_private, _params, session, socket) do
+  def on_mount(:mount_area_private, _params, session, socket) do
     socket = mount_current_scope(socket, session)
     scope = socket.assigns.current_scope
 
@@ -204,12 +204,12 @@ defmodule KjogviWeb.UserAuth do
      socket
      |> Phoenix.Component.assign(:current_scope, %{
        scope
-       | section: :private,
+       | area: :private,
          subject_user: scope.current_user
      })}
   end
 
-  def on_mount(:mount_section_admin, _params, session, socket) do
+  def on_mount(:mount_area_admin, _params, session, socket) do
     socket = mount_current_scope(socket, session)
     scope = socket.assigns.current_scope
 
@@ -217,12 +217,12 @@ defmodule KjogviWeb.UserAuth do
      socket
      |> Phoenix.Component.assign(:current_scope, %{
        scope
-       | section: :admin,
+       | area: :admin,
          subject_user: scope.current_user
      })}
   end
 
-  def on_mount(:mount_section_user, %{"username" => username}, session, socket) do
+  def on_mount(:mount_area_user, %{"username" => username}, session, socket) do
     socket = mount_current_scope(socket, session)
 
     case Accounts.get_user_by_nickname(username) do
@@ -239,7 +239,7 @@ defmodule KjogviWeb.UserAuth do
          Phoenix.Component.assign(
            socket,
            :current_scope,
-           %{scope | section: :user, subject_user: subject_user}
+           %{scope | area: :user, subject_user: subject_user}
          )}
     end
   end

@@ -14,7 +14,7 @@ defmodule KjogviWeb.Partials do
   embed_templates "partials/*"
 
   @doc """
-  Sub-menu shown in the public chrome when browsing a specific user's section,
+  Sub-menu shown in the public chrome when browsing a specific user's area,
   linking to that user's own lifelist and photos.
   """
   attr :scope, Kjogvi.Scope, required: true
