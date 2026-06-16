@@ -36,6 +36,8 @@ defmodule KjogviWeb.Router do
     post "/", SetupController, :create
   end
 
+  # GLOBAL ROUTES
+
   scope "/", KjogviWeb do
     pipe_through [:browser]
 
@@ -73,6 +75,25 @@ defmodule KjogviWeb.Router do
       ] do
       live "/confirm/:token", Live.Accounts.Confirmation, :edit
       live "/confirm", Live.Accounts.ConfirmationInstructions, :new
+    end
+  end
+
+  # COMMUNITY ROUTES
+
+  # Community area: aggregate public data across all users. The default
+  # `:community` scope from the `:browser` pipeline drives it.
+  scope "/community", KjogviWeb do
+    pipe_through [:browser]
+
+    live_session :community,
+      on_mount: [
+        {KjogviWeb.UserAuth, :mount_current_scope}
+      ] do
+      live "/lifelist", Live.Lifelist.Index, :index
+      live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
+      live "/lifelist/:year/:location", Live.Lifelist.Index, :index
+      live "/photos", Live.Photos.Index, :index
+      live "/photos/page/:page", Live.Photos.Index, :index
     end
   end
 
@@ -173,25 +194,6 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :ensure_admin},
         {KjogviWeb.UserAuth, :mount_area_admin}
       ]
-  end
-
-  # PUBLIC ROUTES
-
-  # Community area: aggregate public data across all users. The default
-  # `:community` scope from the `:browser` pipeline drives it.
-  scope "/community", KjogviWeb do
-    pipe_through [:browser]
-
-    live_session :community,
-      on_mount: [
-        {KjogviWeb.UserAuth, :mount_current_scope}
-      ] do
-      live "/lifelist", Live.Lifelist.Index, :index
-      live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
-      live "/lifelist/:year/:location", Live.Lifelist.Index, :index
-      live "/photos", Live.Photos.Index, :index
-      live "/photos/page/:page", Live.Photos.Index, :index
-    end
   end
 
   # Other scopes may use custom stacks.
