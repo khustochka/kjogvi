@@ -109,5 +109,19 @@ only when LiveView classes are applied, for example:
   display: none;
 }
 
+/* Connection-status bar (client/server error popups).
+   The bar is position:fixed and lives at the very end of the DOM, so it can't
+   push content down through normal flow. Instead, when LiveView marks its
+   container as disconnected/errored (phx-client-error / phx-server-error are
+   added to the LiveView root element, not <html>), we reserve space by padding
+   its top, so the bar sits above all content rather than overlapping it. */
+[data-phx-main] > * {
+  transition: padding-top 150ms ease;
+}
+.phx-client-error > *,
+.phx-server-error > * {
+  padding-top: 2.5rem;
+}
+
 /* This file is for your main application CSS */
 

@@ -127,7 +127,6 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :mount_area_private}
       ] do
       live "/locations", Live.My.Locations.Index, :index
-      live "/locations/countries", Live.My.Countries.Index, :index
       live "/locations/new", Live.My.Locations.Form, :new
       live "/locations/:slug/edit", Live.My.Locations.Form, :edit
       live "/locations/:slug", Live.My.Locations.Show, :show

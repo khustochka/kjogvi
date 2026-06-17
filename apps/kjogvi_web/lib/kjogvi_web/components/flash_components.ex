@@ -29,41 +29,98 @@ defmodule KjogviWeb.FlashComponents do
     """
   end
 
-  attr :id, :string, default: "hidden-flash", doc: "the optional id of flash container"
+  attr :id, :string, default: "connection-status-flash", doc: "the optional id of flash container"
 
   @doc """
-  Shows hidden flash group with standard titles and content.
+  Shows popups for internet disconnection and server errors.
 
   ## Examples
 
-      <.hidden_flash />
+      <.connection_status_flash />
   """
-  def hidden_flash(assigns) do
+  def connection_status_flash(assigns) do
     ~H"""
     <div id={@id}>
-      <.flash_popup
-        id="client-error"
-        kind={:error}
-        title={gettext("We can't find the internet")}
-        phx-disconnected={show(".phx-client-error #client-error")}
-        phx-connected={hide("#client-error")}
-        hidden
-      >
-        {gettext("Attempting to reconnect")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
-      </.flash_popup>
+      <hr hidden aria-hidden="true" />
+      <p hidden aria-hidden="true">
+        {gettext(
+          "The following are service messages shown by JavaScript popups when the connection drops."
+        )}
+      </p>
+      <ul>
+        <li>
+          <.connection_status_popup
+            id="client-error"
+            title={gettext("Connection interrupted")}
+            phx-disconnected={
+              show(".phx-client-error #client-error")
+              |> JS.remove_attribute("hidden", to: ".phx-client-error #client-error")
+            }
+            phx-connected={hide("#client-error") |> JS.set_attribute({"hidden", ""})}
+            hidden
+          >
+            {gettext("Attempting to reconnect")}
+            <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+          </.connection_status_popup>
+        </li>
+        <li>
+          <.connection_status_popup
+            id="server-error"
+            variant={:error}
+            title={gettext("Something went wrong!")}
+            phx-disconnected={
+              show(".phx-server-error #server-error")
+              |> JS.remove_attribute("hidden", to: ".phx-server-error #server-error")
+            }
+            phx-connected={hide("#server-error") |> JS.set_attribute({"hidden", ""})}
+            hidden
+          >
+            {gettext("Hang in there while we get back on track")}
+            <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+          </.connection_status_popup>
+        </li>
+      </ul>
+      <hr hidden aria-hidden="true" />
+    </div>
+    """
+  end
 
-      <.flash_popup
-        id="server-error"
-        kind={:error}
-        title={gettext("Something went wrong!")}
-        phx-disconnected={show(".phx-server-error #server-error")}
-        phx-connected={hide("#server-error")}
-        hidden
-      >
-        {gettext("Hang in there while we get back on track")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
-      </.flash_popup>
+  @doc """
+  Renders a connection-status popup (internet disconnection / server error).
+
+  A full-width bar pinned to the top of the viewport, signifying connection error
+  or server error. The page content is pushed down (rather
+  than overlapped) via the `.phx-client-error` / `.phx-server-error` body
+  padding defined in `app.css`, so the bar can stay at the end of the DOM.
+
+  ## Examples
+
+      <.connection_status_popup id="client-error" title="We can't find the internet">
+        Attempting to reconnect
+      </.connection_status_popup>
+  """
+  attr :id, :string, required: true, doc: "the id of the popup container"
+  attr :title, :string, default: nil
+  attr :variant, :atom, values: [:warning, :error], default: :warning, doc: "color scheme"
+  attr :rest, :global, doc: "the arbitrary HTML attributes to add to the popup container"
+
+  slot :inner_block, doc: "the inner block that renders the popup message"
+
+  def connection_status_popup(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      role="alert"
+      class={[
+        "fixed top-0 left-0 z-50 w-full",
+        "px-8 py-2 text-black text-sm leading-6 text-center",
+        @variant == :warning && "bg-amber-100",
+        @variant == :error && "bg-rose-100"
+      ]}
+      {@rest}
+    >
+      <span :if={@title} class="font-semibold">{@title}</span>
+      {render_slot(@inner_block)}
     </div>
     """
   end
