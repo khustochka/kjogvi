@@ -3,11 +3,7 @@ defmodule Ornitho.Ops do
   Ornitho repo operations.
   """
 
-  def transaction(fun_or_multi, opts \\ []) do
-    Ornithologue.repo().transaction(fun_or_multi, opts)
-  end
-
-  def rollback(value) do
-    Ornithologue.repo().rollback(value)
+  def transact(fun_or_multi, opts \\ []) do
+    Ornithologue.repo().transact(fun_or_multi, opts)
   end
 end

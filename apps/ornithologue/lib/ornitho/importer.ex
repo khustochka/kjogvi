@@ -73,15 +73,13 @@ defmodule Ornitho.Importer do
         force = opts[:force]
 
         with {:ok, config} <- validate_config() do
-          Ops.transaction(
+          Ops.transact(
             fn ->
               with {:ok, _} <- prepare_repo(force: force),
                    {:ok, book} <- create_book(),
                    {:ok, taxa_count} = result <- create_taxa(config, book),
                    {:ok, _} <- finalize_imported_book(book, taxa_count) do
                 result
-              else
-                {:error, e} -> Ops.rollback(e)
               end
             end,
             timeout: Ornitho.Importer.import_timeout()
