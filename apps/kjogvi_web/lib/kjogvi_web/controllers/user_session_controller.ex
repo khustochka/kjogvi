@@ -10,7 +10,7 @@ defmodule KjogviWeb.UserSessionController do
 
   def create(conn, %{"_action" => "password_updated"} = params) do
     conn
-    |> put_session(:user_return_to, ~p"/my/account/settings")
+    |> put_session(:user_return_to, ~p"/my/settings/security")
     |> create(params, "Password updated successfully!")
   end
 

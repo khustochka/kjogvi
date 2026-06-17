@@ -57,7 +57,7 @@ defmodule KjogviWeb.Live.My.Logbook.Index do
 
     <div class="mt-2 mb-4 text-sm">
       <.link
-        navigate={~p"/my/account/settings#logbook-settings"}
+        navigate={~p"/my/settings/preferences#logbook-settings"}
         class="text-forest-700 underline hover:text-forest-900"
       >
         Logbook settings
@@ -85,7 +85,7 @@ defmodule KjogviWeb.Live.My.Logbook.Index do
     >
       No lists are selected for the logbook.
       <.link
-        navigate={~p"/my/account/settings#logbook-settings"}
+        navigate={~p"/my/settings/preferences#logbook-settings"}
         class="text-forest-700 underline hover:text-forest-900"
       >
         Enable some in Settings

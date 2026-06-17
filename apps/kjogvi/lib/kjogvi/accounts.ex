@@ -279,7 +279,7 @@ defmodule Kjogvi.Accounts do
 
   ## Examples
 
-      iex> deliver_user_update_email_instructions(user, current_email, &url(~p"/my/account/settings/confirm_email/#{&1})")
+      iex> deliver_user_update_email_instructions(user, current_email, &url(~p"/my/settings/security/confirm_email/#{&1})")
       {:ok, %{to: ..., body: ...}}
 
   """

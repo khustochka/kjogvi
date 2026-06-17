@@ -47,7 +47,7 @@ defmodule KjogviWeb.HeaderComponents do
       ]}>
         {render_slot(@inner_block)}
       </.h1>
-      <div :if={@subheader != []} class="mt-2 font-header font-semibold text-xl text-zinc-400">
+      <div :if={@subheader != []} class="mt-2 font-header font-normal text-xl text-zinc-400">
         {render_slot(@subheader)}
       </div>
     </div>
@@ -99,7 +99,7 @@ defmodule KjogviWeb.HeaderComponents do
   defp h_style(:h1, class) do
     [
       "font-header",
-      "font-semibold",
+      "font-normal",
       "text-zinc-600",
       "text-5xl",
       "leading-snug",
@@ -112,7 +112,7 @@ defmodule KjogviWeb.HeaderComponents do
   defp h_style(:h2, class) do
     [
       "font-header",
-      "font-semibold",
+      "font-medium",
       "text-zinc-600",
       "text-2xl",
       "leading-[1.4]",
@@ -125,7 +125,7 @@ defmodule KjogviWeb.HeaderComponents do
   defp h_style(:h3, class) do
     [
       "font-header",
-      "font-semibold",
+      "font-medium",
       "text-zinc-600",
       "text-xl",
       "leading-[1.4]",

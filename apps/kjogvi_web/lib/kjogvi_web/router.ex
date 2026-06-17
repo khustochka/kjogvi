@@ -146,8 +146,11 @@ defmodule KjogviWeb.Router do
 
       live "/logbook", Live.My.Logbook.Index, :index
 
-      live "/account/settings", Live.My.Account.Settings, :edit
-      live "/account/settings/confirm_email/:token", Live.My.Account.Settings, :confirm_email
+      live "/settings", Live.My.Settings.Profile, :redirect
+      live "/settings/profile", Live.My.Settings.Profile, :edit
+      live "/settings/security", Live.My.Settings.Security, :edit
+      live "/settings/security/confirm_email/:token", Live.My.Settings.Security, :confirm_email
+      live "/settings/preferences", Live.My.Settings.Preferences, :edit
 
       live "/lifelist", Live.Lifelist.Index, :index
       live "/lifelist/:year_or_location", Live.Lifelist.Index, :index

@@ -101,6 +101,7 @@ defmodule KjogviWeb do
       # CoreComponents preserved for reference but should be slowly phazed out
       # import KjogviWeb.CoreComponents
       import KjogviWeb.AccessComponents
+      import KjogviWeb.AccountSettingsComponents
       import KjogviWeb.BaseComponents
       import KjogviWeb.HeaderComponents
       import KjogviWeb.FlashComponents

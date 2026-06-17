@@ -21,7 +21,7 @@ defmodule KjogviWeb.UserSessionControllerTest do
       conn = get(conn, ~p"/")
       response = html_response(conn, 200)
       assert response =~ user.email
-      assert response =~ ~p"/my/account/settings"
+      assert response =~ ~p"/my/settings/profile"
       assert response =~ ~p"/account/logout"
     end
 
@@ -80,7 +80,7 @@ defmodule KjogviWeb.UserSessionControllerTest do
           }
         })
 
-      assert redirected_to(conn) == ~p"/my/account/settings"
+      assert redirected_to(conn) == ~p"/my/settings/security"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password updated successfully"
     end
 

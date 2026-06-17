@@ -21,7 +21,7 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
     {:ok, lv, _html} = live(conn, ~p"/my/logbook")
 
     assert lv
-           |> element("a[href='/my/account/settings#logbook-settings']", "Logbook settings")
+           |> element("a[href='/my/settings/preferences#logbook-settings']", "Logbook settings")
            |> has_element?()
   end
 
