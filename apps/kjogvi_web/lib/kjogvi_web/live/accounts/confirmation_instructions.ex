@@ -3,15 +3,17 @@ defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
 
   use KjogviWeb, :live_view
 
+  alias KjogviWeb.LoginRegistrationComponents
+
   alias Kjogvi.Accounts
 
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <CoreComponents.header class="text-center">
+      <LoginRegistrationComponents.header>
         No confirmation instructions received?
-        <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
-      </CoreComponents.header>
+        <:subheader>We'll send a new confirmation link to your inbox</:subheader>
+      </LoginRegistrationComponents.header>
 
       {render_form(assigns)}
 
@@ -40,17 +42,23 @@ defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
   defp render_form(assigns) do
     ~H"""
     <.form
+      :let={f}
       for={@form}
       id="resend_confirmation_form"
       phx-submit="send_instructions"
+      class="mx-auto max-w-sm mt-8 space-y-4"
     >
-      <div class="mt-8 space-y-8 bg-white">
-        <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
-        <div class="mt-2 flex items-center justify-between gap-6">
-          <CoreComponents.button phx-disable-with="Sending..." class="w-full">
-            Resend confirmation instructions
-          </CoreComponents.button>
-        </div>
+      <LoginRegistrationComponents.email_input
+        field={f[:email]}
+        label="Email"
+        autocomplete="username"
+        spellcheck="false"
+        required
+      />
+      <div class="text-center">
+        <CoreComponents.button phx-disable-with="Sending..." class="w-full py-4 text-xl font-header">
+          Resend confirmation instructions
+        </CoreComponents.button>
       </div>
     </.form>
     """

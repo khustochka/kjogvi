@@ -3,15 +3,17 @@ defmodule KjogviWeb.Live.Accounts.ForgotPassword do
 
   use KjogviWeb, :live_view
 
+  alias KjogviWeb.LoginRegistrationComponents
+
   alias Kjogvi.Accounts
 
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <CoreComponents.header class="text-center">
+      <LoginRegistrationComponents.header>
         Forgot your password?
-        <:subtitle>We'll send a password reset link to your inbox</:subtitle>
-      </CoreComponents.header>
+        <:subheader>We'll send a password reset link to your inbox</:subheader>
+      </LoginRegistrationComponents.header>
 
       {render_form(assigns)}
 
@@ -39,14 +41,24 @@ defmodule KjogviWeb.Live.Accounts.ForgotPassword do
 
   defp render_form(assigns) do
     ~H"""
-    <.form for={@form} id="reset-password-form" phx-submit="send_email">
-      <div class="mt-8 space-y-8 bg-white">
-        <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
-        <div class="mt-2 flex items-center justify-between gap-6">
-          <CoreComponents.button phx-disable-with="Sending..." class="w-full">
-            Send password reset instructions
-          </CoreComponents.button>
-        </div>
+    <.form
+      :let={f}
+      for={@form}
+      id="reset-password-form"
+      phx-submit="send_email"
+      class="mx-auto max-w-sm mt-8 space-y-4"
+    >
+      <LoginRegistrationComponents.email_input
+        field={f[:email]}
+        label="Email"
+        autocomplete="username"
+        spellcheck="false"
+        required
+      />
+      <div class="text-center">
+        <CoreComponents.button phx-disable-with="Sending..." class="w-full py-4 text-xl font-header">
+          Send password reset instructions
+        </CoreComponents.button>
       </div>
     </.form>
     """

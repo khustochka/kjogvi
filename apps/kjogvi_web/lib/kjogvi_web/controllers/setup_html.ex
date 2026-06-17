@@ -4,5 +4,7 @@ defmodule KjogviWeb.SetupHTML do
   """
   use KjogviWeb, :html
 
+  alias KjogviWeb.LoginRegistrationComponents
+
   embed_templates "setup_html/*"
 end

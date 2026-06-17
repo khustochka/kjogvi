@@ -3,12 +3,14 @@ defmodule KjogviWeb.Live.Accounts.Confirmation do
 
   use KjogviWeb, :live_view
 
+  alias KjogviWeb.LoginRegistrationComponents
+
   alias Kjogvi.Accounts
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <CoreComponents.header class="text-center">Confirm Account</CoreComponents.header>
+      <LoginRegistrationComponents.header>Confirm Account</LoginRegistrationComponents.header>
 
       {render_form(assigns)}
 
@@ -36,14 +38,20 @@ defmodule KjogviWeb.Live.Accounts.Confirmation do
 
   defp render_form(assigns) do
     ~H"""
-    <.form for={@form} id="confirmation_form" phx-submit="confirm_account">
-      <div class="mt-8 space-y-8 bg-white">
-        <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
-        <div class="mt-2 flex items-center justify-between gap-6">
-          <CoreComponents.button phx-disable-with="Confirming..." class="w-full">
-            Confirm my account
-          </CoreComponents.button>
-        </div>
+    <.form
+      for={@form}
+      id="confirmation_form"
+      phx-submit="confirm_account"
+      class="mx-auto max-w-sm mt-8 space-y-4"
+    >
+      <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
+      <div class="text-center">
+        <CoreComponents.button
+          phx-disable-with="Confirming..."
+          class="w-full py-4 text-xl font-header"
+        >
+          Confirm my account
+        </CoreComponents.button>
       </div>
     </.form>
     """

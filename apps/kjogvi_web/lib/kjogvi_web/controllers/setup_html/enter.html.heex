@@ -1,16 +1,19 @@
 <div class="mx-auto max-w-sm">
   <.main_flash flash={@flash} />
 
+  <LoginRegistrationComponents.header>
+    Enter setup code
+  </LoginRegistrationComponents.header>
+
   <.form
     action={~p"/setup/register"}
     method="post"
     for={%{"setup_code" => nil}}
+    class="mx-auto max-w-sm mt-8 space-y-4"
   >
-    <div class="mt-8 space-y-8 bg-white">
-      <CoreComponents.input name="setup_code" value="" type="text" label="Setup code" required />
-      <div class="mt-2 flex items-center justify-between gap-6">
-        <CoreComponents.button>Submit</CoreComponents.button>
-      </div>
+    <CoreComponents.input name="setup_code" value="" type="text" label="Setup code" required />
+    <div class="text-center">
+      <CoreComponents.button class="w-full py-4 text-xl font-header">Submit</CoreComponents.button>
     </div>
   </.form>
 </div>

@@ -1,20 +1,40 @@
 <div class="mx-auto max-w-sm">
-  <CoreComponents.header class="text-center">
+  <LoginRegistrationComponents.header>
     Register an admin account
-  </CoreComponents.header>
+  </LoginRegistrationComponents.header>
 
-  <.form for={@form} id="registration_form" action={~p"/setup"} method="post">
-    <div class="mt-8 space-y-8 bg-white">
-      <CoreComponents.input field={@form[:email]} type="email" label="Email" required />
-      <CoreComponents.input field={@form[:password]} type="password" label="Password" required />
+  <.form
+    :let={f}
+    for={@form}
+    id="registration_form"
+    action={~p"/setup"}
+    method="post"
+    class="mx-auto max-w-sm mt-8 space-y-4"
+  >
+    <LoginRegistrationComponents.email_input
+      field={f[:email]}
+      label="Email"
+      autocomplete="username"
+      spellcheck="false"
+      required
+    />
+    <LoginRegistrationComponents.password_input
+      field={f[:password]}
+      label="Password"
+      autocomplete="new-password"
+      spellcheck="false"
+      required
+    />
 
-      <input type="hidden" name="setup_code" value={@setup_code} />
+    <input type="hidden" name="setup_code" value={@setup_code} />
 
-      <div class="mt-2 flex items-center justify-between gap-6">
-        <CoreComponents.button phx-disable-with="Creating account..." class="w-full">
-          Create an account
-        </CoreComponents.button>
-      </div>
+    <div class="text-center">
+      <CoreComponents.button
+        phx-disable-with="Creating account..."
+        class="w-full py-4 text-xl font-header"
+      >
+        Create an account
+      </CoreComponents.button>
     </div>
   </.form>
 </div>

@@ -3,12 +3,14 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
 
   use KjogviWeb, :live_view
 
+  alias KjogviWeb.LoginRegistrationComponents
+
   alias Kjogvi.Accounts
 
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <CoreComponents.header class="text-center">Reset Password</CoreComponents.header>
+      <LoginRegistrationComponents.header>Reset Password</LoginRegistrationComponents.header>
 
       {render_form(assigns)}
 
@@ -37,28 +39,34 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
   defp render_form(assigns) do
     ~H"""
     <.form
+      :let={f}
       for={@form}
       id="reset-password-form"
       phx-submit="reset-password"
       phx-change="validate"
+      class="mx-auto max-w-sm mt-8 space-y-4"
     >
-      <div class="mt-8 space-y-8 bg-white">
-        <CoreComponents.error :if={@form.errors != []}>
-          Oops, something went wrong! Please check the errors below.
-        </CoreComponents.error>
-
-        <CoreComponents.input field={@form[:password]} type="password" label="New password" required />
-        <CoreComponents.input
-          field={@form[:password_confirmation]}
-          type="password"
-          label="Confirm new password"
-          required
-        />
-        <div class="mt-2 flex items-center justify-between gap-6">
-          <CoreComponents.button phx-disable-with="Resetting..." class="w-full">
-            Reset Password
-          </CoreComponents.button>
-        </div>
+      <LoginRegistrationComponents.password_input
+        field={f[:password]}
+        label="New password"
+        autocomplete="new-password"
+        spellcheck="false"
+        required
+      />
+      <LoginRegistrationComponents.password_input
+        field={f[:password_confirmation]}
+        label="Confirm new password"
+        autocomplete="new-password"
+        spellcheck="false"
+        required
+      />
+      <div class="text-center">
+        <CoreComponents.button
+          phx-disable-with="Resetting..."
+          class="w-full py-4 text-xl font-header"
+        >
+          Reset Password
+        </CoreComponents.button>
       </div>
     </.form>
     """
