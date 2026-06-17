@@ -13,15 +13,26 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
   end
 
   describe "page rendering" do
-    test "renders both import cards", %{conn: conn} do
+    test "an admin sees both the Legacy and eBird import cards", %{conn: conn} do
+      {:ok, _lv, html} =
+        conn
+        |> login_user(Kjogvi.AccountsFixtures.admin_fixture())
+        |> live(~p"/my/imports")
+
+      assert html =~ "Import Tasks"
+      assert html =~ "Legacy Import"
+      assert html =~ "eBird preload"
+    end
+
+    test "a non-admin user sees only the eBird import card", %{conn: conn} do
       {:ok, _lv, html} =
         conn
         |> login_user(Kjogvi.AccountsFixtures.user_fixture())
         |> live(~p"/my/imports")
 
       assert html =~ "Import Tasks"
-      assert html =~ "Legacy Import"
       assert html =~ "eBird preload"
+      refute html =~ "Legacy Import"
     end
 
     test "redirects when not logged in", %{conn: conn} do
@@ -58,7 +69,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
   describe "legacy progress over PubSub" do
     setup %{conn: conn} do
-      user = Kjogvi.AccountsFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.admin_fixture()
 
       {:ok, lv, _html} =
         conn
@@ -78,6 +89,19 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       broadcast_progress({:legacy_import, user.id}, %{message: "Legacy import done."})
 
       assert flush_render(lv) =~ "Legacy import done."
+    end
+
+    test "a non-admin's session ignores legacy progress broadcasts", %{conn: conn} do
+      user = Kjogvi.AccountsFixtures.user_fixture()
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      broadcast_progress({:legacy_import, user.id}, %{message: "Importing locations... 42"})
+
+      refute flush_render(lv) =~ "Importing locations... 42"
     end
   end
 

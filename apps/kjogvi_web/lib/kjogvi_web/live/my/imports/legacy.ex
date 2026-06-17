@@ -3,6 +3,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
   Legacy import live component.
   """
 
+  alias Kjogvi.Accounts
   use KjogviWeb, :live_component
 
   alias Kjogvi.Util.AsyncResult
@@ -11,8 +12,13 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
 
   @component_id "legacy-import"
 
-  def on_mount(:attach, _params, _session, socket) do
-    {:cont, attach_hook(socket, :legacy_import_progress, :handle_info, &handle_progress/2)}
+  def on_mount(:attach, _params, _session, %{assigns: assigns} = socket) do
+    {:cont,
+     if Accounts.admin?(assigns.current_scope.current_user) do
+       attach_hook(socket, :legacy_import_progress, :handle_info, &handle_progress/2)
+     else
+       socket
+     end}
   end
 
   defp handle_progress({:progress, {:legacy_import, _user_id}, status}, socket) do
