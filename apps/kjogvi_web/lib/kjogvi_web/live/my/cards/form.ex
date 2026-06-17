@@ -14,6 +14,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   alias Kjogvi.Birding
   alias Kjogvi.Geo
+  alias KjogviWeb.BaseComponents
   alias KjogviWeb.Live.Components.LocationAutocomplete
   alias KjogviWeb.Live.Components.MonthCalendar
   alias KjogviWeb.Live.My.Cards.ObservationForm
@@ -168,7 +169,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
             hidden_name="card[observ_date]"
             errors={
               if show_field_error?(@form, :observ_date),
-                do: Enum.map(@form[:observ_date].errors, &CoreComponents.translate_error/1),
+                do: Enum.map(@form[:observ_date].errors, &BaseComponents.translate_error/1),
                 else: []
             }
           />
@@ -186,7 +187,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                 on_select_event="location_selected"
                 errors={
                   if show_field_error?(@form, :location_id),
-                    do: Enum.map(@form[:location_id].errors, &CoreComponents.translate_error/1),
+                    do: Enum.map(@form[:location_id].errors, &BaseComponents.translate_error/1),
                     else: []
                 }
               />

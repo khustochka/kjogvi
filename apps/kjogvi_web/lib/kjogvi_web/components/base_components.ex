@@ -10,7 +10,8 @@ defmodule KjogviWeb.BaseComponents do
 
   import IconComponents
 
-  # alias Phoenix.LiveView.JS
+  alias Phoenix.LiveView.JS
+
   # use Gettext, backend: KjogviWeb.Gettext
 
   @doc """
@@ -39,6 +40,34 @@ defmodule KjogviWeb.BaseComponents do
   """
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
+  end
+
+  @doc """
+  Shows an element with a transition.
+  """
+  def show(js \\ %JS{}, selector) do
+    JS.show(js,
+      to: selector,
+      time: 300,
+      transition:
+        {"transition-all transform ease-out duration-300",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+         "opacity-100 translate-y-0 sm:scale-100"}
+    )
+  end
+
+  @doc """
+  Hides an element with a transition.
+  """
+  def hide(js \\ %JS{}, selector) do
+    JS.hide(js,
+      to: selector,
+      time: 200,
+      transition:
+        {"transition-all transform ease-in duration-200",
+         "opacity-100 translate-y-0 sm:scale-100",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+    )
   end
 
   def link_to_top(assigns) do

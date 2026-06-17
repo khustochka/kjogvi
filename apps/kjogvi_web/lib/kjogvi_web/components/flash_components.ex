@@ -4,7 +4,8 @@ defmodule KjogviWeb.FlashComponents do
   """
   use Phoenix.Component
 
-  import KjogviWeb.CoreComponents
+  import KjogviWeb.BaseComponents, only: [show: 1, hide: 1, hide: 2]
+  import KjogviWeb.IconComponents
   use Gettext, backend: KjogviWeb.Gettext
 
   alias Phoenix.LiveView.JS

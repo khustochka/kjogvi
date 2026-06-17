@@ -5,6 +5,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
 
   use KjogviWeb, :html
 
+  alias KjogviWeb.BaseComponents
   alias KjogviWeb.CoreComponents
   alias KjogviWeb.Live.Components.TaxonAutocomplete
 
@@ -70,7 +71,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
               compact={true}
               errors={
                 if show_field_error?(@obs_form, :taxon_key),
-                  do: Enum.map(@obs_form[:taxon_key].errors, &CoreComponents.translate_error/1),
+                  do: Enum.map(@obs_form[:taxon_key].errors, &BaseComponents.translate_error/1),
                   else: []
               }
             />
@@ -141,7 +142,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
       |> assign(:id, field.id)
       |> assign(:name, field.name)
       |> assign(:value, field.value)
-      |> assign(:errors, Enum.map(errors, &CoreComponents.translate_error/1))
+      |> assign(:errors, Enum.map(errors, &BaseComponents.translate_error/1))
 
     ~H"""
     <div>

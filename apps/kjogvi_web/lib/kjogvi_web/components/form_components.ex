@@ -6,6 +6,7 @@ defmodule KjogviWeb.FormComponents do
   use Phoenix.Component
 
   alias KjogviWeb.IconComponents
+  alias KjogviWeb.BaseComponents
   alias KjogviWeb.CoreComponents
   alias Phoenix.LiveView.JS
   use Gettext, backend: KjogviWeb.Gettext
@@ -46,7 +47,7 @@ defmodule KjogviWeb.FormComponents do
 
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(errors, &CoreComponents.translate_error(&1)))
+    |> assign(:errors, Enum.map(errors, &BaseComponents.translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> input()
