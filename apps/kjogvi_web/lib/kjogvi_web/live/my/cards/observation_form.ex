@@ -5,6 +5,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
 
   use KjogviWeb, :html
 
+  alias Phoenix.LiveView.JS
   alias KjogviWeb.CoreComponents
   alias KjogviWeb.Live.Components.TaxonAutocomplete
 
@@ -56,7 +57,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
           </button>
         </div>
       <% else %>
-        <div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-3 lg:grid-cols-[minmax(10rem,1fr)_8rem_minmax(6rem,0.8fr)_minmax(6rem,0.8fr)_auto_auto] lg:items-end">
+        <div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-3 lg:grid-cols-[minmax(10rem,1fr)_8rem_minmax(6rem,1fr)_auto_auto_auto] lg:items-end">
           <div class="col-span-2 lg:col-span-1">
             <TaxonAutocomplete.taxon_autocomplete
               id={"taxon_search_#{@obs_form.index}"}
@@ -84,17 +85,19 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
             <.compact_input field={@obs_form[:notes]} label="Notes" />
           </div>
 
-          <div class="col-span-2 lg:col-span-1">
-            <.compact_input field={@obs_form[:private_notes]} label="Private notes" />
+          <div class="lg:self-start">
+            <label
+              for={@obs_form[:voice].id}
+              class="block text-sm font-semibold leading-6 text-zinc-800 whitespace-nowrap"
+            >
+              Heard only
+            </label>
+            <div class="py-1">
+              <CoreComponents.input type="checkbox" field={@obs_form[:voice]} />
+            </div>
           </div>
 
           <div class="flex lg:flex-col gap-2 lg:gap-0.5 items-end lg:items-start lg:justify-end">
-            <label
-              for={@obs_form[:voice].id}
-              class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap"
-            >
-              <CoreComponents.input type="checkbox" field={@obs_form[:voice]} /> Heard
-            </label>
             <label
               for={@obs_form[:hidden].id}
               class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-800 whitespace-nowrap"
@@ -123,6 +126,26 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
               <.icon name="hero-x-mark" class="w-4 h-4" />
             <% end %>
           </button>
+        </div>
+
+        <% has_private_notes = @obs_form[:private_notes].value not in [nil, ""] %>
+        <div class="mt-2">
+          <button
+            :if={!has_private_notes}
+            type="button"
+            id={"private_notes_toggle_#{@obs_form.index}"}
+            class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-700"
+            phx-click={toggle_private_notes(@obs_form.index)}
+          >
+            <.icon name="hero-chevron-right" class="w-3.5 h-3.5" /> Add private note
+          </button>
+
+          <div
+            id={"private_notes_field_#{@obs_form.index}"}
+            class={[!has_private_notes && "hidden"]}
+          >
+            <.compact_input field={@obs_form[:private_notes]} label="Private notes" />
+          </div>
         </div>
       <% end %>
     </div>
@@ -163,6 +186,13 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
       <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
     </div>
     """
+  end
+
+  # Reveal the private notes input and hide the "Add private note" toggle.
+  defp toggle_private_notes(index) do
+    JS.hide(to: "#private_notes_toggle_#{index}")
+    |> JS.show(to: "#private_notes_field_#{index}")
+    |> JS.focus(to: "#private_notes_field_#{index} input")
   end
 
   defp taxon_display(%{taxon: %{name_en: name_en, name_sci: name_sci}})

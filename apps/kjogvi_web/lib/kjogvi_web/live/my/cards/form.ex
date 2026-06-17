@@ -234,6 +234,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                 <div class="mt-2 inline-flex overflow-hidden rounded-lg border border-gray-300">
                   <label class={[
                     "cursor-pointer px-5 py-1.5 text-sm font-semibold select-none",
+                    "has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-blue-600",
                     @form[:ebird_complete].value == true && "bg-blue-100 text-blue-800",
                     @form[:ebird_complete].value != true && "bg-white text-gray-500 hover:bg-gray-50"
                   ]}>
@@ -247,6 +248,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                   </label>
                   <label class={[
                     "cursor-pointer border-l border-gray-300 px-5 py-1.5 text-sm font-semibold select-none",
+                    "has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-blue-600",
                     @form[:ebird_complete].value == false && "bg-blue-100 text-blue-800",
                     @form[:ebird_complete].value != false && "bg-white text-gray-500 hover:bg-gray-50"
                   ]}>
