@@ -25,7 +25,7 @@ defmodule KjogviWeb.SetupController do
     conn
     |> assign(:form, form)
     |> assign(:setup_code, get_session(conn, :setup_code))
-    |> render(:form)
+    |> render(:register)
   end
 
   def create(conn, %{"user" => user_params}) do

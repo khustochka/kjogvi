@@ -12,31 +12,33 @@ defmodule KjogviWeb.Live.My.Settings.Security do
     <.account_settings active={:security}>
       <.h2>Email</.h2>
 
-      <CoreComponents.simple_form
+      <.form
         for={@email_form}
         id="email_form"
         phx-submit="update_email"
         phx-change="validate_email"
         class="mb-8"
       >
-        <CoreComponents.input field={@email_form[:email]} type="email" label="Email" required />
-        <.input
-          field={@email_form[:current_password]}
-          name="current_password"
-          id="current_password_for_email"
-          type="password"
-          label="Current password"
-          value={@email_form_current_password}
-          required
-        />
-        <:actions>
-          <CoreComponents.button phx-disable-with="Changing...">Change Email</CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+        <div class="mt-8 space-y-8 bg-white">
+          <CoreComponents.input field={@email_form[:email]} type="email" label="Email" required />
+          <.input
+            field={@email_form[:current_password]}
+            name="current_password"
+            id="current_password_for_email"
+            type="password"
+            label="Current password"
+            value={@email_form_current_password}
+            required
+          />
+          <div class="mt-2 flex items-center justify-between gap-6">
+            <CoreComponents.button phx-disable-with="Changing...">Change Email</CoreComponents.button>
+          </div>
+        </div>
+      </.form>
 
       <.h2>Password</.h2>
 
-      <CoreComponents.simple_form
+      <.form
         for={@password_form}
         id="password_form"
         action={~p"/account/login?_action=password_updated"}
@@ -45,33 +47,35 @@ defmodule KjogviWeb.Live.My.Settings.Security do
         phx-submit="update_password"
         phx-trigger-action={@trigger_submit}
       >
-        <input
-          name={@password_form[:email].name}
-          type="hidden"
-          id="hidden_user_email"
-          value={@current_email}
-        />
-        <.input
-          field={@password_form[:current_password]}
-          name="current_password"
-          type="password"
-          label="Current password"
-          id="current_password_for_password"
-          value={@current_password}
-          required
-        />
-        <.input field={@password_form[:password]} type="password" label="New password" required />
-        <.input
-          field={@password_form[:password_confirmation]}
-          type="password"
-          label="Confirm new password"
-        />
-        <:actions>
-          <CoreComponents.button phx-disable-with="Changing...">
-            Change Password
-          </CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+        <div class="mt-8 space-y-8 bg-white">
+          <input
+            name={@password_form[:email].name}
+            type="hidden"
+            id="hidden_user_email"
+            value={@current_email}
+          />
+          <.input
+            field={@password_form[:current_password]}
+            name="current_password"
+            type="password"
+            label="Current password"
+            id="current_password_for_password"
+            value={@current_password}
+            required
+          />
+          <.input field={@password_form[:password]} type="password" label="New password" required />
+          <.input
+            field={@password_form[:password_confirmation]}
+            type="password"
+            label="Confirm new password"
+          />
+          <div class="mt-2 flex items-center justify-between gap-6">
+            <CoreComponents.button phx-disable-with="Changing...">
+              Change Password
+            </CoreComponents.button>
+          </div>
+        </div>
+      </.form>
     </.account_settings>
     """
   end

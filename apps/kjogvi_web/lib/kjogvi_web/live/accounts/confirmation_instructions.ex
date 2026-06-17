@@ -39,18 +39,20 @@ defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
 
   defp render_form(assigns) do
     ~H"""
-    <CoreComponents.simple_form
+    <.form
       for={@form}
       id="resend_confirmation_form"
       phx-submit="send_instructions"
     >
-      <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
-      <:actions>
-        <CoreComponents.button phx-disable-with="Sending..." class="w-full">
-          Resend confirmation instructions
-        </CoreComponents.button>
-      </:actions>
-    </CoreComponents.simple_form>
+      <div class="mt-8 space-y-8 bg-white">
+        <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
+        <div class="mt-2 flex items-center justify-between gap-6">
+          <CoreComponents.button phx-disable-with="Sending..." class="w-full">
+            Resend confirmation instructions
+          </CoreComponents.button>
+        </div>
+      </div>
+    </.form>
     """
   end
 

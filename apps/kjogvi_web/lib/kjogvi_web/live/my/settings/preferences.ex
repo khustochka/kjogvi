@@ -13,124 +13,126 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     <.account_settings active={:preferences}>
       <.h2>Preferences</.h2>
 
-      <CoreComponents.simple_form
+      <.form
         for={@settings_form}
         id="settings_form"
         phx-change="validate_settings"
         phx-submit="update_settings"
       >
-        <CoreComponents.input
-          field={@settings_form[:default_book_signature]}
-          type="select"
-          label="Default taxonomy"
-          options={@book_options}
-          prompt="Select default taxonomy..."
-        />
+        <div class="mt-8 space-y-8 bg-white">
+          <CoreComponents.input
+            field={@settings_form[:default_book_signature]}
+            type="select"
+            label="Default taxonomy"
+            options={@book_options}
+            prompt="Select default taxonomy..."
+          />
 
-        <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
-          eBird settings
-        </h3>
-        <.inputs_for :let={settings_form_extras} field={@settings_form[:extras]}>
-          <.inputs_for :let={ebird_form} field={settings_form_extras[:ebird]}>
-            <CoreComponents.input
-              field={ebird_form[:username]}
-              label="Username"
-              id="ebird_username"
-              value={@current_scope.current_user.extras.ebird.username}
-            />
-            <div>
-              <.input
-                field={ebird_form[:password]}
-                type="password"
-                label="Password"
-                id="ebird_password"
-                value={@current_scope.current_user.extras.ebird.password}
+          <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
+            eBird settings
+          </h3>
+          <.inputs_for :let={settings_form_extras} field={@settings_form[:extras]}>
+            <.inputs_for :let={ebird_form} field={settings_form_extras[:ebird]}>
+              <CoreComponents.input
+                field={ebird_form[:username]}
+                label="Username"
+                id="ebird_username"
+                value={@current_scope.current_user.extras.ebird.username}
               />
-            </div>
+              <div>
+                <.input
+                  field={ebird_form[:password]}
+                  type="password"
+                  label="Password"
+                  id="ebird_password"
+                  value={@current_scope.current_user.extras.ebird.password}
+                />
+              </div>
+            </.inputs_for>
           </.inputs_for>
-        </.inputs_for>
-        <h3
-          id="logbook-settings"
-          class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6 scroll-mt-4"
-        >
-          Logbook settings
-        </h3>
-        <p class="text-sm text-zinc-500 mb-2">
-          Choose which lists to include in the recent additions logbook.
-        </p>
+          <h3
+            id="logbook-settings"
+            class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6 scroll-mt-4"
+          >
+            Logbook settings
+          </h3>
+          <p class="text-sm text-zinc-500 mb-2">
+            Choose which lists to include in the recent additions logbook.
+          </p>
 
-        <table class="w-full md:max-w-lg text-sm">
-          <thead>
-            <tr class="border-b border-zinc-200">
-              <th class="text-left py-2 font-semibold">Location</th>
-              <th class="text-center py-2 font-semibold w-20">Life</th>
-              <th class="text-center py-2 font-semibold w-20">Year</th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for {row, i} <- Enum.with_index(@logbook_location_rows) do %>
-              <tr class="border-b border-zinc-300">
-                <td class="py-2">
-                  <input
-                    type="hidden"
-                    name={"user[extras][logbook_settings][#{i}][location_id]"}
-                    value={row.location_id || ""}
-                  />
-                  <span :if={row.location_id == nil} class="inline-flex items-center gap-1">
-                    <.icon name="hero-globe-americas-solid" class="h-4 w-4 text-gray-500" /> {row.name}
-                  </span>
-                  <span
-                    :if={row.location_id != nil && !row.nested && row.flag}
-                    class="inline-flex items-center gap-1"
-                  >
-                    <span>{row.flag}</span> {row.name}
-                  </span>
-                  <span :if={row.location_id != nil && !row.nested && !row.flag}>
-                    {row.name}
-                  </span>
-                  <span :if={row.nested} class="pl-6">
-                    {row.name}
-                  </span>
-                </td>
-                <td class="text-center py-2">
-                  <input
-                    type="hidden"
-                    name={"user[extras][logbook_settings][#{i}][life]"}
-                    value="false"
-                  />
-                  <input
-                    type="checkbox"
-                    name={"user[extras][logbook_settings][#{i}][life]"}
-                    value="true"
-                    checked={row.life}
-                    class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
-                  />
-                </td>
-                <td class="text-center py-2">
-                  <input
-                    type="hidden"
-                    name={"user[extras][logbook_settings][#{i}][year]"}
-                    value="false"
-                  />
-                  <input
-                    type="checkbox"
-                    name={"user[extras][logbook_settings][#{i}][year]"}
-                    value="true"
-                    checked={row.year}
-                    class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
-                  />
-                </td>
+          <table class="w-full md:max-w-lg text-sm">
+            <thead>
+              <tr class="border-b border-zinc-200">
+                <th class="text-left py-2 font-semibold">Location</th>
+                <th class="text-center py-2 font-semibold w-20">Life</th>
+                <th class="text-center py-2 font-semibold w-20">Year</th>
               </tr>
-            <% end %>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <%= for {row, i} <- Enum.with_index(@logbook_location_rows) do %>
+                <tr class="border-b border-zinc-300">
+                  <td class="py-2">
+                    <input
+                      type="hidden"
+                      name={"user[extras][logbook_settings][#{i}][location_id]"}
+                      value={row.location_id || ""}
+                    />
+                    <span :if={row.location_id == nil} class="inline-flex items-center gap-1">
+                      <.icon name="hero-globe-americas-solid" class="h-4 w-4 text-gray-500" /> {row.name}
+                    </span>
+                    <span
+                      :if={row.location_id != nil && !row.nested && row.flag}
+                      class="inline-flex items-center gap-1"
+                    >
+                      <span>{row.flag}</span> {row.name}
+                    </span>
+                    <span :if={row.location_id != nil && !row.nested && !row.flag}>
+                      {row.name}
+                    </span>
+                    <span :if={row.nested} class="pl-6">
+                      {row.name}
+                    </span>
+                  </td>
+                  <td class="text-center py-2">
+                    <input
+                      type="hidden"
+                      name={"user[extras][logbook_settings][#{i}][life]"}
+                      value="false"
+                    />
+                    <input
+                      type="checkbox"
+                      name={"user[extras][logbook_settings][#{i}][life]"}
+                      value="true"
+                      checked={row.life}
+                      class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                    />
+                  </td>
+                  <td class="text-center py-2">
+                    <input
+                      type="hidden"
+                      name={"user[extras][logbook_settings][#{i}][year]"}
+                      value="false"
+                    />
+                    <input
+                      type="checkbox"
+                      name={"user[extras][logbook_settings][#{i}][year]"}
+                      value="true"
+                      checked={row.year}
+                      class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                    />
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
 
-        <:actions>
-          <CoreComponents.button phx-disable-with="Saving...">
-            Update
-          </CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+          <div class="mt-2 flex items-center justify-between gap-6">
+            <CoreComponents.button phx-disable-with="Saving...">
+              Update
+            </CoreComponents.button>
+          </div>
+        </div>
+      </.form>
     </.account_settings>
     """
   end

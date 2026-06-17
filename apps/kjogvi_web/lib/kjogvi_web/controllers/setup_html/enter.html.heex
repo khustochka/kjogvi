@@ -1,14 +1,16 @@
 <div class="mx-auto max-w-sm">
   <.main_flash flash={@flash} />
 
-  <CoreComponents.simple_form
+  <.form
     action={~p"/setup/register"}
     method="post"
     for={%{"setup_code" => nil}}
   >
-    <CoreComponents.input name="setup_code" value="" type="text" label="Setup code" required />
-    <:actions>
-      <CoreComponents.button>Submit</CoreComponents.button>
-    </:actions>
-  </CoreComponents.simple_form>
+    <div class="mt-8 space-y-8 bg-white">
+      <CoreComponents.input name="setup_code" value="" type="text" label="Setup code" required />
+      <div class="mt-2 flex items-center justify-between gap-6">
+        <CoreComponents.button>Submit</CoreComponents.button>
+      </div>
+    </div>
+  </.form>
 </div>

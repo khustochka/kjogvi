@@ -39,14 +39,16 @@ defmodule KjogviWeb.Live.Accounts.ForgotPassword do
 
   defp render_form(assigns) do
     ~H"""
-    <CoreComponents.simple_form for={@form} id="reset-password-form" phx-submit="send_email">
-      <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
-      <:actions>
-        <CoreComponents.button phx-disable-with="Sending..." class="w-full">
-          Send password reset instructions
-        </CoreComponents.button>
-      </:actions>
-    </CoreComponents.simple_form>
+    <.form for={@form} id="reset-password-form" phx-submit="send_email">
+      <div class="mt-8 space-y-8 bg-white">
+        <CoreComponents.input field={@form[:email]} type="email" placeholder="Email" required />
+        <div class="mt-2 flex items-center justify-between gap-6">
+          <CoreComponents.button phx-disable-with="Sending..." class="w-full">
+            Send password reset instructions
+          </CoreComponents.button>
+        </div>
+      </div>
+    </.form>
     """
   end
 

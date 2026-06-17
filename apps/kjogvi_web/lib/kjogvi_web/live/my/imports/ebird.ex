@@ -111,21 +111,23 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     ~H"""
     <div>
       <.main_flash id="ebird-preload-flash" flash={@flash} />
-      <CoreComponents.simple_form
+      <.form
         id="ebird-preload-form"
         for={nil}
         phx-submit="start_preload"
         phx-target={@myself}
         class="mb-10"
       >
-        <:actions>
-          <%= if @async_result.loading do %>
-            <CoreComponents.button disabled>Preload</CoreComponents.button>
-          <% else %>
-            <CoreComponents.button>Preload</CoreComponents.button>
-          <% end %>
-        </:actions>
-      </CoreComponents.simple_form>
+        <div class="mt-8 space-y-8 bg-white">
+          <div class="mt-2 flex items-center justify-between gap-6">
+            <%= if @async_result.loading do %>
+              <CoreComponents.button disabled>Preload</CoreComponents.button>
+            <% else %>
+              <CoreComponents.button>Preload</CoreComponents.button>
+            <% end %>
+          </div>
+        </div>
+      </.form>
 
       <p>
         <b>Last preloaded:</b>

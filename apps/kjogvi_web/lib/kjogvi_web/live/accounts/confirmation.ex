@@ -36,14 +36,16 @@ defmodule KjogviWeb.Live.Accounts.Confirmation do
 
   defp render_form(assigns) do
     ~H"""
-    <CoreComponents.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">
-      <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
-      <:actions>
-        <CoreComponents.button phx-disable-with="Confirming..." class="w-full">
-          Confirm my account
-        </CoreComponents.button>
-      </:actions>
-    </CoreComponents.simple_form>
+    <.form for={@form} id="confirmation_form" phx-submit="confirm_account">
+      <div class="mt-8 space-y-8 bg-white">
+        <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
+        <div class="mt-2 flex items-center justify-between gap-6">
+          <CoreComponents.button phx-disable-with="Confirming..." class="w-full">
+            Confirm my account
+          </CoreComponents.button>
+        </div>
+      </div>
+    </.form>
     """
   end
 

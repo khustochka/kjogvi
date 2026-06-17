@@ -91,20 +91,22 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     ~H"""
     <div>
       <.main_flash id="legacy-import-flash" flash={@flash} />
-      <CoreComponents.simple_form
+      <.form
         id="legacy-import-form"
         for={nil}
         phx-submit="start_import"
         phx-target={@myself}
       >
-        <:actions>
-          <%= if @async_result.loading do %>
-            <CoreComponents.button disabled>Import</CoreComponents.button>
-          <% else %>
-            <CoreComponents.button>Import</CoreComponents.button>
-          <% end %>
-        </:actions>
-      </CoreComponents.simple_form>
+        <div class="mt-8 space-y-8 bg-white">
+          <div class="mt-2 flex items-center justify-between gap-6">
+            <%= if @async_result.loading do %>
+              <CoreComponents.button disabled>Import</CoreComponents.button>
+            <% else %>
+              <CoreComponents.button>Import</CoreComponents.button>
+            <% end %>
+          </div>
+        </div>
+      </.form>
     </div>
     """
   end

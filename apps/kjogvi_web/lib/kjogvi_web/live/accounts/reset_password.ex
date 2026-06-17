@@ -36,29 +36,31 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
 
   defp render_form(assigns) do
     ~H"""
-    <CoreComponents.simple_form
+    <.form
       for={@form}
       id="reset-password-form"
       phx-submit="reset-password"
       phx-change="validate"
     >
-      <CoreComponents.error :if={@form.errors != []}>
-        Oops, something went wrong! Please check the errors below.
-      </CoreComponents.error>
+      <div class="mt-8 space-y-8 bg-white">
+        <CoreComponents.error :if={@form.errors != []}>
+          Oops, something went wrong! Please check the errors below.
+        </CoreComponents.error>
 
-      <CoreComponents.input field={@form[:password]} type="password" label="New password" required />
-      <CoreComponents.input
-        field={@form[:password_confirmation]}
-        type="password"
-        label="Confirm new password"
-        required
-      />
-      <:actions>
-        <CoreComponents.button phx-disable-with="Resetting..." class="w-full">
-          Reset Password
-        </CoreComponents.button>
-      </:actions>
-    </CoreComponents.simple_form>
+        <CoreComponents.input field={@form[:password]} type="password" label="New password" required />
+        <CoreComponents.input
+          field={@form[:password_confirmation]}
+          type="password"
+          label="Confirm new password"
+          required
+        />
+        <div class="mt-2 flex items-center justify-between gap-6">
+          <CoreComponents.button phx-disable-with="Resetting..." class="w-full">
+            Reset Password
+          </CoreComponents.button>
+        </div>
+      </div>
+    </.form>
     """
   end
 

@@ -12,35 +12,37 @@ defmodule KjogviWeb.Live.My.Settings.Profile do
     <.account_settings active={:profile}>
       <.h2>Profile</.h2>
 
-      <CoreComponents.simple_form
+      <.form
         for={@settings_form}
         id="settings_form"
         phx-change="validate_settings"
         phx-submit="update_settings"
       >
-        <CoreComponents.input
-          field={@settings_form[:nickname]}
-          type="text"
-          label="Nickname"
-          required
-        >
-          <:hint>3–20 characters: lowercase letters, digits, hyphens and underscores.</:hint>
-        </CoreComponents.input>
+        <div class="mt-8 space-y-8 bg-white">
+          <CoreComponents.input
+            field={@settings_form[:nickname]}
+            type="text"
+            label="Nickname"
+            required
+          >
+            <:hint>3–20 characters: lowercase letters, digits, hyphens and underscores.</:hint>
+          </CoreComponents.input>
 
-        <CoreComponents.input
-          field={@settings_form[:display_name]}
-          type="text"
-          label="Display name"
-        >
-          <:hint>Up to 50 characters: letters, spaces and common punctuation.</:hint>
-        </CoreComponents.input>
+          <CoreComponents.input
+            field={@settings_form[:display_name]}
+            type="text"
+            label="Display name"
+          >
+            <:hint>Up to 50 characters: letters, spaces and common punctuation.</:hint>
+          </CoreComponents.input>
 
-        <:actions>
-          <CoreComponents.button phx-disable-with="Saving...">
-            Update
-          </CoreComponents.button>
-        </:actions>
-      </CoreComponents.simple_form>
+          <div class="mt-2 flex items-center justify-between gap-6">
+            <CoreComponents.button phx-disable-with="Saving...">
+              Update
+            </CoreComponents.button>
+          </div>
+        </div>
+      </.form>
     </.account_settings>
     """
   end
