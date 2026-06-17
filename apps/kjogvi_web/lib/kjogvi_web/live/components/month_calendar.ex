@@ -17,7 +17,6 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
 
   use KjogviWeb, :live_component
 
-  alias KjogviWeb.CoreComponents
   alias KjogviWeb.DateHelper
 
   attr :id, :string, required: true
@@ -155,7 +154,7 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
         id={"#{@id}-hidden"}
         value={if @selected_date, do: Date.to_iso8601(@selected_date), else: ""}
       />
-      <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end

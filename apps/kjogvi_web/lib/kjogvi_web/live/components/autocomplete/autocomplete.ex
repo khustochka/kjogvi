@@ -67,7 +67,6 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
 
   use KjogviWeb, :live_component
 
-  alias KjogviWeb.CoreComponents
   alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
   # `attr` on a LiveComponent gives compile-time validation at call sites
@@ -326,7 +325,7 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
           </div>
         </div>
       </div>
-      <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end

@@ -35,12 +35,12 @@ defmodule KjogviWeb.Live.My.Countries.Index do
       Countries
     </.h1>
 
-    <CoreComponents.table id="countries" rows={@countries}>
+    <.table id="countries" rows={@countries}>
       <:col :let={country} label="id">{country.id}</:col>
       <:col :let={country} label="slug">{country.slug}</:col>
       <:col :let={country} label="name">{country.name_en}</:col>
       <:col :let={country} label="iso">{country.iso_code}</:col>
-    </CoreComponents.table>
+    </.table>
     """
   end
 end

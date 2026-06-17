@@ -161,7 +161,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
         ]}
         {@rest}
       />
-      <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end

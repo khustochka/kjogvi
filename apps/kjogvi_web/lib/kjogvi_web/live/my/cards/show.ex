@@ -173,7 +173,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
         This card has no observations.
       </p>
       <div class="-mt-8">
-        <CoreComponents.table
+        <.table
           :if={!Enum.empty?(@card.observations)}
           id="observation"
           rows={@card.observations}
@@ -191,7 +191,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
           <:col :let={obs} label="Taxon">
             {present_taxon(Map.take(obs, [:taxon_key, :taxon]))}
           </:col>
-        </CoreComponents.table>
+        </.table>
       </div>
     </section>
     """
@@ -231,9 +231,9 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     <div class="text-slate-400">
       {@taxon_key}
     </div>
-    <CoreComponents.error>
+    <.error>
       Undefined taxon!
-    </CoreComponents.error>
+    </.error>
     """
   end
 

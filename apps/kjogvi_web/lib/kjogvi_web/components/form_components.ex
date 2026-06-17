@@ -7,7 +7,6 @@ defmodule KjogviWeb.FormComponents do
 
   alias KjogviWeb.IconComponents
   alias KjogviWeb.BaseComponents
-  alias KjogviWeb.CoreComponents
   alias Phoenix.LiveView.JS
   use Gettext, backend: KjogviWeb.Gettext
 
@@ -76,7 +75,7 @@ defmodule KjogviWeb.FormComponents do
           <.password_visibility_toggle :if={@password_toggle} for={@id} />
         </div>
       </label>
-      <CoreComponents.error :for={msg <- @errors}>{msg}</CoreComponents.error>
+      <BaseComponents.error :for={msg <- @errors}>{msg}</BaseComponents.error>
     </fieldset>
     """
   end

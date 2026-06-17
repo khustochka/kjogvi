@@ -155,9 +155,9 @@ defmodule KjogviWeb.Live.My.Cards.Form do
       </span>
     </nav>
 
-    <CoreComponents.header>
+    <.h1>
       {if @action == :create, do: "New Card", else: "Edit Card ##{@card.id}"}
-    </CoreComponents.header>
+    </.h1>
 
     <.form for={@form} id="card-form" phx-submit="save" phx-change="sync_card" class="space-y-4">
       <div class="flex flex-col sm:flex-row gap-4">

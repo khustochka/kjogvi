@@ -222,9 +222,9 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       </span>
     </nav>
 
-    <CoreComponents.header>
+    <.h1>
       {if @action == :create, do: "New Location", else: "Edit #{@location.name_en}"}
-    </CoreComponents.header>
+    </.h1>
 
     <.form for={@form} id="location-form" phx-submit="save" phx-change="validate" class="space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
