@@ -111,7 +111,10 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
 
       <div class="flex flex-col gap-2 rounded-xl border border-stone-200 bg-stone-50 p-4 sm:flex-row sm:items-start sm:gap-4">
         <div class="w-44 shrink-0">
-          <label for={"#{@id}-date"} class="block text-sm font-semibold leading-6 text-zinc-800">
+          <label
+            for={"#{@id}-date"}
+            class="block text-sm font-medium font-header leading-6 text-zinc-800"
+          >
             Date
           </label>
           <input
@@ -122,7 +125,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
             disabled={@selected != []}
             phx-change="date_changed"
             phx-target={@myself}
-            class="mt-2 block w-full rounded-lg border-zinc-300 text-zinc-900 focus:border-zinc-400 focus:ring-0 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:text-sm sm:leading-6"
+            class="block w-full rounded-lg border-zinc-300 text-zinc-900 focus:border-zinc-400 focus:ring-0 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:text-sm sm:leading-6"
           />
           <p :if={@selected != []} id={"#{@id}-date-locked"} class="mt-1 text-xs text-stone-400">
             Locked to the selected observation's card.

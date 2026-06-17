@@ -281,11 +281,11 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
       <label
         :if={@label}
         for={@id}
-        class="block text-sm font-semibold leading-6 text-zinc-800"
+        class="block text-sm font-header font-medium leading-6 text-zinc-800"
       >
         {@label}
       </label>
-      <div class={["relative", @label && !@compact && "mt-2"]}>
+      <div class="relative">
         <SearchInput.search_input
           id={@id}
           target={@myself}

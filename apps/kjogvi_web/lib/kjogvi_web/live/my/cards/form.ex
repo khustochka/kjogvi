@@ -234,10 +234,10 @@ defmodule KjogviWeb.Live.My.Cards.Form do
               />
 
               <fieldset>
-                <legend class="block text-sm font-semibold leading-6 text-zinc-800">
+                <legend class="block text-sm font-medium font-header leading-6 text-zinc-800">
                   eBird Complete
                 </legend>
-                <div class="mt-2 inline-flex overflow-hidden rounded-lg border border-gray-300">
+                <div class="inline-flex overflow-hidden rounded-lg border border-gray-300">
                   <label class={[
                     "cursor-pointer px-5 py-1.5 text-sm font-semibold select-none",
                     @form[:ebird_complete].value == true && "bg-blue-100 text-blue-800",

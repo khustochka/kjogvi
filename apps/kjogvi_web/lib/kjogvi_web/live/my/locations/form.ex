@@ -242,7 +242,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         <div>
           <label
             for={@form[:location_type].id}
-            class="block text-sm font-semibold leading-6 text-zinc-800"
+            class="block text-sm font-medium font-header leading-6 text-zinc-800"
           >
             Locus type
           </label>
@@ -250,7 +250,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
             id={@form[:location_type].id}
             name={@form[:location_type].name}
             size={length(Location.location_types()) + 1}
-            class="mt-2 inline-block w-auto min-w-48 pr-8 rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 text-base"
+            class="inline-block w-auto min-w-48 pr-8 rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 text-base"
           >
             {Phoenix.HTML.Form.options_for_select(
               [{"— none —", ""} | Location.location_types()],
@@ -376,11 +376,11 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   defp cached_label(assigns) do
     ~H"""
     <div id={@id}>
-      <span class="block text-sm font-semibold leading-6 text-zinc-800">{@label}</span>
+      <span class="block text-sm font-medium font-header leading-6 text-zinc-800">{@label}</span>
       <div
         id={"#{@id}_value"}
         aria-disabled="true"
-        class="mt-2 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-500 sm:text-sm sm:leading-6"
+        class="block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-500 sm:text-sm sm:leading-6"
       >
         <span class="block min-h-6">{@current_label}</span>
       </div>

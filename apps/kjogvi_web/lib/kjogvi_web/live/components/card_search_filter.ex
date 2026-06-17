@@ -48,8 +48,11 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
       <div class="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto_auto]">
         <%!-- Taxon --%>
         <div>
-          <span class="block text-sm font-semibold leading-6 text-indigo-900">Taxon</span>
-          <div class="mt-2">
+          <label
+            for={"#{@id}-taxon"}
+            class="block text-sm font-medium font-header leading-6 text-indigo-900"
+          >Taxon</label>
+          <div>
             <TaxonAutocomplete.taxon_autocomplete
               id={"#{@id}-taxon"}
               user={@user}
@@ -75,10 +78,13 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
 
         <%!-- Date --%>
         <div>
-          <label for={"#{@id}-date"} class="block text-sm font-semibold leading-6 text-indigo-900">
+          <label
+            for={"#{@id}-date"}
+            class="block text-sm font-medium font-header leading-6 text-indigo-900"
+          >
             Date
           </label>
-          <div class="mt-2">
+          <div>
             <input
               type="date"
               id={"#{@id}-date"}
@@ -91,8 +97,8 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
 
         <%!-- Location --%>
         <div>
-          <span class="block text-sm font-semibold leading-6 text-indigo-900">Location</span>
-          <div class="mt-2">
+          <span class="block text-sm font-medium font-header leading-6 text-indigo-900">Location</span>
+          <div>
             <LocationAutocomplete.location_autocomplete
               id={"#{@id}-location"}
               current_value={@filter.location && Geo.Location.long_name(@filter.location)}
@@ -134,7 +140,7 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
         <%!-- Voice + hidden --%>
         <div class="flex flex-col gap-3 lg:row-start-1 lg:col-start-4">
           <fieldset>
-            <legend class="block text-sm font-semibold leading-6 text-indigo-900">
+            <legend class="block text-sm font-medium font-header leading-6 text-indigo-900">
               Observations
             </legend>
             <ul class="mt-1 space-y-1">

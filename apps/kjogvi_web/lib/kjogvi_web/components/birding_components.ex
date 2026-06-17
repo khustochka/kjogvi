@@ -225,7 +225,7 @@ defmodule KjogviWeb.BirdingComponents do
           <span :if={present?(obs.quantity)} class="shrink-0 tabular-nums text-stone-500">
             {obs.quantity}
           </span>
-          <span class="min-w-0 break-words sm:truncate">
+          <span class="min-w-0 wrap-break-words sm:truncate">
             <.observation_taxon_name obs={obs} />
           </span>
           <span

@@ -286,7 +286,7 @@ defmodule KjogviWeb.CoreComponents do
 
     ~H"""
     <div>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+      <label class="flex items-center gap-2 text-sm leading-6 text-zinc-600">
         <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
         <input
           type="checkbox"
@@ -312,7 +312,7 @@ defmodule KjogviWeb.CoreComponents do
         id={@id}
         name={@name}
         aria-describedby={@hint != [] && "#{@id}_hint"}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class="block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
         multiple={@multiple}
         {@rest}
       >
@@ -336,7 +336,7 @@ defmodule KjogviWeb.CoreComponents do
         name={@name}
         aria-describedby={@hint != [] && "#{@id}_hint"}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 min-h-[6rem]",
+          "block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 min-h-[6rem]",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
         ]}
@@ -362,7 +362,7 @@ defmodule KjogviWeb.CoreComponents do
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         aria-describedby={@hint != [] && "#{@id}_hint"}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
         ]}
@@ -385,9 +385,9 @@ defmodule KjogviWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label for={@for} class="block text-sm font-header font-medium leading-6 text-zinc-800">
       {render_slot(@inner_block)}
-      <span :if={@required} class="text-rose-600" aria-hidden="true">*</span>
+      <span :if={@required} class="text-rose-600" aria-hidden="true" title="Required">*</span>
     </label>
     """
   end

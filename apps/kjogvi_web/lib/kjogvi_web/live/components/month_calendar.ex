@@ -96,8 +96,8 @@ defmodule KjogviWeb.Live.Components.MonthCalendar do
 
     ~H"""
     <div id={@id}>
-      <label class="block text-sm font-semibold leading-6 text-zinc-800">{@label}</label>
-      <div class="mt-2 border border-zinc-300 rounded-lg p-3 w-fit">
+      <label class="block text-sm font-medium font-header leading-6 text-zinc-800">{@label}</label>
+      <div class="border border-zinc-300 rounded-lg p-3 w-fit">
         <div class="flex items-center justify-between mb-2">
           <button
             type="button"

@@ -146,7 +146,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
 
     ~H"""
     <div>
-      <label for={@id} class="block text-sm font-semibold leading-6 text-zinc-800">
+      <label for={@id} class="block text-sm font-medium font-header leading-6 text-zinc-800">
         {@label}
       </label>
       <input
