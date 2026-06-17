@@ -61,12 +61,12 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
         required
       />
       <div class="text-center">
-        <CoreComponents.button
+        <.button
           phx-disable-with="Resetting..."
           class="w-full py-4 text-xl font-header"
         >
           Reset Password
-        </CoreComponents.button>
+        </.button>
       </div>
     </.form>
     """

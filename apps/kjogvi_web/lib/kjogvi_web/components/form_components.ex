@@ -110,4 +110,52 @@ defmodule KjogviWeb.FormComponents do
     </span>
     """
   end
+
+  @doc """
+  Renders a button with navigation support.
+
+  ## Examples
+
+      <.button>Send!</.button>
+      <.button phx-click="go" variant="primary">Send!</.button>
+      <.button navigate={~p"/"}>Home</.button>
+  """
+  attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
+  attr :class, :any
+  # TODO: define variants
+  # attr :variant, :string, values: ~w(primary)
+  slot :inner_block, required: true
+
+  @spec button(%{:rest => nil | maybe_improper_list() | map(), optional(any()) => any()}) ::
+          Phoenix.LiveView.Rendered.t()
+  def button(%{rest: rest} = assigns) do
+    # variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
+
+    # assigns =
+    #   assign_new(assigns, :class, fn ->
+    #     ["btn", Map.fetch!(variants, assigns[:variant])]
+    #   end)
+
+    assigns =
+      assign(assigns, :class, [
+        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900",
+        "hover:bg-zinc-700 disabled:bg-zinc-500 py-2 px-3",
+        "text-sm font-medium font-header leading-6 text-white active:text-white/80",
+        assigns[:class]
+      ])
+
+    if rest[:href] || rest[:navigate] || rest[:patch] do
+      ~H"""
+      <.link class={@class} {@rest}>
+        {render_slot(@inner_block)}
+      </.link>
+      """
+    else
+      ~H"""
+      <button class={@class} {@rest}>
+        {render_slot(@inner_block)}
+      </button>
+      """
+    end
+  end
 end

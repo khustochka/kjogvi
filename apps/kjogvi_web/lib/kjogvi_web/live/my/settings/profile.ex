@@ -37,9 +37,9 @@ defmodule KjogviWeb.Live.My.Settings.Profile do
           </CoreComponents.input>
 
           <div class="mt-2 flex items-center justify-between gap-6">
-            <CoreComponents.button phx-disable-with="Saving...">
+            <.button phx-disable-with="Saving...">
               Update
-            </CoreComponents.button>
+            </.button>
           </div>
         </div>
       </.form>

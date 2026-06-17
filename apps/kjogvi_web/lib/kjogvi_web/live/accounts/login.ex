@@ -59,9 +59,9 @@ defmodule KjogviWeb.Live.Accounts.Login do
           </.link>
         </div>
         <div class="text-center">
-          <CoreComponents.button class="w-1/2 py-4 text-xl font-header" phx-disable-with>
+          <.button class="w-1/2 py-4 text-xl font-header" phx-disable-with>
             Log in
-          </CoreComponents.button>
+          </.button>
         </div>
       </.form>
     </div>

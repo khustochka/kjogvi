@@ -31,7 +31,7 @@ defmodule KjogviWeb.Live.My.Settings.Security do
             required
           />
           <div class="mt-2 flex items-center justify-between gap-6">
-            <CoreComponents.button phx-disable-with="Changing...">Change Email</CoreComponents.button>
+            <.button phx-disable-with="Changing...">Change Email</.button>
           </div>
         </div>
       </.form>
@@ -70,9 +70,9 @@ defmodule KjogviWeb.Live.My.Settings.Security do
             label="Confirm new password"
           />
           <div class="mt-2 flex items-center justify-between gap-6">
-            <CoreComponents.button phx-disable-with="Changing...">
+            <.button phx-disable-with="Changing...">
               Change Password
-            </CoreComponents.button>
+            </.button>
           </div>
         </div>
       </.form>

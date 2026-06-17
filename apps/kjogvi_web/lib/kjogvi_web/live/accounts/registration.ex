@@ -73,12 +73,12 @@ defmodule KjogviWeb.Live.Accounts.Registration do
       </LoginRegistrationComponents.password_input>
 
       <div class="text-center">
-        <CoreComponents.button
+        <.button
           phx-disable-with
           class="w-1/2 py-4 text-xl font-header"
         >
           Submit
-        </CoreComponents.button>
+        </.button>
       </div>
     </.form>
     """

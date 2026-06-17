@@ -56,9 +56,9 @@ defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
         required
       />
       <div class="text-center">
-        <CoreComponents.button phx-disable-with="Sending..." class="w-full py-4 text-xl font-header">
+        <.button phx-disable-with="Sending..." class="w-full py-4 text-xl font-header">
           Resend confirmation instructions
-        </CoreComponents.button>
+        </.button>
       </div>
     </.form>
     """

@@ -46,12 +46,12 @@ defmodule KjogviWeb.Live.Accounts.Confirmation do
     >
       <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
       <div class="text-center">
-        <CoreComponents.button
+        <.button
           phx-disable-with="Confirming..."
           class="w-full py-4 text-xl font-header"
         >
           Confirm my account
-        </CoreComponents.button>
+        </.button>
       </div>
     </.form>
     """

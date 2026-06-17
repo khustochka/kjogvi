@@ -121,9 +121,9 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
         <div class="mt-8 space-y-8 bg-white">
           <div class="mt-2 flex items-center justify-between gap-6">
             <%= if @async_result.loading do %>
-              <CoreComponents.button disabled>Preload</CoreComponents.button>
+              <.button disabled>Preload</.button>
             <% else %>
-              <CoreComponents.button>Preload</CoreComponents.button>
+              <.button>Preload</.button>
             <% end %>
           </div>
         </div>
