@@ -42,6 +42,8 @@ only when LiveView classes are applied, for example:
 @theme {
   --font-header: 'Rubik', 'sans-serif', 'ui-sans-serif', 'system-ui';
 
+  /* Do not remove color-brand, it is used by OrnithoWeb */
+  --color-brand: #FD4F00; 
   --color-blue-menu: #407FBF;
   --color-blue-menu-hover: #306faf;
   --color-blue-menu-border: rgba(64, 127, 191, 0.6);
