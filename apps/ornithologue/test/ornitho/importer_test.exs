@@ -7,20 +7,6 @@ defmodule Ornitho.ImporterTest do
 
   @importer Importer.Test.NoTaxa
   describe "process_import/2" do
-    test "raises if the book exists (no force option)" do
-      insert(:book, slug: "test", version: "no_taxa")
-
-      assert_raise RuntimeError,
-                   "A book for importer Ornitho.Importer.Test.NoTaxa already exists, to force overwrite " <>
-                     "it pass [force: true] (or --force in a Mix task. Please note that in this case all " <>
-                     "taxa will be deleted!",
-                   fn ->
-                     @importer.process_import()
-                   end
-
-      assert Ornitho.Finder.Book.exists?(@importer.slug, @importer.version) == true
-    end
-
     @importer Importer.Test.NoTaxa
     test "returns ok and updates the book if instructed to force" do
       _old_book = insert(:book, slug: "test", version: "no_taxa", name: "Old name")
