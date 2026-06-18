@@ -102,8 +102,36 @@ defmodule Kjogvi.MixProject do
     [
       setup: ["deps.get", "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run #{__DIR__}/priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      # Function alias so that `-r`/`--repo` flags are forwarded to the underlying
+      # ecto tasks; with a plain list alias they would be dropped and every repo
+      # in `:ecto_repos` would be reset. Seeds only target `Kjogvi.Repo`, so they
+      # run only when the reset is not scoped to a different repo.
+      "ecto.reset": &ecto_reset/1,
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
+  end
+
+  # Resets the database(s), forwarding any `-r`/`--repo` (and other) flags to the
+  # underlying ecto tasks. Without a `-r` flag every repo in `:ecto_repos` is
+  # reset; with one, only that repo is.
+  defp ecto_reset(args) do
+    Mix.Task.run("ecto.drop", args)
+    Mix.Task.run("ecto.create", args)
+    Mix.Task.run("ecto.migrate", args)
+
+    if seed_main_repo?(args) do
+      Mix.Task.run("run", ["#{__DIR__}/priv/repo/seeds.exs"])
+    end
+  end
+
+  # Seeds belong to Kjogvi.Repo, so only run them when the reset is not scoped to
+  # a different repo.
+  defp seed_main_repo?(args) do
+    {opts, _, _} = OptionParser.parse(args, switches: [repo: :keep], aliases: [r: :repo])
+
+    case Keyword.get_values(opts, :repo) do
+      [] -> true
+      repos -> "Kjogvi.Repo" in repos or "Elixir.Kjogvi.Repo" in repos
+    end
   end
 end
