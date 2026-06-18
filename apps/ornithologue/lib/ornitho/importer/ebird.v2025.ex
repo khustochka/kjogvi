@@ -19,33 +19,25 @@ defmodule Ornitho.Importer.Ebird.V2025 do
     file_path: "import/ebird/v2025/ornithologue_ebird_v2025.csv"
 
   @impl Ornitho.StreamImporter
-  def create_taxa_from_stream(book, stream) do
-    stream
-    |> CSV.decode(headers: true)
-    |> Enum.reduce({0, %{}}, fn {:ok, row}, {num_saved, species_cache} ->
-      {:ok, extras} = Jason.decode(row["extras"])
+  def to_taxon_attrs(book, row, time) do
+    {:ok, extras} = Jason.decode(row["extras"])
 
-      attrs =
-        row
-        |> Map.put("parent_species_id", species_cache[row["parent_species_code"]])
-        |> Map.put("extras", extras)
-
-      taxon = Ops.Taxon.create!(book, attrs)
-
-      new_cache =
-        row["category"]
-        |> case do
-          "species" ->
-            Map.put(species_cache, row["code"], taxon.id)
-
-          _ ->
-            species_cache
-        end
-
-      {num_saved + 1, new_cache}
-    end)
-    |> case do
-      {n, _} -> {:ok, n}
-    end
+    %{
+      book_id: book.id,
+      name_sci: row["name_sci"],
+      name_en: row["name_en"],
+      code: row["code"],
+      taxon_concept_id: row["taxon_concept_id"],
+      category: row["category"],
+      authority: row["authority"],
+      authority_brackets: str_to_bool(row["authority_brackets"]),
+      protonym: row["protonym"],
+      order: row["order"],
+      family: row["family"],
+      sort_order: String.to_integer(row["sort_order"]),
+      inserted_at: time,
+      updated_at: time,
+      extras: extras
+    }
   end
 end
