@@ -3,8 +3,8 @@
 
 @import "tailwindcss" source(none);
 @source "../css";
-@source "../js";
-@source "../../lib/ornitho_web";
+
+@import "./ornitho_web.css";
 
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
@@ -32,10 +32,6 @@
 
 
 /* ------ mine -------- */
-
-@theme {
-  --color-brand: #FD4F00;
-}
 
 @layer base {
   :root {
