@@ -10,8 +10,10 @@ defmodule OrnithoWeb.Live.Book.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
+     # Maps each running import task's monitor ref to its importer string, so the
+     # right table row shows "importing..." and is cleared when the task ends.
+     |> assign(:importing, %{})
      |> assign(:page_title, "Books")
-     |> assign(:importing, MapSet.new())
      |> load_books()}
   end
 
@@ -21,38 +23,63 @@ defmodule OrnithoWeb.Live.Book.Index do
 
     if importer_string in Ornitho.Importer.legit_importers_string() do
       importer = String.to_existing_atom(importer_string)
+      task = Ornitho.Importer.run_import_async(importer, force: force)
 
       {:noreply,
-       socket
-       |> assign(:importing, MapSet.put(socket.assigns.importing, importer_string))
-       |> start_async({:import, importer_string}, fn ->
-         importer.process_import(force: force)
-       end)}
+       assign(socket, :importing, Map.put(socket.assigns.importing, task.ref, importer_string))}
     else
       {:noreply, put_flash(socket, :error, "Not an allowed importer.")}
     end
   end
 
+  # The import task finished and returned a result. Stop monitoring it (flushing
+  # the trailing :DOWN), then reflect success or a handled {:error, _} in the UI.
   @impl true
-  def handle_async({:import, importer_string}, {:ok, result}, socket) do
+  def handle_info({ref, result}, socket) when is_map_key(socket.assigns.importing, ref) do
+    Process.demonitor(ref, [:flush])
+    name = importer_name(socket.assigns.importing[ref])
+
     socket =
       case result do
-        {:ok, _} -> socket
-        {:error, err} -> put_flash(socket, :error, err)
+        {:ok, _} -> flash_importer(socket, :info, name, "import complete")
+        {:error, _} -> flash_importer(socket, :error, name, "import failed")
       end
 
-    {:noreply,
-     socket
-     |> assign(:importing, MapSet.delete(socket.assigns.importing, importer_string))
-     |> load_books()}
+    {:noreply, finish_import(socket, ref)}
   end
 
-  def handle_async({:import, importer_string}, {:exit, reason}, socket) do
+  # The import task crashed (an uncaught exception or exit) before returning a
+  # result; async_nolink delivers it here instead of taking down the LiveView.
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, socket)
+      when is_map_key(socket.assigns.importing, ref) do
+    name = importer_name(socket.assigns.importing[ref])
+
     {:noreply,
      socket
-     |> put_flash(:error, "Import failed: #{inspect(reason)}")
-     |> assign(:importing, MapSet.delete(socket.assigns.importing, importer_string))
-     |> load_books()}
+     |> flash_importer(:error, name, "import failed")
+     |> finish_import(ref)}
+  end
+
+  def handle_info(_msg, socket), do: {:noreply, socket}
+
+  defp finish_import(socket, ref) do
+    socket
+    |> assign(:importing, Map.delete(socket.assigns.importing, ref))
+    |> load_books()
+  end
+
+  defp flash_importer(socket, kind, name, message) do
+    put_flash(socket, kind, "#{name}: #{message}")
+  end
+
+  # The importer module's human-readable name; it is loaded by the time an import
+  # was started, so the atom is guaranteed to exist.
+  defp importer_name(importer_string) do
+    String.to_existing_atom(importer_string).name()
+  end
+
+  defp importing?(importing, importer_string) do
+    importer_string in Map.values(importing)
   end
 
   defp load_books(socket) do
@@ -61,13 +88,29 @@ defmodule OrnithoWeb.Live.Book.Index do
     |> assign(:importers, Ornitho.Importer.unimported())
   end
 
+  attr :class, :string, default: nil
+
+  defp importing_spinner(assigns) do
+    ~H"""
+    <span class={["mt-1 flex items-center gap-1 text-xs font-semibold leading-6", @class]}>
+      <.icon name="hero-arrow-path" class="h-3 w-3 animate-spin" />
+      <span>Importing<span class="sr-only">, please wait</span></span>
+    </span>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <.header class="text-xl">
       {@page_title}
     </.header>
-    <.simpler_table id="taxonomy-index-books" rows={@books} class="mb-10">
+    <p :if={@books == []} id="taxonomy-index-books-empty" class="mb-10 text-zinc-500">
+      No taxonomy books have been imported yet.<%= if @importers != [] do %>
+        Choose one from the list below to import.
+      <% end %>
+    </p>
+    <.simpler_table :if={@books != []} id="taxonomy-index-books" rows={@books} class="mb-10">
       <:col :let={book} label="slug and version" class="w-48">
         <span class="font-mono text-xl font-semibold text-zinc-600">{book.slug}</span>
         <span class="font-mono text-lg text-zinc-500">{book.version}</span>
@@ -86,8 +129,8 @@ defmodule OrnithoWeb.Live.Book.Index do
       <:col :let={book} label="taxa" class="w-20">{book.taxa_count}</:col>
       <:col :let={book} label="imported" class="w-36">
         <.datetime time={book.imported_at} />
-        <%= if MapSet.member?(@importing, book.importer) do %>
-          <span class="text-xs font-semibold leading-6 text-red-600">importing...</span>
+        <%= if importing?(@importing, book.importer) do %>
+          <.importing_spinner class="text-red-600" />
         <% else %>
           <form id={"reimport-#{book.importer}"} phx-submit="import">
             <input type="hidden" name="importer" value={book.importer} />
@@ -125,8 +168,8 @@ defmodule OrnithoWeb.Live.Book.Index do
           </p>
         </:col>
         <:col :let={importer} label="import" class="w-36">
-          <%= if MapSet.member?(@importing, Atom.to_string(importer)) do %>
-            <span class="text-sm font-semibold leading-6 text-zinc-700">importing...</span>
+          <%= if importing?(@importing, Atom.to_string(importer)) do %>
+            <.importing_spinner class="text-zinc-700" />
           <% else %>
             <form id={"import-#{importer}"} phx-submit="import">
               <input type="hidden" name="importer" value={importer} />

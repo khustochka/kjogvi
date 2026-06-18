@@ -5,9 +5,10 @@ defmodule OrnithoWeb.Live.Book.IndexTest do
   import Phoenix.LiveViewTest
 
   describe "Index" do
-    test "No books", %{conn: conn} do
-      {:ok, _index_live, html} = live(conn, "/taxonomy")
-      assert html =~ "slug"
+    test "shows an empty-state message when no books are imported", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, "/taxonomy")
+      assert has_element?(index_live, "#taxonomy-index-books-empty")
+      refute has_element?(index_live, "#taxonomy-index-books")
     end
 
     test "Book with no taxa", %{conn: conn} do
