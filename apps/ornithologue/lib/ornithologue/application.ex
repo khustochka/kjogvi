@@ -7,6 +7,8 @@ defmodule Ornithologue.Application do
 
   @impl true
   def start(_type, _args) do
+    Ornitho.Importer.Telemetry.attach_default_logger()
+
     children = [
       # {Ornitho.Repo, []}
       # Starts a worker by calling: Ornithologue.Worker.start_link(arg)

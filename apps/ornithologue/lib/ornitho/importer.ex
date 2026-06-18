@@ -73,18 +73,32 @@ defmodule Ornitho.Importer do
         force = opts[:force]
 
         with {:ok, config} <- validate_config() do
-          Ops.transact(
-            fn ->
-              with {:ok, _} <- prepare_repo(force: force),
-                   {:ok, book} <- create_book(),
-                   {:ok, taxa_count} = result <- create_taxa(config, book),
-                   {:ok, _} <- finalize_imported_book(book, taxa_count) do
-                result
+          :telemetry.span([:ornitho, :import], %{importer: __MODULE__}, fn ->
+            result = run_import(config, force)
+
+            taxa_count =
+              case result do
+                {:ok, count} -> count
+                _ -> nil
               end
-            end,
-            timeout: Ornitho.Importer.import_timeout()
-          )
+
+            {result, %{importer: __MODULE__, taxa_count: taxa_count}}
+          end)
         end
+      end
+
+      defp run_import(config, force) do
+        Ops.transact(
+          fn ->
+            with {:ok, _} <- prepare_repo(force: force),
+                 {:ok, book} <- create_book(),
+                 {:ok, taxa_count} = result <- create_taxa(config, book),
+                 {:ok, _} <- finalize_imported_book(book, taxa_count) do
+              result
+            end
+          end,
+          timeout: Ornitho.Importer.import_timeout()
+        )
       end
 
       defp prepare_repo(opts \\ []) do

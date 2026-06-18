@@ -88,6 +88,32 @@ defmodule Ornitho.ImporterTest do
     end
   end
 
+  describe "telemetry" do
+    @importer Importer.Demo.V1
+    test "emits a stop event with duration and taxa_count" do
+      ref = make_ref()
+      test_pid = self()
+
+      :telemetry.attach(
+        "test-#{inspect(ref)}",
+        [:ornitho, :import, :stop],
+        fn _event, measurements, metadata, _config ->
+          send(test_pid, {ref, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("test-#{inspect(ref)}") end)
+
+      assert {:ok, count} = @importer.process_import()
+
+      assert_receive {^ref, measurements, metadata}
+      assert is_integer(measurements.duration)
+      assert metadata.importer == @importer
+      assert metadata.taxa_count == count
+    end
+  end
+
   describe "legit_importers/0" do
     test "returns a list of importer modules from config" do
       result = Importer.legit_importers()
