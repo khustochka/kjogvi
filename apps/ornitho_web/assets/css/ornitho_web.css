@@ -11,6 +11,7 @@
 
 /* OrnithoWeb's own design tokens — owned here, not duplicated in the host. */
 @theme {
+  /* If the host app declares its own brand color, it will win. */
   --color-brand: #fd4f00;
 }
 
