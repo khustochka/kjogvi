@@ -9,7 +9,7 @@ defmodule Ornitho.Importer.Test.NoTaxa do
     publication_date: ~D[2018-08-14]
 
   @impl Ornitho.Importer
-  def create_taxa(_config, _book) do
+  def create_taxa(_config, _book, _source) do
     {:ok, 0}
   end
 

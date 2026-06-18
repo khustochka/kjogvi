@@ -44,12 +44,20 @@ defmodule Ornitho.StreamImporter do
       @spec slug() :: String.t()
       def file_path(), do: @file_path
 
+      # The source file is fetched here, before the transaction opens, so a slow S3
+      # download does not hold a database connection or eat into the transaction
+      # timeout. The stream is threaded into `create_taxa/3`.
       @impl Ornitho.Importer
-      def create_taxa(config, book) do
+      def before_transaction(config) do
         case file_streamer(config, file_path()) do
           {:error, _} = err -> err
-          stream -> create_taxa_from_stream(book, stream)
+          stream -> {:ok, stream}
         end
+      end
+
+      @impl Ornitho.Importer
+      def create_taxa(_config, book, stream) do
+        create_taxa_from_stream(book, stream)
       end
 
       defp create_taxa_from_stream(book, stream) do

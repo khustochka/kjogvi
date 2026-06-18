@@ -12,8 +12,20 @@ defmodule Ornitho.Importer do
 
   alias Ornitho.Schema.Book
 
-  @callback create_taxa(config :: map(), book :: Book.t()) :: {:ok, integer()} | {:error, any()}
+  @callback create_taxa(config :: map(), book :: Book.t(), source :: any()) ::
+              {:ok, integer()} | {:error, any()}
   @callback validate_config() :: {:ok, any()} | {:error, any()}
+
+  @doc """
+  Runs before the import transaction opens, so slow setup (e.g. downloading a source
+  file) does not run with a database connection checked out or eat into the transaction
+  timeout. The `{:ok, source}` it returns is threaded into `create_taxa/3`. Defaults to
+  `{:ok, nil}`. Importers that need pre-transaction work (see `Ornitho.StreamImporter`)
+  override this; returning `{:error, reason}` aborts the import before any database work.
+  """
+  @callback before_transaction(config :: map()) :: {:ok, any()} | {:error, any()}
+
+  @optional_callbacks before_transaction: 1
 
   @required_keys [:slug, :version, :name]
   @default_import_timeout 60_000
@@ -74,7 +86,13 @@ defmodule Ornitho.Importer do
 
         with {:ok, config} <- validate_config() do
           :telemetry.span([:ornitho, :import], %{importer: __MODULE__}, fn ->
-            result = run_import(config, force)
+            # Run pre-transaction setup (e.g. downloading the source file) outside the
+            # transaction so it does not hold a database connection or eat into the
+            # transaction timeout.
+            result =
+              with {:ok, source} <- before_transaction(config) do
+                run_import(config, source, force)
+              end
 
             taxa_count =
               case result do
@@ -87,12 +105,17 @@ defmodule Ornitho.Importer do
         end
       end
 
-      defp run_import(config, force) do
+      @impl Ornitho.Importer
+      def before_transaction(_config), do: {:ok, nil}
+
+      defoverridable before_transaction: 1
+
+      defp run_import(config, source, force) do
         Ops.transact(
           fn ->
             with {:ok, _} <- prepare_repo(force: force),
                  {:ok, book} <- create_book(),
-                 {:ok, taxa_count} = result <- create_taxa(config, book),
+                 {:ok, taxa_count} = result <- create_taxa(config, book, source),
                  {:ok, _} <- finalize_imported_book(book, taxa_count) do
               result
             end
