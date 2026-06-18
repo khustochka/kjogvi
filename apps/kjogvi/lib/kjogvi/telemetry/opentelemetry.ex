@@ -32,7 +32,10 @@ defmodule Kjogvi.Telemetry.Opentelemetry do
         [:kjogvi, :legacy, :import, :cards, :exception],
         [:kjogvi, :legacy, :import, :observations, :start],
         [:kjogvi, :legacy, :import, :observations, :stop],
-        [:kjogvi, :legacy, :import, :observations, :exception]
+        [:kjogvi, :legacy, :import, :observations, :exception],
+        [:kjogvi, :legacy, :import, :images, :start],
+        [:kjogvi, :legacy, :import, :images, :stop],
+        [:kjogvi, :legacy, :import, :images, :exception]
       ],
       &__MODULE__.handle_event/4,
       config
