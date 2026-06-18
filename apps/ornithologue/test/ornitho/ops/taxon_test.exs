@@ -29,38 +29,67 @@ defmodule Ornitho.Ops.TaxonTest do
     end
   end
 
-  describe "set_parent_species/3" do
-    test "links children to the parent species and returns the count" do
+  describe "link_parent_species/1" do
+    test "links children to the parent named in their extras and returns the count" do
       book = insert(:book)
       parent = insert(:taxon, book: book, code: "comcuc", category: "species")
-      child1 = insert(:taxon, book: book, code: "comcuc1", category: "issf")
-      child2 = insert(:taxon, book: book, code: "comcuc2", category: "issf")
 
-      assert Ops.Taxon.set_parent_species(book.id, "comcuc", ["comcuc1", "comcuc2"]) == 2
+      child1 =
+        insert(:taxon,
+          book: book,
+          code: "comcuc1",
+          category: "issf",
+          extras: parent_ref("comcuc")
+        )
+
+      child2 =
+        insert(:taxon,
+          book: book,
+          code: "comcuc2",
+          category: "issf",
+          extras: parent_ref("comcuc")
+        )
+
+      assert Ops.Taxon.link_parent_species(book.id) == 2
 
       assert OrnithoRepo.reload(child1).parent_species_id == parent.id
       assert OrnithoRepo.reload(child2).parent_species_id == parent.id
     end
 
-    test "only updates taxa whose code is in the list" do
+    test "leaves taxa without a parent_species_code unlinked" do
       book = insert(:book)
       parent = insert(:taxon, book: book, code: "comcuc", category: "species")
-      child = insert(:taxon, book: book, code: "comcuc1", category: "issf")
-      other = insert(:taxon, book: book, code: "comcuc2", category: "issf")
 
-      assert Ops.Taxon.set_parent_species(book.id, "comcuc", ["comcuc1"]) == 1
+      child =
+        insert(:taxon,
+          book: book,
+          code: "comcuc1",
+          category: "issf",
+          extras: parent_ref("comcuc")
+        )
+
+      plain = insert(:taxon, book: book, code: "comcuc2", category: "species")
+
+      assert Ops.Taxon.link_parent_species(book.id) == 1
 
       assert OrnithoRepo.reload(child).parent_species_id == parent.id
-      assert OrnithoRepo.reload(other).parent_species_id == nil
+      assert OrnithoRepo.reload(plain).parent_species_id == nil
     end
 
     test "is scoped to the given book" do
       book = insert(:book)
       other_book = insert(:book)
       insert(:taxon, book: book, code: "comcuc", category: "species")
-      child_in_other = insert(:taxon, book: other_book, code: "comcuc1", category: "issf")
 
-      assert Ops.Taxon.set_parent_species(book.id, "comcuc", ["comcuc1"]) == 0
+      child_in_other =
+        insert(:taxon,
+          book: other_book,
+          code: "comcuc1",
+          category: "issf",
+          extras: parent_ref("comcuc")
+        )
+
+      assert Ops.Taxon.link_parent_species(book.id) == 0
 
       assert OrnithoRepo.reload(child_in_other).parent_species_id == nil
     end
@@ -69,19 +98,33 @@ defmodule Ornitho.Ops.TaxonTest do
       book = insert(:book)
       other_book = insert(:book)
       insert(:taxon, book: other_book, code: "comcuc", category: "species")
-      child = insert(:taxon, book: book, code: "comcuc1", category: "issf")
 
-      assert Ops.Taxon.set_parent_species(book.id, "comcuc", ["comcuc1"]) == 1
+      child =
+        insert(:taxon,
+          book: book,
+          code: "comcuc1",
+          category: "issf",
+          extras: parent_ref("comcuc")
+        )
 
-      # No parent with that code exists in `book`, so the subquery yields NULL.
+      assert Ops.Taxon.link_parent_species(book.id) == 0
+
+      # No parent with that code exists in `book`, so the child stays unlinked.
       assert OrnithoRepo.reload(child).parent_species_id == nil
     end
 
-    test "returns zero when no child codes match" do
+    test "leaves the child unlinked when its parent_species_code matches nothing" do
       book = insert(:book)
       insert(:taxon, book: book, code: "comcuc", category: "species")
 
-      assert Ops.Taxon.set_parent_species(book.id, "comcuc", ["nope"]) == 0
+      child =
+        insert(:taxon, book: book, code: "comcuc1", category: "issf", extras: parent_ref("nope"))
+
+      assert Ops.Taxon.link_parent_species(book.id) == 0
+
+      assert OrnithoRepo.reload(child).parent_species_id == nil
     end
   end
+
+  defp parent_ref(code), do: %{"parent_species_code" => code}
 end
