@@ -112,6 +112,16 @@ defmodule Kjogvi.Telemetry.Opentelemetry do
 
     OpenTelemetry.Tracer.set_attribute(:duration, duration)
 
+    # A handled failure surfaces as a `:stop` carrying an `:error` reason; mark the
+    # span errored.
+    case metadata do
+      %{error: reason} ->
+        OpenTelemetry.Tracer.set_status(OpenTelemetry.status(:error, inspect(reason)))
+
+      _ ->
+        :ok
+    end
+
     OpentelemetryTelemetry.end_telemetry_span(tracer_id, metadata)
   end
 
