@@ -37,6 +37,7 @@ defmodule Kjogvi.Geo.Location do
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
+    field :extras, :map, default: %{}
 
     field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
 
@@ -77,6 +78,7 @@ defmodule Kjogvi.Geo.Location do
     is_private
     lat
     lon
+    extras
     parent_id
     cached_parent_id
     cached_city_id
