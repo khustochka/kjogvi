@@ -174,6 +174,7 @@ if config_env() == :prod do
 
   # ORNITHOLOGUE IMPORTER
 
+  # Not really needed now, since the import query was optimized
   config :ornithologue, Ornitho.Importer,
     import_timeout: String.to_integer(System.get_env("ORNITHO_IMPORTER_TIMEOUT", "60000"))
 
