@@ -214,11 +214,13 @@ defmodule Kjogvi.Server.ExclusiveTaskProcessorTest do
 
   describe "retention sweep" do
     test "evicts a finished status once it is older than the ttl" do
-      # ttl 0 makes any finished status immediately eligible; a 10ms sweep keeps
-      # the test snappy. This server isn't the shared one — it carries the
-      # retention overrides.
+      # A short (but non-zero) ttl leaves a window in which the finished status is
+      # still observable, then becomes eligible for the next sweep; a 10ms sweep
+      # keeps the test snappy. (ttl 0 would race: the sweep could evict the result
+      # before the poll below ever sees it.) This server isn't the shared one — it
+      # carries the retention overrides.
       server =
-        start_supervised!({Processor, name: nil, ttl: 0, sweep_interval: 10}, id: :ttl_zero)
+        start_supervised!({Processor, name: nil, ttl: 20, sweep_interval: 10}, id: :ttl_zero)
 
       key = {:job, 1}
 

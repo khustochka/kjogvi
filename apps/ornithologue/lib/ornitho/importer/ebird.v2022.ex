@@ -17,34 +17,28 @@ defmodule Ornitho.Importer.Ebird.V2022 do
   use Ornitho.StreamImporter,
     file_path: "import/ebird/v2022/ornithologue_ebird_v2022.csv"
 
+  import Ornitho.Util
+
   @impl Ornitho.StreamImporter
-  def create_taxa_from_stream(book, stream) do
-    stream
-    |> CSV.decode(headers: true)
-    |> Enum.reduce({0, %{}}, fn {:ok, row}, {num_saved, species_cache} ->
-      {:ok, extras} = Jason.decode(row["extras"])
+  def to_taxon_attrs(book, row, time) do
+    {:ok, extras} = Jason.decode(row["extras"])
 
-      attrs =
-        row
-        |> Map.put("parent_species_id", species_cache[row["parent_species_code"]])
-        |> Map.put("extras", extras)
-
-      taxon = Ops.Taxon.create!(book, attrs)
-
-      new_cache =
-        row["category"]
-        |> case do
-          "species" ->
-            Map.put(species_cache, row["code"], taxon.id)
-
-          _ ->
-            species_cache
-        end
-
-      {num_saved + 1, new_cache}
-    end)
-    |> case do
-      {n, _} -> {:ok, n}
-    end
+    %{
+      book_id: book.id,
+      name_sci: cast_string(row["name_sci"]),
+      name_en: cast_string(row["name_en"]),
+      code: cast_string(row["code"]),
+      taxon_concept_id: cast_string(row["taxon_concept_id"]),
+      category: cast_string(row["category"]),
+      authority: cast_string(row["authority"]),
+      authority_brackets: cast_boolean(row["authority_brackets"]),
+      protonym: cast_string(row["protonym"]),
+      order: cast_string(row["order"]),
+      family: cast_string(row["family"]),
+      sort_order: cast_integer(row["sort_order"]),
+      inserted_at: time,
+      updated_at: time,
+      extras: extras
+    }
   end
 end

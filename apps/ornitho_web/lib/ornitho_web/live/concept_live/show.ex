@@ -4,6 +4,7 @@ defmodule OrnithoWeb.Live.Concept.Show do
   use OrnithoWeb, :live_view
 
   import OrnithoWeb.BreadcrumbsComponents
+  import OrnithoWeb.TaxaComponents
 
   @impl true
   def mount(%{}, _session, socket) do
@@ -28,7 +29,9 @@ defmodule OrnithoWeb.Live.Concept.Show do
   def render(assigns) do
     ~H"""
     <.breadcrumbs>
-      <:crumb><b><.link href={OrnithoWeb.LinkHelper.root_path(@socket)}>Taxonomy</.link></b></:crumb>
+      <:crumb>
+        <b><.breadcrumb_link href={OrnithoWeb.LinkHelper.root_path(@socket)}>Taxonomy</.breadcrumb_link></b>
+      </:crumb>
       <:crumb>
         <b>
           Concepts
@@ -38,11 +41,12 @@ defmodule OrnithoWeb.Live.Concept.Show do
     </.breadcrumbs>
 
     <.header>
-      Taxon concept {@concept_id}
+      Taxon concept
+      <.concept_id>{@concept_id}</.concept_id>
     </.header>
 
     <div :if={@taxa != []} class="mt-6">
-      <h2>Corresponding taxa</h2>
+      <.section_heading>Corresponding taxa</.section_heading>
       <OrnithoWeb.Live.Taxa.Table.render
         taxa={@taxa}
         mixed_book_view={true}

@@ -11,7 +11,7 @@ defmodule OrnithoWeb.BreadcrumbsComponents do
   ## Examples
 
       <.breadcrumbs>
-        <:crumb><b><.link href={OrnithoWeb.LinkHelper.root_path(@conn)}>Taxonomy</.link></b></:crumb>
+        <:crumb><b><.breadcrumb_link href={OrnithoWeb.LinkHelper.root_path(@conn)}>Taxonomy</.breadcrumb_link></b></:crumb>
         <:crumb><%= @book.name %></:crumb>
       </.breadcrumbs>
   """
@@ -32,6 +32,23 @@ defmodule OrnithoWeb.BreadcrumbsComponents do
   defp breadcrumbs_separator(assigns) do
     ~H"""
     <span class="mx-1 text-sm text-zinc-400">/</span>
+    """
+  end
+
+  @doc """
+  Renders a breadcrumb link in the brand color.
+
+  Forwards `navigate`, `patch`, `href` and any other attributes to `<.link>`.
+  The brand color may be overridden by a host app, so embedded breadcrumbs pick
+  up the host's brand.
+  """
+  attr :class, :any, default: nil
+  attr :rest, :global, include: ~w(navigate patch href method download name target)
+  slot :inner_block, required: true
+
+  def breadcrumb_link(assigns) do
+    ~H"""
+    <.link class={["text-brand hover:text-brand/80", @class]} {@rest}>{render_slot(@inner_block)}</.link>
     """
   end
 end

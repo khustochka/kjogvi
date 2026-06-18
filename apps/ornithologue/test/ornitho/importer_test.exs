@@ -7,20 +7,6 @@ defmodule Ornitho.ImporterTest do
 
   @importer Importer.Test.NoTaxa
   describe "process_import/2" do
-    test "raises if the book exists (no force option)" do
-      insert(:book, slug: "test", version: "no_taxa")
-
-      assert_raise RuntimeError,
-                   "A book for importer Ornitho.Importer.Test.NoTaxa already exists, to force overwrite " <>
-                     "it pass [force: true] (or --force in a Mix task. Please note that in this case all " <>
-                     "taxa will be deleted!",
-                   fn ->
-                     @importer.process_import()
-                   end
-
-      assert Ornitho.Finder.Book.exists?(@importer.slug, @importer.version) == true
-    end
-
     @importer Importer.Test.NoTaxa
     test "returns ok and updates the book if instructed to force" do
       _old_book = insert(:book, slug: "test", version: "no_taxa", name: "Old name")
@@ -88,6 +74,32 @@ defmodule Ornitho.ImporterTest do
     end
   end
 
+  describe "telemetry" do
+    @importer Importer.Demo.V1
+    test "emits a stop event with duration and taxa_count" do
+      ref = make_ref()
+      test_pid = self()
+
+      :telemetry.attach(
+        "test-#{inspect(ref)}",
+        [:ornitho, :import, :stop],
+        fn _event, measurements, metadata, _config ->
+          send(test_pid, {ref, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("test-#{inspect(ref)}") end)
+
+      assert {:ok, count} = @importer.process_import()
+
+      assert_receive {^ref, measurements, metadata}
+      assert is_integer(measurements.duration)
+      assert metadata.importer == @importer
+      assert metadata.taxa_count == count
+    end
+  end
+
   describe "legit_importers/0" do
     test "returns a list of importer modules from config" do
       result = Importer.legit_importers()
@@ -132,6 +144,13 @@ defmodule Ornitho.ImporterTest do
       result = Importer.import_timeout()
       assert is_integer(result)
       assert result > 0
+    end
+  end
+
+  describe "run_import_async/2" do
+    test "runs the import in a supervised task and returns the result" do
+      task = Importer.run_import_async(Importer.Test.NoTaxa)
+      assert {:ok, _} = Task.await(task)
     end
   end
 end

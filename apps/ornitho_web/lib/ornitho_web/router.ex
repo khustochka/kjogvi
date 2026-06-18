@@ -29,8 +29,7 @@ defmodule OrnithoWeb.Router do
             get "/css-:md5", OrnithoWeb.Assets, :css, as: :ornitho_web_asset
             get "/js-:md5", OrnithoWeb.Assets, :js, as: :ornitho_web_asset
 
-            get "/", OrnithoWeb.BooksController, :index, route_opts
-            post "/import", OrnithoWeb.BooksController, :import, route_opts
+            live "/", OrnithoWeb.Live.Book.Index, nil, route_opts
 
             live "/concepts/:id", OrnithoWeb.Live.Concept.Show, nil, route_opts
             live "/:slug/:version", OrnithoWeb.Live.Book.Show, nil, route_opts

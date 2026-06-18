@@ -17,10 +17,6 @@ defmodule OrnithoWeb.LinkHelper do
     routed_path(conn_or_socket, path, params)
   end
 
-  def import_path(conn_or_socket, params \\ []) do
-    routed_path(conn_or_socket, "import", params)
-  end
-
   defp routed_path(conn_or_socket, path, params) do
     router = _router(conn_or_socket)
 

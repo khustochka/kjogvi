@@ -43,12 +43,14 @@ defmodule OrnithoWeb.Live.Taxa.Show do
   def render(assigns) do
     ~H"""
     <.breadcrumbs>
-      <:crumb><b><.link href={OrnithoWeb.LinkHelper.root_path(@socket)}>Taxonomy</.link></b></:crumb>
+      <:crumb>
+        <b><.breadcrumb_link href={OrnithoWeb.LinkHelper.root_path(@socket)}>Taxonomy</.breadcrumb_link></b>
+      </:crumb>
       <:crumb>
         <b>
-          <.link navigate={OrnithoWeb.LinkHelper.book_path(@socket, @book)}>
+          <.breadcrumb_link navigate={OrnithoWeb.LinkHelper.book_path(@socket, @book)}>
             {@book.name}
-          </.link>
+          </.breadcrumb_link>
         </b>
       </:crumb>
       <:crumb><.sci_name taxon={@taxon} /></:crumb>
@@ -70,16 +72,23 @@ defmodule OrnithoWeb.Live.Taxa.Show do
           {@taxon.order} / {@taxon.family}
         </:item>
         <:item title="Code"><span class="font-mono">{@taxon.code}</span></:item>
-        <:item title="Taxon Concept ID">{@taxon.taxon_concept_id}</:item>
+        <:item :if={@taxon.taxon_concept_id} title="Taxon Concept ID">
+          <.link
+            navigate={OrnithoWeb.LinkHelper.path(@socket, "/concepts/#{@taxon.taxon_concept_id}")}
+            class="no-underline"
+          >
+            <.concept_id>{@taxon.taxon_concept_id}</.concept_id>
+          </.link>
+        </:item>
         <:item :if={@taxon.parent_species} title="Parent species">
-          <.link patch={
+          <.taxon_link patch={
             OrnithoWeb.LinkHelper.path(
               @socket,
               "/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}"
             )
           }>
             <.sci_name taxon={@taxon.parent_species} />
-          </.link>
+          </.taxon_link>
         </:item>
         <:item :for={{key, value} <- @taxon.extras || %{}} title={key}>
           {value}
@@ -87,7 +96,7 @@ defmodule OrnithoWeb.Live.Taxa.Show do
       </.list>
     </div>
     <div :if={@taxon.child_taxa != []} class="mt-6">
-      <h2>Child taxa</h2>
+      <.section_heading>Child taxa</.section_heading>
       <OrnithoWeb.Live.Taxa.Table.render
         book={@book}
         taxa={@taxon.child_taxa}
@@ -96,7 +105,7 @@ defmodule OrnithoWeb.Live.Taxa.Show do
       />
     </div>
     <div :if={@same_concept_taxa != []} class="mt-6">
-      <h2>Same concept taxa</h2>
+      <.section_heading>Same concept taxa</.section_heading>
       <OrnithoWeb.Live.Taxa.Table.render
         taxa={@same_concept_taxa}
         mixed_book_view={true}

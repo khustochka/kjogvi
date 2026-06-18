@@ -7,9 +7,9 @@
 @source "../css";
 @source "../js";
 @source "../../lib/kjogvi_web";
-@source "../../../../apps/ornitho_web/css";
-@source "../../../../apps/ornitho_web/js";
-@source "../../../../apps/ornitho_web/lib/ornitho_web";
+
+/* Include OrnithoWeb config. */
+@import "../../../../apps/ornitho_web/assets/css/ornitho_web.css";
 
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";

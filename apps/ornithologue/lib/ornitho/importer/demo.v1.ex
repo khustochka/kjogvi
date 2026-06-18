@@ -36,7 +36,7 @@ defmodule Ornitho.Importer.Demo.V1 do
   ]
 
   @impl Ornitho.Importer
-  def create_taxa(_config, book) do
+  def create_taxa(_config, book, _source) do
     case Ops.Taxon.create_many(book, @taxa_list) do
       {:ok, rows} ->
         {:ok, length(Map.keys(rows))}

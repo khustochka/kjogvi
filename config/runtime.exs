@@ -174,8 +174,9 @@ if config_env() == :prod do
 
   # ORNITHOLOGUE IMPORTER
 
+  # Not really needed now, since the import query was optimized
   config :ornithologue, Ornitho.Importer,
-    import_timeout: String.to_integer(System.get_env("ORNITHO_IMPORTER_TIMEOUT", "30000"))
+    import_timeout: String.to_integer(System.get_env("ORNITHO_IMPORTER_TIMEOUT", "60000"))
 
   # Taxonomy downloads use their own S3 profile, passed as a per-request ex_aws
   # override (the global ex_aws config is the image storage profile). Credentials

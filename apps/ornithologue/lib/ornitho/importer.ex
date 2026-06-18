@@ -12,8 +12,20 @@ defmodule Ornitho.Importer do
 
   alias Ornitho.Schema.Book
 
-  @callback create_taxa(config :: map(), book :: Book.t()) :: {:ok, integer()} | {:error, any()}
+  @callback create_taxa(config :: map(), book :: Book.t(), source :: any()) ::
+              {:ok, integer()} | {:error, any()}
   @callback validate_config() :: {:ok, any()} | {:error, any()}
+
+  @doc """
+  Runs before the import transaction opens, so slow setup (e.g. downloading a source
+  file) does not run with a database connection checked out or eat into the transaction
+  timeout. The `{:ok, source}` it returns is threaded into `create_taxa/3`. Defaults to
+  `{:ok, nil}`. Importers that need pre-transaction work (see `Ornitho.StreamImporter`)
+  override this; returning `{:error, reason}` aborts the import before any database work.
+  """
+  @callback before_transaction(config :: map()) :: {:ok, any()} | {:error, any()}
+
+  @optional_callbacks before_transaction: 1
 
   @required_keys [:slug, :version, :name]
   @default_import_timeout 60_000
@@ -73,20 +85,47 @@ defmodule Ornitho.Importer do
         force = opts[:force]
 
         with {:ok, config} <- validate_config() do
-          Ops.transaction(
-            fn ->
-              with {:ok, _} <- prepare_repo(force: force),
-                   {:ok, book} <- create_book(),
-                   {:ok, taxa_count} = result <- create_taxa(config, book),
-                   {:ok, _} <- finalize_imported_book(book, taxa_count) do
-                result
-              else
-                {:error, e} -> Ops.rollback(e)
+          :telemetry.span([:ornitho, :import], %{importer: __MODULE__}, fn ->
+            # Run pre-transaction setup (e.g. downloading the source file) outside the
+            # transaction so it does not hold a database connection or eat into the
+            # transaction timeout.
+            result =
+              with {:ok, source} <- before_transaction(config) do
+                run_import(config, source, force)
               end
-            end,
-            timeout: Ornitho.Importer.import_timeout()
-          )
+
+            # A failed import returns `{:error, reason}` (e.g. a download or config
+            # error) without raising, so the span emits `:stop`, not `:exception`.
+            # Carry the reason in the `:stop` metadata so handlers can tell success
+            # from failure — `:telemetry.span/3` has no separate error event.
+            metadata =
+              case result do
+                {:ok, count} -> %{importer: __MODULE__, taxa_count: count}
+                {:error, reason} -> %{importer: __MODULE__, taxa_count: nil, error: reason}
+              end
+
+            {result, metadata}
+          end)
         end
+      end
+
+      @impl Ornitho.Importer
+      def before_transaction(_config), do: {:ok, nil}
+
+      defoverridable before_transaction: 1
+
+      defp run_import(config, source, force) do
+        Ops.transact(
+          fn ->
+            with {:ok, _} <- prepare_repo(force: force),
+                 {:ok, book} <- create_book(),
+                 {:ok, taxa_count} = result <- create_taxa(config, book, source),
+                 {:ok, _} <- finalize_imported_book(book, taxa_count) do
+              result
+            end
+          end,
+          timeout: Ornitho.Importer.import_timeout()
+        )
       end
 
       defp prepare_repo(opts \\ []) do
@@ -150,5 +189,21 @@ defmodule Ornitho.Importer do
 
   def import_timeout() do
     Application.get_env(:ornithologue, __MODULE__)[:import_timeout] || @default_import_timeout
+  end
+
+  @doc """
+  Runs `importer.process_import/1` as a supervised, monitored task.
+
+  The task runs under `Ornitho.TaskSupervisor` and is monitored (not
+  linked) via `Task.Supervisor.async_nolink/3`, so the caller is notified of the
+  result through the usual `Task` messages and survives a crash of the import
+  (the failure arrives as a `:DOWN` message instead of bringing the caller down).
+  Returns the `%Task{}`; await it or match its `ref` in `handle_info/2`.
+  """
+  @spec run_import_async(module(), keyword()) :: Task.t()
+  def run_import_async(importer, opts \\ []) when is_atom(importer) do
+    Task.Supervisor.async_nolink(Ornitho.TaskSupervisor, fn ->
+      importer.process_import(opts)
+    end)
   end
 end

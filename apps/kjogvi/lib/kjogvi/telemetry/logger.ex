@@ -25,13 +25,18 @@ defmodule Kjogvi.Telemetry.Logger do
   end
 
   @doc false
-  def legacy_import_stop(_, %{duration: duration}, metadata, _) do
-    # See also Phoenix.Logger.duration for improvements
-    Logger.info(
-      "[Kjogvi.Legacy.Import] Finished: duration=#{System.convert_time_unit(duration, :native, :millisecond)}ms",
+  def legacy_import_stop(_, %{duration: duration}, %{error: reason} = metadata, _) do
+    Logger.error(
+      "[Kjogvi.Legacy.Import] Failed after #{duration_ms(duration)}ms: #{inspect(reason)}",
       metadata
     )
   end
+
+  def legacy_import_stop(_, %{duration: duration}, metadata, _) do
+    Logger.info("[Kjogvi.Legacy.Import] Finished: duration=#{duration_ms(duration)}ms", metadata)
+  end
+
+  defp duration_ms(duration), do: System.convert_time_unit(duration, :native, :millisecond)
 
   def dev_setup do
     ecto_dev_logger(

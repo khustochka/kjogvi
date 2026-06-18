@@ -65,7 +65,7 @@ defmodule Kjogvi.Legacy.Import do
           timeout: query_timeout()
         )
 
-      {result, telemetry_metadata(opts)}
+      {result, stop_metadata(result, opts)}
     end)
   end
 
@@ -79,7 +79,7 @@ defmodule Kjogvi.Legacy.Import do
           :ok
         end
 
-      {result, telemetry_metadata(opts)}
+      {result, stop_metadata(result, opts)}
     end)
   end
 
@@ -89,7 +89,7 @@ defmodule Kjogvi.Legacy.Import do
     :telemetry.span([:kjogvi, :legacy, :import, object_type], telemetry_metadata(opts), fn ->
       result = load(object_type, adapter().init(), {1, 0}, opts)
 
-      {result, telemetry_metadata(opts)}
+      {result, stop_metadata(result, opts)}
     end)
   end
 
@@ -171,5 +171,17 @@ defmodule Kjogvi.Legacy.Import do
   defp telemetry_metadata(opts) do
     broadcast_key = opts[:broadcast_key] || "legacy_import:#{opts[:user].id}"
     %{adapter: adapter(), user_id: opts[:user].id, broadcast_key: broadcast_key}
+  end
+
+  # `:telemetry.span/3` has no error event for a handled `{:error, _}` (only crashes
+  # emit `:exception`), so carry the reason in an `:error` key to let handlers tell a
+  # failed `:stop` from a successful one.
+  defp stop_metadata(result, opts) do
+    metadata = telemetry_metadata(opts)
+
+    case result do
+      {:error, reason} -> Map.put(metadata, :error, reason)
+      _ -> metadata
+    end
   end
 end

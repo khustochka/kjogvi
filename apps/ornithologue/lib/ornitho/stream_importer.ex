@@ -12,9 +12,10 @@ defmodule Ornitho.StreamImporter do
   """
 
   alias Ornitho.Schema.Book
+  alias Ornitho.Ops
+  alias Ornitho.Schema.Taxon
 
-  @callback create_taxa_from_stream(book :: Book.t(), stream :: Enumerable.t()) ::
-              {:ok, integer()} | {:error, any()}
+  @callback to_taxon_attrs(book :: Book.t(), row :: map(), time :: DateTime) :: map()
 
   @required_keys [:file_path]
 
@@ -43,12 +44,67 @@ defmodule Ornitho.StreamImporter do
       @spec slug() :: String.t()
       def file_path(), do: @file_path
 
+      # The source file is fetched here, before the transaction opens, so a slow S3
+      # download does not hold a database connection or eat into the transaction
+      # timeout. The stream is threaded into `create_taxa/3`.
       @impl Ornitho.Importer
-      def create_taxa(config, book) do
+      def before_transaction(config) do
         case file_streamer(config, file_path()) do
           {:error, _} = err -> err
-          stream -> create_taxa_from_stream(book, stream)
+          stream -> {:ok, stream}
         end
+      end
+
+      @impl Ornitho.Importer
+      def create_taxa(_config, book, stream) do
+        create_taxa_from_stream(book, stream)
+      end
+
+      defp create_taxa_from_stream(book, stream) do
+        with {:ok, _num_saved} = result <- insert_taxa(book, stream),
+             {:ok, _} <- Ops.Taxon.link_parent_species(book.id) do
+          result
+        end
+      end
+
+      # Inserts taxa in chunks. The child's `parent_species_code` is stashed in `extras`
+      # so the parent link can be resolved afterwards in a single self-join (the parent
+      # may live in the same or an earlier chunk, so its id is not known at insert time).
+      #
+      # `insert_all` bypasses changesets, so a bad row (e.g. a duplicate code, or a NULL
+      # in a required column) surfaces as a raised database exception rather than a
+      # changeset error. The exception is left to propagate: it rolls back the
+      # surrounding `Ops.transact` transaction and crashes the import task, which the
+      # caller observes (and the telemetry span reports as an `:exception`).
+      defp insert_taxa(book, stream) do
+        num_saved =
+          stream
+          |> CSV.decode(headers: true)
+          |> Stream.chunk_every(chunk_size())
+          |> Enum.reduce(0, fn chunk, num_saved ->
+            time = DateTime.utc_now()
+
+            taxa_to_insert =
+              Enum.map(chunk, fn {:ok, row} ->
+                book
+                |> to_taxon_attrs(row, time)
+                |> put_parent_species_code(row["parent_species_code"])
+              end)
+
+            {num_inserted, _} = Ops.insert_all(Taxon, taxa_to_insert)
+
+            num_saved + num_inserted
+          end)
+
+        {:ok, num_saved}
+      end
+
+      defp put_parent_species_code(attrs, nil), do: attrs
+      defp put_parent_species_code(attrs, ""), do: attrs
+
+      defp put_parent_species_code(attrs, code) do
+        extras = Map.put(attrs[:extras] || %{}, "parent_species_code", code)
+        Map.put(attrs, :extras, extras)
       end
 
       defp file_streamer(config, path) do
@@ -67,6 +123,8 @@ defmodule Ornitho.StreamImporter do
       defp adapter() do
         config()[:adapter]
       end
+
+      defp chunk_size, do: 2_000
     end
   end
 end

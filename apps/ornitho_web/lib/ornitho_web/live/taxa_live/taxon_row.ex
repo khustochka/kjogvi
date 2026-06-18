@@ -34,18 +34,16 @@ defmodule OrnithoWeb.Live.Taxa.TaxonRow do
         <div class="font-mono">
           <.highlighted content={@taxon.code} search_state={@search_state} />
         </div>
-        <div :if={@taxon.taxon_concept_id} class="font-mono">
-          <span class="text-xs text-slate-400">
-            <.link
-              navigate={@link_builder.("/concepts/#{@taxon.taxon_concept_id}")}
-              phx-no-format
-            >
-                    <.highlighted
-                      content={@taxon.taxon_concept_id}
-                      search_state={@search_state}
-                      full_match={true}
-                    /></.link>
-          </span>
+        <div :if={@taxon.taxon_concept_id}>
+          <.link
+            navigate={@link_builder.("/concepts/#{@taxon.taxon_concept_id}")}
+            class="no-underline"
+            phx-no-format
+          ><.concept_id><.highlighted
+                content={@taxon.taxon_concept_id}
+                search_state={@search_state}
+                full_match={true}
+              /></.concept_id></.link>
         </div>
       </td>
       <td class="p-0 py-4 pr-6">
@@ -53,10 +51,10 @@ defmodule OrnithoWeb.Live.Taxa.TaxonRow do
           <div>
             <div>
               <strong>
-                <.link
+                <.taxon_link
                   navigate={@link_builder.("/#{@book.slug}/#{@book.version}/#{@taxon.code}")}
                   phx-no-format
-                ><.sci_name taxon={@taxon} search_state={@search_state} /></.link>
+                ><.sci_name taxon={@taxon} search_state={@search_state} /></.taxon_link>
               </strong>
               <.category_tag :if={@taxon.category} category={@taxon.category} />
               <.extinct_tag taxon={@taxon} />
@@ -68,12 +66,12 @@ defmodule OrnithoWeb.Live.Taxa.TaxonRow do
         </div>
       </td>
       <td :if={!@skip_parent_species} class="p-0 py-4 pr-6 text-center">
-        <.link
+        <.taxon_link
           :if={@taxon.parent_species}
           navigate={@link_builder.("/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}")}
         >
           <.sci_name taxon={@taxon.parent_species} />
-        </.link>
+        </.taxon_link>
       </td>
       <td class="p-0 py-4 pr-6">
         <div>{@taxon.order}</div>

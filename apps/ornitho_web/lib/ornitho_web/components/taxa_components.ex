@@ -78,6 +78,73 @@ defmodule OrnithoWeb.TaxaComponents do
   end
 
   @doc """
+  Renders a link to a taxon in the brand color.
+
+  Forwards `navigate`, `patch`, `href` and any other attributes to `<.link>`.
+  The brand color may be overridden by a host app, so embedded taxon links
+  pick up the host's brand.
+
+  ## Examples
+
+      <.taxon_link navigate={taxon_path(@socket, @taxon)}><.sci_name taxon={@taxon} /></.taxon_link>
+  """
+  attr :class, :any, default: nil
+  attr :rest, :global, include: ~w(navigate patch href method download name target)
+  slot :inner_block, required: true
+
+  def taxon_link(assigns) do
+    ~H"""
+    <.link class={["text-brand hover:text-brand/80", @class]} {@rest}>{render_slot(@inner_block)}</.link>
+    """
+  end
+
+  @doc """
+  Renders a section heading (e.g. above a related-taxa table).
+
+  ## Examples
+
+      <.section_heading>Child taxa</.section_heading>
+  """
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  def section_heading(assigns) do
+    ~H"""
+    <h2 class={["text-xl font-semibold text-zinc-800", @class]}>
+      {render_slot(@inner_block)}
+    </h2>
+    """
+  end
+
+  @doc ~S"""
+  Renders a taxon concept id as a monospace badge so it stands out as an
+  identifier.
+
+  Pass the id as the inner block (so callers can wrap it in `<.highlighted>`
+  for search highlighting, or in a `<.link>` to the concept page).
+
+  ## Examples
+
+      <.concept_id>{@taxon.taxon_concept_id}</.concept_id>
+
+      <.link navigate={~p"/concepts/#{id}"}><.concept_id>{id}</.concept_id></.link>
+  """
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  def concept_id(assigns) do
+    ~H"""
+    <code
+      class={[
+        "font-mono text-[0.9em] bg-zinc-200 text-zinc-600 rounded px-1 py-0.5",
+        @class
+      ]}
+      phx-no-format
+    >{render_slot(@inner_block)}</code>
+    """
+  end
+
+  @doc """
   Renders a tag with taxon category.
   """
   attr :category, :string

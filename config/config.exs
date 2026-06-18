@@ -139,9 +139,7 @@ config :ornithologue, Ornitho.Importer,
     Ornitho.Importer.AviList.V2025
   ]
 
-config :ornithologue, Ornitho.StreamImporter,
-  adapter: Ornitho.StreamImporter.LocalAdapter,
-  path_prefix: "apps/ornithologue/priv"
+config :ornithologue, Ornitho.StreamImporter, adapter: Ornitho.StreamImporter.LocalAdapter
 
 # KJOGVI
 

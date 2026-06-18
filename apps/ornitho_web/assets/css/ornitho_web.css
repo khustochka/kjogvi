@@ -1,0 +1,21 @@
+/* OrnithoWeb shared CSS partial.
+
+   This file is meant to be imported by a host application's `app.css` so the
+   host's Tailwind build picks up OrnithoWeb's own design tokens and scans
+   OrnithoWeb's source files for class names.
+
+   All `@source` paths are relative to THIS file, so they resolve correctly
+   whether OrnithoWeb lives under `apps/ornitho_web` (umbrella) or
+   `deps/ornitho_web` (Hex dependency). The host should not need to know where
+   OrnithoWeb is on disk beyond the single `@import` of this file. */
+
+/* OrnithoWeb's own design tokens — owned here, not duplicated in the host. */
+@theme {
+  /* If the host app declares its own brand color, it will win. */
+  --color-brand: #fd4f00;
+}
+
+/* Where OrnithoWeb's class names live, so the host's Tailwind build emits
+   the utilities OrnithoWeb actually uses. */
+@source "../js";
+@source "../../lib/ornitho_web";
