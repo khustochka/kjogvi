@@ -7,7 +7,8 @@ defmodule Ornitho.Importer.Telemetry do
     * `[:ornitho, :import, :start]` — `%{system_time: ...}`,
       metadata `%{importer: module, telemetry_span_context: ...}`
     * `[:ornitho, :import, :stop]` — `%{duration: native_time}`,
-      metadata `%{importer: module, taxa_count: integer | nil, ...}`
+      metadata `%{importer: module, taxa_count: integer | nil, ...}`; on a handled
+      failure (`{:error, reason}` return) the metadata also carries `error: reason`
     * `[:ornitho, :import, :exception]` — `%{duration: native_time}`,
       metadata with `:kind`, `:reason`, `:stacktrace`, ...
 
@@ -37,6 +38,13 @@ defmodule Ornitho.Importer.Telemetry do
   @doc false
   def handle_event(@start_event, _measurements, metadata, %{level: level}) do
     Logger.log(level, "[Ornitho.Importer] #{inspect(metadata.importer)} started")
+  end
+
+  def handle_event(@stop_event, %{duration: duration}, %{error: reason} = metadata, _config) do
+    Logger.error(
+      "[Ornitho.Importer] #{inspect(metadata.importer)} failed after " <>
+        "#{format_duration(duration)}: #{inspect(reason)}"
+    )
   end
 
   def handle_event(@stop_event, %{duration: duration}, metadata, %{level: level}) do

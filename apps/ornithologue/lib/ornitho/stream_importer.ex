@@ -73,9 +73,9 @@ defmodule Ornitho.StreamImporter do
       #
       # `insert_all` bypasses changesets, so a bad row (e.g. a duplicate code, or a NULL
       # in a required column) surfaces as a raised database exception rather than a
-      # changeset error. We catch it and return `{:error, reason}` so the failure flows
-      # through the importer's `{:ok, _} | {:error, _}` contract; the surrounding
-      # transaction is rolled back by `Ops.transact` once the error tuple propagates.
+      # changeset error. The exception is left to propagate: it rolls back the
+      # surrounding `Ops.transact` transaction and crashes the import task, which the
+      # caller observes (and the telemetry span reports as an `:exception`).
       defp insert_taxa(book, stream) do
         num_saved =
           stream
@@ -97,9 +97,6 @@ defmodule Ornitho.StreamImporter do
           end)
 
         {:ok, num_saved}
-      rescue
-        error in [Postgrex.Error, Ecto.ConstraintError, DBConnection.EncodeError] ->
-          {:error, error}
       end
 
       defp put_parent_species_code(attrs, nil), do: attrs

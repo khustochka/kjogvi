@@ -94,13 +94,17 @@ defmodule Ornitho.Importer do
                 run_import(config, source, force)
               end
 
-            taxa_count =
+            # A failed import returns `{:error, reason}` (e.g. a download or config
+            # error) without raising, so the span emits `:stop`, not `:exception`.
+            # Carry the reason in the `:stop` metadata so handlers can tell success
+            # from failure — `:telemetry.span/3` has no separate error event.
+            metadata =
               case result do
-                {:ok, count} -> count
-                _ -> nil
+                {:ok, count} -> %{importer: __MODULE__, taxa_count: count}
+                {:error, reason} -> %{importer: __MODULE__, taxa_count: nil, error: reason}
               end
 
-            {result, %{importer: __MODULE__, taxa_count: taxa_count}}
+            {result, metadata}
           end)
         end
       end
@@ -185,5 +189,21 @@ defmodule Ornitho.Importer do
 
   def import_timeout() do
     Application.get_env(:ornithologue, __MODULE__)[:import_timeout] || @default_import_timeout
+  end
+
+  @doc """
+  Runs `importer.process_import/1` as a supervised, monitored task.
+
+  The task runs under `Ornitho.TaskSupervisor` and is monitored (not
+  linked) via `Task.Supervisor.async_nolink/3`, so the caller is notified of the
+  result through the usual `Task` messages and survives a crash of the import
+  (the failure arrives as a `:DOWN` message instead of bringing the caller down).
+  Returns the `%Task{}`; await it or match its `ref` in `handle_info/2`.
+  """
+  @spec run_import_async(module(), keyword()) :: Task.t()
+  def run_import_async(importer, opts \\ []) when is_atom(importer) do
+    Task.Supervisor.async_nolink(Ornitho.TaskSupervisor, fn ->
+      importer.process_import(opts)
+    end)
   end
 end

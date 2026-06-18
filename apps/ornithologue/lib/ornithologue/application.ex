@@ -10,9 +10,7 @@ defmodule Ornithologue.Application do
     Ornitho.Importer.Telemetry.attach_default_logger()
 
     children = [
-      # {Ornitho.Repo, []}
-      # Starts a worker by calling: Ornithologue.Worker.start_link(arg)
-      # {Ornithologue.Worker, arg}
+      {Task.Supervisor, name: Ornitho.TaskSupervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

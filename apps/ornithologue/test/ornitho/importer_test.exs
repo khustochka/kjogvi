@@ -146,4 +146,11 @@ defmodule Ornitho.ImporterTest do
       assert result > 0
     end
   end
+
+  describe "run_import_async/2" do
+    test "runs the import in a supervised task and returns the result" do
+      task = Importer.run_import_async(Importer.Test.NoTaxa)
+      assert {:ok, _} = Task.await(task)
+    end
+  end
 end
