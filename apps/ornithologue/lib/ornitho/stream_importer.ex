@@ -61,32 +61,45 @@ defmodule Ornitho.StreamImporter do
       end
 
       defp create_taxa_from_stream(book, stream) do
-        num_saved = insert_taxa(book, stream)
-        Ops.Taxon.link_parent_species(book.id)
-        {:ok, num_saved}
+        with {:ok, _num_saved} = result <- insert_taxa(book, stream),
+             {:ok, _} <- Ops.Taxon.link_parent_species(book.id) do
+          result
+        end
       end
 
       # Inserts taxa in chunks. The child's `parent_species_code` is stashed in `extras`
       # so the parent link can be resolved afterwards in a single self-join (the parent
       # may live in the same or an earlier chunk, so its id is not known at insert time).
+      #
+      # `insert_all` bypasses changesets, so a bad row (e.g. a duplicate code, or a NULL
+      # in a required column) surfaces as a raised database exception rather than a
+      # changeset error. We catch it and return `{:error, reason}` so the failure flows
+      # through the importer's `{:ok, _} | {:error, _}` contract; the surrounding
+      # transaction is rolled back by `Ops.transact` once the error tuple propagates.
       defp insert_taxa(book, stream) do
-        stream
-        |> CSV.decode(headers: true)
-        |> Stream.chunk_every(chunk_size())
-        |> Enum.reduce(0, fn chunk, num_saved ->
-          time = DateTime.utc_now()
+        num_saved =
+          stream
+          |> CSV.decode(headers: true)
+          |> Stream.chunk_every(chunk_size())
+          |> Enum.reduce(0, fn chunk, num_saved ->
+            time = DateTime.utc_now()
 
-          taxa_to_insert =
-            Enum.map(chunk, fn {:ok, row} ->
-              book
-              |> to_taxon_attrs(row, time)
-              |> put_parent_species_code(row["parent_species_code"])
-            end)
+            taxa_to_insert =
+              Enum.map(chunk, fn {:ok, row} ->
+                book
+                |> to_taxon_attrs(row, time)
+                |> put_parent_species_code(row["parent_species_code"])
+              end)
 
-          {num_inserted, _} = Ops.insert_all(Taxon, taxa_to_insert)
+            {num_inserted, _} = Ops.insert_all(Taxon, taxa_to_insert)
 
-          num_saved + num_inserted
-        end)
+            num_saved + num_inserted
+          end)
+
+        {:ok, num_saved}
+      rescue
+        error in [Postgrex.Error, Ecto.ConstraintError, DBConnection.EncodeError] ->
+          {:error, error}
       end
 
       defp put_parent_species_code(attrs, nil), do: attrs

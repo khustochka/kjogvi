@@ -50,7 +50,7 @@ defmodule Ornitho.Ops.TaxonTest do
           extras: parent_ref("comcuc")
         )
 
-      assert Ops.Taxon.link_parent_species(book.id) == 2
+      assert Ops.Taxon.link_parent_species(book.id) == {:ok, 2}
 
       assert OrnithoRepo.reload(child1).parent_species_id == parent.id
       assert OrnithoRepo.reload(child2).parent_species_id == parent.id
@@ -70,7 +70,7 @@ defmodule Ornitho.Ops.TaxonTest do
 
       plain = insert(:taxon, book: book, code: "comcuc2", category: "species")
 
-      assert Ops.Taxon.link_parent_species(book.id) == 1
+      assert Ops.Taxon.link_parent_species(book.id) == {:ok, 1}
 
       assert OrnithoRepo.reload(child).parent_species_id == parent.id
       assert OrnithoRepo.reload(plain).parent_species_id == nil
@@ -89,7 +89,7 @@ defmodule Ornitho.Ops.TaxonTest do
           extras: parent_ref("comcuc")
         )
 
-      assert Ops.Taxon.link_parent_species(book.id) == 0
+      assert Ops.Taxon.link_parent_species(book.id) == {:ok, 0}
 
       assert OrnithoRepo.reload(child_in_other).parent_species_id == nil
     end
@@ -107,7 +107,7 @@ defmodule Ornitho.Ops.TaxonTest do
           extras: parent_ref("comcuc")
         )
 
-      assert Ops.Taxon.link_parent_species(book.id) == 0
+      assert Ops.Taxon.link_parent_species(book.id) == {:ok, 0}
 
       # No parent with that code exists in `book`, so the child stays unlinked.
       assert OrnithoRepo.reload(child).parent_species_id == nil
@@ -120,7 +120,7 @@ defmodule Ornitho.Ops.TaxonTest do
       child =
         insert(:taxon, book: book, code: "comcuc1", category: "issf", extras: parent_ref("nope"))
 
-      assert Ops.Taxon.link_parent_species(book.id) == 0
+      assert Ops.Taxon.link_parent_species(book.id) == {:ok, 0}
 
       assert OrnithoRepo.reload(child).parent_species_id == nil
     end
