@@ -34,7 +34,7 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
 
       refute result =~ "Must have the @ sign and no spaces."
       # A too-short password reddens the hint instead of listing a separate error.
-      assert has_element?(lv, "#registration_form_password_hint.text-rose-600")
+      assert has_element?(lv, "#user_password_hint.text-rose-600")
     end
 
     test "flags a malformed email once the field is blurred", %{conn: conn} do
@@ -42,7 +42,7 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
 
       result =
         lv
-        |> element("#registration_form_email")
+        |> element("#user_email")
         |> render_blur(value: "with spaces")
 
       assert result =~ "Must have the @ sign and no spaces."
@@ -68,7 +68,7 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
 
       result =
         lv
-        |> element("#registration_form_email")
+        |> element("#user_email")
         |> render_blur(value: user.email)
 
       assert result =~ "has already been taken"
@@ -139,7 +139,7 @@ defmodule KjogviWeb.Live.Accounts.RegistrationTest do
       )
       |> render_submit()
 
-      assert has_element?(lv, "#registration_form_password_hint.text-rose-600")
+      assert has_element?(lv, "#user_password_hint.text-rose-600")
     end
   end
 
