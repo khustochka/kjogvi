@@ -251,12 +251,12 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
   # {location, nested?} tuples so the template can render nesting explicitly
   # instead of guessing from presence of a flag.
   #
-  # Top-level order: continents/specials first (alphabetical), then countries
+  # Top-level order: non-country tops first (alphabetical), then countries
   # (alphabetical), each country immediately followed by its children. Inside
-  # each country block, regions come first (alphabetical), then any other
+  # each country block, subdivisions come first (alphabetical), then any other
   # sub-country locations (specials, etc.) alphabetical.
   defp sort_logbook_locations(locations) do
-    {countries, others} = Enum.split_with(locations, &(&1.location_type == "country"))
+    {countries, others} = Enum.split_with(locations, &(&1.location_type == :country))
     country_ids = MapSet.new(countries, & &1.id)
 
     {children, top_level_others} =
@@ -288,9 +288,9 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     non_country_top ++ country_blocks
   end
 
-  # Regions first (alphabetical), then everything else alphabetical.
+  # Subdivisions first (alphabetical), then everything else alphabetical.
   defp sort_country_children(children) do
-    {regions, rest} = Enum.split_with(children, &(&1.location_type == "region"))
+    {regions, rest} = Enum.split_with(children, &(&1.location_type == :subdivision1))
     Enum.sort_by(regions, & &1.name_en) ++ Enum.sort_by(rest, & &1.name_en)
   end
 
@@ -298,7 +298,7 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     setting = Map.get(existing_settings, loc.id)
 
     flag =
-      if loc.location_type == "country" do
+      if loc.location_type == :country do
         case Kjogvi.Geo.Location.to_flag_emoji(loc) do
           "" -> nil
           f -> f

@@ -127,6 +127,58 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "location_types/0 and hierarchy_levels/0" do
+    test "hierarchy levels are the ordered set, top to bottom" do
+      assert Location.hierarchy_levels() ==
+               ~w(country subdivision1 subdivision2 city site section)a
+    end
+
+    test "location_types is the hierarchy plus special" do
+      assert Location.location_types() ==
+               ~w(country subdivision1 subdivision2 city site section special)a
+    end
+  end
+
+  describe "level FK columns" do
+    test "persist and load via their associations" do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: "subdivision1",
+          country_id: country.id
+        )
+
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      site =
+        insert(:location,
+          name_en: "Assiniboine Park",
+          location_type: "site",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      loaded =
+        Repo.get!(Location, site.id)
+        |> Repo.preload([:country, :subdivision1, :subdivision2, :city, :site])
+
+      assert loaded.country.id == country.id
+      assert loaded.subdivision1.id == subdivision1.id
+      assert loaded.city.id == city.id
+      assert is_nil(loaded.subdivision2)
+      assert is_nil(loaded.site)
+    end
+  end
+
   describe "Query.for_user/2" do
     test "returns own and common locations but not another user's" do
       user = user_fixture()

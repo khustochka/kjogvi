@@ -496,9 +496,9 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     end
   end
 
-  defp slot_for("country"), do: :country
-  defp slot_for("region"), do: :subdivision
-  defp slot_for("city"), do: :city
+  defp slot_for(:country), do: :country
+  defp slot_for(:subdivision1), do: :subdivision
+  defp slot_for(:city), do: :city
   defp slot_for(_), do: nil
 
   defp classified_ids(cached), do: Enum.map(Map.values(cached), &(&1 && &1.id))

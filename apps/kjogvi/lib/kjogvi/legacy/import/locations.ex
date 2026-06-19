@@ -68,14 +68,17 @@ defmodule Kjogvi.Legacy.Import.Locations do
     Kjogvi.Repo.query("DELETE FROM locations WHERE import_source='legacy';")
   end
 
-  # The geographic backbone (region and above) stays common; everything else,
-  # including untyped personal locations, is owned by the importing user.
-  @common_location_types ~w(continent country region)
+  # The geographic backbone (subdivision1 and above) stays common; everything
+  # else, including untyped personal locations, is owned by the importing user.
+  @common_location_types ~w(country subdivision1)a
 
   defp put_owner(loc, user_id) do
     owner = if loc.location_type in @common_location_types, do: nil, else: user_id
     Map.put(loc, :user_id, owner)
   end
+
+  defp to_location_type(nil), do: nil
+  defp to_location_type(value), do: String.to_existing_atom(value)
 
   defp convert_ancestry(%{ancestry: nil} = loc) do
     %{loc | ancestry: []}
@@ -97,9 +100,9 @@ defmodule Kjogvi.Legacy.Import.Locations do
   defp transform_keys(%{loc_type: loc_type, slug: slug} = loc) do
     location_type =
       if slug in ["5mr", "arabat_spit"] do
-        "special"
+        :special
       else
-        Utils.blank_to_nil(loc_type)
+        loc_type |> Utils.blank_to_nil() |> to_location_type()
       end
 
     time = DateTime.utc_now()

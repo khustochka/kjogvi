@@ -73,7 +73,7 @@ defmodule KjogviWeb.LocationComponents do
   @doc """
   Renders a colored badge for a location type.
   """
-  attr :type, :string, required: true
+  attr :type, :atom, required: true
 
   def type_badge(assigns) do
     ~H"""
@@ -160,12 +160,13 @@ defmodule KjogviWeb.LocationComponents do
   """
   def type_badge_classes(type) do
     case type do
-      "continent" -> "bg-indigo-100 text-indigo-700"
-      "country" -> "bg-sky-100 text-sky-700"
-      "region" -> "bg-amber-100 text-amber-700"
-      "city" -> "bg-violet-100 text-violet-700"
-      "raion" -> "bg-teal-100 text-teal-700"
-      "special" -> "bg-rose-100 text-rose-700"
+      :country -> "bg-sky-100 text-sky-700"
+      :subdivision1 -> "bg-amber-100 text-amber-700"
+      :subdivision2 -> "bg-teal-100 text-teal-700"
+      :city -> "bg-violet-100 text-violet-700"
+      :site -> "bg-indigo-100 text-indigo-700"
+      :section -> "bg-emerald-100 text-emerald-700"
+      :special -> "bg-rose-100 text-rose-700"
       _other -> "bg-stone-100 text-stone-600"
     end
   end

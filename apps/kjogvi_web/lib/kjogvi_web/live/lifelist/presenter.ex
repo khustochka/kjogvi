@@ -77,7 +77,7 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
   end
 
   # Not country lists - not indexed
-  def robots(%{location: %{location_type: location_type}}) when location_type != "country" do
+  def robots(%{location: %{location_type: location_type}}) when location_type != :country do
     nil
   end
 

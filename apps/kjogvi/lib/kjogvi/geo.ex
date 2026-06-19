@@ -38,7 +38,7 @@ defmodule Kjogvi.Geo do
   def get_logbook_settings_locations do
     from(l in Location,
       where:
-        l.location_type in ["country", "region"] or
+        l.location_type in [:country, :subdivision1] or
           not is_nil(l.public_index)
     )
     |> Repo.all()
@@ -119,14 +119,14 @@ defmodule Kjogvi.Geo do
   def get_upper_level_locations do
     good_children_ids =
       from(Location)
-      |> where([l], l.location_type in ["country", "region"] or is_nil(l.cached_country_id))
+      |> where([l], l.location_type in [:country, :subdivision1] or is_nil(l.cached_country_id))
       |> select(fragment("distinct unnest(array_append(ancestry, id))"))
 
     # Need to add null type, because it is not matching != "special"
     from(l in Location,
       where:
         l.id in subquery(good_children_ids) and
-          (l.location_type != "special" or is_nil(l.location_type))
+          (l.location_type != :special or is_nil(l.location_type))
     )
     |> Repo.all()
   end
@@ -139,7 +139,7 @@ defmodule Kjogvi.Geo do
   """
   def locations_by_parent(scope) do
     scoped_locations(scope)
-    |> where([l], l.location_type != "special" or is_nil(l.location_type))
+    |> where([l], l.location_type != :special or is_nil(l.location_type))
     |> Location.Query.load_cards_count()
     |> Repo.all()
     |> Enum.group_by(&List.last(&1.ancestry))
@@ -149,7 +149,7 @@ defmodule Kjogvi.Geo do
     Location
     |> Location.Query.load_cards_count()
     |> where([l], fragment("? @> ?::bigint[]", l.ancestry, [^parent_id]))
-    |> where([l], l.location_type != "special" or is_nil(l.location_type))
+    |> where([l], l.location_type != :special or is_nil(l.location_type))
     |> Repo.all()
   end
 
@@ -169,7 +169,7 @@ defmodule Kjogvi.Geo do
   @doc """
   Returns member locations for a special location, or an empty list if not special.
   """
-  def special_member_locations(%Location{location_type: "special"} = location) do
+  def special_member_locations(%Location{location_type: :special} = location) do
     location
     |> Repo.preload(special_child_locations: from(l in Location, order_by: l.name_en))
     |> Map.get(:special_child_locations)

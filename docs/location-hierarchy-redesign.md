@@ -25,9 +25,11 @@ it, and remember the type set is the six levels **plus** `special`.
 ## Requirements
 
 - **Level FK columns.** Add `country_id`, `subdivision1_id`, `subdivision2_id`,
-  `city_id`, `site_id`, `section_id` to `locations`, each a self-referential
-  `belongs_to(... Location)`. These columns **are** the hierarchy — there is no
-  separate tree edge and no arbitrary depth.
+  `city_id`, `site_id` to `locations`, each a self-referential
+  `belongs_to(... Location)`. There is **no `section_id`**: `section` is the
+  lowest level and never an ancestor, so an FK at that level would always be
+  null. These columns **are** the hierarchy — there is no separate tree edge and
+  no arbitrary depth.
 - **Levels are sparse / skippable.** Not every level must be filled. A location
   can be a child of `subdivision1` with `subdivision2`/`city` left null. A
   location's own level is its `location_type`; the FK columns point only to its
@@ -132,8 +134,9 @@ Implement in small, separately reviewable stages. **Failing tests between
 stages are acceptable** when they belong to functionality a later stage
 fixes/implements.
 
-1. **Schema migration.** Add the six level FK columns (`country_id …
-   section_id`), their btree indexes, and the `belongs_to` associations; update
+1. **Schema migration.** Add the five level FK columns (`country_id …
+   site_id`; no `section_id`), their btree indexes, and the `belongs_to`
+   associations; update
    the `location_type` value set (drop `continent`/`region`/`raion`, add
    `subdivision1`/`subdivision2`/`site`/`section`). Leave `ancestry` / `cached_*`
    in place so the app still compiles. Tests cover the columns and associations.
@@ -193,3 +196,42 @@ fixes/implements.
   than inferring it from the lowest non-null slot?
 - Should the integrity invariant be a DB constraint, a changeset validation, or
   both?
+
+## Process
+
+- **Stage review gate.** Each stage is handed off for review when complete; the
+  next stage and any commit wait for explicit per-stage approval. Don't batch
+  stages or commit without an in-the-moment go-ahead.
+
+## Decisions made during implementation
+
+- **No `section_id` FK column.** `section` is the lowest hierarchy level and is
+  never an ancestor, so a `section_id` FK would always be null. Level FK columns
+  are the five above-lowest levels: `country_id`, `subdivision1_id`,
+  `subdivision2_id`, `city_id`, `site_id`.
+- **Index page = flat + search → no `parent_id` in the core redesign.** Per the
+  `parent_id` requirement, the column is added only for a tree-structured index.
+  The core redesign targets the flat search index (stage 5) and defers the tree
+  view, so `parent_id` is **skipped**; adding it later is a one-column migration
+  plus one changeset line.
+- **`location_type` is an `Ecto.Enum`** (atoms in app code, strings in the DB),
+  with the value set as its single source of truth — `validate_inclusion` is
+  dropped (the type enforces membership). All `location_type` reads/matches use
+  atoms (`:country`, `:special`, …); query comparisons pin atoms.
+
+## Progress log
+
+- **Stage 1 — done (pending review).** Migration
+  `20260619120000_add_level_fks_to_locations.exs` adds the five level FK columns
+  + btree indexes; schema gains the five `belongs_to` associations,
+  `@hierarchy_levels` / `hierarchy_levels/0`, and the updated `@location_types`
+  (`country subdivision1 subdivision2 city site section special`). `location_type`
+  converted to `Ecto.Enum`; all readers updated to atoms (`geo`, `location/query`,
+  `card/query`, legacy import, location_components, preferences, presenter,
+  locations form). `ancestry` / `cached_*` left intact. New tests cover the
+  columns/associations and the type accessors. Remaining red tests are all old
+  `ancestry`/`cached_*`/dropped-type cases owned by stages 2/4/5/6.
+- **Side fix (committed separately, `e0867f7f`).** Pre-existing registration test
+  failures from the earlier `Remove :let={f}` commit (field ids changed
+  `registration_form_*` → `user_*`); updated the test selectors. Unrelated to the
+  redesign.

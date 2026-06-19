@@ -3,8 +3,8 @@ defmodule Kjogvi.Geo.Location.Query do
   Queries for Locations.
   """
 
-  @country_location_type "country"
-  @special_location_type "special"
+  @country_location_type :country
+  @special_location_type :special
 
   import Ecto.Query
 

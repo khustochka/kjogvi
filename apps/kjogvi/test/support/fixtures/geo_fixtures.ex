@@ -14,7 +14,7 @@ defmodule Kjogvi.GeoFixtures do
     default_attrs = %{
       slug: unique_location_slug(),
       name_en: "Test Location #{System.unique_integer()}",
-      location_type: "unknown",
+      location_type: nil,
       ancestry: [],
       is_private: false
     }

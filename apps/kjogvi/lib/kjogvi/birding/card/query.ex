@@ -31,7 +31,7 @@ defmodule Kjogvi.Birding.Card.Query do
     |> where([..., card: c], c.motorless == true)
   end
 
-  def by_location_with_descendants(query, %{location_type: "special", id: id}) do
+  def by_location_with_descendants(query, %{location_type: :special, id: id}) do
     specials_ids =
       from("special_locations")
       |> where([l], l.parent_location_id == ^id)

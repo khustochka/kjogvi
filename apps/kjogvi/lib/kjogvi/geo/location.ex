@@ -27,10 +27,16 @@ defmodule Kjogvi.Geo.Location do
   alias Kjogvi.Geo.Location.Query
   alias Kjogvi.Repo
 
+  # Ordered hierarchy levels, top to bottom.
+  @hierarchy_levels ~w(country subdivision1 subdivision2 city site section)a
+
+  # `special` sits outside the ordered hierarchy: no fixed level, any-rank parent.
+  @location_types @hierarchy_levels ++ ~w(special)a
+
   schema "locations" do
     field :slug, :string
     field :name_en, :string
-    field :location_type, :string
+    field :location_type, Ecto.Enum, values: @location_types
     field :ancestry, {:array, :integer}, default: []
     field :iso_code, :string
     field :is_private, :boolean, default: false
@@ -47,6 +53,12 @@ defmodule Kjogvi.Geo.Location do
     belongs_to(:cached_city, Location)
     belongs_to(:cached_subdivision, Location)
     belongs_to(:cached_country, Location)
+
+    belongs_to(:country, Location)
+    belongs_to(:subdivision1, Location)
+    belongs_to(:subdivision2, Location)
+    belongs_to(:city, Location)
+    belongs_to(:site, Location)
 
     belongs_to(:user, Kjogvi.Accounts.User)
 
@@ -86,9 +98,9 @@ defmodule Kjogvi.Geo.Location do
     cached_city_id
   )a
 
-  @location_types ~w(continent country region city raion special)
-
   def location_types, do: @location_types
+
+  def hierarchy_levels, do: @hierarchy_levels
 
   @doc false
   def changeset(location, attrs) do
@@ -99,7 +111,6 @@ defmodule Kjogvi.Geo.Location do
       :name_en,
       :is_private
     ])
-    |> validate_inclusion(:location_type, @location_types)
     |> unique_constraint(:slug)
     |> put_ancestry()
     |> put_cached_admin()
@@ -133,8 +144,8 @@ defmodule Kjogvi.Geo.Location do
     |> Enum.reverse()
     |> Enum.reduce({nil, nil}, fn id, {country, subdivision} ->
       case {by_id[id], country, subdivision} do
-        {"country", nil, _} -> {id, subdivision}
-        {"region", _, nil} -> {country, id}
+        {:country, nil, _} -> {id, subdivision}
+        {:subdivision1, _, nil} -> {country, id}
         _ -> {country, subdivision}
       end
     end)
