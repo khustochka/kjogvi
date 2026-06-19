@@ -46,6 +46,19 @@ defmodule Kjogvi.BirdingTest do
       refute changeset.valid?
     end
 
+    test "requires observ_date, location_id, effort_type, and user_id" do
+      changeset = Card.changeset(%Card{}, %{})
+
+      refute changeset.valid?
+
+      assert %{
+               observ_date: ["can't be blank"],
+               location_id: ["can't be blank"],
+               effort_type: ["can't be blank"],
+               user_id: ["can't be blank"]
+             } = errors_on(changeset)
+    end
+
     test "creates a card with observations" do
       user = user_fixture()
       location = insert(:location)
@@ -67,6 +80,51 @@ defmodule Kjogvi.BirdingTest do
       assert hd(card.observations).taxon_key == "ebird/eBird_2023/bkcchi1"
       assert hd(card.observations).quantity == "3"
     end
+  end
+
+  describe "card location ownership" do
+    test "create_card accepts a common location" do
+      user = user_fixture()
+      location = insert(:location, location_type: "city")
+
+      assert {:ok, _card} = Birding.create_card(user, valid_card_attrs(location))
+    end
+
+    test "create_card accepts the user's own location" do
+      user = user_fixture()
+      location = insert(:location, location_type: "city", user_id: user.id)
+
+      assert {:ok, _card} = Birding.create_card(user, valid_card_attrs(location))
+    end
+
+    test "create_card rejects another user's location" do
+      user = user_fixture()
+      location = insert(:location, location_type: "city", user_id: user_fixture().id)
+
+      assert {:error, changeset} = Birding.create_card(user, valid_card_attrs(location))
+      assert "is not available" in errors_on(changeset).location_id
+    end
+
+    test "update_card rejects switching to another user's location" do
+      user = user_fixture()
+      own = insert(:location, location_type: "city", user_id: user.id)
+      other = insert(:location, location_type: "city", user_id: user_fixture().id)
+
+      {:ok, card} = Birding.create_card(user, valid_card_attrs(own))
+
+      assert {:error, changeset} =
+               Birding.update_card(card, %{"location_id" => other.id})
+
+      assert "is not available" in errors_on(changeset).location_id
+    end
+  end
+
+  defp valid_card_attrs(location) do
+    %{
+      "observ_date" => "2024-05-10",
+      "location_id" => location.id,
+      "effort_type" => "INCIDENTAL"
+    }
   end
 
   describe "update_card/2" do

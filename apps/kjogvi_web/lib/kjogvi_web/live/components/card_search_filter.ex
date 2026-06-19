@@ -32,6 +32,7 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
   attr :id, :string, default: "card-search-filter"
   attr :filter, Filter, required: true
   attr :user, :map, required: true
+  attr :scope, Kjogvi.Scope, required: true
 
   attr :taxon_label, :string,
     default: "",
@@ -106,6 +107,7 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
               hidden_value={(@filter.location && @filter.location.id) || ""}
               placeholder=""
               on_select_event="filter_location"
+              scope={@scope}
               compact
             />
           </div>

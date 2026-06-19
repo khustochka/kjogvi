@@ -33,6 +33,16 @@ defmodule Kjogvi.Accounts.User do
   end
 
   @doc """
+  Whether `user` owns `ownable` — any struct carrying a `user_id` (e.g. a
+  location or card). Unowned records (`user_id: nil`) belong to no one.
+  """
+  def owns?(%__MODULE__{id: id}, %{user_id: user_id}) when not is_nil(user_id) do
+    id == user_id
+  end
+
+  def owns?(_user, _ownable), do: false
+
+  @doc """
   A user changeset for registration.
 
   It is important to validate the length of both email and password.

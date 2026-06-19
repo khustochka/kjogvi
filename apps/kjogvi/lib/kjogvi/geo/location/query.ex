@@ -58,6 +58,13 @@ defmodule Kjogvi.Geo.Location.Query do
     from l in query, where: l.is_private == false or is_nil(l.is_private)
   end
 
+  @doc """
+  Restricts to locations visible to a user: their own plus common ones.
+  """
+  def for_user(query, user) do
+    from l in query, where: l.user_id == ^user.id or is_nil(l.user_id)
+  end
+
   def countries(query) do
     from [..., l] in query,
       where: l.location_type == @country_location_type

@@ -154,6 +154,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
     <CardSearchFilter.card_search_filter
       filter={@filter}
       user={@current_scope.current_user}
+      scope={@current_scope}
       taxon_label={@taxon_label}
     />
 

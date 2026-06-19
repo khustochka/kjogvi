@@ -5,7 +5,8 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
   import Kjogvi.AccountsFixtures
 
   setup %{conn: conn} do
-    %{conn: login_user(conn, user_fixture())}
+    user = user_fixture()
+    %{conn: login_user(conn, user), user: user}
   end
 
   test "renders with no locations", %{conn: conn} do
@@ -20,6 +21,37 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
     assert has_element?(index_live, "a", location.name_en)
+  end
+
+  test "shows the user's own and common locations but not another user's",
+       %{conn: conn, user: user} do
+    own = insert(:location, name_en: "My Patch", location_type: "city", user_id: user.id)
+    common = insert(:location, name_en: "Shared Place", location_type: "city")
+
+    other =
+      insert(:location, name_en: "Their Patch", location_type: "city", user_id: user_fixture().id)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "a", own.name_en)
+    assert has_element?(index_live, "a", common.name_en)
+    refute has_element?(index_live, "a", other.name_en)
+  end
+
+  test "shows the user's own special location but not another user's", %{conn: conn, user: user} do
+    own = insert(:location, name_en: "My List", location_type: "special", user_id: user.id)
+
+    other =
+      insert(:location,
+        name_en: "Their List",
+        location_type: "special",
+        user_id: user_fixture().id
+      )
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "*", own.name_en)
+    refute has_element?(index_live, "*", other.name_en)
   end
 
   test "shows total location count", %{conn: conn} do
@@ -49,24 +81,34 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     refute has_element?(index_live, "span", "lifelist filter")
   end
 
-  test "row shows edit link for every location", %{conn: conn} do
-    location = insert(:location, name_en: "Winnipeg")
+  test "row shows edit link for the user's own location", %{conn: conn, user: user} do
+    location = insert(:location, name_en: "Winnipeg", location_type: "city", user_id: user.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
     assert has_element?(index_live, "a[href='/my/locations/#{location.slug}/edit']")
   end
 
-  test "row shows delete button when location can be deleted", %{conn: conn} do
-    location = insert(:location, name_en: "Empty")
+  test "row hides edit link and delete button for a common location", %{conn: conn} do
+    location = insert(:location, name_en: "Common Place", location_type: "city")
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    refute has_element?(index_live, "a[href='/my/locations/#{location.slug}/edit']")
+    refute has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{location.id}']")
+  end
+
+  test "row shows delete button when the user's own location can be deleted",
+       %{conn: conn, user: user} do
+    location = insert(:location, name_en: "Empty", location_type: "city", user_id: user.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
     assert has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{location.id}']")
   end
 
-  test "row hides delete button when location has children", %{conn: conn} do
-    parent = insert(:location, name_en: "Canada")
+  test "row hides delete button when location has children", %{conn: conn, user: user} do
+    parent = insert(:location, name_en: "Canada", location_type: "city", user_id: user.id)
     insert(:location, name_en: "Manitoba", ancestry: [parent.id])
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
@@ -74,8 +116,8 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     refute has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{parent.id}']")
   end
 
-  test "row hides delete button when location has cards", %{conn: conn} do
-    location = insert(:location, name_en: "With Cards")
+  test "row hides delete button when location has cards", %{conn: conn, user: user} do
+    location = insert(:location, name_en: "With Cards", location_type: "city", user_id: user.id)
     insert(:card, location: location)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
@@ -83,8 +125,8 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     refute has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{location.id}']")
   end
 
-  test "deletes a location", %{conn: conn} do
-    location = insert(:location, name_en: "Doomed")
+  test "deletes a location", %{conn: conn, user: user} do
+    location = insert(:location, name_en: "Doomed", location_type: "city", user_id: user.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 

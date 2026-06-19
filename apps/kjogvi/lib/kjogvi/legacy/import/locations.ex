@@ -9,8 +9,9 @@ defmodule Kjogvi.Legacy.Import.Locations do
 
   @min_start_seq 10_000
 
-  def import(columns_str, rows, _opts) do
+  def import(columns_str, rows, opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
+    user_id = opts[:user].id
 
     locations =
       for row <- rows do
@@ -18,6 +19,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
         |> Map.new()
         |> convert_ancestry
         |> transform_keys
+        |> put_owner(user_id)
       end
 
     five_mr_slugs = for loc <- locations, loc.is_5mr, do: loc.slug
@@ -66,6 +68,15 @@ defmodule Kjogvi.Legacy.Import.Locations do
     Kjogvi.Repo.query("DELETE FROM locations WHERE import_source='legacy';")
   end
 
+  # The geographic backbone (region and above) stays common; everything else,
+  # including untyped personal locations, is owned by the importing user.
+  @common_location_types ~w(continent country region)
+
+  defp put_owner(loc, user_id) do
+    owner = if loc.location_type in @common_location_types, do: nil, else: user_id
+    Map.put(loc, :user_id, owner)
+  end
+
   defp convert_ancestry(%{ancestry: nil} = loc) do
     %{loc | ancestry: []}
   end
@@ -102,7 +113,8 @@ defmodule Kjogvi.Legacy.Import.Locations do
       :ebird_location_id,
       :name_ru,
       :name_uk,
-      :cached_public_locus_id
+      :cached_public_locus_id,
+      :new_type
     ])
     |> Map.put(:is_5mr, loc.five_mile_radius)
     |> Map.put(:location_type, location_type)

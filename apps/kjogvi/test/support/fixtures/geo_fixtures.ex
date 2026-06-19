@@ -36,7 +36,8 @@ defmodule Kjogvi.GeoFixtures do
         :iso_code,
         :public_index,
         :cached_country_id,
-        :cached_subdivision_id
+        :cached_subdivision_id,
+        :user_id
       ])
       |> validate_required([:slug, :name_en, :ancestry, :is_private])
       |> Repo.insert()

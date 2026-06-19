@@ -9,7 +9,8 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
   alias Kjogvi.Repo
 
   setup %{conn: conn} do
-    %{conn: login_user(conn, user_fixture())}
+    user = user_fixture()
+    %{conn: login_user(conn, user), user: user}
   end
 
   defp build_chain do
@@ -357,13 +358,14 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
   end
 
   describe "map picker" do
-    test "renders map container with current coords as data attributes", %{conn: conn} do
+    test "renders map container with current coords as data attributes", %{conn: conn, user: user} do
       location =
         insert(:location,
           name_en: "Winnipeg",
           slug: "wpg",
           lat: Decimal.new("49.89510"),
-          lon: Decimal.new("-97.13840")
+          lon: Decimal.new("-97.13840"),
+          user_id: user.id
         )
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/#{location.slug}/edit")
@@ -391,8 +393,8 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert picker_html =~ ~s|data-parent-lon="-106.34680"|
     end
 
-    test "map_picked event updates form lat/lon", %{conn: conn} do
-      location = insert(:location, name_en: "Manitoba", slug: "mb")
+    test "map_picked event updates form lat/lon", %{conn: conn, user: user} do
+      location = insert(:location, name_en: "Manitoba", slug: "mb", user_id: user.id)
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/#{location.slug}/edit")
 
@@ -404,13 +406,14 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert lon_input =~ ~s|value="-97.138400"|
     end
 
-    test "map_cleared event clears lat/lon", %{conn: conn} do
+    test "map_cleared event clears lat/lon", %{conn: conn, user: user} do
       location =
         insert(:location,
           name_en: "Winnipeg",
           slug: "wpg",
           lat: Decimal.new("49.89510"),
-          lon: Decimal.new("-97.13840")
+          lon: Decimal.new("-97.13840"),
+          user_id: user.id
         )
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/#{location.slug}/edit")
@@ -423,8 +426,8 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
   end
 
   describe "edit" do
-    test "renders edit form with current values", %{conn: conn} do
-      location = insert(:location, name_en: "Manitoba", slug: "mb")
+    test "renders edit form with current values", %{conn: conn, user: user} do
+      location = insert(:location, name_en: "Manitoba", slug: "mb", user_id: user.id)
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/#{location.slug}/edit")
 
@@ -432,8 +435,14 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert has_element?(view, "#location-breadcrumbs a", "Manitoba")
     end
 
-    test "updates a location", %{conn: conn} do
-      location = insert(:location, name_en: "Manitoba", slug: "mb")
+    test "updates a location", %{conn: conn, user: user} do
+      location =
+        insert(:location,
+          name_en: "Manitoba",
+          slug: "mb",
+          location_type: "city",
+          user_id: user.id
+        )
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/#{location.slug}/edit")
 
@@ -455,6 +464,22 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     test "redirects for nonexistent slug", %{conn: conn} do
       assert {:error, {:live_redirect, %{to: "/my/locations"}}} =
                live(conn, ~p"/my/locations/nonexistent/edit")
+    end
+
+    test "redirects to the show page when editing a common location", %{conn: conn} do
+      location = insert(:location, name_en: "Canada", slug: "ca", location_type: "country")
+
+      assert {:error, {:live_redirect, %{to: "/my/locations/ca"}}} =
+               live(conn, ~p"/my/locations/#{location.slug}/edit")
+    end
+
+    test "redirects when editing another user's location", %{conn: conn} do
+      location =
+        insert(:location, name_en: "Their Patch", slug: "theirs", user_id: user_fixture().id)
+
+      # Another user's location is not visible to this scope, so it reads as "not found".
+      assert {:error, {:live_redirect, %{to: "/my/locations"}}} =
+               live(conn, ~p"/my/locations/#{location.slug}/edit")
     end
   end
 end

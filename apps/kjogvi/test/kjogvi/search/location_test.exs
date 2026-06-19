@@ -1,27 +1,43 @@
 defmodule Kjogvi.Search.LocationTest do
   use Kjogvi.DataCase
 
+  alias Kjogvi.Geo.Location
   alias Kjogvi.Search.Location, as: Search
   alias Kjogvi.GeoFixtures
 
-  describe "search_locations/2" do
+  describe "search_locations/3 with a restricted base query" do
+    test "searches only within the supplied query" do
+      import Ecto.Query
+
+      keep = GeoFixtures.location_fixture(%{slug: "keep-park", name_en: "Park Keep"})
+      drop = GeoFixtures.location_fixture(%{slug: "drop-park", name_en: "Park Drop"})
+
+      query = from(l in Location, where: l.id == ^keep.id)
+      ids = Search.search_locations(query, "Park") |> Enum.map(& &1.id)
+
+      assert keep.id in ids
+      refute drop.id in ids
+    end
+  end
+
+  describe "search_locations/3" do
     test "returns empty list for empty or non-string query" do
-      assert Search.search_locations("") == []
-      assert Search.search_locations("   ") == []
-      assert Search.search_locations(nil) == []
+      assert Search.search_locations(Location, "") == []
+      assert Search.search_locations(Location, "   ") == []
+      assert Search.search_locations(Location, nil) == []
     end
 
     test "matches by name_en" do
       loc = GeoFixtures.location_fixture(%{slug: "central-park", name_en: "Central Park"})
 
-      results = Search.search_locations("Central")
+      results = Search.search_locations(Location, "Central")
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
     test "matches by slug" do
       loc = GeoFixtures.location_fixture(%{slug: "assiniboine-park", name_en: "Assiniboine Park"})
 
-      results = Search.search_locations("assiniboine-park")
+      results = Search.search_locations(Location, "assiniboine-park")
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
@@ -34,14 +50,14 @@ defmodule Kjogvi.Search.LocationTest do
           iso_code: "CA"
         })
 
-      results = Search.search_locations("CA")
+      results = Search.search_locations(Location, "CA")
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
     test "case-insensitive" do
       loc = GeoFixtures.location_fixture(%{slug: "abc-park", name_en: "Abc Park"})
 
-      results = Search.search_locations("abc park")
+      results = Search.search_locations(Location, "abc park")
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
@@ -70,7 +86,7 @@ defmodule Kjogvi.Search.LocationTest do
           iso_code: "AU"
         })
 
-      results = Search.search_locations("US")
+      results = Search.search_locations(Location, "US")
       assert hd(results).id == us.id
     end
 
@@ -78,7 +94,7 @@ defmodule Kjogvi.Search.LocationTest do
       exact = GeoFixtures.location_fixture(%{slug: "park", name_en: "Park"})
       _starts = GeoFixtures.location_fixture(%{slug: "park-street", name_en: "Park Street"})
 
-      results = Search.search_locations("Park")
+      results = Search.search_locations(Location, "Park")
       assert hd(results).id == exact.id
     end
 
@@ -86,7 +102,7 @@ defmodule Kjogvi.Search.LocationTest do
       starts = GeoFixtures.location_fixture(%{slug: "park-street", name_en: "Park Street"})
       _word = GeoFixtures.location_fixture(%{slug: "central-park", name_en: "Central Park"})
 
-      results = Search.search_locations("park")
+      results = Search.search_locations(Location, "park")
       assert hd(results).id == starts.id
     end
 
@@ -94,7 +110,7 @@ defmodule Kjogvi.Search.LocationTest do
       word_start = GeoFixtures.location_fixture(%{slug: "central-park", name_en: "Central Park"})
       _contains = GeoFixtures.location_fixture(%{slug: "sparking", name_en: "Sparking"})
 
-      results = Search.search_locations("park")
+      results = Search.search_locations(Location, "park")
       ids = Enum.map(results, & &1.id)
       assert Enum.find_index(ids, &(&1 == word_start.id)) == 0
     end
@@ -102,7 +118,7 @@ defmodule Kjogvi.Search.LocationTest do
     test "word-start matches on slug too" do
       loc = GeoFixtures.location_fixture(%{slug: "abc-park", name_en: "Foobar"})
 
-      results = Search.search_locations("park")
+      results = Search.search_locations(Location, "park")
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
@@ -110,14 +126,14 @@ defmodule Kjogvi.Search.LocationTest do
       loc =
         GeoFixtures.location_fixture(%{slug: "kildonan-transcona", name_en: "Kildonan/Transcona"})
 
-      results = Search.search_locations("transcona")
+      results = Search.search_locations(Location, "transcona")
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
     test "matches a word that starts right after an opening quote" do
       loc = GeoFixtures.location_fixture(%{slug: "park-veselka", name_en: ~s(Park "Veselka")})
 
-      results = Search.search_locations("veselka")
+      results = Search.search_locations(Location, "veselka")
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
@@ -126,14 +142,14 @@ defmodule Kjogvi.Search.LocationTest do
         GeoFixtures.location_fixture(%{slug: "park-#{i}", name_en: "Park #{i}"})
       end
 
-      results = Search.search_locations("Park", limit: 3)
+      results = Search.search_locations(Location, "Park", limit: 3)
       assert length(results) == 3
     end
 
     test "returns full Location structs" do
       loc = GeoFixtures.location_fixture(%{slug: "test-loc", name_en: "Test Location"})
 
-      [result] = Search.search_locations("Test")
+      [result] = Search.search_locations(Location, "Test")
       assert result.id == loc.id
       assert result.name_en == "Test Location"
       assert result.slug == "test-loc"
@@ -148,7 +164,7 @@ defmodule Kjogvi.Search.LocationTest do
           is_private: true
         })
 
-      results = Search.search_locations("Private")
+      results = Search.search_locations(Location, "Private")
       assert Enum.any?(results, fn r -> r.id == private.id end)
     end
   end

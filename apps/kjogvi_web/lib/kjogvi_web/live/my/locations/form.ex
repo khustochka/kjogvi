@@ -15,6 +15,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   use KjogviWeb, :live_view
 
+  alias Kjogvi.Accounts.User
   alias Kjogvi.Geo
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
@@ -29,14 +30,22 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   @impl true
   def handle_params(%{"slug" => slug}, _url, socket) do
-    case Geo.location_by_slug_scope(socket.assigns.current_scope, slug) do
-      nil ->
+    location = Geo.location_by_slug_scope(socket.assigns.current_scope, slug)
+
+    cond do
+      is_nil(location) ->
         {:noreply,
          socket
          |> put_flash(:error, "Location not found")
          |> push_navigate(to: ~p"/my/locations")}
 
-      location ->
+      not User.owns?(socket.assigns.current_scope.current_user, location) ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "You can only edit your own locations")
+         |> push_navigate(to: ~p"/my/locations/#{location.slug}")}
+
+      true ->
         location = Repo.preload(location, @cached_fields) |> Location.with_parent_id()
         parent_struct = location.parent_id && Repo.get(Location, location.parent_id)
 
@@ -117,10 +126,12 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   end
 
   def handle_event("save", %{"location" => params}, socket) do
+    scope = socket.assigns.current_scope
+
     result =
       case socket.assigns.action do
-        :create -> Geo.create_location(params)
-        :edit -> Geo.update_location(socket.assigns.location, params)
+        :create -> Geo.create_location(scope, params)
+        :edit -> Geo.update_location(scope, socket.assigns.location, params)
       end
 
     case result do
@@ -132,6 +143,12 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
+
+      {:error, :forbidden} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "You can only edit your own locations")
+         |> push_navigate(to: ~p"/my/locations")}
     end
   end
 
@@ -236,6 +253,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
             current_label={@cached_labels[:parent]}
             current_id={@form[:parent_id].value}
             on_select_event="parent_selected"
+            scope={@current_scope}
           />
         </div>
 
@@ -272,6 +290,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           current_id={@form[:cached_parent_id].value}
           on_select_event="cached_selected"
           on_select_params={%{"field" => "cached_parent"}}
+          scope={@current_scope}
         />
         <.autocomplete_row
           field="cached_city"
@@ -280,6 +299,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           current_id={@form[:cached_city_id].value}
           on_select_event="cached_selected"
           on_select_params={%{"field" => "cached_city"}}
+          scope={@current_scope}
         />
         <.cached_label
           id="location_cached_subdivision"
@@ -353,6 +373,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   attr :current_id, :any, default: nil
   attr :on_select_event, :string, required: true
   attr :on_select_params, :map, default: %{}
+  attr :scope, Kjogvi.Scope, required: true
 
   defp autocomplete_row(assigns) do
     ~H"""
@@ -365,6 +386,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       hidden_value={@current_id || ""}
       on_select_event={@on_select_event}
       on_select_params={@on_select_params}
+      scope={@scope}
     />
     """
   end

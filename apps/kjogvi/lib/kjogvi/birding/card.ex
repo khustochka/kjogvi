@@ -83,14 +83,34 @@ defmodule Kjogvi.Birding.Card do
     |> validate_required([
       :observ_date,
       :location_id,
-      :effort_type
+      :effort_type,
+      :user_id
     ])
+    |> validate_location_ownership()
     |> validate_effort_fields()
     |> cast_assoc(:observations,
       with: &Kjogvi.Birding.Observation.changeset/2,
       sort_param: :observations_order,
       drop_param: :observations_drop
     )
+  end
+
+  # Skip the ownership lookup (a DB query) when the changeset is already invalid.
+  defp validate_location_ownership(%Ecto.Changeset{valid?: false} = changeset) do
+    changeset
+  end
+
+  defp validate_location_ownership(changeset) do
+    location_id = get_field(changeset, :location_id)
+    user_id = get_field(changeset, :user_id)
+
+    case Kjogvi.Repo.get(Kjogvi.Geo.Location, location_id) do
+      %{user_id: owner_id} when not is_nil(owner_id) and owner_id != user_id ->
+        add_error(changeset, :location_id, "is not available")
+
+      _ ->
+        changeset
+    end
   end
 
   defp validate_effort_fields(changeset) do

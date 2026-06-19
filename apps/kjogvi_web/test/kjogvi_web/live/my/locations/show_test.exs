@@ -5,7 +5,8 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   import Kjogvi.AccountsFixtures
 
   setup %{conn: conn} do
-    %{conn: login_user(conn, user_fixture())}
+    user = user_fixture()
+    %{conn: login_user(conn, user), user: user}
   end
 
   test "renders location name and slug", %{conn: conn} do
@@ -140,16 +141,16 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     refute has_element?(show_live, "span", "lifelist filter")
   end
 
-  test "delete button enabled for empty location", %{conn: conn} do
-    location = insert(:location, name_en: "Empty")
+  test "delete button enabled for empty location", %{conn: conn, user: user} do
+    location = insert(:location, name_en: "Empty", user_id: user.id)
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 
     refute has_element?(show_live, "#delete-location-button[disabled]")
   end
 
-  test "delete button disabled when location has children", %{conn: conn} do
-    parent = insert(:location, name_en: "Canada")
+  test "delete button disabled when location has children", %{conn: conn, user: user} do
+    parent = insert(:location, name_en: "Canada", user_id: user.id)
     insert(:location, name_en: "Manitoba", ancestry: [parent.id])
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{parent.slug}")
@@ -157,13 +158,22 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     assert has_element?(show_live, "#delete-location-button[disabled]")
   end
 
-  test "delete button disabled when location has cards", %{conn: conn} do
-    location = insert(:location, name_en: "With Cards")
+  test "delete button disabled when location has cards", %{conn: conn, user: user} do
+    location = insert(:location, name_en: "With Cards", user_id: user.id)
     insert(:card, location: location)
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 
     assert has_element?(show_live, "#delete-location-button[disabled]")
+  end
+
+  test "edit and delete buttons hidden for a common location", %{conn: conn} do
+    location = insert(:location, name_en: "Common Place")
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    refute has_element?(show_live, "a[href='/my/locations/#{location.slug}/edit']")
+    refute has_element?(show_live, "#delete-location-button")
   end
 
   describe "static map" do

@@ -23,26 +23,33 @@ defmodule Kjogvi.Search.Location do
 
   @default_limit 20
 
-  def search_locations(term, opts \\ [])
+  @doc """
+  Searches `query` (a `Location` queryable) for `term`.
 
-  def search_locations(term, opts) when is_binary(term) do
+  The caller supplies the base query, which is how scoping is applied: pass a
+  query already restricted to the locations the current scope may see (see
+  `Kjogvi.Geo.search_locations/3`).
+  """
+  def search_locations(query, term, opts \\ [])
+
+  def search_locations(query, term, opts) when is_binary(term) do
     case String.trim(term) do
       "" ->
         []
 
       trimmed ->
-        do_search(trimmed, opts)
+        do_search(query, trimmed, opts)
     end
   end
 
-  def search_locations(_, _), do: []
+  def search_locations(_, _, _), do: []
 
-  defp do_search(term, opts) do
+  defp do_search(query, term, opts) do
     limit = Keyword.get(opts, :limit, @default_limit)
     ilike_term = "%#{term}%"
     term_lower = String.downcase(term)
 
-    Location
+    query
     |> where(
       [l],
       ilike(l.name_en, ^ilike_term) or

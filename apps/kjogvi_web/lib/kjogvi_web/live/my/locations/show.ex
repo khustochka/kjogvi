@@ -3,6 +3,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
 
   use KjogviWeb, :live_view
 
+  alias Kjogvi.Accounts.User
   alias Kjogvi.Geo
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
@@ -41,6 +42,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
        |> assign(:cards_count, cards_count)
        |> assign(:children, children)
        |> assign(:member_locations, member_locations)
+       |> assign(:can_modify, User.owns?(socket.assigns.current_scope.current_user, location))
        |> assign(:can_delete, can_delete)}
     else
       {:ok,
@@ -57,7 +59,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
 
   @impl true
   def handle_event("delete", _params, socket) do
-    case Geo.delete_location(socket.assigns.location) do
+    case Geo.delete_location(socket.assigns.current_scope, socket.assigns.location) do
       {:ok, _location} ->
         {:noreply,
          socket
@@ -69,6 +71,9 @@ defmodule KjogviWeb.Live.My.Locations.Show do
 
       {:error, :has_cards} ->
         {:noreply, put_flash(socket, :error, "Cannot delete: location has cards")}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, "You can only delete your own locations")}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Could not delete location")}
@@ -113,6 +118,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
           </p>
           <div class="mt-6 flex flex-wrap items-center gap-2">
             <.action_button
+              :if={@can_modify}
               navigate={~p"/my/locations/#{@location.slug}/edit"}
               icon="hero-pencil-square"
               variant="secondary"
@@ -127,6 +133,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
               Add sub-location
             </.action_button>
             <button
+              :if={@can_modify}
               id="delete-location-button"
               type="button"
               phx-click="delete"

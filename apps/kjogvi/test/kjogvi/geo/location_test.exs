@@ -1,7 +1,11 @@
 defmodule Kjogvi.Geo.LocationTest do
   use Kjogvi.DataCase, async: true
 
+  import Kjogvi.AccountsFixtures
+
   alias Kjogvi.Geo.Location
+  alias Kjogvi.Geo.Location.Query
+  alias Kjogvi.Repo
 
   describe "changeset/2" do
     test "valid with required fields" do
@@ -120,6 +124,22 @@ defmodule Kjogvi.Geo.LocationTest do
 
       assert get_change(changeset, :cached_country_id) == country.id
       refute get_change(changeset, :cached_subdivision_id)
+    end
+  end
+
+  describe "Query.for_user/2" do
+    test "returns own and common locations but not another user's" do
+      user = user_fixture()
+
+      own = insert(:location, location_type: "city", user_id: user.id)
+      common = insert(:location, location_type: "city")
+      other = insert(:location, location_type: "city", user_id: user_fixture().id)
+
+      ids = Location |> Query.for_user(user) |> Repo.all() |> Enum.map(& &1.id)
+
+      assert own.id in ids
+      assert common.id in ids
+      refute other.id in ids
     end
   end
 

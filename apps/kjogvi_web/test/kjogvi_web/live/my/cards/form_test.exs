@@ -165,6 +165,32 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       html = render(lv)
       assert html =~ "Central Park"
     end
+
+    test "location autocomplete offers own and common locations but not another user's",
+         %{conn: conn, user: user} do
+      _own =
+        GeoFixtures.location_fixture(
+          name_en: "Owned Park",
+          location_type: "city",
+          user_id: user.id
+        )
+
+      _common = GeoFixtures.location_fixture(name_en: "Common Park", location_type: "city")
+
+      _other =
+        GeoFixtures.location_fixture(
+          name_en: "Other Park",
+          location_type: "city",
+          user_id: AccountsFixtures.user_fixture().id
+        )
+
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      html = lv |> element("#location_search") |> render_keyup(%{"value" => "Park"})
+
+      assert html =~ "Owned"
+      assert html =~ "Common"
+      refute html =~ "Other Park"
+    end
   end
 
   describe "location search" do
@@ -172,7 +198,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       location1 = GeoFixtures.location_fixture(name_en: "Central Park")
       location2 = GeoFixtures.location_fixture(name_en: "Hyde Park")
 
-      results = Search.Location.search_locations("Central")
+      results = Search.Location.search_locations(Geo.Location, "Central")
       assert Enum.any?(results, &(&1.id == location1.id))
       refute Enum.any?(results, &(&1.id == location2.id))
     end
@@ -181,7 +207,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       _public = GeoFixtures.location_fixture(name_en: "Public Park", is_private: false)
       _private = GeoFixtures.location_fixture(name_en: "Private Park", is_private: true)
 
-      results = Search.Location.search_locations("Park")
+      results = Search.Location.search_locations(Geo.Location, "Park")
       assert Enum.any?(results, &String.contains?(Geo.Location.long_name(&1), "Public"))
       assert Enum.any?(results, &String.contains?(Geo.Location.long_name(&1), "Private"))
     end
@@ -190,7 +216,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       _exact = GeoFixtures.location_fixture(name_en: "Park")
       _prefix = GeoFixtures.location_fixture(name_en: "Park Lane")
 
-      results = Search.Location.search_locations("Park")
+      results = Search.Location.search_locations(Geo.Location, "Park")
       assert results != []
       assert Geo.Location.long_name(Enum.at(results, 0)) =~ "Park"
     end

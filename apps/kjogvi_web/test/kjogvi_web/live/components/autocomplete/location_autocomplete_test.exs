@@ -18,6 +18,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocompleteTest do
         label="Location"
         placeholder="Pick a location"
         on_select_event="location_selected"
+        scope={%Kjogvi.Scope{area: :community}}
       />
       """
     end

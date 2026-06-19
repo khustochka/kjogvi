@@ -1,6 +1,8 @@
 defmodule Kjogvi.GeoTest do
   use Kjogvi.DataCase, async: true
 
+  import Kjogvi.AccountsFixtures
+
   alias Kjogvi.Geo
 
   describe "cards_count/1" do
@@ -253,12 +255,12 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "get_specials/0" do
+  describe "get_specials/1" do
     test "returns only special locations" do
       insert(:location, location_type: "special", name_en: "5MR")
       insert(:location, location_type: "country", name_en: "Canada")
 
-      specials = Geo.get_specials()
+      specials = Geo.get_specials(%Kjogvi.Scope{area: :admin})
       assert length(specials) == 1
       assert hd(specials).name_en == "5MR"
     end
@@ -266,7 +268,19 @@ defmodule Kjogvi.GeoTest do
     test "returns empty list when no specials exist" do
       insert(:location, location_type: "country")
 
-      assert Geo.get_specials() == []
+      assert Geo.get_specials(%Kjogvi.Scope{area: :admin}) == []
+    end
+
+    test "with a private scope, returns own and common specials but not another user's" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{current_user: user, area: :private}
+
+      own = insert(:location, location_type: "special", user_id: user.id)
+      common = insert(:location, location_type: "special")
+      _other = insert(:location, location_type: "special", user_id: user_fixture().id)
+
+      ids = Geo.get_specials(scope) |> Enum.map(& &1.id) |> Enum.sort()
+      assert ids == Enum.sort([own.id, common.id])
     end
   end
 
@@ -302,7 +316,6 @@ defmodule Kjogvi.GeoTest do
     test "returns private location for authenticated scope with private_view" do
       location = insert(:location, slug: "private-loc", is_private: true)
 
-      import Kjogvi.AccountsFixtures
       user = user_fixture()
       scope = %Kjogvi.Scope{current_user: user, area: :private}
 
@@ -313,11 +326,63 @@ defmodule Kjogvi.GeoTest do
     test "does not return private location for authenticated scope without private_view" do
       insert(:location, slug: "private-loc", is_private: true)
 
-      import Kjogvi.AccountsFixtures
       user = user_fixture()
       scope = %Kjogvi.Scope{current_user: user, area: :community}
 
       assert Geo.location_by_slug_scope(scope, "private-loc") == nil
+    end
+
+    test "private-area user sees own and common locations but not another user's" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{current_user: user, area: :private}
+
+      own = insert(:location, slug: "own-loc", location_type: "city", user_id: user.id)
+      common = insert(:location, slug: "common-loc", location_type: "city")
+
+      other =
+        insert(:location, slug: "other-loc", location_type: "city", user_id: user_fixture().id)
+
+      assert Geo.location_by_slug_scope(scope, "own-loc").id == own.id
+      assert Geo.location_by_slug_scope(scope, "common-loc").id == common.id
+      assert Geo.location_by_slug_scope(scope, "other-loc") == nil
+      refute is_nil(other.id)
+    end
+
+    test "admin scope sees any user's location" do
+      owned =
+        insert(:location, slug: "owned-loc", location_type: "city", user_id: user_fixture().id)
+
+      scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
+
+      assert Geo.location_by_slug_scope(scope, "owned-loc").id == owned.id
+    end
+  end
+
+  describe "search_locations/3" do
+    test "private-area user finds own and common locations but not another user's" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{current_user: user, area: :private}
+
+      own = insert(:location, slug: "own-park", name_en: "Park Own", user_id: user.id)
+      common = insert(:location, slug: "common-park", name_en: "Park Common")
+
+      _other =
+        insert(:location, slug: "other-park", name_en: "Park Other", user_id: user_fixture().id)
+
+      ids = Geo.search_locations(scope, "Park") |> Enum.map(& &1.id) |> Enum.sort()
+
+      assert ids == Enum.sort([own.id, common.id])
+    end
+
+    test "admin scope finds any user's location" do
+      scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
+
+      owned =
+        insert(:location, slug: "owned-park", name_en: "Park Owned", user_id: user_fixture().id)
+
+      ids = Geo.search_locations(scope, "Park") |> Enum.map(& &1.id)
+
+      assert owned.id in ids
     end
   end
 
@@ -333,25 +398,47 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "all_locations_by_parent/0" do
-    test "returns locations grouped by parent id" do
+  describe "locations_by_parent/1" do
+    setup do
+      %{scope: %Kjogvi.Scope{area: :admin}}
+    end
+
+    test "returns locations grouped by parent id", %{scope: scope} do
       parent = insert(:location)
       insert(:location, ancestry: [parent.id])
       insert(:location, ancestry: [parent.id])
 
-      grouped = Geo.all_locations_by_parent()
+      grouped = Geo.locations_by_parent(scope)
 
       assert length(grouped[parent.id]) == 2
       assert grouped[nil] != []
     end
 
-    test "excludes special locations" do
+    test "excludes special locations", %{scope: scope} do
       insert(:location, location_type: "special")
       insert(:location, location_type: "country")
 
-      grouped = Geo.all_locations_by_parent()
+      grouped = Geo.locations_by_parent(scope)
       all = Enum.flat_map(grouped, fn {_k, v} -> v end)
       refute Enum.any?(all, &(&1.location_type == "special"))
+    end
+
+    test "with a private scope, excludes another user's locations" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{current_user: user, area: :private}
+
+      own = insert(:location, location_type: "city", user_id: user.id)
+      common = insert(:location, location_type: "city")
+      other = insert(:location, location_type: "city", user_id: user_fixture().id)
+
+      ids =
+        Geo.locations_by_parent(scope)
+        |> Enum.flat_map(fn {_k, v} -> v end)
+        |> Enum.map(& &1.id)
+
+      assert own.id in ids
+      assert common.id in ids
+      refute other.id in ids
     end
   end
 
@@ -409,18 +496,24 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "create_location/1 cached_public_location_id derivation" do
-    test "sets cached_public_location_id for private location to nearest public ancestor" do
+  describe "create_location/2 cached_public_location_id derivation" do
+    setup do
+      %{scope: %Kjogvi.Scope{current_user: user_fixture(), area: :private}}
+    end
+
+    test "sets cached_public_location_id for private location to nearest public ancestor",
+         %{scope: scope} do
       country = insert(:location, name_en: "Canada", is_private: false)
 
       private_parent =
         insert(:location, name_en: "Private area", is_private: true, ancestry: [country.id])
 
       {:ok, created} =
-        Geo.create_location(%{
+        Geo.create_location(scope, %{
           "slug" => "secret-patch",
           "name_en" => "Secret Patch",
           "is_private" => "true",
+          "location_type" => "special",
           "parent_id" => private_parent.id
         })
 
@@ -428,18 +521,81 @@ defmodule Kjogvi.GeoTest do
       assert created.ancestry == [country.id, private_parent.id]
     end
 
-    test "leaves cached_public_location_id nil for public location" do
+    test "leaves cached_public_location_id nil for public location", %{scope: scope} do
       country = insert(:location, name_en: "Canada", is_private: false)
 
       {:ok, created} =
-        Geo.create_location(%{
+        Geo.create_location(scope, %{
           "slug" => "city-x",
           "name_en" => "City X",
           "is_private" => "false",
+          "location_type" => "city",
           "parent_id" => country.id
         })
 
       assert is_nil(created.cached_public_location_id)
     end
+  end
+
+  describe "create_location/2 ownership" do
+    setup do
+      %{user: user, scope: scope} = scope_fixture()
+      %{user: user, scope: scope}
+    end
+
+    test "stamps the creating user as the owner", %{user: user, scope: scope} do
+      for location_type <- ~w(continent country region city raion special) do
+        {:ok, created} =
+          Geo.create_location(scope, %{
+            "slug" => "loc-#{location_type}",
+            "name_en" => "Loc #{location_type}",
+            "is_private" => "false",
+            "location_type" => location_type
+          })
+
+        assert created.user_id == user.id
+      end
+    end
+  end
+
+  describe "update_location/3 and delete_location/2 authorization" do
+    setup do
+      %{user: owner, scope: owner_scope} = scope_fixture()
+      %{user: _other, scope: other_scope} = scope_fixture()
+
+      location =
+        insert(:location, location_type: "city", user_id: owner.id, slug: "owned-city")
+
+      %{
+        owner_scope: owner_scope,
+        other_scope: other_scope,
+        location: location
+      }
+    end
+
+    test "owner can update", %{owner_scope: scope, location: location} do
+      assert {:ok, updated} =
+               Geo.update_location(scope, location, %{"name_en" => "Renamed"})
+
+      assert updated.name_en == "Renamed"
+    end
+
+    test "another user cannot update", %{other_scope: scope, location: location} do
+      assert {:error, :forbidden} =
+               Geo.update_location(scope, location, %{"name_en" => "Hijacked"})
+    end
+
+    test "owner can delete", %{owner_scope: scope, location: location} do
+      assert {:ok, _} = Geo.delete_location(scope, location)
+    end
+
+    test "another user cannot delete", %{other_scope: scope, location: location} do
+      assert {:error, :forbidden} = Geo.delete_location(scope, location)
+    end
+  end
+
+  defp scope_fixture do
+    user = user_fixture()
+    %{user: user, scope: %Kjogvi.Scope{current_user: user, area: :private}}
   end
 end

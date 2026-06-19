@@ -5,6 +5,7 @@ defmodule Kjogvi.Geo do
 
   import Ecto.Query
 
+  alias Kjogvi.Accounts.User
   alias Kjogvi.Repo
   alias __MODULE__.Location
 
@@ -131,14 +132,14 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Returns all non-special locations grouped by parent ID (last element of ancestry).
+  Returns scoped non-special locations grouped by parent ID (last element of ancestry).
 
-  Top-level locations (no parent) are grouped under `nil`.
+  Top-level locations (no parent) are grouped under `nil`. The result is
+  restricted to the locations `scope` may see (own + common).
   """
-  def all_locations_by_parent do
-    from(l in Location,
-      where: l.location_type != "special" or is_nil(l.location_type)
-    )
+  def locations_by_parent(scope) do
+    scoped_locations(scope)
+    |> where([l], l.location_type != "special" or is_nil(l.location_type))
     |> Location.Query.load_cards_count()
     |> Repo.all()
     |> Enum.group_by(&List.last(&1.ancestry))
@@ -176,8 +177,8 @@ defmodule Kjogvi.Geo do
 
   def special_member_locations(%Location{}), do: []
 
-  def get_specials do
-    Location
+  def get_specials(scope) do
+    scoped_locations(scope)
     |> Location.Query.specials()
     |> Repo.all()
   end
@@ -189,13 +190,29 @@ defmodule Kjogvi.Geo do
   end
 
   def location_by_slug_scope(scope, slug) do
-    if is_nil(scope.current_user) or scope.area != :private do
-      Location |> Location.Query.only_public()
-    else
-      Location
-    end
+    scoped_locations(scope)
     |> Location.Query.by_slug(slug)
     |> Repo.one()
+  end
+
+  @doc """
+  Searches locations visible to `scope`, restricting the base query to what the
+  scope may see before delegating to `Kjogvi.Search.Location`.
+  """
+  def search_locations(scope, term, opts \\ []) do
+    scoped_locations(scope)
+    |> Kjogvi.Search.Location.search_locations(term, opts)
+  end
+
+  # The base query of locations a scope may see.
+  defp scoped_locations(%{area: :admin}), do: Location
+
+  defp scoped_locations(%{area: :private, current_user: user}) do
+    Location |> Location.Query.for_user(user)
+  end
+
+  defp scoped_locations(_scope) do
+    Location |> Location.Query.only_public()
   end
 
   def cards_count(location_id) do
@@ -233,21 +250,29 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Creates a location.
+  Creates a location owned by the scope's `current_user`.
   """
-  def create_location(attrs) do
+  def create_location(scope, attrs) do
     %Location{}
     |> Location.changeset(attrs)
+    |> Ecto.Changeset.put_change(:user_id, scope.current_user && scope.current_user.id)
     |> Repo.insert()
   end
 
   @doc """
   Updates a location.
+
+  Returns `{:error, :forbidden}` when the scope may not modify the location.
+  Ownership (`user_id`) is not editable, so it is never changed here.
   """
-  def update_location(%Location{} = location, attrs) do
-    location
-    |> Location.changeset(attrs)
-    |> Repo.update()
+  def update_location(scope, %Location{} = location, attrs) do
+    if User.owns?(scope.current_user, location) do
+      location
+      |> Location.changeset(attrs)
+      |> Repo.update()
+    else
+      {:error, :forbidden}
+    end
   end
 
   @doc """
@@ -258,13 +283,19 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Deletes a location. Refuses if the location has children or cards.
+  Deletes a location.
+
+  Refuses with `{:error, :forbidden}` when the scope may not modify it, or with
+  `{:error, :has_children}` / `{:error, :has_cards}` when it is still in use.
   """
-  def delete_location(%Location{} = location) do
+  def delete_location(scope, %Location{} = location) do
     children = children_count(location.id)
     cards = cards_count(location.id)
 
     cond do
+      not User.owns?(scope.current_user, location) ->
+        {:error, :forbidden}
+
       children > 0 ->
         {:error, :has_children}
 

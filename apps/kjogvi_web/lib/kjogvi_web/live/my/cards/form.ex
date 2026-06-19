@@ -185,6 +185,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                 hidden_name="card[location_id]"
                 hidden_value={@form[:location_id].value || ""}
                 on_select_event="location_selected"
+                scope={@current_scope}
                 errors={
                   if show_field_error?(@form, :location_id),
                     do: Enum.map(@form[:location_id].errors, &BaseComponents.translate_error/1),

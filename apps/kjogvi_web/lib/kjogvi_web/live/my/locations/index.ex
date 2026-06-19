@@ -3,13 +3,14 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   use KjogviWeb, :live_view
 
+  alias Kjogvi.Accounts.User
   alias Kjogvi.Geo
-  alias Kjogvi.Search
   alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
   @impl true
   def mount(_params, _session, socket) do
-    grouped_locations = Geo.all_locations_by_parent()
+    scope = socket.assigns.current_scope
+    grouped_locations = Geo.locations_by_parent(scope)
 
     # Start with only top-level locations (no parents)
     top_locations = grouped_locations[nil] || []
@@ -27,7 +28,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       |> assign(:total_locations, count_locations(grouped_locations))
       |> assign(:search_term, "")
       |> assign(:search_results, [])
-      |> assign(:specials, Geo.get_specials())
+      |> assign(:specials, Geo.get_specials(scope))
       |> assign(:expanded_locations, expanded_locations)
     }
   end
@@ -43,7 +44,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
     search_results =
       if String.length(search_term) >= 2 do
-        Search.Location.search_locations(search_term)
+        Geo.search_locations(socket.assigns.current_scope, search_term)
       else
         []
       end
@@ -65,9 +66,9 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   def handle_event("delete", %{"id" => id_str}, socket) do
     location = Kjogvi.Repo.get!(Kjogvi.Geo.Location, String.to_integer(id_str))
 
-    case Geo.delete_location(location) do
+    case Geo.delete_location(socket.assigns.current_scope, location) do
       {:ok, _} ->
-        grouped_locations = Geo.all_locations_by_parent()
+        grouped_locations = Geo.locations_by_parent(socket.assigns.current_scope)
         top_locations = grouped_locations[nil] || []
 
         {:noreply,
@@ -83,6 +84,9 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
       {:error, :has_cards} ->
         {:noreply, put_flash(socket, :error, "Cannot delete: location has cards")}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, "You can only delete your own locations")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not delete location")}
@@ -172,11 +176,12 @@ defmodule KjogviWeb.Live.My.Locations.Index do
                   <.location_row location={location} />
                 </div>
 
-                <.lifelist_link slug={location.slug} />
                 <.row_actions
                   location={location}
+                  can_modify={User.owns?(@current_scope.current_user, location)}
                   can_delete={Geo.can_delete_location?(location)}
                 />
+                <.lifelist_link slug={location.slug} />
               </div>
 
               <div :if={length(location.ancestry) > 0} class="mt-1 text-xs text-stone-400">
@@ -202,6 +207,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               children={Map.get(@grouped_locations, location.id, [])}
               location={location}
               expanded_locations={@expanded_locations}
+              current_user={@current_scope.current_user}
               level={0}
             />
           <% end %>
@@ -235,6 +241,13 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   defp has_children?(assigns), do: assigns.children != []
 
+  attr :location, :map, required: true
+  attr :grouped_locations, :map, required: true
+  attr :children, :list, required: true
+  attr :expanded_locations, :any, required: true
+  attr :current_user, :any, default: nil
+  attr :level, :integer, required: true
+
   def render_location(assigns) do
     ~H"""
     <div class="mb-2 border-t border-b border-l border-stone-200 rounded-l-lg">
@@ -260,11 +273,12 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </div>
         </div>
 
-        <.lifelist_link slug={@location.slug} />
         <.row_actions
           location={@location}
+          can_modify={User.owns?(@current_user, @location)}
           can_delete={!has_children?(assigns) and (Map.get(@location, :cards_count) || 0) == 0}
         />
+        <.lifelist_link slug={@location.slug} />
       </div>
 
       <%= if has_children?(assigns) and MapSet.member?(@expanded_locations, @location.id) do %>
@@ -275,6 +289,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
               grouped_locations={@grouped_locations}
               children={Map.get(@grouped_locations, child.id, [])}
               expanded_locations={@expanded_locations}
+              current_user={@current_user}
               level={@level + 1}
             />
           <% end %>
@@ -285,12 +300,14 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   end
 
   attr :location, :map, required: true
+  attr :can_modify, :boolean, default: false
   attr :can_delete, :boolean, required: true
 
   def row_actions(assigns) do
     ~H"""
     <div class="shrink-0 flex items-center gap-1">
       <.link
+        :if={@can_modify}
         href={~p"/my/locations/#{@location.slug}/edit"}
         class="p-1.5 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded"
         title="Edit"
@@ -298,7 +315,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <.icon name="hero-pencil-square" class="w-4 h-4" />
       </.link>
       <button
-        :if={@can_delete}
+        :if={@can_modify and @can_delete}
         type="button"
         phx-click="delete"
         phx-value-id={@location.id}
