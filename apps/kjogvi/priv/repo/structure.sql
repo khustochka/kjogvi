@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Yr39cfSOk9XHNhMi2fmdWJcaAXgPJIdyWWC5kfQfQcK2rJqSa7vuArkvOUwNiUG
+\restrict 7Pt7UqBNeYeAgU0bxyv7pdiLDJYwhCf7X9MYg2DwrPM2O6JrsTq1GiCSIbLx5K5
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -185,7 +185,8 @@ CREATE TABLE public.locations (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     import_source character varying(255),
-    extras jsonb DEFAULT '{}'::jsonb NOT NULL
+    extras jsonb DEFAULT '{}'::jsonb NOT NULL,
+    user_id bigint
 );
 
 
@@ -687,6 +688,13 @@ CREATE UNIQUE INDEX locations_slug_index ON public.locations USING btree (slug);
 
 
 --
+-- Name: locations_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX locations_user_id_index ON public.locations USING btree (user_id);
+
+
+--
 -- Name: observations_card_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -865,6 +873,14 @@ ALTER TABLE ONLY public.locations
 
 
 --
+-- Name: locations locations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT locations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: observations observations_card_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -908,7 +924,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Yr39cfSOk9XHNhMi2fmdWJcaAXgPJIdyWWC5kfQfQcK2rJqSa7vuArkvOUwNiUG
+\unrestrict 7Pt7UqBNeYeAgU0bxyv7pdiLDJYwhCf7X9MYg2DwrPM2O6JrsTq1GiCSIbLx5K5
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -931,3 +947,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260612000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260613120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260615170413);
 INSERT INTO public."schema_migrations" (version) VALUES (20260618000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260618184652);

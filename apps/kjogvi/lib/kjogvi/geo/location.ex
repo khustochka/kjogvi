@@ -48,6 +48,8 @@ defmodule Kjogvi.Geo.Location do
     belongs_to(:cached_subdivision, Location)
     belongs_to(:cached_country, Location)
 
+    belongs_to(:user, Kjogvi.Accounts.User)
+
     has_many(:cards, Kjogvi.Birding.Card)
     has_many(:observations, through: [:cards, :observations])
 
