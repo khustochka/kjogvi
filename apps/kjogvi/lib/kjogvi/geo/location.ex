@@ -33,6 +33,16 @@ defmodule Kjogvi.Geo.Location do
   # `special` sits outside the ordered hierarchy: no fixed level, any-rank parent.
   @location_types @hierarchy_levels ++ ~w(special)a
 
+  # Level FK columns, top to bottom. `section` is the lowest level and never an
+  # ancestor, so there is no `section_id`.
+  @level_fks ~w(country_id subdivision1_id subdivision2_id city_id site_id)a
+
+  # Maps each ancestor level to its FK column on a child.
+  @level_fk_by_level Map.new(@level_fks, fn fk ->
+                       {fk |> Atom.to_string() |> String.trim_trailing("_id") |> String.to_atom(),
+                        fk}
+                     end)
+
   schema "locations" do
     field :slug, :string
     field :name_en, :string
@@ -101,6 +111,8 @@ defmodule Kjogvi.Geo.Location do
   def location_types, do: @location_types
 
   def hierarchy_levels, do: @hierarchy_levels
+
+  def level_fks, do: @level_fks
 
   @doc false
   def changeset(location, attrs) do
@@ -210,6 +222,102 @@ defmodule Kjogvi.Geo.Location do
   def set_public_location_changeset(%Location{} = location) do
     location
     |> change([])
+  end
+
+  @doc """
+  Validates the level FK columns against the slot-occupancy invariant.
+
+  For a location of a given `location_type`:
+
+  - **Own-level-and-below null** — no FK may be set for the location's own level
+    or any level below it.
+  - **Belongs to a country** — every level below `country` must have `country_id`
+    set; a location can't float with no ancestor. Intermediate levels are still
+    skippable (a city may hang directly off a `country` or a `subdivision1`).
+  - **Prefix-consistency** — each set ancestor's own higher-level FKs equal this
+    location's, so the level FKs are a consistent subset of the ancestors'.
+
+  `special` has no fixed level and is exempt. This is a pure single-row check
+  (it loads the referenced ancestors only for prefix-consistency); it does not
+  set any FKs.
+  """
+  def validate_slot_occupancy(changeset) do
+    case get_field(changeset, :location_type) do
+      :special -> changeset
+      location_type -> validate_levels(changeset, location_type)
+    end
+  end
+
+  defp validate_levels(changeset, location_type) do
+    set_levels =
+      for {level, fk} <- @level_fk_by_level, not is_nil(get_field(changeset, fk)), do: level
+
+    changeset
+    |> validate_own_level_and_below(location_type, set_levels)
+    |> validate_has_country(location_type)
+    |> validate_prefix_consistency()
+  end
+
+  # No FK at the location's own level or below.
+  defp validate_own_level_and_below(changeset, location_type, set_levels) do
+    own_index = level_index(location_type)
+
+    Enum.reduce(set_levels, changeset, fn level, acc ->
+      if level_index(level) >= own_index do
+        add_error(acc, @level_fk_by_level[level], "cannot be set for a #{location_type}")
+      else
+        acc
+      end
+    end)
+  end
+
+  # Every level below `country` must belong to a country.
+  defp validate_has_country(changeset, :country), do: changeset
+
+  defp validate_has_country(changeset, _location_type) do
+    if is_nil(get_field(changeset, :country_id)) do
+      add_error(changeset, :country_id, "can't be blank")
+    else
+      changeset
+    end
+  end
+
+  # Each set ancestor's own higher-level FKs equal this location's.
+  defp validate_prefix_consistency(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+
+  defp validate_prefix_consistency(changeset) do
+    set =
+      for {level, fk} <- @level_fk_by_level, id = get_field(changeset, fk), do: {level, fk, id}
+
+    ancestors =
+      from(l in __MODULE__, where: l.id in ^Enum.map(set, fn {_, _, id} -> id end))
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    Enum.reduce(set, changeset, fn {level, fk, id}, acc ->
+      case ancestors[id] do
+        nil -> add_error(acc, fk, "does not exist")
+        ancestor -> check_ancestor_prefix(acc, level, fk, ancestor)
+      end
+    end)
+  end
+
+  defp check_ancestor_prefix(changeset, level, fk, ancestor) do
+    @hierarchy_levels
+    |> Enum.take(level_index(level))
+    |> Enum.reduce(changeset, fn higher, acc ->
+      higher_fk = @level_fk_by_level[higher]
+
+      if Map.get(ancestor, higher_fk) == get_field(acc, higher_fk) do
+        acc
+      else
+        add_error(acc, higher_fk, "is inconsistent with #{fk}'s ancestry")
+      end
+    end)
+  end
+
+  defp level_index(level) do
+    Enum.find_index(@hierarchy_levels, &(&1 == level))
   end
 
   def show_on_lifelist?(location) do

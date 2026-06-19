@@ -112,6 +112,133 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "validate_slot_occupancy/1" do
+    @level_fks Location.level_fks()
+
+    defp slot_changeset(attrs) do
+      Ecto.Changeset.cast(%Location{}, attrs, [:location_type | @level_fks])
+      |> Location.validate_slot_occupancy()
+    end
+
+    test "valid when only ancestor slots above own level are set" do
+      country = insert(:location, location_type: "country")
+
+      subdivision1 =
+        insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      changeset =
+        slot_changeset(%{
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        })
+
+      assert changeset.valid?
+    end
+
+    test "valid when an optional intermediate level is skipped" do
+      country = insert(:location, location_type: "country")
+
+      subdivision1 =
+        insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      # city hangs directly off subdivision1, skipping subdivision2
+      changeset =
+        slot_changeset(%{
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        })
+
+      assert changeset.valid?
+    end
+
+    test "valid when a city hangs directly off a country" do
+      country = insert(:location, location_type: "country")
+
+      # country -> city -> site, skipping subdivision1/subdivision2
+      changeset =
+        slot_changeset(%{
+          location_type: "city",
+          country_id: country.id
+        })
+
+      assert changeset.valid?
+    end
+
+    test "valid for a top-level country with no slots set" do
+      changeset = slot_changeset(%{location_type: "country"})
+      assert changeset.valid?
+    end
+
+    test "special is exempt" do
+      # no country_id, and a site_id that would be invalid for a hierarchy level
+      changeset =
+        slot_changeset(%{
+          location_type: "special",
+          site_id: insert(:location, location_type: "site").id
+        })
+
+      assert changeset.valid?
+    end
+
+    test "invalid with an FK at its own level" do
+      country = insert(:location, location_type: "country")
+      sub = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      changeset =
+        slot_changeset(%{
+          location_type: "subdivision1",
+          country_id: country.id,
+          subdivision1_id: sub.id
+        })
+
+      assert %{subdivision1_id: [_]} = errors_on(changeset)
+    end
+
+    test "invalid with an FK below its own level" do
+      country = insert(:location, location_type: "country")
+      sub = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      city =
+        insert(:location, location_type: "city", country_id: country.id, subdivision1_id: sub.id)
+
+      changeset =
+        slot_changeset(%{
+          location_type: "subdivision1",
+          country_id: country.id,
+          city_id: city.id
+        })
+
+      assert %{city_id: [_]} = errors_on(changeset)
+    end
+
+    test "invalid when a non-country location has no country" do
+      # a city floating with no country_id
+      changeset = slot_changeset(%{location_type: "city"})
+
+      assert %{country_id: ["can't be blank"]} = errors_on(changeset)
+    end
+
+    test "invalid when an ancestor's higher-level FK is inconsistent" do
+      country = insert(:location, location_type: "country")
+      other_country = insert(:location, location_type: "country")
+
+      # subdivision1 belongs to other_country, not country
+      subdivision1 =
+        insert(:location, location_type: "subdivision1", country_id: other_country.id)
+
+      changeset =
+        slot_changeset(%{
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        })
+
+      assert %{country_id: [_]} = errors_on(changeset)
+    end
+  end
+
   describe "Query.for_user/2" do
     test "returns own and common locations but not another user's" do
       user = user_fixture()

@@ -63,11 +63,12 @@ it, and remember the type set is the six levels **plus** `special`.
   - Its own-level slot and every slot **below** it are `null` (a country has
     `subdivision1_id … section_id` null; a city has `site_id`/`section_id` null).
     Put plainly: a location cannot have an FK of its own level or below.
-  - Parent slots may be set but must be sparse only from the bottom up — **no
-    gap directly above a set slot** (if `subdivision2_id` is set, then
-    `subdivision1_id` and `country_id` must be set too), though lower levels may
-    skip an optional level (a city may hang directly off `subdivision1` with no
-    `subdivision2`).
+  - Every level **below `country`** must belong to a country — `country_id` is
+    required for `subdivision1 … section` (only a top-level `country` may have it
+    null). This is the real "every loc has a parent" rule: combined with
+    prefix-consistency, having a country is what keeps a location from floating.
+    Intermediate levels are still skippable (a city may hang directly off a
+    `country` or a `subdivision1`, with `subdivision1`/`subdivision2` null).
   - Set ancestor slots are **prefix-consistent**: each ancestor's own
     higher-level FKs equal this location's (a `subdivision2` whose
     `subdivision1_id` differs from this location's is invalid). So a location's
@@ -235,3 +236,30 @@ fixes/implements.
   failures from the earlier `Remove :let={f}` commit (field ids changed
   `registration_form_*` → `user_*`); updated the test selectors. Unrelated to the
   redesign.
+- **Stage 2 — done (committed `33589546`).** Removed the obsolete
+  `ancestry`/`cached_*` unit tests from `location_test.exs` (cached-derivation
+  changeset cases, the `full_name`/`name_local_part`/`name_administrative_part`/
+  `long_name` name-builder describes, and the `ancestors`/`add_ancestors`/
+  `preload_ancestors` describes); kept the required-field, type-accessor, level-FK,
+  `Query.for_user`, `to_flag_emoji`, `raw_public_location`, and
+  `set_public_location_changeset` tests. Remapped two trivial dropped-type fixtures
+  in `geo_test.exs` (`region` → `subdivision1`; ownership loop to the new type set).
+  The `ancestry`/`cached_*` columns and code stay intact. Remaining red tests
+  (logbook roll-up, web form/show/index) are all later-stage-owned (4/5/6) and left
+  red on purpose.
+- **Stage 3 — done (pending review).** Added `Location.validate_slot_occupancy/1`,
+  a pure single-row changeset validation for the three slot-occupancy invariants
+  (own-level-and-below null; every non-country level belongs to a country, i.e.
+  `country_id` required; ancestor prefix-consistency), with `@level_fks` /
+  `level_fks/0` and the `@level_fk_by_level` map. `special` is exempt. Not wired
+  into `changeset/2` (write wiring is stage 6) — it's standalone so tests call it
+  directly. Note: prefix-consistency issues one `SELECT` for the referenced
+  ancestors (the only non-single-row part). New `validate_slot_occupancy/1` describe
+  in `location_test.exs` (10 cases). Suite unchanged at 7 red (the stage-5
+  `logbook_test` roll-up cases); no new regressions.
+  - **Refinement during review.** The original "no gap above a set slot"
+    contiguity rule was reframed: it was largely redundant with
+    prefix-consistency, and its real intent is "every location below `country`
+    belongs to a country." Replaced with an explicit `country_id`-required check
+    (`country` itself and `special` exempt), which is clearer and also catches an
+    all-null floating location that the contiguity rule missed.
