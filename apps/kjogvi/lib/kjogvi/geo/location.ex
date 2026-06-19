@@ -328,6 +328,30 @@ defmodule Kjogvi.Geo.Location do
     location.name_en
   end
 
+  # Level FK ancestor associations, most-specific level first — the order their
+  # names appear after the location's own name.
+  @name_assocs ~w(site city subdivision2 subdivision1 country)a
+
+  @doc """
+  Builds a location's full display name from its level FK ancestors.
+
+  The location's own `name_en`, followed by each set ancestor's `name_en` from
+  the most specific level (`site`) up to `country`, joined by `", "`. Requires
+  the level associations to be preloaded (`Query.preload_levels/1` /
+  `Query.level_assocs/0`).
+  """
+  def long_name_from_levels(location) do
+    [location.name_en | level_ancestor_names(location)]
+    |> Enum.join(", ")
+  end
+
+  defp level_ancestor_names(location) do
+    @name_assocs
+    |> Enum.map(&Map.get(location, &1))
+    |> Enum.reject(&(is_nil(&1) || match?(%Ecto.Association.NotLoaded{}, &1)))
+    |> Enum.map(& &1.name_en)
+  end
+
   def name_local_part(%{cached_city: cached_city} = location) do
     postfix =
       if is_nil(cached_city) do

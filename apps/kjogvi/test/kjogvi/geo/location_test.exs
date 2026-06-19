@@ -239,6 +239,64 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "long_name_from_levels/1" do
+    setup do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: "subdivision1",
+          country_id: country.id
+        )
+
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      site =
+        insert(:location,
+          name_en: "Assiniboine Park",
+          location_type: "site",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      %{country: country, subdivision1: subdivision1, city: city, site: site}
+    end
+
+    defp preload_levels(location) do
+      Repo.preload(location, Location.Query.level_assocs())
+    end
+
+    test "composes own name then ancestors most-specific to country", %{site: site} do
+      assert site |> preload_levels() |> Location.long_name_from_levels() ==
+               "Assiniboine Park, Winnipeg, Manitoba, Canada"
+    end
+
+    test "skips unset intermediate levels", %{country: country} do
+      # a city hanging directly off the country, no subdivision set
+      city =
+        insert(:location,
+          name_en: "Lonely City",
+          location_type: "city",
+          country_id: country.id
+        )
+
+      assert city |> preload_levels() |> Location.long_name_from_levels() ==
+               "Lonely City, Canada"
+    end
+
+    test "a top-level country is just its own name", %{country: country} do
+      assert country |> preload_levels() |> Location.long_name_from_levels() == "Canada"
+    end
+  end
+
   describe "Query.for_user/2" do
     test "returns own and common locations but not another user's" do
       user = user_fixture()

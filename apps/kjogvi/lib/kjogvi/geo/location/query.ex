@@ -30,6 +30,10 @@ defmodule Kjogvi.Geo.Location.Query do
   # name (e.g. `Location.long_name/1`).
   @display_assocs [:cached_parent, :cached_city, :cached_subdivision, :cached_country]
 
+  # The level FK associations needed to render a location's display name
+  # (`Location.long_name_from_levels/1`).
+  @level_assocs [:country, :subdivision1, :subdivision2, :city, :site]
+
   @doc """
   The cached ancestor associations a location needs to render its display name.
 
@@ -39,10 +43,25 @@ defmodule Kjogvi.Geo.Location.Query do
   def display_assocs, do: @display_assocs
 
   @doc """
+  The level FK associations a location needs to render its display name.
+
+  Use `preload_levels/1` to attach them to a query's `location`; this list is
+  for the rarer cases that preload on a bare `Location` (or another assoc name).
+  """
+  def level_assocs, do: @level_assocs
+
+  @doc """
   Preloads the display associations onto each card/observation's `location`.
   """
   def preload_display(query) do
     preload(query, location: ^@display_assocs)
+  end
+
+  @doc """
+  Preloads the level FK associations onto each card/observation's `location`.
+  """
+  def preload_levels(query) do
+    preload(query, location: ^@level_assocs)
   end
 
   def minimal_select(query \\ Location) do

@@ -263,3 +263,16 @@ fixes/implements.
     belongs to a country." Replaced with an explicit `country_id`-required check
     (`country` itself and `special` exempt), which is clearer and also catches an
     all-null floating location that the contiguity rule missed.
+- **Stage 4 — done (pending review).** Full-name generation over the level FKs,
+  reads only. Added `Location.long_name_from_levels/1` — own `name_en` plus each
+  set ancestor's name from most-specific (`site`) up to `country`, skipping unset
+  levels — backed by `@name_assocs` and a private `level_ancestor_names/1` that
+  tolerates unloaded/nil assocs. Added `Location.Query.level_assocs/0` and
+  `preload_levels/1` (mirroring `display_assocs`/`preload_display`) to attach the
+  five level FK associations. The old `long_name`/`name_local_part`/
+  `name_administrative_part` (and the `cached_*` preloads they read) are left
+  intact and still wired to the call sites — swapping consumers over is deferred,
+  and they're dropped in stage 8. New `long_name_from_levels/1` describe in
+  `location_test.exs` (3 cases: full chain, skipped intermediate level, bare
+  country). Suite at 7 red (unchanged stage-5 `logbook_test`/`geo_test` roll-up
+  cases); no new regressions.
