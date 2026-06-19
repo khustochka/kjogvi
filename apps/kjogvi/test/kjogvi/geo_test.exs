@@ -240,7 +240,7 @@ defmodule Kjogvi.GeoTest do
   describe "get_countries/0" do
     test "returns only locations with country type" do
       insert(:location, location_type: "country", name_en: "Canada")
-      insert(:location, location_type: "region", name_en: "Manitoba")
+      insert(:location, location_type: "subdivision1", name_en: "Manitoba")
       insert(:location, name_en: "Winnipeg")
 
       countries = Geo.get_countries()
@@ -249,7 +249,7 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "returns empty list when no countries exist" do
-      insert(:location, location_type: "region")
+      insert(:location, location_type: "subdivision1")
 
       assert Geo.get_countries() == []
     end
@@ -544,7 +544,7 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "stamps the creating user as the owner", %{user: user, scope: scope} do
-      for location_type <- ~w(continent country region city raion special) do
+      for location_type <- ~w(country subdivision1 subdivision2 city site section special) do
         {:ok, created} =
           Geo.create_location(scope, %{
             "slug" => "loc-#{location_type}",
