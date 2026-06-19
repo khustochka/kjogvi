@@ -295,6 +295,51 @@ defmodule Kjogvi.Geo.LocationTest do
     test "a top-level country is just its own name", %{country: country} do
       assert country |> preload_levels() |> Location.long_name_from_levels() == "Canada"
     end
+
+    test "drops the location itself when it is private", %{
+      country: country,
+      subdivision1: subdivision1,
+      city: city
+    } do
+      private_site =
+        insert(:location,
+          name_en: "Secret Patch",
+          location_type: "site",
+          is_private: true,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      assert private_site |> preload_levels() |> Location.long_name_from_levels() ==
+               "Winnipeg, Manitoba, Canada"
+    end
+
+    test "drops a private ancestor from the chain", %{
+      country: country,
+      subdivision1: subdivision1
+    } do
+      private_city =
+        insert(:location,
+          name_en: "Hidden City",
+          location_type: "city",
+          is_private: true,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      site =
+        insert(:location,
+          name_en: "Open Patch",
+          location_type: "site",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id,
+          city_id: private_city.id
+        )
+
+      assert site |> preload_levels() |> Location.long_name_from_levels() ==
+               "Open Patch, Manitoba, Canada"
+    end
   end
 
   describe "Query.for_user/2" do
