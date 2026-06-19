@@ -21,7 +21,6 @@ defmodule KjogviWeb.Live.Accounts.Login do
       </LoginRegistrationComponents.header>
 
       <.form
-        :let={f}
         for={@form}
         id="login_form"
         action={~p"/account/login"}
@@ -29,14 +28,14 @@ defmodule KjogviWeb.Live.Accounts.Login do
         class="mx-auto max-w-sm mt-8 space-y-4"
       >
         <LoginRegistrationComponents.email_input
-          field={f[:email]}
+          field={@form[:email]}
           label="Email"
           autocomplete="username"
           spellcheck="false"
           required
         />
         <LoginRegistrationComponents.password_input
-          field={f[:password]}
+          field={@form[:password]}
           label="Password"
           autocomplete="current-password"
           spellcheck="false"
@@ -45,7 +44,7 @@ defmodule KjogviWeb.Live.Accounts.Login do
 
         <div class="mt-2 flex items-center justify-between gap-6">
           <CoreComponents.input
-            field={f[:remember_me]}
+            field={@form[:remember_me]}
             type="checkbox"
             label="Keep me logged in"
           />

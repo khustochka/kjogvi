@@ -4,7 +4,6 @@
   </LoginRegistrationComponents.header>
 
   <.form
-    :let={f}
     for={@form}
     id="registration_form"
     action={~p"/setup"}
@@ -12,14 +11,14 @@
     class="mx-auto max-w-sm mt-8 space-y-4"
   >
     <LoginRegistrationComponents.email_input
-      field={f[:email]}
+      field={@form[:email]}
       label="Email"
       autocomplete="username"
       spellcheck="false"
       required
     />
     <LoginRegistrationComponents.password_input
-      field={f[:password]}
+      field={@form[:password]}
       label="Password"
       autocomplete="new-password"
       spellcheck="false"

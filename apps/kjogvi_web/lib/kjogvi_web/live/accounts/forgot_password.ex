@@ -42,14 +42,13 @@ defmodule KjogviWeb.Live.Accounts.ForgotPassword do
   defp render_form(assigns) do
     ~H"""
     <.form
-      :let={f}
       for={@form}
       id="reset-password-form"
       phx-submit="send_email"
       class="mx-auto max-w-sm mt-8 space-y-4"
     >
       <LoginRegistrationComponents.email_input
-        field={f[:email]}
+        field={@form[:email]}
         label="Email"
         autocomplete="username"
         spellcheck="false"

@@ -42,14 +42,13 @@ defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
   defp render_form(assigns) do
     ~H"""
     <.form
-      :let={f}
       for={@form}
       id="resend_confirmation_form"
       phx-submit="send_instructions"
       class="mx-auto max-w-sm mt-8 space-y-4"
     >
       <LoginRegistrationComponents.email_input
-        field={f[:email]}
+        field={@form[:email]}
         label="Email"
         autocomplete="username"
         spellcheck="false"

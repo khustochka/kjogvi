@@ -40,7 +40,6 @@ defmodule KjogviWeb.Live.Accounts.Registration do
   defp render_form(assigns) do
     ~H"""
     <.form
-      :let={f}
       for={@form}
       id="registration_form"
       phx-submit="save"
@@ -51,7 +50,7 @@ defmodule KjogviWeb.Live.Accounts.Registration do
       class="mx-auto max-w-sm mt-8 space-y-4"
     >
       <LoginRegistrationComponents.email_input
-        field={f[:email]}
+        field={@form[:email]}
         label="Email"
         phx-blur="validate_email"
         phx-debounce="500"
@@ -61,7 +60,7 @@ defmodule KjogviWeb.Live.Accounts.Registration do
         required
       />
       <LoginRegistrationComponents.password_input
-        field={f[:password]}
+        field={@form[:password]}
         label="Password"
         autocomplete="new-password"
         spellcheck="false"

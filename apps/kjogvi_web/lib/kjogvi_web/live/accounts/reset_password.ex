@@ -39,7 +39,6 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
   defp render_form(assigns) do
     ~H"""
     <.form
-      :let={f}
       for={@form}
       id="reset-password-form"
       phx-submit="reset-password"
@@ -47,14 +46,14 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
       class="mx-auto max-w-sm mt-8 space-y-4"
     >
       <LoginRegistrationComponents.password_input
-        field={f[:password]}
+        field={@form[:password]}
         label="New password"
         autocomplete="new-password"
         spellcheck="false"
         required
       />
       <LoginRegistrationComponents.password_input
-        field={f[:password_confirmation]}
+        field={@form[:password_confirmation]}
         label="Confirm new password"
         autocomplete="new-password"
         spellcheck="false"
