@@ -104,8 +104,11 @@ defmodule Kjogvi.Geo.Location do
     lon
     extras
     parent_id
-    cached_parent_id
-    cached_city_id
+    country_id
+    subdivision1_id
+    subdivision2_id
+    city_id
+    site_id
   )a
 
   def location_types, do: @location_types
@@ -124,6 +127,15 @@ defmodule Kjogvi.Geo.Location do
     |> Enum.reject(&is_nil/1)
   end
 
+  @doc """
+  The id of the location's direct parent — its deepest set level FK — or `nil`
+  for a top-level location. The inverse of `level_fks_from_parent/1`: editing
+  this location and re-picking the same parent reproduces its level FKs.
+  """
+  def parent_id_from_levels(location) do
+    location |> ancestor_ids() |> List.last()
+  end
+
   @doc false
   def changeset(location, attrs) do
     location
@@ -134,57 +146,23 @@ defmodule Kjogvi.Geo.Location do
       :is_private
     ])
     |> unique_constraint(:slug)
-    |> put_ancestry()
-    |> put_cached_admin()
-    |> put_cached_public_location()
+    |> put_level_fks_from_parent()
+    |> validate_slot_occupancy()
   end
 
-  defp put_cached_admin(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+  # When a `parent_id` is present in the changeset, derive the five level FK
+  # columns (and keep `ancestry` in sync) from the chosen parent. A nil
+  # `parent_id` clears them. When `parent_id` was not cast at all (e.g. an edit
+  # that touches only the name), the existing FKs are left untouched.
+  defp put_level_fks_from_parent(changeset) do
+    case fetch_change(changeset, :parent_id) do
+      {:ok, nil} ->
+        clear_level_fks(changeset)
 
-  defp put_cached_admin(changeset) do
-    ancestry = get_field(changeset, :ancestry) || []
-
-    {country_id, subdivision_id} = derive_admin_ids(ancestry)
-
-    changeset
-    |> put_change(:cached_country_id, country_id)
-    |> put_change(:cached_subdivision_id, subdivision_id)
-  end
-
-  defp derive_admin_ids([]), do: {nil, nil}
-
-  defp derive_admin_ids(ancestry) do
-    by_id =
-      from(l in __MODULE__,
-        where: l.id in ^ancestry,
-        select: {l.id, l.location_type}
-      )
-      |> Repo.all()
-      |> Map.new()
-
-    ancestry
-    |> Enum.reverse()
-    |> Enum.reduce({nil, nil}, fn id, {country, subdivision} ->
-      case {by_id[id], country, subdivision} do
-        {:country, nil, _} -> {id, subdivision}
-        {:subdivision1, _, nil} -> {country, id}
-        _ -> {country, subdivision}
-      end
-    end)
-  end
-
-  defp put_ancestry(changeset) do
-    case fetch_field(changeset, :parent_id) do
-      {_, nil} ->
-        put_change(changeset, :ancestry, [])
-
-      {_, parent_id} ->
+      {:ok, parent_id} ->
         case Repo.get(__MODULE__, parent_id) do
-          nil ->
-            add_error(changeset, :parent_id, "does not exist")
-
-          parent ->
-            put_change(changeset, :ancestry, parent.ancestry ++ [parent.id])
+          nil -> add_error(changeset, :parent_id, "does not exist")
+          parent -> put_level_fks(changeset, parent)
         end
 
       :error ->
@@ -192,34 +170,33 @@ defmodule Kjogvi.Geo.Location do
     end
   end
 
-  defp put_cached_public_location(%Ecto.Changeset{valid?: false} = changeset), do: changeset
-
-  defp put_cached_public_location(changeset) do
-    is_private = get_field(changeset, :is_private)
-    ancestry = get_field(changeset, :ancestry) || []
-
-    cond do
-      not is_private ->
-        put_change(changeset, :cached_public_location_id, nil)
-
-      ancestry == [] ->
-        put_change(changeset, :cached_public_location_id, nil)
-
-      true ->
-        public_id = nearest_public_ancestor_id(ancestry)
-        put_change(changeset, :cached_public_location_id, public_id)
-    end
+  defp clear_level_fks(changeset) do
+    changeset
+    |> put_change(:ancestry, [])
+    |> then(fn cs -> Enum.reduce(@level_fks, cs, &put_change(&2, &1, nil)) end)
   end
 
-  defp nearest_public_ancestor_id(ancestry) do
-    ancestors =
-      from(l in __MODULE__, where: l.id in ^ancestry, select: {l.id, l.is_private})
-      |> Repo.all()
-      |> Map.new()
+  defp put_level_fks(changeset, parent) do
+    fks = level_fks_from_parent(parent)
 
-    ancestry
-    |> Enum.reverse()
-    |> Enum.find(fn id -> ancestors[id] == false end)
+    changeset
+    |> put_change(:ancestry, ancestor_ids(parent) ++ [parent.id])
+    |> then(fn cs -> Enum.reduce(@level_fks, cs, &put_change(&2, &1, Map.fetch!(fks, &1))) end)
+  end
+
+  @doc """
+  The five level FK values a child would inherit from `parent`: the parent's own
+  level FKs, plus the parent itself placed into the slot for its `location_type`
+  (when the parent is one of the five ancestor-capable levels). A `section` or
+  `special` parent contributes no slot of its own.
+  """
+  def level_fks_from_parent(parent) do
+    base = Map.new(@level_fks, fn fk -> {fk, Map.get(parent, fk)} end)
+
+    case Map.get(@level_fk_by_level, parent.location_type) do
+      nil -> base
+      fk -> Map.put(base, fk, parent.id)
+    end
   end
 
   def set_public_location_changeset(%Location{is_private: true} = location) do
@@ -247,12 +224,13 @@ defmodule Kjogvi.Geo.Location do
   - **Prefix-consistency** — each set ancestor's own higher-level FKs equal this
     location's, so the level FKs are a consistent subset of the ancestors'.
 
-  `special` has no fixed level and is exempt. This is a pure single-row check
-  (it loads the referenced ancestors only for prefix-consistency); it does not
-  set any FKs.
+  `special` (and a location with no `location_type` yet) has no fixed level and
+  is exempt. This is a pure single-row check (it loads the referenced ancestors
+  only for prefix-consistency); it does not set any FKs.
   """
   def validate_slot_occupancy(changeset) do
     case get_field(changeset, :location_type) do
+      nil -> changeset
       :special -> changeset
       location_type -> validate_levels(changeset, location_type)
     end

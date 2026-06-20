@@ -19,14 +19,13 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "shows full long name as subtitle when richer than name_en", %{conn: conn} do
-    country = insert(:location, name_en: "Canada", location_type: "country")
+    country = insert(:location, name_en: "Canada", location_type: :country)
 
     location =
       insert(:location,
         name_en: "Manitoba",
-        location_type: "region",
-        ancestry: [country.id],
-        cached_country_id: country.id
+        location_type: :subdivision1,
+        country_id: country.id
       )
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
@@ -51,8 +50,10 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "shows ancestor locations in breadcrumbs", %{conn: conn} do
-    parent = insert(:location, name_en: "Canada", location_type: "country")
-    child = insert(:location, name_en: "Manitoba", ancestry: [parent.id])
+    parent = insert(:location, name_en: "Canada", location_type: :country)
+
+    child =
+      insert(:location, name_en: "Manitoba", location_type: :subdivision1, country_id: parent.id)
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{child.slug}")
 
@@ -78,12 +79,13 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "lists direct children", %{conn: conn} do
-    parent = insert(:location, name_en: "Canada", location_type: "country")
+    parent = insert(:location, name_en: "Canada", location_type: :country)
 
     child1 =
-      insert(:location, name_en: "Manitoba", ancestry: [parent.id], location_type: "region")
+      insert(:location, name_en: "Manitoba", location_type: :subdivision1, country_id: parent.id)
 
-    child2 = insert(:location, name_en: "Ontario", ancestry: [parent.id], location_type: "region")
+    child2 =
+      insert(:location, name_en: "Ontario", location_type: :subdivision1, country_id: parent.id)
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{parent.slug}")
 
@@ -150,8 +152,13 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "delete button disabled when location has children", %{conn: conn, user: user} do
-    parent = insert(:location, name_en: "Canada", user_id: user.id)
-    insert(:location, name_en: "Manitoba", ancestry: [parent.id])
+    parent = insert(:location, name_en: "Canada", location_type: :country, user_id: user.id)
+
+    insert(:location,
+      name_en: "Manitoba",
+      location_type: :subdivision1,
+      country_id: parent.id
+    )
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{parent.slug}")
 

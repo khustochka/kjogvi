@@ -2,15 +2,14 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   @moduledoc """
   LiveView for creating and editing locations.
 
-  State is split into three assigns:
+  State is split into:
     * `@location` — the pristine DB row (or a fresh struct for `:create`). Never
       mutated; passed to the context on save.
     * `@form` — the changeset wrapped via `to_form/1`; the source of truth for
-      every editable field.
-    * `@cached_labels` — display strings for autocomplete fields (parent and
-      cached_*), since the changeset only carries IDs.
-    * `@parent_struct` — the loaded parent location, needed by the map picker
-      for its fallback center coords.
+      every editable field. Ancestry is set through a single virtual `parent_id`,
+      from which the changeset derives the five level FK columns.
+    * `@parent_struct` — the loaded parent location, both the label for the
+      parent autocomplete and the map picker's fallback center coords.
   """
 
   use KjogviWeb, :live_view
@@ -20,8 +19,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
   alias KjogviWeb.Live.Components.LocationAutocomplete
-
-  @cached_fields Location.Query.display_assocs()
 
   @impl true
   def mount(_params, _session, socket) do
@@ -46,8 +43,10 @@ defmodule KjogviWeb.Live.My.Locations.Form do
          |> push_navigate(to: ~p"/my/locations/#{location.slug}")}
 
       true ->
-        location = Repo.preload(location, @cached_fields) |> Location.with_parent_id()
-        parent_struct = location.parent_id && Repo.get(Location, location.parent_id)
+        parent_id = Location.parent_id_from_levels(location)
+
+        parent_struct =
+          parent_id && Repo.preload(load_parent(parent_id), Location.Query.level_assocs())
 
         {
           :noreply,
@@ -56,16 +55,16 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           |> assign(:action, :edit)
           |> assign(:location, location)
           |> assign(:parent_struct, parent_struct)
-          |> assign(:cached_labels, labels_from_record(location, parent_struct))
-          |> assign_form(initial_params(location, parent_struct))
+          |> assign_form(initial_params(location, parent_id))
         }
     end
   end
 
   def handle_params(params, _url, socket) do
     parent_id = params["parent_id"] && String.to_integer(params["parent_id"])
-    parent_struct = parent_id && Repo.get(Location, parent_id)
-    {parent_ids, parent_labels} = derive_from_parent(parent_struct)
+
+    parent_struct =
+      parent_id && Repo.preload(load_parent(parent_id), Location.Query.level_assocs())
 
     {
       :noreply,
@@ -74,16 +73,15 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       |> assign(:action, :create)
       |> assign(:location, %Location{is_private: false})
       |> assign(:parent_struct, parent_struct)
-      |> assign(:cached_labels, parent_labels)
-      |> assign_form(parent_ids)
+      |> assign_form(%{"parent_id" => parent_id})
     }
   end
 
-  defp assign_form(socket, params) do
-    changeset =
-      socket.assigns.location
-      |> Geo.change_location(params)
+  defp load_parent(nil), do: nil
+  defp load_parent(parent_id), do: Repo.get(Location, parent_id)
 
+  defp assign_form(socket, params) do
+    changeset = Geo.change_location(socket.assigns.location, params)
     assign(socket, :form, to_form(changeset))
   end
 
@@ -93,36 +91,28 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   defp current_form_params(_), do: %{}
 
-  @impl true
-  def handle_event("validate", %{"location" => params}, socket) do
+  defp revalidate(socket, params) do
     changeset =
       socket.assigns.location
       |> Geo.change_location(params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, :form, to_form(changeset))}
+    assign(socket, :form, to_form(changeset))
+  end
+
+  @impl true
+  def handle_event("validate", %{"location" => params}, socket) do
+    {:noreply, revalidate(socket, params)}
   end
 
   def handle_event("map_picked", %{"lat" => lat, "lon" => lon}, socket) do
     params = current_form_params(socket) |> Map.merge(%{"lat" => lat, "lon" => lon})
-
-    changeset =
-      socket.assigns.location
-      |> Geo.change_location(params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign(socket, :form, to_form(changeset))}
+    {:noreply, revalidate(socket, params)}
   end
 
   def handle_event("map_cleared", _params, socket) do
     params = current_form_params(socket) |> Map.merge(%{"lat" => nil, "lon" => nil})
-
-    changeset =
-      socket.assigns.location
-      |> Geo.change_location(params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign(socket, :form, to_form(changeset))}
+    {:noreply, revalidate(socket, params)}
   end
 
   def handle_event("save", %{"location" => params}, socket) do
@@ -154,72 +144,22 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   @impl true
   def handle_info({:autocomplete_select, "parent_selected", %{"result" => result}}, socket) do
-    parent_struct = Repo.get(Location, result.id)
-    {ids, labels} = derive_from_parent(parent_struct)
-
-    params = current_form_params(socket) |> Map.merge(ids)
-
-    changeset =
-      socket.assigns.location
-      |> Geo.change_location(params)
-      |> Map.put(:action, :validate)
+    parent_struct = Repo.preload(load_parent(result.id), Location.Query.level_assocs())
+    params = current_form_params(socket) |> Map.put("parent_id", result.id)
 
     {:noreply,
      socket
      |> assign(:parent_struct, parent_struct)
-     |> assign(:cached_labels, labels)
-     |> assign(:form, to_form(changeset))}
+     |> revalidate(params)}
   end
 
   def handle_info({:autocomplete_clear, "parent_selected", _params}, socket) do
-    {ids, labels} = derive_from_parent(nil)
-    params = current_form_params(socket) |> Map.merge(ids)
-
-    changeset =
-      socket.assigns.location
-      |> Geo.change_location(params)
-      |> Map.put(:action, :validate)
+    params = current_form_params(socket) |> Map.put("parent_id", nil)
 
     {:noreply,
      socket
      |> assign(:parent_struct, nil)
-     |> assign(:cached_labels, labels)
-     |> assign(:form, to_form(changeset))}
-  end
-
-  def handle_info({:autocomplete_select, "cached_selected", params}, socket) do
-    field = params["field"]
-    result = params["result"]
-    field_atom = String.to_existing_atom(field)
-
-    labels = Map.put(socket.assigns.cached_labels, field_atom, result.name_en)
-    form_params = current_form_params(socket) |> Map.put("#{field}_id", result.id)
-
-    changeset =
-      socket.assigns.location
-      |> Geo.change_location(form_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply,
-     socket
-     |> assign(:cached_labels, labels)
-     |> assign(:form, to_form(changeset))}
-  end
-
-  def handle_info({:autocomplete_clear, "cached_selected", %{"field" => field}}, socket) do
-    field_atom = String.to_existing_atom(field)
-    labels = Map.put(socket.assigns.cached_labels, field_atom, nil)
-    form_params = current_form_params(socket) |> Map.put("#{field}_id", nil)
-
-    changeset =
-      socket.assigns.location
-      |> Geo.change_location(form_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply,
-     socket
-     |> assign(:cached_labels, labels)
-     |> assign(:form, to_form(changeset))}
+     |> revalidate(params)}
   end
 
   @impl true
@@ -250,11 +190,18 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           <.autocomplete_row
             field="parent"
             label="Parent"
-            current_label={@cached_labels[:parent]}
+            current_label={@parent_struct && Location.long_name_from_levels(@parent_struct)}
             current_id={@form[:parent_id].value}
             on_select_event="parent_selected"
             scope={@current_scope}
           />
+          <ul
+            :if={ancestry_errors(@form) != []}
+            id="location-ancestry-errors"
+            class="text-sm text-rose-600"
+          >
+            <li :for={msg <- ancestry_errors(@form)}>{msg}</li>
+          </ul>
         </div>
 
         <div>
@@ -278,39 +225,8 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         </div>
       </div>
 
-      <p class="text-stone-500 text-sm pt-2">
-        These fields determine the segments of the location's full display name.
-      </p>
-
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <.autocomplete_row
-          field="cached_parent"
-          label="Cached parent"
-          current_label={@cached_labels[:cached_parent]}
-          current_id={@form[:cached_parent_id].value}
-          on_select_event="cached_selected"
-          on_select_params={%{"field" => "cached_parent"}}
-          scope={@current_scope}
-        />
-        <.autocomplete_row
-          field="cached_city"
-          label="Cached city"
-          current_label={@cached_labels[:cached_city]}
-          current_id={@form[:cached_city_id].value}
-          on_select_event="cached_selected"
-          on_select_params={%{"field" => "cached_city"}}
-          scope={@current_scope}
-        />
-        <.cached_label
-          id="location_cached_subdivision"
-          label="Cached subdivision"
-          current_label={@cached_labels[:cached_subdivision]}
-        />
-        <.cached_label
-          id="location_cached_country"
-          label="Cached country"
-          current_label={@cached_labels[:cached_country]}
-        />
+      <div :if={@parent_struct} id="location-ancestry-summary" class="text-sm text-stone-500 pt-1">
+        Ancestry: {Location.long_name_from_levels(@parent_struct)}
       </div>
 
       <div class="pt-2">
@@ -391,25 +307,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     """
   end
 
-  attr :id, :string, required: true
-  attr :label, :string, required: true
-  attr :current_label, :any, default: nil
-
-  defp cached_label(assigns) do
-    ~H"""
-    <div id={@id}>
-      <span class="block text-sm font-medium font-header leading-6 text-zinc-800">{@label}</span>
-      <div
-        id={"#{@id}_value"}
-        aria-disabled="true"
-        class="block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-500 sm:text-sm sm:leading-6"
-      >
-        <span class="block min-h-6">{@current_label}</span>
-      </div>
-    </div>
-    """
-  end
-
   attr :lat, Phoenix.HTML.FormField, required: true
   attr :lon, Phoenix.HTML.FormField, required: true
   attr :parent, :any, default: nil
@@ -444,8 +341,24 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   defp cancel_path(:edit, location), do: ~p"/my/locations/#{location.slug}"
   defp cancel_path(:create, _), do: ~p"/my/locations"
 
+  # Slot-occupancy/parent errors don't map to a visible input (the level FKs are
+  # derived from the parent), so surface them near the parent picker.
+  @ancestry_error_fields [:parent_id | Location.level_fks()]
+
+  defp ancestry_errors(%Phoenix.HTML.Form{} = form) do
+    for field <- @ancestry_error_fields,
+        {msg, _opts} <- Keyword.get_values(form.source.errors, field) do
+      "#{humanize_field(field)} #{msg}"
+    end
+  end
+
+  defp humanize_field(:parent_id), do: "Parent"
+
+  defp humanize_field(field),
+    do: field |> Phoenix.Naming.humanize() |> String.trim_trailing(" id")
+
   # Initial form params reconstructed from a loaded location (edit mode).
-  defp initial_params(location, parent_struct) do
+  defp initial_params(location, parent_id) do
     %{
       "slug" => location.slug,
       "name_en" => location.name_en,
@@ -454,92 +367,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       "is_private" => location.is_private,
       "lat" => location.lat,
       "lon" => location.lon,
-      "parent_id" => parent_struct && parent_struct.id,
-      "cached_parent_id" => location.cached_parent_id,
-      "cached_city_id" => location.cached_city_id
-    }
-  end
-
-  # Given a parent location (or nil), derives the four cached IDs and the five
-  # display labels (parent + four cached_*). Walks the parent's ancestry chain
-  # deepest-first; each ancestor goes into the slot matching its location_type,
-  # and the deepest unclassified non-self ancestor becomes cached_parent.
-  defp derive_from_parent(nil) do
-    {
-      %{
-        "parent_id" => nil,
-        "cached_parent_id" => nil,
-        "cached_city_id" => nil
-      },
-      empty_labels()
-    }
-  end
-
-  defp derive_from_parent(%Location{} = parent) do
-    cached = classify_ancestry(parent)
-    cached_parent = if parent.id in classified_ids(cached), do: nil, else: parent
-
-    {ids_from_parent(parent, cached_parent, cached),
-     labels_from_parent(parent, cached_parent, cached)}
-  end
-
-  defp classify_ancestry(parent) do
-    chain = Location.ancestors(parent) ++ [parent]
-
-    Enum.reduce(chain, %{city: nil, subdivision: nil, country: nil}, &place_in_slot/2)
-  end
-
-  defp place_in_slot(loc, acc) do
-    case slot_for(loc.location_type) do
-      nil -> acc
-      slot -> if Map.fetch!(acc, slot) == nil, do: Map.put(acc, slot, loc), else: acc
-    end
-  end
-
-  defp slot_for(:country), do: :country
-  defp slot_for(:subdivision1), do: :subdivision
-  defp slot_for(:city), do: :city
-  defp slot_for(_), do: nil
-
-  defp classified_ids(cached), do: Enum.map(Map.values(cached), &(&1 && &1.id))
-
-  defp ids_from_parent(parent, cached_parent, cached) do
-    %{
-      "parent_id" => parent.id,
-      "cached_parent_id" => cached_parent && cached_parent.id,
-      "cached_city_id" => cached[:city] && cached[:city].id
-    }
-  end
-
-  defp labels_from_parent(parent, cached_parent, cached) do
-    %{
-      parent: parent.name_en,
-      cached_parent: cached_parent && cached_parent.name_en,
-      cached_city: cached[:city] && cached[:city].name_en,
-      cached_subdivision: cached[:subdivision] && cached[:subdivision].name_en,
-      cached_country: cached[:country] && cached[:country].name_en
-    }
-  end
-
-  # Labels for editing an existing location: read from preloaded cached_*
-  # associations plus the parent struct.
-  defp labels_from_record(location, parent_struct) do
-    %{
-      parent: parent_struct && parent_struct.name_en,
-      cached_parent: location.cached_parent && location.cached_parent.name_en,
-      cached_city: location.cached_city && location.cached_city.name_en,
-      cached_subdivision: location.cached_subdivision && location.cached_subdivision.name_en,
-      cached_country: location.cached_country && location.cached_country.name_en
-    }
-  end
-
-  defp empty_labels do
-    %{
-      parent: nil,
-      cached_parent: nil,
-      cached_city: nil,
-      cached_subdivision: nil,
-      cached_country: nil
+      "parent_id" => parent_id
     }
   end
 end

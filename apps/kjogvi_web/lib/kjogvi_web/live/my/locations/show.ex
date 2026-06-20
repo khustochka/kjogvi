@@ -18,19 +18,13 @@ defmodule KjogviWeb.Live.My.Locations.Show do
           nil
 
         loc ->
-          Repo.preload(loc, [
-            :cached_parent,
-            :cached_city,
-            :cached_subdivision,
-            :cached_country,
-            :special_parent_locations
-          ])
+          Repo.preload(loc, Location.Query.level_assocs() ++ [:special_parent_locations])
       end
 
     if location do
-      ancestors = Location.ancestors(location)
+      ancestors = Geo.ancestor_locations(location)
       cards_count = Geo.cards_count(location.id)
-      children = Geo.direct_children(location.id)
+      children = Geo.direct_children(location)
       member_locations = Geo.special_member_locations(location)
       can_delete = children == [] and cards_count == 0
 
@@ -110,11 +104,11 @@ defmodule KjogviWeb.Live.My.Locations.Show do
             <% end %>
           </.h1>
           <p
-            :if={Location.long_name(@location) != @location.name_en}
+            :if={Location.long_name_from_levels(@location) != @location.name_en}
             id="location-full-name"
             class="mt-2 text-lg text-stone-600"
           >
-            {Location.long_name(@location)}
+            {Location.long_name_from_levels(@location)}
           </p>
           <div class="mt-6 flex flex-wrap items-center gap-2">
             <.action_button

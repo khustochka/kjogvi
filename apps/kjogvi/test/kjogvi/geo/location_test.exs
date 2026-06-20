@@ -60,6 +60,138 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "changeset/2 deriving level FKs from a parent" do
+    setup do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: :subdivision1,
+          country_id: country.id
+        )
+
+      %{country: country, subdivision1: subdivision1}
+    end
+
+    test "fills the level FKs from the parent's FKs plus the parent itself", %{
+      country: country,
+      subdivision1: subdivision1
+    } do
+      changeset =
+        Location.changeset(%Location{}, %{
+          "slug" => "wpg",
+          "name_en" => "Winnipeg",
+          "is_private" => false,
+          "location_type" => "city",
+          "parent_id" => subdivision1.id
+        })
+
+      assert changeset.valid?
+      assert get_change(changeset, :country_id) == country.id
+      assert get_change(changeset, :subdivision1_id) == subdivision1.id
+      assert get_change(changeset, :city_id) == nil
+    end
+
+    test "a nil parent_id clears the level FKs", %{country: country} do
+      city =
+        insert(:location, name_en: "Old City", location_type: :city, country_id: country.id)
+
+      changeset = Location.changeset(city, %{"parent_id" => nil, "location_type" => "country"})
+
+      assert get_change(changeset, :country_id) == nil
+    end
+
+    test "an absent parent_id leaves existing FKs untouched", %{country: country} do
+      city =
+        insert(:location, name_en: "City", location_type: :city, country_id: country.id)
+
+      changeset = Location.changeset(city, %{"name_en" => "City Renamed"})
+
+      refute Map.has_key?(changeset.changes, :country_id)
+    end
+
+    test "errors when the parent does not exist" do
+      changeset =
+        Location.changeset(%Location{}, %{
+          "slug" => "x",
+          "name_en" => "X",
+          "is_private" => false,
+          "location_type" => "city",
+          "parent_id" => -1
+        })
+
+      assert %{parent_id: ["does not exist"]} = errors_on(changeset)
+    end
+
+    test "rejects a parent at the new location's own level", %{
+      country: country,
+      subdivision1: subdivision1
+    } do
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      changeset =
+        Location.changeset(%Location{}, %{
+          "slug" => "y",
+          "name_en" => "Y",
+          "is_private" => false,
+          "location_type" => "city",
+          "parent_id" => city.id
+        })
+
+      assert %{city_id: ["cannot be set for a city"]} = errors_on(changeset)
+    end
+  end
+
+  describe "level_fks_from_parent/1" do
+    test "inherits the parent's FKs and slots the parent by its type" do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: :subdivision1,
+          country_id: country.id
+        )
+
+      assert Location.level_fks_from_parent(subdivision1) == %{
+               country_id: country.id,
+               subdivision1_id: subdivision1.id,
+               subdivision2_id: nil,
+               city_id: nil,
+               site_id: nil
+             }
+    end
+
+    test "a special parent contributes its FKs but no slot of its own" do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      special =
+        insert(:location, name_en: "Patch", location_type: :special, country_id: country.id)
+
+      fks = Location.level_fks_from_parent(special)
+      assert fks.country_id == country.id
+      assert fks.subdivision1_id == nil
+    end
+  end
+
+  describe "parent_id_from_levels/1" do
+    test "is the deepest set level FK" do
+      location = %Location{country_id: 1, subdivision1_id: 2, subdivision2_id: nil}
+      assert Location.parent_id_from_levels(location) == 2
+    end
+
+    test "is nil for a top-level location" do
+      assert Location.parent_id_from_levels(%Location{}) == nil
+    end
+  end
+
   describe "location_types/0 and hierarchy_levels/0" do
     test "hierarchy levels are the ordered set, top to bottom" do
       assert Location.hierarchy_levels() ==
@@ -513,6 +645,45 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location, location_type: "section", country_id: country.id)
 
       assert child_location_ids(section) == [section.id]
+    end
+  end
+
+  describe "Query.direct_children/1" do
+    defp direct_child_ids(location) do
+      location |> Query.direct_children() |> Repo.all() |> Enum.map(& &1.id) |> Enum.sort()
+    end
+
+    test "returns only descendants whose deepest set FK is this location" do
+      country = insert(:location, location_type: "country")
+      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      # A city nested under the subdivision is NOT a direct child of the country.
+      _city =
+        insert(:location,
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision.id
+        )
+
+      # A city hanging directly off the country IS a direct child.
+      direct_city = insert(:location, location_type: "city", country_id: country.id)
+
+      assert direct_child_ids(country) == Enum.sort([subdivision.id, direct_city.id])
+    end
+
+    test "excludes the location itself" do
+      country = insert(:location, location_type: "country")
+      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      refute country.id in direct_child_ids(country)
+      assert direct_child_ids(country) == [subdivision.id]
+    end
+
+    test "a section has no children" do
+      country = insert(:location, location_type: "country")
+      section = insert(:location, location_type: "section", country_id: country.id)
+
+      assert direct_child_ids(section) == []
     end
   end
 

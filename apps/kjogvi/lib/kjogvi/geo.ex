@@ -227,14 +227,25 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Returns direct children of a location (where it is the last element of ancestry).
+  Returns the direct children of a location — the descendants whose deepest set
+  level FK is this location — ordered by name.
   """
-  def direct_children(location_id) do
-    from(l in Location,
-      where: fragment("?[array_length(?, 1)] = ?", l.ancestry, l.ancestry, ^location_id),
-      order_by: l.name_en
-    )
+  def direct_children(%Location{} = location) do
+    location
+    |> Location.Query.direct_children()
+    |> order_by([l], asc: l.name_en)
     |> Repo.all()
+  end
+
+  @doc """
+  Returns a location's ancestors, top to bottom (country first), read from its
+  level FK columns.
+  """
+  def ancestor_locations(%Location{} = location) do
+    ancestor_ids = Location.ancestor_ids(location)
+    by_id = Map.new(get_locations_by_ids(ancestor_ids), &{&1.id, &1})
+
+    Enum.map(ancestor_ids, &by_id[&1])
   end
 
   def children_count(location_id) do

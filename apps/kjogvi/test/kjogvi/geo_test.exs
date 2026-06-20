@@ -68,6 +68,67 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "direct_children/1" do
+    test "returns direct children ordered by name, not deeper descendants" do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      manitoba =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: :subdivision1,
+          country_id: country.id
+        )
+
+      _alberta =
+        insert(:location,
+          name_en: "Alberta",
+          location_type: :subdivision1,
+          country_id: country.id
+        )
+
+      _winnipeg =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: manitoba.id
+        )
+
+      children = Geo.direct_children(country)
+
+      assert Enum.map(children, & &1.name_en) == ["Alberta", "Manitoba"]
+    end
+  end
+
+  describe "ancestor_locations/1" do
+    test "returns ancestors top to bottom from the level FKs" do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      manitoba =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: :subdivision1,
+          country_id: country.id
+        )
+
+      winnipeg =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: manitoba.id
+        )
+
+      assert Geo.ancestor_locations(winnipeg) |> Enum.map(& &1.name_en) == ["Canada", "Manitoba"]
+    end
+
+    test "is empty for a top-level location" do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      assert Geo.ancestor_locations(country) == []
+    end
+  end
+
   describe "get_logbook_settings_locations/0" do
     test "includes countries and subdivisions regardless of public_index" do
       country =
@@ -504,44 +565,59 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "create_location/2 cached_public_location_id derivation" do
+  describe "create_location/2 level FK derivation from parent" do
     setup do
       %{scope: %Kjogvi.Scope{current_user: user_fixture(), area: :private}}
     end
 
-    test "sets cached_public_location_id for private location to nearest public ancestor",
-         %{scope: scope} do
-      country = insert(:location, name_en: "Canada", is_private: false)
+    test "derives the level FKs from the chosen parent", %{scope: scope} do
+      country = insert(:location, name_en: "Canada", location_type: :country)
 
-      private_parent =
-        insert(:location, name_en: "Private area", is_private: true, ancestry: [country.id])
-
-      {:ok, created} =
-        Geo.create_location(scope, %{
-          "slug" => "secret-patch",
-          "name_en" => "Secret Patch",
-          "is_private" => "true",
-          "location_type" => "special",
-          "parent_id" => private_parent.id
-        })
-
-      assert created.cached_public_location_id == country.id
-      assert created.ancestry == [country.id, private_parent.id]
-    end
-
-    test "leaves cached_public_location_id nil for public location", %{scope: scope} do
-      country = insert(:location, name_en: "Canada", is_private: false)
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: :subdivision1,
+          country_id: country.id
+        )
 
       {:ok, created} =
         Geo.create_location(scope, %{
-          "slug" => "city-x",
-          "name_en" => "City X",
+          "slug" => "winnipeg",
+          "name_en" => "Winnipeg",
           "is_private" => "false",
           "location_type" => "city",
-          "parent_id" => country.id
+          "parent_id" => subdivision1.id
         })
 
-      assert is_nil(created.cached_public_location_id)
+      assert created.country_id == country.id
+      assert created.subdivision1_id == subdivision1.id
+      assert created.city_id == nil
+      assert created.ancestry == [country.id, subdivision1.id]
+    end
+
+    test "a top-level country has no level FKs", %{scope: scope} do
+      {:ok, created} =
+        Geo.create_location(scope, %{
+          "slug" => "greenland",
+          "name_en" => "Greenland",
+          "is_private" => "false",
+          "location_type" => "country"
+        })
+
+      assert created.country_id == nil
+      assert created.ancestry == []
+    end
+
+    test "rejects a non-country location with no parent", %{scope: scope} do
+      assert {:error, changeset} =
+               Geo.create_location(scope, %{
+                 "slug" => "floating-city",
+                 "name_en" => "Floating City",
+                 "is_private" => "false",
+                 "location_type" => "city"
+               })
+
+      assert %{country_id: ["can't be blank"]} = errors_on(changeset)
     end
   end
 
@@ -552,13 +628,19 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "stamps the creating user as the owner", %{user: user, scope: scope} do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      # Non-country levels need a country parent to satisfy slot occupancy.
       for location_type <- ~w(country subdivision1 subdivision2 city site section special) do
+        parent_id = if location_type == "country", do: nil, else: country.id
+
         {:ok, created} =
           Geo.create_location(scope, %{
             "slug" => "loc-#{location_type}",
             "name_en" => "Loc #{location_type}",
             "is_private" => "false",
-            "location_type" => location_type
+            "location_type" => location_type,
+            "parent_id" => parent_id
           })
 
         assert created.user_id == user.id
@@ -571,8 +653,15 @@ defmodule Kjogvi.GeoTest do
       %{user: owner, scope: owner_scope} = scope_fixture()
       %{user: _other, scope: other_scope} = scope_fixture()
 
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
       location =
-        insert(:location, location_type: "city", user_id: owner.id, slug: "owned-city")
+        insert(:location,
+          location_type: :city,
+          country_id: country.id,
+          user_id: owner.id,
+          slug: "owned-city"
+        )
 
       %{
         owner_scope: owner_scope,

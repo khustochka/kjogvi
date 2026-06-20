@@ -135,6 +135,42 @@ defmodule Kjogvi.Geo.Location.Query do
     end
   end
 
+  # Level FK columns, top to bottom (mirrors `Location.level_fks/0`); used to
+  # blank the slots below a location's own level when finding direct children.
+  @level_fks ~w(country_id subdivision1_id subdivision2_id city_id site_id)a
+
+  @doc """
+  Query for the **direct** children of `location`: descendants whose deepest set
+  level FK is `location` itself.
+
+  A direct child has `location`'s descendant FK pointing at it and every level FK
+  *below* `location`'s own level left null (so a `subdivision1`'s direct children
+  are `subdivision2_id == id` rows with `city_id`/`site_id` null — not the cities
+  nested further down). A `section` or unmapped type has no children.
+  """
+  def direct_children(%{id: id, location_type: location_type}) do
+    case Map.fetch(@descendant_fk, location_type) do
+      {:ok, fk} ->
+        below = below_level_fks(fk)
+
+        base = from l in Location, where: field(l, ^fk) == ^id
+
+        Enum.reduce(below, base, fn lower_fk, query ->
+          from l in query, where: is_nil(field(l, ^lower_fk))
+        end)
+
+      :error ->
+        from l in Location, where: false
+    end
+  end
+
+  # Level FK columns strictly below the given one.
+  defp below_level_fks(fk) do
+    @level_fks
+    |> Enum.drop_while(&(&1 != fk))
+    |> Enum.drop(1)
+  end
+
   @doc """
   Query selecting the ids of a special location's members plus all their
   descendants.

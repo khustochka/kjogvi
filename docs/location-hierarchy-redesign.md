@@ -361,3 +361,39 @@ fixes/implements.
     `put_cached_public_location/1`, and the `cached_public_location` assoc. These
     are ready to drop in stage 8 — flipping the earlier "leave it in place" call
     now that level FKs make the cache redundant.
+- **Stage 6 — done (pending review).** Create + simple update wired onto the
+  level FKs (no `location_type` change yet); the show page rebuilt alongside.
+  **Form UX = single parent picker** (per the decision): one Parent autocomplete
+  whose selection derives all five level FKs; the per-level `cached_*`
+  autocompletes are gone.
+  - **Changeset.** `changeset/2` replaced `put_ancestry`/`put_cached_admin`/
+    `put_cached_public_location` with `put_level_fks_from_parent/1` +
+    `validate_slot_occupancy/1` (stage 3 now wired in). A cast `parent_id` drives
+    it: a set id loads the parent and fills the FKs via the new
+    `level_fks_from_parent/1` (parent's own FKs + the parent placed into its
+    `location_type` slot; a `section`/`special`/nil-type parent contributes no
+    slot); a nil id clears them; an absent id leaves existing FKs untouched (so a
+    name-only edit doesn't disturb ancestry). `ancestry` is kept in sync from the
+    parent's `ancestor_ids` for the legacy consumers still reading it.
+    `@editable_fields` swapped `cached_parent_id`/`cached_city_id` for the five
+    level FK columns. `validate_slot_occupancy/1` now also exempts a nil
+    `location_type` (the factory default).
+  - **Form LiveView.** Rebuilt on `parent_id`: select/clear a parent →
+    re-derive + revalidate; edit mode reconstructs `parent_id` via the new
+    `Location.parent_id_from_levels/1` (deepest set FK). Added a
+    `#location-ancestry-summary` line and a `#location-ancestry-errors` list to
+    surface slot-occupancy errors that don't map to a visible input (the level
+    FKs are derived, not typed).
+  - **Show page.** Off `cached_*`/`ancestry`: breadcrumbs + ancestry chain from
+    `Geo.ancestor_locations/1` (level FKs), children from `Geo.direct_children/1`
+    (rebuilt on a new `Location.Query.direct_children/1` — descendants whose
+    deepest set FK is this location), subtitle from `long_name_from_levels/1`.
+  - **Tests.** `form_test.exs` and the two red `show_test` cases rewritten to
+    level FKs; new `changeset/2` derivation, `level_fks_from_parent/1`,
+    `parent_id_from_levels/1`, `Query.direct_children/1`, `Geo.direct_children/1`,
+    and `Geo.ancestor_locations/1` describes. The obsolete
+    `create_location/2 cached_public_location_id derivation` describe in
+    `geo_test.exs` (tested the now-removed cache write) was replaced with a level
+    FK derivation describe; the ownership / owner-can-update fixtures gained a
+    country parent to satisfy slot occupancy. Full suite green (536 core + 457
+    web, 1 pre-existing skip).
