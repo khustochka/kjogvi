@@ -296,7 +296,7 @@ defmodule Kjogvi.Geo.LocationTest do
       assert country |> preload_levels() |> Location.long_name_from_levels() == "Canada"
     end
 
-    test "drops the location itself when it is private", %{
+    test "includes private segments (owner-facing, no filtering)", %{
       country: country,
       subdivision1: subdivision1,
       city: city
@@ -312,6 +312,48 @@ defmodule Kjogvi.Geo.LocationTest do
         )
 
       assert private_site |> preload_levels() |> Location.long_name_from_levels() ==
+               "Secret Patch, Winnipeg, Manitoba, Canada"
+    end
+  end
+
+  describe "public_long_name_from_levels/1" do
+    setup do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: "subdivision1",
+          country_id: country.id
+        )
+
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      %{country: country, subdivision1: subdivision1, city: city}
+    end
+
+    test "drops the location itself when it is private", %{
+      country: country,
+      subdivision1: subdivision1,
+      city: city
+    } do
+      private_site =
+        insert(:location,
+          name_en: "Secret Patch",
+          location_type: "site",
+          is_private: true,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      assert private_site |> preload_levels() |> Location.public_long_name_from_levels() ==
                "Winnipeg, Manitoba, Canada"
     end
 
@@ -337,7 +379,7 @@ defmodule Kjogvi.Geo.LocationTest do
           city_id: private_city.id
         )
 
-      assert site |> preload_levels() |> Location.long_name_from_levels() ==
+      assert site |> preload_levels() |> Location.public_long_name_from_levels() ==
                "Open Patch, Manitoba, Canada"
     end
   end

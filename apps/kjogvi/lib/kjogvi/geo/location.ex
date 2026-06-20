@@ -346,12 +346,23 @@ defmodule Kjogvi.Geo.Location do
   Builds a location's full display name from its level FK ancestors.
 
   The location's own `name_en`, followed by each set ancestor's `name_en` from
-  the most specific level (`site`) up to `country`, joined by `", "`. Private
-  segments — the location itself or any ancestor with `is_private` — are dropped,
-  so a private location's name never surfaces. Requires the level associations to
-  be preloaded (`Query.preload_levels/1` / `Query.level_assocs/0`).
+  the most specific level (`site`) up to `country`, joined by `", "`. Includes
+  every segment regardless of privacy — for owner-facing contexts. Use
+  `public_long_name_from_levels/1` where private segments must be hidden.
+  Requires the level associations to be preloaded (`Query.preload_levels/1` /
+  `Query.level_assocs/0`).
   """
   def long_name_from_levels(location) do
+    [location | level_ancestors(location)]
+    |> Enum.map_join(", ", & &1.name_en)
+  end
+
+  @doc """
+  Like `long_name_from_levels/1`, but drops private segments (the location
+  itself or any ancestor with `is_private`), so a private location's name never
+  surfaces. For public-facing display.
+  """
+  def public_long_name_from_levels(location) do
     [location | level_ancestors(location)]
     |> Enum.reject(& &1.is_private)
     |> Enum.map_join(", ", & &1.name_en)

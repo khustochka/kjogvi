@@ -38,24 +38,31 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "counts direct children" do
-      parent = insert(:location)
-      insert(:location, ancestry: [parent.id])
-      insert(:location, ancestry: [parent.id])
+      parent = insert(:location, location_type: "country")
+      insert(:location, location_type: "subdivision1", country_id: parent.id)
+      insert(:location, location_type: "subdivision2", country_id: parent.id)
 
       assert Geo.children_count(parent.id) == 2
     end
 
     test "counts nested descendants" do
-      grandparent = insert(:location)
-      parent = insert(:location, ancestry: [grandparent.id])
-      insert(:location, ancestry: [grandparent.id, parent.id])
+      grandparent = insert(:location, location_type: "country")
+
+      parent =
+        insert(:location, location_type: "subdivision1", country_id: grandparent.id)
+
+      insert(:location,
+        location_type: "city",
+        country_id: grandparent.id,
+        subdivision1_id: parent.id
+      )
 
       assert Geo.children_count(grandparent.id) == 2
     end
 
     test "does not count unrelated locations" do
-      location = insert(:location)
-      insert(:location)
+      location = insert(:location, location_type: "country")
+      insert(:location, location_type: "country")
 
       assert Geo.children_count(location.id) == 0
     end
@@ -397,29 +404,27 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "locations_by_parent/1" do
-    setup do
-      %{scope: %Kjogvi.Scope{area: :admin}}
+  describe "list_locations/1" do
+    test "returns scoped non-special locations ordered by name with card counts" do
+      scope = %Kjogvi.Scope{area: :admin}
+      insert(:location, name_en: "Zürich", location_type: "city")
+      with_cards = insert(:location, name_en: "Aarau", location_type: "city")
+      insert(:card, location: with_cards)
+
+      result = Geo.list_locations(scope)
+
+      assert Enum.map(result, & &1.name_en) == ["Aarau", "Zürich"]
+      assert hd(result).cards_count == 1
     end
 
-    test "returns locations grouped by parent id", %{scope: scope} do
-      parent = insert(:location)
-      insert(:location, ancestry: [parent.id])
-      insert(:location, ancestry: [parent.id])
-
-      grouped = Geo.locations_by_parent(scope)
-
-      assert length(grouped[parent.id]) == 2
-      assert grouped[nil] != []
-    end
-
-    test "excludes special locations", %{scope: scope} do
+    test "excludes special locations" do
+      scope = %Kjogvi.Scope{area: :admin}
       insert(:location, location_type: "special")
-      insert(:location, location_type: "country")
+      country = insert(:location, location_type: "country")
 
-      grouped = Geo.locations_by_parent(scope)
-      all = Enum.flat_map(grouped, fn {_k, v} -> v end)
-      refute Enum.any?(all, &(&1.location_type == "special"))
+      ids = Geo.list_locations(scope) |> Enum.map(& &1.id)
+
+      assert ids == [country.id]
     end
 
     test "with a private scope, excludes another user's locations" do
@@ -430,10 +435,7 @@ defmodule Kjogvi.GeoTest do
       common = insert(:location, location_type: "city")
       other = insert(:location, location_type: "city", user_id: user_fixture().id)
 
-      ids =
-        Geo.locations_by_parent(scope)
-        |> Enum.flat_map(fn {_k, v} -> v end)
-        |> Enum.map(& &1.id)
+      ids = Geo.list_locations(scope) |> Enum.map(& &1.id)
 
       assert own.id in ids
       assert common.id in ids

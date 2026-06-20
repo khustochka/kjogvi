@@ -153,7 +153,7 @@ defmodule Kjogvi.Search.LocationTest do
       assert result.id == loc.id
       assert result.name_en == "Test Location"
       assert result.slug == "test-loc"
-      assert Ecto.assoc_loaded?(result.cached_country)
+      assert Ecto.assoc_loaded?(result.country)
     end
 
     test "includes private locations" do

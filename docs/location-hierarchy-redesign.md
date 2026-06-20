@@ -313,3 +313,31 @@ fixes/implements.
     cast whitelist gained the five level FK columns (they were silently dropped).
     Core `kjogvi` app suite green; remaining red tests are all stage-6
     (form/create-update) or the deferred index/show tree view.
+- **Stage 5 (locations index page) — done (pending review).** Rebuilt
+  `my/locations/index.ex` as a **flat search list** over level FKs, dropping the
+  `ancestry`-walking tree view (recursive `render_location`, `expanded_locations`
+  toggle state, `name_cache`, `location_breadcrumb`). The page is now: stats →
+  search → full flat list (`Geo.list_locations/1`, scoped non-special locations
+  ordered by name with `cards_count` + level assocs) → specials. Rows render with
+  a `<ul>`/`<li>` structure and show the full long name as a subtitle.
+  - **Name builder split (privacy).** The autocomplete and `/my` index are
+    owner-facing — they must show the owner's own private location names. So the
+    stage-4 builder split into two: `Location.long_name_from_levels/1` (plain, no
+    privacy filtering — for owner contexts) and a new
+    `public_long_name_from_levels/1` (drops private segments — for public display).
+    The stage-4 privacy tests moved to the `public_*` describe.
+  - **Search path → level FKs.** `Search.Location.search_locations` now preloads
+    `level_assocs` (was `display_assocs`); its consumers swapped to the plain
+    builder: the location autocomplete component and the card form's
+    `location_display` / `fetch_card_for_edit` (now `preload_levels`).
+  - **`children_count/1` → level FKs.** Rebuilt on `child_locations/1` (was the
+    `ancestry @> [id]` fragment); powers the index/show delete guard. The flat
+    list calls `can_delete_location?` per row (N+1, same as the prior search-result
+    path) — acceptable for a personal list, revisit if it grows.
+  - **Removed** `Geo.locations_by_parent/1` (only the tree view used it); replaced
+    its test with a `list_locations/1` describe. Index/geo/card-form/search tests
+    migrated to level FKs.
+  - **Deferred to the show-page rebuild:** `my/locations/show.ex` still uses
+    `Location.ancestors/1`, `Geo.direct_children/1`, and the old
+    `Location.long_name/1` (breadcrumbs, ancestry chain, children, subtitle) — its
+    two red tests and the stage-6 form tests are the only remaining failures.

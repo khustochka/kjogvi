@@ -334,7 +334,9 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   # Display helpers - get names from nested structs
 
-  defp location_display(%{location: %Geo.Location{} = loc}), do: Geo.Location.long_name(loc)
+  defp location_display(%{location: %Geo.Location{} = loc}),
+    do: Geo.Location.long_name_from_levels(loc)
+
   defp location_display(_), do: ""
 
   # Callbacks for AutocompleteSearch components

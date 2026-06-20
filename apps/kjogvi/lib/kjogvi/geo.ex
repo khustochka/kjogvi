@@ -132,17 +132,18 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Returns scoped non-special locations grouped by parent ID (last element of ancestry).
+  Returns scoped non-special locations as a flat list ordered by name, each with
+  its `cards_count` loaded and level FK associations preloaded for display names.
 
-  Top-level locations (no parent) are grouped under `nil`. The result is
-  restricted to the locations `scope` may see (own + common).
+  Restricted to the locations `scope` may see (own + common).
   """
-  def locations_by_parent(scope) do
+  def list_locations(scope) do
     scoped_locations(scope)
     |> where([l], l.location_type != :special or is_nil(l.location_type))
+    |> order_by([l], asc: l.name_en)
     |> Location.Query.load_cards_count()
     |> Repo.all()
-    |> Enum.group_by(&List.last(&1.ancestry))
+    |> Repo.preload(Location.Query.level_assocs())
   end
 
   def get_child_locations(parent_id) do
@@ -237,10 +238,11 @@ defmodule Kjogvi.Geo do
   end
 
   def children_count(location_id) do
-    from(l in Location,
-      where: fragment("? @> ?::bigint[]", l.ancestry, [^location_id]),
-      select: count(l.id)
-    )
+    location = Repo.get!(Location, location_id)
+
+    Location.Query.child_locations(location)
+    |> where([l], l.id != ^location_id)
+    |> select([l], count(l.id))
     |> Repo.one()
   end
 

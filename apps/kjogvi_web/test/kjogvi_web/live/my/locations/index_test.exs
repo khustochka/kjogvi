@@ -108,8 +108,8 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
   end
 
   test "row hides delete button when location has children", %{conn: conn, user: user} do
-    parent = insert(:location, name_en: "Canada", location_type: "city", user_id: user.id)
-    insert(:location, name_en: "Manitoba", ancestry: [parent.id])
+    parent = insert(:location, name_en: "Canada", location_type: "country", user_id: user.id)
+    insert(:location, name_en: "Manitoba", location_type: "subdivision1", country_id: parent.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
@@ -173,21 +173,13 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     end
   end
 
-  test "expands and collapses a parent location", %{conn: conn} do
-    parent = insert(:location, name_en: "Europe", location_type: "continent")
-    insert(:location, name_en: "Germany", ancestry: [parent.id], location_type: "country")
+  test "lists all locations flat regardless of hierarchy", %{conn: conn} do
+    country = insert(:location, name_en: "Germany", location_type: "country")
+    insert(:location, name_en: "Berlin", location_type: "city", country_id: country.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    # Parent should be auto-expanded (top-level), so child is visible
     assert has_element?(index_live, "a", "Germany")
-
-    # Collapse
-    index_live |> element("button[phx-value-location_id='#{parent.id}']") |> render_click()
-    refute has_element?(index_live, "a", "Germany")
-
-    # Expand again
-    index_live |> element("button[phx-value-location_id='#{parent.id}']") |> render_click()
-    assert has_element?(index_live, "a", "Germany")
+    assert has_element?(index_live, "a", "Berlin")
   end
 end

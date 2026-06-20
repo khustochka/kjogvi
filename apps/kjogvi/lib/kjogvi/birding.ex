@@ -91,7 +91,7 @@ defmodule Kjogvi.Birding do
     Card
     |> Card.Query.as_card()
     |> Card.Query.by_user(user)
-    |> Geo.Location.Query.preload_display()
+    |> Geo.Location.Query.preload_levels()
     |> Repo.get!(id)
     |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
   end

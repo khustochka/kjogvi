@@ -208,8 +208,16 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       _private = GeoFixtures.location_fixture(name_en: "Private Park", is_private: true)
 
       results = Search.Location.search_locations(Geo.Location, "Park")
-      assert Enum.any?(results, &String.contains?(Geo.Location.long_name(&1), "Public"))
-      assert Enum.any?(results, &String.contains?(Geo.Location.long_name(&1), "Private"))
+
+      assert Enum.any?(
+               results,
+               &String.contains?(Geo.Location.long_name_from_levels(&1), "Public")
+             )
+
+      assert Enum.any?(
+               results,
+               &String.contains?(Geo.Location.long_name_from_levels(&1), "Private")
+             )
     end
 
     test "search_locations prioritizes exact match" do
@@ -218,7 +226,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       results = Search.Location.search_locations(Geo.Location, "Park")
       assert results != []
-      assert Geo.Location.long_name(Enum.at(results, 0)) =~ "Park"
+      assert Geo.Location.long_name_from_levels(Enum.at(results, 0)) =~ "Park"
     end
   end
 

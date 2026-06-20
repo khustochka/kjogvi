@@ -10,9 +10,8 @@ defmodule Kjogvi.Search.Location do
   3. A word in `name_en` or `slug` starts with the term
   4. Term appears anywhere
 
-  Returns full `Location` structs with `cached_parent`, `cached_city`,
-  `cached_subdivision`, and `cached_country` preloaded so callers can
-  derive display names (e.g. `Location.long_name/1`).
+  Returns full `Location` structs with the level FK associations preloaded so
+  callers can derive display names (e.g. `Location.long_name_from_levels/1`).
   """
 
   import Ecto.Query
@@ -56,7 +55,7 @@ defmodule Kjogvi.Search.Location do
         ilike(l.slug, ^ilike_term) or
         ilike(l.iso_code, ^ilike_term)
     )
-    |> preload(^Location.Query.display_assocs())
+    |> preload(^Location.Query.level_assocs())
     |> Repo.all()
     |> Enum.sort_by(&sort_priority(&1, term_lower))
     |> Enum.take(limit)
