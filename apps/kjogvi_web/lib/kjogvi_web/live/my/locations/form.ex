@@ -222,6 +222,13 @@ defmodule KjogviWeb.Live.My.Locations.Form do
               @form[:location_type].value || ""
             )}
           </select>
+          <ul
+            :if={@form[:location_type].errors != []}
+            id="location-type-errors"
+            class="mt-1 text-sm text-rose-600"
+          >
+            <li :for={{msg, _opts} <- @form[:location_type].errors}>{msg}</li>
+          </ul>
         </div>
       </div>
 

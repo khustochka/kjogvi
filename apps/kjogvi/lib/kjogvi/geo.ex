@@ -277,16 +277,33 @@ defmodule Kjogvi.Geo do
   @doc """
   Updates a location.
 
+  When the `location_type` changes, the descendants' level FKs are cascaded in
+  the same transaction so they keep pointing at this location through the column
+  for its new level.
+
   Returns `{:error, :forbidden}` when the scope may not modify the location.
   Ownership (`user_id`) is not editable, so it is never changed here.
   """
   def update_location(scope, %Location{} = location, attrs) do
     if User.owns?(scope.current_user, location) do
-      location
-      |> Location.changeset(attrs)
-      |> Repo.update()
+      Repo.transact(fn -> update_and_cascade(location, attrs) end)
     else
       {:error, :forbidden}
+    end
+  end
+
+  # Updates the location and, when its `location_type` changed, cascades the
+  # descendants' level FKs onto the new level column. Runs inside the
+  # `update_location/3` transaction.
+  defp update_and_cascade(location, attrs) do
+    old_type = location.location_type
+
+    with {:ok, updated} <- Repo.update(Location.changeset(location, attrs)) do
+      if updated.location_type != old_type do
+        Location.Query.move_descendants(updated.id, old_type, updated.location_type)
+      end
+
+      {:ok, updated}
     end
   end
 

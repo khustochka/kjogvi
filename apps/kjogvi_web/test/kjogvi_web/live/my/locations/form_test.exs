@@ -154,6 +154,29 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert has_element?(view, "#location-ancestry-errors", "cannot be set for a city")
       refute Geo.location_by_slug("another-city")
     end
+
+    test "rejects a section parent and surfaces the error", %{conn: conn} do
+      %{country: country} = build_chain()
+
+      section =
+        insert(:location, name_en: "Trail", location_type: :section, country_id: country.id)
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{section.id}")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "nested-section",
+          name_en: "Nested Section",
+          location_type: "section",
+          is_private: "false"
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#location-ancestry-errors", "cannot be a section")
+      refute Geo.location_by_slug("nested-section")
+    end
   end
 
   describe "clear parent" do
@@ -416,6 +439,84 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       updated = Repo.get(Location, location.id)
       assert updated.name_en == "Winnipeg (updated)"
       assert updated.country_id == country.id
+    end
+
+    test "changing location_type cascades the descendants' level FKs", %{conn: conn, user: user} do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          slug: "mb",
+          location_type: :subdivision1,
+          country_id: country.id,
+          user_id: user.id
+        )
+
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/#{subdivision1.slug}/edit")
+
+      {:ok, _show, _html} =
+        view
+        |> form("#location-form",
+          location: %{
+            slug: "mb",
+            name_en: "Manitoba",
+            location_type: "subdivision2",
+            is_private: "false"
+          }
+        )
+        |> render_submit()
+        |> follow_redirect(conn)
+
+      assert Repo.get(Location, subdivision1.id).location_type == :subdivision2
+
+      reloaded_city = Repo.get(Location, city.id)
+      assert reloaded_city.subdivision1_id == nil
+      assert reloaded_city.subdivision2_id == subdivision1.id
+    end
+
+    test "rejects a location_type change that collides with a child", %{conn: conn, user: user} do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          slug: "mb",
+          location_type: :subdivision1,
+          country_id: country.id,
+          user_id: user.id
+        )
+
+      insert(:location,
+        name_en: "Winnipeg",
+        location_type: :city,
+        country_id: country.id,
+        subdivision1_id: subdivision1.id
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/#{subdivision1.slug}/edit")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "mb",
+          name_en: "Manitoba",
+          location_type: "city",
+          is_private: "false"
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#location-type-errors", "sub-location is at that level or above")
+      assert Repo.get(Location, subdivision1.id).location_type == :subdivision1
     end
 
     test "redirects for nonexistent slug", %{conn: conn} do

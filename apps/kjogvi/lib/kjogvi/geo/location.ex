@@ -148,6 +148,7 @@ defmodule Kjogvi.Geo.Location do
     |> unique_constraint(:slug)
     |> put_level_fks_from_parent()
     |> validate_slot_occupancy()
+    |> validate_location_type_change()
   end
 
   # When a `parent_id` is present in the changeset, derive the five level FK
@@ -162,6 +163,7 @@ defmodule Kjogvi.Geo.Location do
       {:ok, parent_id} ->
         case Repo.get(__MODULE__, parent_id) do
           nil -> add_error(changeset, :parent_id, "does not exist")
+          %{location_type: :section} -> add_error(changeset, :parent_id, "cannot be a section")
           parent -> put_level_fks(changeset, parent)
         end
 
@@ -187,8 +189,9 @@ defmodule Kjogvi.Geo.Location do
   @doc """
   The five level FK values a child would inherit from `parent`: the parent's own
   level FKs, plus the parent itself placed into the slot for its `location_type`
-  (when the parent is one of the five ancestor-capable levels). A `section` or
-  `special` parent contributes no slot of its own.
+  (when the parent is one of the five ancestor-capable levels). A `special`
+  parent contributes its FKs but no slot of its own. (A `section` can't be a
+  parent — `changeset/2` rejects it before this is reached.)
   """
   def level_fks_from_parent(parent) do
     base = Map.new(@level_fks, fn fk -> {fk, Map.get(parent, fk)} end)
@@ -306,6 +309,68 @@ defmodule Kjogvi.Geo.Location do
 
   defp level_index(level) do
     Enum.find_index(@hierarchy_levels, &(&1 == level))
+  end
+
+  @doc """
+  Validates that a `location_type` change stays within the band left open by the
+  location's existing relatives:
+
+      (highest set parent level) < new level < (lowest existing child level)
+
+  The **upper bound** (parents) is already enforced by `validate_slot_occupancy/1`:
+  the level FKs derived from the chosen parent would put an FK at the new level or
+  below, which slot occupancy rejects. This adds the **lower bound** — a location
+  may demote to level L only if every existing child stays strictly below L, i.e.
+  it has no child at L or any level above it (a child at-or-above the new level
+  would end up at-or-above its own ancestor). A brand-new location has no
+  children, so this is a no-op on create.
+
+  `special` and a not-yet-set `location_type` are exempt — they have no fixed
+  level. The check runs only when `location_type` actually changes to a hierarchy
+  level on an already-persisted location.
+  """
+  def validate_location_type_change(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+
+  def validate_location_type_change(
+        %{data: %{__meta__: %{state: :loaded}} = location} = changeset
+      ) do
+    case fetch_change(changeset, :location_type) do
+      {:ok, new_type} when new_type in @hierarchy_levels ->
+        validate_no_child_at_or_above(changeset, location, new_type)
+
+      _ ->
+        changeset
+    end
+  end
+
+  def validate_location_type_change(changeset), do: changeset
+
+  defp validate_no_child_at_or_above(changeset, location, new_type) do
+    new_index = level_index(new_type)
+
+    # A child must stay strictly below the new level; one at the new level or
+    # above (lower-or-equal index) would collide with — or outrank — its ancestor.
+    blocking_levels = Enum.take(@hierarchy_levels, new_index + 1)
+
+    has_blocking_child =
+      Query.child_locations(location)
+      |> exclude_self(location.id)
+      |> where([l], l.location_type in ^blocking_levels)
+      |> Repo.exists?()
+
+    if has_blocking_child do
+      add_error(
+        changeset,
+        :location_type,
+        "cannot change to #{new_type}: a sub-location is at that level or above"
+      )
+    else
+      changeset
+    end
+  end
+
+  defp exclude_self(query, id) do
+    from(l in query, where: l.id != ^id)
   end
 
   def show_on_lifelist?(location) do

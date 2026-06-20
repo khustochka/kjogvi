@@ -124,6 +124,22 @@ defmodule Kjogvi.Geo.LocationTest do
       assert %{parent_id: ["does not exist"]} = errors_on(changeset)
     end
 
+    test "rejects a section parent (a section can never be an ancestor)", %{country: country} do
+      section =
+        insert(:location, name_en: "Trail", location_type: :section, country_id: country.id)
+
+      changeset =
+        Location.changeset(%Location{}, %{
+          "slug" => "z",
+          "name_en" => "Z",
+          "is_private" => false,
+          "location_type" => "section",
+          "parent_id" => section.id
+        })
+
+      assert %{parent_id: ["cannot be a section"]} = errors_on(changeset)
+    end
+
     test "rejects a parent at the new location's own level", %{
       country: country,
       subdivision1: subdivision1
@@ -146,6 +162,127 @@ defmodule Kjogvi.Geo.LocationTest do
         })
 
       assert %{city_id: ["cannot be set for a city"]} = errors_on(changeset)
+    end
+  end
+
+  describe "changeset/2 changing location_type" do
+    setup do
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: :subdivision1,
+          country_id: country.id
+        )
+
+      %{country: country, subdivision1: subdivision1}
+    end
+
+    test "demoting is rejected when a child sits at the new level", %{
+      country: country,
+      subdivision1: subdivision1
+    } do
+      # subdivision1 has a city child; demoting it to city collides with that child.
+      insert(:location,
+        name_en: "Winnipeg",
+        location_type: :city,
+        country_id: country.id,
+        subdivision1_id: subdivision1.id
+      )
+
+      changeset =
+        Location.changeset(subdivision1, %{
+          "location_type" => "city",
+          "parent_id" => country.id
+        })
+
+      assert %{location_type: [msg]} = errors_on(changeset)
+      assert msg =~ "sub-location is at that level or above"
+    end
+
+    test "demoting is allowed when every child stays strictly below the new level", %{
+      country: country,
+      subdivision1: subdivision1
+    } do
+      # subdivision1's children are a city and a site (both below subdivision2);
+      # demoting to subdivision2 leaves them strictly below.
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      insert(:location,
+        name_en: "The Forks",
+        location_type: :site,
+        country_id: country.id,
+        subdivision1_id: subdivision1.id,
+        city_id: city.id
+      )
+
+      changeset =
+        Location.changeset(subdivision1, %{
+          "location_type" => "subdivision2",
+          "parent_id" => country.id
+        })
+
+      assert changeset.valid?
+    end
+
+    test "promoting past a parent at the new level is rejected by slot occupancy", %{
+      country: country,
+      subdivision1: subdivision1
+    } do
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      # Promote the city to subdivision1 while still parented by a subdivision1.
+      changeset =
+        Location.changeset(city, %{
+          "location_type" => "subdivision1",
+          "parent_id" => subdivision1.id
+        })
+
+      assert %{subdivision1_id: ["cannot be set for a subdivision1"]} = errors_on(changeset)
+    end
+
+    test "promoting to a valid higher level is allowed", %{
+      country: country,
+      subdivision1: subdivision1
+    } do
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      changeset =
+        Location.changeset(city, %{
+          "location_type" => "subdivision1",
+          "parent_id" => country.id
+        })
+
+      assert changeset.valid?
+    end
+
+    test "a type change on a childless location is allowed", %{country: country} do
+      city =
+        insert(:location, name_en: "Winnipeg", location_type: :city, country_id: country.id)
+
+      changeset =
+        Location.changeset(city, %{"location_type" => "site", "parent_id" => country.id})
+
+      assert changeset.valid?
     end
   end
 
@@ -684,6 +821,61 @@ defmodule Kjogvi.Geo.LocationTest do
       section = insert(:location, location_type: "section", country_id: country.id)
 
       assert direct_child_ids(section) == []
+    end
+  end
+
+  describe "Query.move_descendants/3" do
+    test "re-points descendants from the old level column to the new one" do
+      country = insert(:location, location_type: "country")
+      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      city =
+        insert(:location,
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision.id
+        )
+
+      site =
+        insert(:location,
+          location_type: "site",
+          country_id: country.id,
+          subdivision1_id: subdivision.id,
+          city_id: city.id
+        )
+
+      # subdivision demotes to subdivision2: descendants move subdivision1_id -> subdivision2_id.
+      assert {2, _} =
+               Query.move_descendants(subdivision.id, :subdivision1, :subdivision2)
+
+      reloaded_city = Repo.get!(Location, city.id)
+      assert reloaded_city.subdivision1_id == nil
+      assert reloaded_city.subdivision2_id == subdivision.id
+      assert reloaded_city.country_id == country.id
+
+      reloaded_site = Repo.get!(Location, site.id)
+      assert reloaded_site.subdivision1_id == nil
+      assert reloaded_site.subdivision2_id == subdivision.id
+      # The deeper city_id slot is untouched.
+      assert reloaded_site.city_id == city.id
+    end
+
+    test "leaves unrelated locations alone" do
+      country = insert(:location, location_type: "country")
+      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+      other = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      Query.move_descendants(subdivision.id, :subdivision1, :subdivision2)
+
+      assert Repo.get!(Location, other.id).subdivision1_id == nil
+      assert Repo.get!(Location, other.id).country_id == country.id
+    end
+
+    test "a move to/from section touches nothing" do
+      country = insert(:location, location_type: "country")
+      section = insert(:location, location_type: "section", country_id: country.id)
+
+      assert {0, nil} = Query.move_descendants(section.id, :section, :city)
     end
   end
 

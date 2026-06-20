@@ -397,3 +397,42 @@ fixes/implements.
     FK derivation describe; the ownership / owner-can-update fixtures gained a
     country parent to satisfy slot occupancy. Full suite green (536 core + 457
     web, 1 pre-existing skip).
+- **Stage 7 — done (pending review).** `location_type` change: the band invariant
+  plus the descendant FK cascade.
+  - **Lower-bound validation.** New `Location.validate_location_type_change/1`
+    (wired into `changeset/2` after slot occupancy) enforces the children bound —
+    a location may move to level L only if every existing child stays strictly
+    below L (no child at L or above). It runs only when `location_type` actually
+    changes to a hierarchy level on an already-persisted row (`__meta__.state ==
+    :loaded`); creates and `special`/nil-type are no-ops. It rides
+    `Query.child_locations/1` (which dispatches on the *old* type to find current
+    descendants), excludes self, and tests `location_type in <levels at-or-above
+    new>`. The **upper bound** (parents) needs no new code — deriving the level FKs
+    from the chosen parent already trips `validate_slot_occupancy/1` if the parent
+    sits at the new level or below, so promotion past a too-low parent is rejected
+    there.
+  - **Descendant cascade.** New `Location.Query.move_descendants/3` (+ exposed
+    `descendant_fk/1`): an `update_all` re-pointing descendants from the old level
+    column to the new one (`old_fk → NULL`, `new_fk → id`) when a location's type
+    moves; the band guarantees the new column is null on every descendant, so the
+    move keeps their slot occupancy valid. A move to/from `section` (no descendant
+    column) is a no-op. `Geo.update_location/3` now runs the changeset update and
+    the cascade in one `Ecto.Multi` transaction, firing the cascade only when the
+    persisted `location_type` actually changed.
+  - **Form.** The `location_type` `<select>` gained a `#location-type-errors` list
+    so the band error (which lands on `:location_type`, a field whose custom
+    `<select>` had no error slot) is surfaced.
+  - **Section-parent fix (review follow-up).** A `section` is the lowest level and
+    has no FK column, so picking one as a parent used to silently drop the link
+    (`level_fks_from_parent/1` found no slot for it) and save the location as a
+    sibling with no error. `put_level_fks_from_parent/1` now rejects a `section`
+    parent with a `:parent_id` error ("cannot be a section"), surfaced via the
+    existing `#location-ancestry-errors` list. (`special` parents are still valid.)
+  - **Tests.** New `changeset/2 changing location_type` (demote-rejected,
+    demote-allowed, promote-past-parent-rejected-by-slot-occupancy,
+    promote-allowed, childless-allowed) and `Query.move_descendants/3` describes in
+    `location_test.exs`; `update_location/3 with a location_type change` describe in
+    `geo_test.exs` (cascade, rejection leaves descendants untouched, same-type
+    no-op); two `edit` cases in `form_test.exs` (cascade through the form, rejection
+    surfaced + persisted type unchanged). Full suite green (547 core + 459 web, 1
+    pre-existing skip).

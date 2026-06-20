@@ -691,6 +691,116 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "update_location/3 with a location_type change" do
+    setup do
+      %{user: owner, scope: scope} = scope_fixture()
+      country = insert(:location, name_en: "Canada", location_type: :country)
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: :subdivision1,
+          country_id: country.id,
+          user_id: owner.id,
+          slug: "manitoba"
+        )
+
+      %{scope: scope, country: country, subdivision1: subdivision1}
+    end
+
+    test "cascades descendants' level FKs when the type moves", %{
+      scope: scope,
+      country: country,
+      subdivision1: subdivision1
+    } do
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      site =
+        insert(:location,
+          name_en: "The Forks",
+          location_type: :site,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      assert {:ok, updated} =
+               Geo.update_location(scope, subdivision1, %{
+                 "location_type" => "subdivision2",
+                 "parent_id" => country.id
+               })
+
+      assert updated.location_type == :subdivision2
+
+      reloaded_city = Repo.get!(Kjogvi.Geo.Location, city.id)
+      assert reloaded_city.subdivision1_id == nil
+      assert reloaded_city.subdivision2_id == subdivision1.id
+
+      reloaded_site = Repo.get!(Kjogvi.Geo.Location, site.id)
+      assert reloaded_site.subdivision1_id == nil
+      assert reloaded_site.subdivision2_id == subdivision1.id
+      assert reloaded_site.city_id == city.id
+    end
+
+    test "rejects a demotion that collides with an existing child", %{
+      scope: scope,
+      country: country,
+      subdivision1: subdivision1
+    } do
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      assert {:error, changeset} =
+               Geo.update_location(scope, subdivision1, %{
+                 "location_type" => "city",
+                 "parent_id" => country.id
+               })
+
+      assert %{location_type: [_]} = errors_on(changeset)
+
+      # Nothing cascaded: the child is untouched.
+      reloaded_city = Repo.get!(Kjogvi.Geo.Location, city.id)
+      assert reloaded_city.subdivision1_id == subdivision1.id
+      assert Repo.get!(Kjogvi.Geo.Location, subdivision1.id).location_type == :subdivision1
+    end
+
+    test "a same-type update does not touch descendants", %{
+      scope: scope,
+      country: country,
+      subdivision1: subdivision1
+    } do
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: :city,
+          country_id: country.id,
+          subdivision1_id: subdivision1.id
+        )
+
+      assert {:ok, _} =
+               Geo.update_location(scope, subdivision1, %{
+                 "name_en" => "Manitoba (renamed)",
+                 "location_type" => "subdivision1",
+                 "parent_id" => country.id
+               })
+
+      reloaded_city = Repo.get!(Kjogvi.Geo.Location, city.id)
+      assert reloaded_city.subdivision1_id == subdivision1.id
+      assert reloaded_city.subdivision2_id == nil
+    end
+  end
+
   defp scope_fixture do
     user = user_fixture()
     %{user: user, scope: %Kjogvi.Scope{current_user: user, area: :private}}

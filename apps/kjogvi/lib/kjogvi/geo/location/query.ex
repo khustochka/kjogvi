@@ -172,6 +172,40 @@ defmodule Kjogvi.Geo.Location.Query do
   end
 
   @doc """
+  Maps a location's own `location_type` to the descendant FK column that points
+  back to it, or `nil` for levels (`section`) that are never an ancestor.
+  """
+  def descendant_fk(location_type), do: Map.get(@descendant_fk, location_type)
+
+  @doc """
+  Rewrites the level FKs of `location_id`'s descendants when the location moves
+  from `old_type` to `new_type`.
+
+  Descendants currently reference the location through the descendant FK column
+  for its old level; this re-points them through the column for its new level
+  (clearing the old one). The band invariant guarantees the new column is null on
+  every descendant, so the move keeps each descendant's slot occupancy valid.
+
+  Returns the number of rows updated. A move to/from `section` (no descendant
+  column) touches nothing — a `section` has no descendants and is never an
+  ancestor.
+  """
+  def move_descendants(location_id, old_type, new_type) do
+    case {descendant_fk(old_type), descendant_fk(new_type)} do
+      {nil, _} ->
+        {0, nil}
+
+      {old_fk, nil} ->
+        from(l in Location, where: field(l, ^old_fk) == ^location_id)
+        |> Repo.update_all(set: [{old_fk, nil}])
+
+      {old_fk, new_fk} ->
+        from(l in Location, where: field(l, ^old_fk) == ^location_id)
+        |> Repo.update_all(set: [{old_fk, nil}, {new_fk, location_id}])
+    end
+  end
+
+  @doc """
   Query selecting the ids of a special location's members plus all their
   descendants.
 
