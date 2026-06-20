@@ -384,6 +384,78 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "public_location_from_levels/1" do
+    setup do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+
+      city =
+        insert(:location, name_en: "Winnipeg", location_type: "city", country_id: country.id)
+
+      %{country: country, city: city}
+    end
+
+    test "returns the location itself when it is public", %{city: city} do
+      assert (city |> preload_levels() |> Location.public_location_from_levels()).id == city.id
+    end
+
+    test "returns the nearest public ancestor when the location is private", %{
+      country: country,
+      city: city
+    } do
+      private_site =
+        insert(:location,
+          name_en: "Secret Patch",
+          location_type: "site",
+          is_private: true,
+          country_id: country.id,
+          city_id: city.id
+        )
+
+      result = private_site |> preload_levels() |> Location.public_location_from_levels()
+
+      assert result.id == city.id
+      refute result.is_private
+    end
+
+    test "skips a private ancestor to the next public one", %{country: country} do
+      private_city =
+        insert(:location,
+          name_en: "Hidden City",
+          location_type: "city",
+          is_private: true,
+          country_id: country.id
+        )
+
+      private_site =
+        insert(:location,
+          name_en: "Secret Patch",
+          location_type: "site",
+          is_private: true,
+          country_id: country.id,
+          city_id: private_city.id
+        )
+
+      result = private_site |> preload_levels() |> Location.public_location_from_levels()
+
+      assert result.id == country.id
+    end
+
+    test "is nil when the location and all ancestors are private" do
+      private_country =
+        insert(:location, name_en: "Hidden Country", location_type: "country", is_private: true)
+
+      private_site =
+        insert(:location,
+          name_en: "Secret Patch",
+          location_type: "site",
+          is_private: true,
+          country_id: private_country.id
+        )
+
+      assert private_site |> preload_levels() |> Location.public_location_from_levels() == nil
+    end
+  end
+
   describe "Query.for_user/2" do
     test "returns own and common locations but not another user's" do
       user = user_fixture()

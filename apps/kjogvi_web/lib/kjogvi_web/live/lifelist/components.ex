@@ -128,14 +128,9 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         />
       </div>
       <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
-        <%= with location <- get_in(@lifer, [Access.key!(@location_field)]) do %>
-          <%!-- Do not break the line below --%>
-          <span class="after:content-['_·']">{Geo.Location.name_local_part(location)}</span><span class="sr-only">, </span>
-          <%= if location.cached_country do %>
-            <span class="text-stone-600 font-medium whitespace-nowrap">
-              {Geo.Location.name_administrative_part(location)}
-            </span>
-          <% end %>
+        <%= with location when not is_nil(location) <-
+                 get_in(@lifer, [Access.key!(@location_field)]) do %>
+          {Geo.Location.long_name_from_levels(location)}
         <% end %>
       </div>
     </li>

@@ -341,3 +341,23 @@ fixes/implements.
     `Location.ancestors/1`, `Geo.direct_children/1`, and the old
     `Location.long_name/1` (breadcrumbs, ancestry chain, children, subtitle) — its
     two red tests and the stage-6 form tests are the only remaining failures.
+- **Public-location resolution moved off `cached_public_location_id` (consumer
+  rebuilt; column retirement set up for stage 8).** Surfaced by a real crash:
+  with a fresh level-FK seed, private locations have `cached_public_location_id`
+  nil (the seed/stage-6 path doesn't maintain the cache), so the lifelist's
+  `preload_all_locations` blew up dereferencing the nil `cached_public_location`.
+  - New `Location.public_location_from_levels/1`: the nearest non-private among
+    `[self | level FK ancestors]` (mirrors `public_long_name_from_levels/1` but
+    returns the location; `nil` only if self and all ancestors are private). Relies
+    on the downward-closed-privacy assumption, same as the old `raw_public_location`.
+  - `preload_all_locations` now preloads **level assocs** (not the `cached_*` chain)
+    and resolves `public_location` via the new function, batch-preloading level
+    assocs on the resolved public locations so their names build. The lifelist row
+    component renders `long_name_from_levels/1` on the chosen `location_field`
+    (replacing `name_local_part` / `name_administrative_part` / `cached_country`).
+    `@minimal_select` gained the five level FK columns.
+  - **Now unread by the live path:** `cached_public_location_id`,
+    `set_public_location_changeset/1`, `nearest_public_ancestor_id/1`,
+    `put_cached_public_location/1`, and the `cached_public_location` assoc. These
+    are ready to drop in stage 8 — flipping the earlier "leave it in place" call
+    now that level FKs make the cache redundant.

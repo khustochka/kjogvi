@@ -23,6 +23,11 @@ defmodule Kjogvi.Geo.Location.Query do
     :cached_subdivision_id,
     :cached_country_id,
     :cached_public_location_id,
+    :country_id,
+    :subdivision1_id,
+    :subdivision2_id,
+    :city_id,
+    :site_id,
     :ancestry
   ]
 
@@ -165,36 +170,37 @@ defmodule Kjogvi.Geo.Location.Query do
   end
 
   def preload_all_locations(things) do
+    level_preload = Enum.map(@level_assocs, &{&1, minimal_select()})
+
     things
-    |> Repo.preload(
-      location:
-        {minimal_select(),
-         [
-           cached_parent: minimal_select(),
-           cached_city: minimal_select(),
-           cached_subdivision: minimal_select(),
-           cached_country: minimal_select(),
-           cached_public_location:
-             {minimal_select(),
-              [
-                cached_parent: minimal_select(),
-                cached_city: minimal_select(),
-                cached_subdivision: minimal_select(),
-                cached_country: minimal_select()
-              ]}
-         ]}
-    )
+    |> Repo.preload(location: {minimal_select(), level_preload})
     |> Enum.map(fn thing ->
-      loc =
-        if thing.location.is_private do
-          thing.location.cached_public_location
-        else
-          thing.location
-        end
+      loc = Location.public_location_from_levels(thing.location)
 
       thing
       |> Map.put(:public_location, loc)
-      |> Map.put(:public_location_id, loc.id)
+      |> Map.put(:public_location_id, loc && loc.id)
+    end)
+    |> preload_public_location_levels()
+  end
+
+  # The resolved public_location is the card location itself or one of its level
+  # FK ancestors; preload the level assocs on those ancestors so their display
+  # name can be built too.
+  defp preload_public_location_levels(things) do
+    public_locations =
+      things
+      |> Enum.map(& &1.public_location)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq_by(& &1.id)
+      |> Repo.preload(Enum.map(@level_assocs, &{&1, minimal_select()}))
+      |> Map.new(&{&1.id, &1})
+
+    Enum.map(things, fn thing ->
+      case thing.public_location do
+        nil -> thing
+        loc -> Map.put(thing, :public_location, public_locations[loc.id])
+      end
     end)
   end
 

@@ -502,14 +502,17 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert Enum.map(result.list, & &1.species_page.name_sci) == [taxon2.name_sci]
     end
 
-    test "works with private locations" do
-      public_loc = insert(:location)
+    test "works with private locations, resolving the public ancestor for display" do
+      country = insert(:location, name_en: "Canada", location_type: "country")
+      city = insert(:location, name_en: "Winnipeg", location_type: "city", country_id: country.id)
 
       private_loc =
         insert(:location,
+          name_en: "Secret Patch",
+          location_type: "site",
           is_private: true,
-          ancestry: [public_loc.id],
-          cached_public_location: public_loc
+          country_id: country.id,
+          city_id: city.id
         )
 
       user = user_fixture()
@@ -523,6 +526,11 @@ defmodule Kjogvi.Birding.LifelistTest do
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
       assert length(result.list) == 1
+      # The public-area lifelist must not surface the private location: it resolves
+      # to the nearest public ancestor (the city).
+      [lifer] = result.list
+      assert lifer.public_location.id == city.id
+      refute lifer.public_location.is_private
     end
 
     test "with heard only separated" do
