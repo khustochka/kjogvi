@@ -26,7 +26,7 @@ defmodule Kjogvi.Geo.Location.Query do
   ]
 
   # The level FK associations needed to render a location's display name
-  # (`Location.long_name_from_levels/1`).
+  # (`Location.long_name/1`).
   @level_assocs [:country, :subdivision1, :subdivision2, :city, :site]
 
   @doc """
@@ -110,8 +110,6 @@ defmodule Kjogvi.Geo.Location.Query do
     end
   end
 
-  # Level FK columns, top to bottom (mirrors `Location.level_fks/0`); used to
-  # blank the slots below a location's own level when finding direct children.
   @level_fks ~w(country_id subdivision1_id subdivision2_id city_id site_id)a
 
   @doc """

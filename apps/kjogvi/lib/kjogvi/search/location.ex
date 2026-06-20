@@ -11,7 +11,7 @@ defmodule Kjogvi.Search.Location do
   4. Term appears anywhere
 
   Returns full `Location` structs with the level FK associations preloaded so
-  callers can derive display names (e.g. `Location.long_name_from_levels/1`).
+  callers can derive display names (e.g. `Location.long_name/1`).
   """
 
   import Ecto.Query

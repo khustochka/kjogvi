@@ -102,7 +102,7 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
           <div>
             <LocationAutocomplete.location_autocomplete
               id={"#{@id}-location"}
-              current_value={@filter.location && Geo.Location.long_name_from_levels(@filter.location)}
+              current_value={@filter.location && Geo.Location.long_name(@filter.location)}
               hidden_name="filter[location_id]"
               hidden_value={(@filter.location && @filter.location.id) || ""}
               placeholder=""

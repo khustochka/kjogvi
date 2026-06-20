@@ -104,11 +104,11 @@ defmodule KjogviWeb.Live.My.Locations.Show do
             <% end %>
           </.h1>
           <p
-            :if={Location.long_name_from_levels(@location) != @location.name_en}
+            :if={Location.long_name(@location) != @location.name_en}
             id="location-full-name"
             class="mt-2 text-lg text-stone-600"
           >
-            {Location.long_name_from_levels(@location)}
+            {Location.long_name(@location)}
           </p>
           <div class="mt-6 flex flex-wrap items-center gap-2">
             <.action_button

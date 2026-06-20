@@ -505,7 +505,7 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
-  describe "long_name_from_levels/1" do
+  describe "long_name/1" do
     setup do
       country = insert(:location, name_en: "Canada", location_type: "country")
 
@@ -541,7 +541,7 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "composes own name then ancestors most-specific to country", %{site: site} do
-      assert site |> preload_levels() |> Location.long_name_from_levels() ==
+      assert site |> preload_levels() |> Location.long_name() ==
                "Assiniboine Park, Winnipeg, Manitoba, Canada"
     end
 
@@ -554,12 +554,12 @@ defmodule Kjogvi.Geo.LocationTest do
           country_id: country.id
         )
 
-      assert city |> preload_levels() |> Location.long_name_from_levels() ==
+      assert city |> preload_levels() |> Location.long_name() ==
                "Lonely City, Canada"
     end
 
     test "a top-level country is just its own name", %{country: country} do
-      assert country |> preload_levels() |> Location.long_name_from_levels() == "Canada"
+      assert country |> preload_levels() |> Location.long_name() == "Canada"
     end
 
     test "includes private segments (owner-facing, no filtering)", %{
@@ -577,12 +577,12 @@ defmodule Kjogvi.Geo.LocationTest do
           city_id: city.id
         )
 
-      assert private_site |> preload_levels() |> Location.long_name_from_levels() ==
+      assert private_site |> preload_levels() |> Location.long_name() ==
                "Secret Patch, Winnipeg, Manitoba, Canada"
     end
   end
 
-  describe "public_long_name_from_levels/1" do
+  describe "public_long_name/1" do
     setup do
       country = insert(:location, name_en: "Canada", location_type: "country")
 
@@ -619,7 +619,7 @@ defmodule Kjogvi.Geo.LocationTest do
           city_id: city.id
         )
 
-      assert private_site |> preload_levels() |> Location.public_long_name_from_levels() ==
+      assert private_site |> preload_levels() |> Location.public_long_name() ==
                "Winnipeg, Manitoba, Canada"
     end
 
@@ -645,7 +645,7 @@ defmodule Kjogvi.Geo.LocationTest do
           city_id: private_city.id
         )
 
-      assert site |> preload_levels() |> Location.public_long_name_from_levels() ==
+      assert site |> preload_levels() |> Location.public_long_name() ==
                "Open Patch, Manitoba, Canada"
     end
   end

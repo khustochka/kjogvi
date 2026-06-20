@@ -6,7 +6,7 @@ defmodule Kjogvi.Geo.Location do
   `country_id … site_id` (one per ordered level above `section`). They name the
   ancestor at each level directly, so selecting a region (all locations under a
   country, etc.) and building a full display name are simple FK reads — see
-  `ancestor_ids/1` and `long_name_from_levels/1`.
+  `ancestor_ids/1` and `long_name/1`.
   """
 
   use Kjogvi.Schema
@@ -317,7 +317,7 @@ defmodule Kjogvi.Geo.Location do
 
     has_blocking_child =
       Query.child_locations(location)
-      |> exclude_self(location.id)
+      |> where([l], l.id != ^location.id)
       |> where([l], l.location_type in ^blocking_levels)
       |> Repo.exists?()
 
@@ -332,16 +332,8 @@ defmodule Kjogvi.Geo.Location do
     end
   end
 
-  defp exclude_self(query, id) do
-    from(l in query, where: l.id != ^id)
-  end
-
   def show_on_lifelist?(location) do
     not is_nil(location.public_index)
-  end
-
-  def full_name(location) do
-    location.name_en
   end
 
   # Level FK ancestor associations, most-specific level first — the order their
@@ -354,21 +346,20 @@ defmodule Kjogvi.Geo.Location do
   The location's own `name_en`, followed by each set ancestor's `name_en` from
   the most specific level (`site`) up to `country`, joined by `", "`. Includes
   every segment regardless of privacy — for owner-facing contexts. Use
-  `public_long_name_from_levels/1` where private segments must be hidden.
-  Requires the level associations to be preloaded (`Query.preload_levels/1` /
-  `Query.level_assocs/0`).
+  `public_long_name/1` where private segments must be hidden. Requires the level
+  associations to be preloaded (`Query.preload_levels/1` / `Query.level_assocs/0`).
   """
-  def long_name_from_levels(location) do
+  def long_name(location) do
     [location | level_ancestors(location)]
     |> Enum.map_join(", ", & &1.name_en)
   end
 
   @doc """
-  Like `long_name_from_levels/1`, but drops private segments (the location
-  itself or any ancestor with `is_private`), so a private location's name never
-  surfaces. For public-facing display.
+  Like `long_name/1`, but drops private segments (the location itself or any
+  ancestor with `is_private`), so a private location's name never surfaces. For
+  public-facing display.
   """
-  def public_long_name_from_levels(location) do
+  def public_long_name(location) do
     [location | level_ancestors(location)]
     |> Enum.reject(& &1.is_private)
     |> Enum.map_join(", ", & &1.name_en)

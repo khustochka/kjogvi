@@ -130,7 +130,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
         <%= with location when not is_nil(location) <-
                  get_in(@lifer, [Access.key!(@location_field)]) do %>
-          {Geo.Location.long_name_from_levels(location)}
+          {Geo.Location.long_name(location)}
         <% end %>
       </div>
     </li>
