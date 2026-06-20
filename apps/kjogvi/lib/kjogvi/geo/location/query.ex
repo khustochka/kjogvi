@@ -18,34 +18,16 @@ defmodule Kjogvi.Geo.Location.Query do
     :location_type,
     :iso_code,
     :is_private,
-    :cached_parent_id,
-    :cached_city_id,
-    :cached_subdivision_id,
-    :cached_country_id,
-    :cached_public_location_id,
     :country_id,
     :subdivision1_id,
     :subdivision2_id,
     :city_id,
-    :site_id,
-    :ancestry
+    :site_id
   ]
-
-  # The cached ancestor associations needed to render a location's display
-  # name (e.g. `Location.long_name/1`).
-  @display_assocs [:cached_parent, :cached_city, :cached_subdivision, :cached_country]
 
   # The level FK associations needed to render a location's display name
   # (`Location.long_name_from_levels/1`).
   @level_assocs [:country, :subdivision1, :subdivision2, :city, :site]
-
-  @doc """
-  The cached ancestor associations a location needs to render its display name.
-
-  Use `preload_display/1` to attach them to a query's `location`; this list is
-  for the rarer cases that preload on a bare `Location` (or another assoc name).
-  """
-  def display_assocs, do: @display_assocs
 
   @doc """
   The level FK associations a location needs to render its display name.
@@ -54,13 +36,6 @@ defmodule Kjogvi.Geo.Location.Query do
   for the rarer cases that preload on a bare `Location` (or another assoc name).
   """
   def level_assocs, do: @level_assocs
-
-  @doc """
-  Preloads the display associations onto each card/observation's `location`.
-  """
-  def preload_display(query) do
-    preload(query, location: ^@display_assocs)
-  end
 
   @doc """
   Preloads the level FK associations onto each card/observation's `location`.
@@ -271,39 +246,6 @@ defmodule Kjogvi.Geo.Location.Query do
         nil -> thing
         loc -> Map.put(thing, :public_location, public_locations[loc.id])
       end
-    end)
-  end
-
-  # Unused function. Use it to build proper ancestor preloading.
-  def preload_location_ancestors(things) do
-    # Only preload ancestors for private locations
-    ancestor_loc_ids =
-      things
-      |> Enum.filter(fn lifer -> lifer.location.is_private end)
-      |> Enum.flat_map(& &1.location.ancestry)
-      |> Enum.uniq()
-
-    loci =
-      from(l in Location,
-        where: l.id in ^ancestor_loc_ids,
-        preload: [
-          cached_parent: ^minimal_select(),
-          cached_city: ^minimal_select(),
-          cached_subdivision: ^minimal_select(),
-          cached_country: ^minimal_select()
-        ]
-      )
-      |> minimal_select()
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn loc, acc -> Map.put(acc, loc.id, loc) end)
-
-    things
-    |> Enum.map(fn thing ->
-      thing.location.ancestry
-      |> Enum.map(fn id -> loci[id] end)
-      |> then(fn ancestors ->
-        put_in(thing.location.ancestors, ancestors)
-      end)
     end)
   end
 end

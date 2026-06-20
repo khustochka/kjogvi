@@ -54,7 +54,6 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
       GeoFixtures.location_fixture(%{
         name_en: "Canada",
         location_type: "country",
-        ancestry: [],
         public_index: 1
       })
 
@@ -62,7 +61,7 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
       GeoFixtures.location_fixture(%{
         name_en: "Some Site",
         location_type: "site",
-        ancestry: [country.id]
+        country_id: country.id
       })
 
     {taxon, _} = Factory.create_species_taxon_with_page()

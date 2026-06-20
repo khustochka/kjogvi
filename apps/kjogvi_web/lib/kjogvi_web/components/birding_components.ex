@@ -84,7 +84,7 @@ defmodule KjogviWeb.BirdingComponents do
           navigate={~p"/my/cards/#{@card.id}"}
           class="min-w-0 flex-1 truncate text-stone-600 no-underline hover:text-stone-900"
         >
-          {Geo.Location.long_name(@card.location)}
+          {Geo.Location.long_name_from_levels(@card.location)}
         </.link>
 
         <%!-- Unresolved marker --%>

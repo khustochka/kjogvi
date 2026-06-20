@@ -65,7 +65,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
           {format_date(@card.observ_date)}
         </h1>
         <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <p class="text-lg text-stone-600">{Geo.Location.long_name(@card.location)}</p>
+          <p class="text-lg text-stone-600">{Geo.Location.long_name_from_levels(@card.location)}</p>
           <span
             :if={@card.import_source}
             id="card-import-source"

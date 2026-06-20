@@ -47,7 +47,7 @@ defmodule KjogviWeb.Live.Components.Autocomplete do
   emphasis):
 
       <:result :let={%{result: r, term: term}}>
-        <Highlight.highlighted_text text={r.long_name} term={term} />
+        <Highlight.highlighted_text text={r.name} term={term} />
       </:result>
 
   Pass `:hidden_name` and `:hidden_value` to render a hidden form input

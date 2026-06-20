@@ -14,7 +14,6 @@ defmodule Kjogvi.Geo.LocationTest do
           %Location{
             slug: "test-loc",
             name_en: "Test",
-            ancestry: [],
             is_private: false
           },
           %{}
@@ -28,7 +27,6 @@ defmodule Kjogvi.Geo.LocationTest do
         Location.changeset(
           %Location{
             name_en: "Test",
-            ancestry: [],
             is_private: false
           },
           %{}
@@ -42,7 +40,6 @@ defmodule Kjogvi.Geo.LocationTest do
         Location.changeset(
           %Location{
             slug: "test-loc",
-            ancestry: [],
             is_private: false
           },
           %{}
@@ -932,48 +929,6 @@ defmodule Kjogvi.Geo.LocationTest do
     test "returns empty string for nil iso code" do
       location = %Location{iso_code: nil}
       assert Location.to_flag_emoji(location) == ""
-    end
-  end
-
-  describe "raw_public_location/1" do
-    test "returns the location itself when not private" do
-      location = %Location{id: 1, is_private: false}
-      assert Location.raw_public_location(location) == location
-    end
-
-    test "returns first non-private ancestor when ancestors are loaded" do
-      public_ancestor = %Location{id: 10, is_private: false}
-      private_ancestor = %Location{id: 11, is_private: true}
-
-      location = %Location{
-        id: 1,
-        is_private: true,
-        ancestors: [public_ancestor, private_ancestor]
-      }
-
-      assert Location.raw_public_location(location) ==
-               private_ancestor |> then(fn _ -> public_ancestor end)
-
-      # ancestors are reversed, then first non-private is found
-      result = Location.raw_public_location(location)
-      refute result.is_private
-    end
-  end
-
-  describe "set_public_location_changeset/1" do
-    test "sets cached_public_location_id for private location" do
-      public_parent = insert(:location, is_private: false)
-      private_loc = insert(:location, is_private: true, ancestry: [public_parent.id])
-
-      changeset = Location.set_public_location_changeset(private_loc)
-      assert get_change(changeset, :cached_public_location_id) == public_parent.id
-    end
-
-    test "returns unchanged changeset for public location" do
-      location = insert(:location, is_private: false)
-
-      changeset = Location.set_public_location_changeset(location)
-      assert changeset.changes == %{}
     end
   end
 end

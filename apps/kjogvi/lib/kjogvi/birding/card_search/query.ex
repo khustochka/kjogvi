@@ -30,7 +30,7 @@ defmodule Kjogvi.Birding.CardSearch.Query do
     |> apply_card_filters(filter)
     |> maybe_restrict_to_matching_observations(filter)
     |> order_by([card: c], desc: c.observ_date, desc: c.id)
-    |> Geo.Location.Query.preload_display()
+    |> Geo.Location.Query.preload_levels()
     |> Card.Query.load_observation_count()
   end
 

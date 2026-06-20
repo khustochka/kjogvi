@@ -2,20 +2,11 @@ defmodule Kjogvi.Geo.Location do
   @moduledoc """
   Location
 
-  Columns starting with `cached_` are denormalized and store cached values that can
-  be derived from `ancestry`. They are useful for selecting all locations for a region
-  (country etc) but even more useful for building full location name.
-
-  * cached_country_id: Country
-  * cached_subdivision_id: Subdivision (state, province)
-  * cached_city_id: City
-  * cached_parent_id: This should only be set if parent name is a part of full name.
-  * cached_public_location_id: For a private location, this is the closest public ancestor.
-
-  TBD: For public location, should it be nil, or should it point to itself.
-
-  Every time a location is changed (ancestry, is_private, location_type), these cached fields
-  need to be recalculated for this location and all its former and new descendants.
+  A location's place in the hierarchy is held in the level FK columns
+  `country_id … site_id` (one per ordered level above `section`). They name the
+  ancestor at each level directly, so selecting a region (all locations under a
+  country, etc.) and building a full display name are simple FK reads — see
+  `ancestor_ids/1` and `long_name_from_levels/1`.
   """
 
   use Kjogvi.Schema
@@ -47,7 +38,6 @@ defmodule Kjogvi.Geo.Location do
     field :slug, :string
     field :name_en, :string
     field :location_type, Ecto.Enum, values: @location_types
-    field :ancestry, {:array, :integer}, default: []
     field :iso_code, :string
     field :is_private, :boolean, default: false
     field :lat, :decimal
@@ -56,13 +46,6 @@ defmodule Kjogvi.Geo.Location do
     field :extras, :map, default: %{}
 
     field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
-
-    belongs_to(:cached_public_location, Location)
-
-    belongs_to(:cached_parent, Location)
-    belongs_to(:cached_city, Location)
-    belongs_to(:cached_subdivision, Location)
-    belongs_to(:cached_country, Location)
 
     belongs_to(:country, Location)
     belongs_to(:subdivision1, Location)
@@ -88,10 +71,6 @@ defmodule Kjogvi.Geo.Location do
     field :cards_count, :integer, virtual: true
 
     field :parent_id, :integer, virtual: true
-
-    field :ancestors, :any,
-      virtual: true,
-      default: struct(Ecto.Association.NotLoaded, %{__field__: :ancestors})
   end
 
   @editable_fields ~w(
@@ -152,9 +131,9 @@ defmodule Kjogvi.Geo.Location do
   end
 
   # When a `parent_id` is present in the changeset, derive the five level FK
-  # columns (and keep `ancestry` in sync) from the chosen parent. A nil
-  # `parent_id` clears them. When `parent_id` was not cast at all (e.g. an edit
-  # that touches only the name), the existing FKs are left untouched.
+  # columns from the chosen parent. A nil `parent_id` clears them. When
+  # `parent_id` was not cast at all (e.g. an edit that touches only the name),
+  # the existing FKs are left untouched.
   defp put_level_fks_from_parent(changeset) do
     case fetch_change(changeset, :parent_id) do
       {:ok, nil} ->
@@ -173,17 +152,13 @@ defmodule Kjogvi.Geo.Location do
   end
 
   defp clear_level_fks(changeset) do
-    changeset
-    |> put_change(:ancestry, [])
-    |> then(fn cs -> Enum.reduce(@level_fks, cs, &put_change(&2, &1, nil)) end)
+    Enum.reduce(@level_fks, changeset, &put_change(&2, &1, nil))
   end
 
   defp put_level_fks(changeset, parent) do
     fks = level_fks_from_parent(parent)
 
-    changeset
-    |> put_change(:ancestry, ancestor_ids(parent) ++ [parent.id])
-    |> then(fn cs -> Enum.reduce(@level_fks, cs, &put_change(&2, &1, Map.fetch!(fks, &1))) end)
+    Enum.reduce(@level_fks, changeset, &put_change(&2, &1, Map.fetch!(fks, &1)))
   end
 
   @doc """
@@ -200,18 +175,6 @@ defmodule Kjogvi.Geo.Location do
       nil -> base
       fk -> Map.put(base, fk, parent.id)
     end
-  end
-
-  def set_public_location_changeset(%Location{is_private: true} = location) do
-    attrs = %{cached_public_location_id: raw_public_location(location).id}
-
-    location
-    |> cast(attrs, [:cached_public_location_id])
-  end
-
-  def set_public_location_changeset(%Location{} = location) do
-    location
-    |> change([])
   end
 
   @doc """
@@ -430,96 +393,6 @@ defmodule Kjogvi.Geo.Location do
     |> Enum.reject(&(is_nil(&1) || match?(%Ecto.Association.NotLoaded{}, &1)))
   end
 
-  def name_local_part(%{cached_city: cached_city} = location) do
-    postfix =
-      if is_nil(cached_city) do
-        []
-      else
-        [cached_city.name_en]
-      end
-
-    [name_with_parent(location) | postfix]
-    |> Enum.join(", ")
-  end
-
-  def name_administrative_part(location) do
-    %{cached_subdivision: cached_subdivision, cached_country: country} = location
-
-    [cached_subdivision, country]
-    |> Enum.reject(&is_nil(&1))
-    |> Enum.map_join(", ", & &1.name_en)
-  end
-
-  def long_name(location) do
-    [name_local_part(location), name_administrative_part(location)]
-    |> Enum.reject(&(is_nil(&1) || &1 == ""))
-    |> Enum.join(", ")
-  end
-
-  def raw_public_location(%{is_private: false} = location) do
-    location
-  end
-
-  def raw_public_location(%{ancestors: ancestors}) when is_list(ancestors) do
-    ancestors
-    |> Enum.reverse()
-    |> Enum.find(fn loc ->
-      !loc.is_private
-    end)
-  end
-
-  def raw_public_location(location) do
-    add_ancestors(location)
-    |> raw_public_location()
-  end
-
-  def add_ancestors(location) do
-    %{location | ancestors: ancestors(location)}
-  end
-
-  @doc """
-  Derives virtual `parent_id` from `ancestry` (last element), for form editing.
-  """
-  def with_parent_id(%__MODULE__{ancestry: ancestry} = location) do
-    %{location | parent_id: List.last(ancestry)}
-  end
-
-  def ancestors(%{ancestry: ancestry} = _location) do
-    from(l in Location,
-      where: l.id in ^ancestry
-    )
-    |> Kjogvi.Repo.all()
-    |> Enum.group_by(& &1.id)
-    |> then(fn map ->
-      ancestry
-      |> Enum.map(fn id ->
-        map[id] |> hd()
-      end)
-    end)
-  end
-
-  def preload_ancestors(locations) do
-    ancestor_ids =
-      locations
-      |> Enum.flat_map(& &1.ancestry)
-      |> Enum.uniq()
-
-    all_ancestors =
-      from(l in Location, where: l.id in ^ancestor_ids)
-      |> Query.minimal_select()
-      |> Repo.all()
-      |> Map.new(&{&1.id, &1})
-
-    locations
-    |> Enum.map(fn location ->
-      ancestors =
-        location.ancestry
-        |> Enum.map(fn id -> all_ancestors[id] end)
-
-      %{location | ancestors: ancestors}
-    end)
-  end
-
   def to_flag_emoji(%{iso_code: nil}) do
     ""
   end
@@ -530,14 +403,5 @@ defmodule Kjogvi.Geo.Location do
     |> String.to_charlist()
     |> Enum.map(&(&1 + 127_397))
     |> to_string()
-  end
-
-  defp name_with_parent(%{cached_parent: nil} = location) do
-    full_name(location)
-  end
-
-  defp name_with_parent(%{cached_parent: cached_parent} = location) do
-    [full_name(location), cached_parent.name_en]
-    |> Enum.join(", ")
   end
 end

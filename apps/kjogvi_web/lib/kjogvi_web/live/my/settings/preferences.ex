@@ -262,10 +262,10 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     {children, top_level_others} =
       Enum.split_with(
         others,
-        &(&1.cached_country_id && MapSet.member?(country_ids, &1.cached_country_id))
+        &(&1.country_id && MapSet.member?(country_ids, &1.country_id))
       )
 
-    children_by_country = Enum.group_by(children, & &1.cached_country_id)
+    children_by_country = Enum.group_by(children, & &1.country_id)
 
     non_country_top =
       top_level_others

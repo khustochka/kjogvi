@@ -458,3 +458,43 @@ fixes/implements.
     `get_upper_level_locations/0` — dead, the card display path, `preferences.ex`,
     the schema dead code, and the column drop itself) are deferred to the stage-8
     cleanup.
+- **Stage 8 — done (pending review). Final cleanup: dropped `ancestry` and the
+  `cached_*` columns.** Nothing reads them anymore, so the column-level remnants
+  and their dead code are gone.
+  - **Last live consumers migrated.** Card display path moved off the `cached_*`
+    chain: `birding.ex` (`resolve_location`, `get_cards`,
+    `fetch_card_with_observations`) and `card_search/query.ex` now `preload_levels`
+    (not `preload_display`); the three `Location.long_name/1` call sites
+    (`birding_components`, `card_search_filter`, `my/cards/show`) now call
+    `long_name_from_levels/1`. `preferences.ex`'s logbook grouping keys on
+    `country_id` instead of `cached_country_id`. `get_upper_level_locations/0`
+    (`cached_country_id` + `unnest(ancestry)`, no live callers) was deleted.
+  - **Dead code removed.** `Location`: the `ancestry` field, the five `cached_*`
+    belongs_to, the virtual `ancestors` field (the virtual `parent_id` stays — it
+    drives the form's parent picker), `set_public_location_changeset/1`,
+    `raw_public_location/1`, `add_ancestors/1`, `with_parent_id/1`, `ancestors/1`,
+    `preload_ancestors/1`, and the cached-name builders (`name_local_part`,
+    `name_administrative_part`, `long_name`, `name_with_parent`); the
+    `put_change(:ancestry, …)` calls dropped from `clear_level_fks`/`put_level_fks`.
+    `Location.Query`: `@display_assocs`, `display_assocs/0`, `preload_display/1`,
+    `preload_location_ancestors/1`, and the `cached_*`/`:ancestry` entries in
+    `@minimal_select`. The old commented-out `cached_country_id`/`ancestry` filter
+    blocks in `card/query.ex` were removed.
+  - **Migration.** `Kjogvi.Repo` migration drops `ancestry`,
+    `cached_public_location_id`, `cached_country_id`, `cached_parent_id`,
+    `cached_city_id`, `cached_subdivision_id` (with a reversible `down` recreating
+    the columns, the `ancestry` gin index, and the partial `cached_country_id`
+    index). `structure.sql` regenerated. (`Card.cached_year`/`cached_month` are
+    unrelated date fields and stay.)
+  - **Legacy import is out of scope** (per "ignore legacy import"):
+    `Legacy.Import.Locations.import/3` and its helpers wrote the dropped columns,
+    so the body is commented out and `import/3` returns `:ok`; its test describe is
+    `@tag :skip`. Rebuilding the importer onto level FKs is a separate future task.
+  - **Tests.** Removed the `raw_public_location/1` and
+    `set_public_location_changeset/1` describes (`location_test.exs`), the
+    `get_upper_level_locations/0` describe and the two `created.ancestry`
+    assertions (`geo_test.exs`); dropped `ancestry`/`cached_*` from `GeoFixtures`
+    and the stray `ancestry:` struct keys / fixtures in `location_test.exs` and
+    `my/logbook/index_test.exs` (the latter's `site` now hangs off `country_id`).
+    Full suite green (535 core + 460 web; 6 core skips = 5 disabled legacy-import
+    cases + 1 pre-existing, 1 web pre-existing skip). Lint clean.

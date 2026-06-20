@@ -15,7 +15,6 @@ defmodule Kjogvi.GeoFixtures do
       slug: unique_location_slug(),
       name_en: "Test Location #{System.unique_integer()}",
       location_type: nil,
-      ancestry: [],
       is_private: false
     }
 
@@ -31,12 +30,9 @@ defmodule Kjogvi.GeoFixtures do
         :slug,
         :name_en,
         :location_type,
-        :ancestry,
         :is_private,
         :iso_code,
         :public_index,
-        :cached_country_id,
-        :cached_subdivision_id,
         :country_id,
         :subdivision1_id,
         :subdivision2_id,
@@ -44,7 +40,7 @@ defmodule Kjogvi.GeoFixtures do
         :site_id,
         :user_id
       ])
-      |> validate_required([:slug, :name_en, :ancestry, :is_private])
+      |> validate_required([:slug, :name_en, :is_private])
       |> Repo.insert()
 
     location

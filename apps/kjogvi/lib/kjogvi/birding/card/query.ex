@@ -48,18 +48,6 @@ defmodule Kjogvi.Birding.Card.Query do
       where: c.location_id in subquery(child_ids)
   end
 
-  # defp filter_by_location(query, %{id: id, location_type: "country"}) do
-  #   from [_, c] in query,
-  #     join: l in assoc(c, :location),
-  #     where: l.cached_country_id == ^id or l.id == ^id
-  # end
-
-  # defp filter_by_location(query, %{id: id}) do
-  #   from [_, c] in query,
-  #     join: l in assoc(c, :location),
-  #     where: ^id in l.ancestry or l.id == ^id
-  # end
-
   @doc """
   Loads per-card aggregates: total number of observations, number of distinct
   taxa, and number of distinct countable species.

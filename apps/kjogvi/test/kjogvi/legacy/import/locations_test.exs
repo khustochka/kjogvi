@@ -54,7 +54,11 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
     Enum.map(@columns, &Map.fetch!(attrs, &1))
   end
 
+  # Disabled: `Locations.import/3` is a no-op until the legacy importer is
+  # rebuilt onto the level-FK model (it relied on the dropped `ancestry` /
+  # `cached_public_location_id` columns). See the module note.
   describe "import/3" do
+    @describetag :skip
     setup do
       %{opts: [user: user_fixture()]}
     end

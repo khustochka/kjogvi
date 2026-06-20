@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 7Pt7UqBNeYeAgU0bxyv7pdiLDJYwhCf7X9MYg2DwrPM2O6JrsTq1GiCSIbLx5K5
+\restrict y5VDrPg2lmIscC2pIHZu0YpR7OmKcej1gGw3pbJ3sEqd1EOlmAzLNZ6erOt78Dm
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -171,22 +171,21 @@ CREATE TABLE public.locations (
     slug character varying(64) NOT NULL,
     name_en character varying(255) NOT NULL,
     location_type character varying(32),
-    ancestry bigint[],
     iso_code character varying(3),
     lat numeric(8,5),
     lon numeric(8,5),
     public_index smallint,
     is_private boolean DEFAULT false NOT NULL,
-    cached_public_location_id bigint,
-    cached_country_id bigint,
-    cached_parent_id bigint,
-    cached_city_id bigint,
-    cached_subdivision_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     import_source character varying(255),
     extras jsonb DEFAULT '{}'::jsonb NOT NULL,
-    user_id bigint
+    user_id bigint,
+    country_id bigint,
+    subdivision1_id bigint,
+    subdivision2_id bigint,
+    city_id bigint,
+    site_id bigint
 );
 
 
@@ -660,17 +659,17 @@ CREATE UNIQUE INDEX images_user_id_slug_index ON public.images USING btree (user
 
 
 --
--- Name: locations_ancestry_index; Type: INDEX; Schema: public; Owner: -
+-- Name: locations_city_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX locations_ancestry_index ON public.locations USING gin (ancestry);
+CREATE INDEX locations_city_id_index ON public.locations USING btree (city_id);
 
 
 --
--- Name: locations_cached_country_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: locations_country_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX locations_cached_country_id_index ON public.locations USING btree (cached_country_id) WHERE (cached_country_id IS NOT NULL);
+CREATE INDEX locations_country_id_index ON public.locations USING btree (country_id);
 
 
 --
@@ -681,10 +680,31 @@ CREATE INDEX locations_location_type_index ON public.locations USING btree (loca
 
 
 --
+-- Name: locations_site_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX locations_site_id_index ON public.locations USING btree (site_id);
+
+
+--
 -- Name: locations_slug_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX locations_slug_index ON public.locations USING btree (slug);
+
+
+--
+-- Name: locations_subdivision1_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX locations_subdivision1_id_index ON public.locations USING btree (subdivision1_id);
+
+
+--
+-- Name: locations_subdivision2_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX locations_subdivision2_id_index ON public.locations USING btree (subdivision2_id);
 
 
 --
@@ -833,43 +853,43 @@ ALTER TABLE ONLY public.images
 
 
 --
--- Name: locations locations_cached_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: locations locations_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_cached_city_id_fkey FOREIGN KEY (cached_city_id) REFERENCES public.locations(id) ON DELETE SET NULL;
+    ADD CONSTRAINT locations_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
 
 
 --
--- Name: locations locations_cached_country_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_cached_country_id_fkey FOREIGN KEY (cached_country_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
-
-
---
--- Name: locations locations_cached_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: locations locations_country_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_cached_parent_id_fkey FOREIGN KEY (cached_parent_id) REFERENCES public.locations(id) ON DELETE SET NULL;
+    ADD CONSTRAINT locations_country_id_fkey FOREIGN KEY (country_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
 
 
 --
--- Name: locations locations_cached_public_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_cached_public_location_id_fkey FOREIGN KEY (cached_public_location_id) REFERENCES public.locations(id) ON DELETE SET NULL;
-
-
---
--- Name: locations locations_cached_subdivision_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: locations locations_site_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_cached_subdivision_id_fkey FOREIGN KEY (cached_subdivision_id) REFERENCES public.locations(id) ON DELETE SET NULL;
+    ADD CONSTRAINT locations_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: locations locations_subdivision1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT locations_subdivision1_id_fkey FOREIGN KEY (subdivision1_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: locations locations_subdivision2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT locations_subdivision2_id_fkey FOREIGN KEY (subdivision2_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
 
 
 --
@@ -924,7 +944,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7Pt7UqBNeYeAgU0bxyv7pdiLDJYwhCf7X9MYg2DwrPM2O6JrsTq1GiCSIbLx5K5
+\unrestrict y5VDrPg2lmIscC2pIHZu0YpR7OmKcej1gGw3pbJ3sEqd1EOlmAzLNZ6erOt78Dm
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -948,3 +968,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260613120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260615170413);
 INSERT INTO public."schema_migrations" (version) VALUES (20260618000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260618184652);
+INSERT INTO public."schema_migrations" (version) VALUES (20260619120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260620000000);

@@ -593,32 +593,6 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "get_upper_level_locations/0" do
-    test "includes countries" do
-      country = insert(:location, location_type: "country")
-
-      results = Geo.get_upper_level_locations()
-      assert Enum.any?(results, &(&1.id == country.id))
-    end
-
-    test "includes subdivisions" do
-      country = insert(:location, location_type: "country")
-
-      subdivision =
-        insert(:location, location_type: "subdivision1", country_id: country.id)
-
-      results = Geo.get_upper_level_locations()
-      assert Enum.any?(results, &(&1.id == subdivision.id))
-    end
-
-    test "excludes special locations" do
-      insert(:location, location_type: "special")
-
-      results = Geo.get_upper_level_locations()
-      refute Enum.any?(results, &(&1.location_type == "special"))
-    end
-  end
-
   describe "create_location/2 level FK derivation from parent" do
     setup do
       %{scope: %Kjogvi.Scope{current_user: user_fixture(), area: :private}}
@@ -646,7 +620,6 @@ defmodule Kjogvi.GeoTest do
       assert created.country_id == country.id
       assert created.subdivision1_id == subdivision1.id
       assert created.city_id == nil
-      assert created.ancestry == [country.id, subdivision1.id]
     end
 
     test "a top-level country has no level FKs", %{scope: scope} do
@@ -659,7 +632,6 @@ defmodule Kjogvi.GeoTest do
         })
 
       assert created.country_id == nil
-      assert created.ancestry == []
     end
 
     test "rejects a non-country location with no parent", %{scope: scope} do
