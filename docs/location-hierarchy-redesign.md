@@ -417,8 +417,8 @@ fixes/implements.
     moves; the band guarantees the new column is null on every descendant, so the
     move keeps their slot occupancy valid. A move to/from `section` (no descendant
     column) is a no-op. `Geo.update_location/3` now runs the changeset update and
-    the cascade in one `Ecto.Multi` transaction, firing the cascade only when the
-    persisted `location_type` actually changed.
+    the cascade in one `Repo.transact` transaction, firing the cascade only when
+    the persisted `location_type` actually changed.
   - **Form.** The `location_type` `<select>` gained a `#location-type-errors` list
     so the band error (which lands on `:location_type`, a field whose custom
     `<select>` had no error slot) is surfaced.
@@ -436,3 +436,25 @@ fixes/implements.
     no-op); two `edit` cases in `form_test.exs` (cascade through the form, rejection
     surfaced + persisted type unchanged). Full suite green (547 core + 459 web, 1
     pre-existing skip).
+- **Lifelist filter context rebuilt on level FKs (pre-stage-8).** Split out of the
+  stage-8 cleanup: `Geo.get_lifelist_location_context/1` (the lifelist filter's
+  siblings/children/ancestors navigation, live at `lifelist/index.ex`) was the last
+  live reader of the `ancestry` array. Its `effective_lifelist_parent/2` now walks
+  `Location.ancestor_ids/1` (the non-null level FK chain `country_id … site_id`,
+  top→bottom) instead of `.ancestry`, finding the deepest ancestor that is itself a
+  lifelist location so non-lifelist intermediaries are still skipped. The selected
+  location's own ancestor ordering likewise comes from `ancestor_ids/1`.
+  - **Behavior note (accepted trade-off).** Hierarchy now reflects only the five
+    canonical level slots, so purely non-canonical chains the old `ancestry` array
+    could express (a continent *above* a country, an extra intermediary *between*
+    two fixed levels) no longer roll up through the filter. Real intermediaries that
+    occupy a fixed slot (e.g. a non-lifelist `subdivision2` between a `subdivision1`
+    and a `city`) are still skipped correctly.
+  - **Tests.** The six `get_lifelist_location_context/1` cases in `geo_test.exs` and
+    the lifelist breadcrumb-ancestor live test in `lifelist/index_test.exs` were
+    migrated from `ancestry` fixtures to canonical level-FK fixtures
+    (country/subdivision1/subdivision2/city). Full suite green (548 core + 460 web,
+    1 pre-existing skip). The remaining `ancestry`/`cached_*` reads (`geo.ex`
+    `get_upper_level_locations/0` — dead, the card display path, `preferences.ex`,
+    the schema dead code, and the column drop itself) are deferred to the stage-8
+    cleanup.

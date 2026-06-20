@@ -174,104 +174,147 @@ defmodule Kjogvi.GeoTest do
   end
 
   describe "get_lifelist_location_context/1" do
-    test "World (nil) returns continents as siblings and countries as children" do
-      europe = insert(:location, name_en: "Europe", ancestry: [], public_index: 1)
-
+    test "World (nil) returns top-level locations as siblings and their children as children" do
       germany =
-        insert(:location, name_en: "Germany", ancestry: [europe.id], public_index: 2)
+        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
+
+      bavaria =
+        insert(:location,
+          name_en: "Bavaria",
+          location_type: :subdivision1,
+          country_id: germany.id,
+          public_index: 2
+        )
 
       # Location without public_index should not appear
-      insert(:location, name_en: "Hidden", ancestry: [], public_index: nil)
+      insert(:location, name_en: "Hidden", location_type: :country, public_index: nil)
 
       result = Geo.get_lifelist_location_context(nil)
 
       assert result.ancestors == []
-      assert Enum.map(result.siblings, & &1.id) == [europe.id]
-      assert Enum.map(result.children, & &1.id) == [germany.id]
+      assert Enum.map(result.siblings, & &1.id) == [germany.id]
+      assert Enum.map(result.children, & &1.id) == [bavaria.id]
     end
 
     test "specific location returns ancestors, siblings, and children" do
-      europe = insert(:location, name_en: "Europe", ancestry: [], public_index: 1)
-
       germany =
-        insert(:location, name_en: "Germany", ancestry: [europe.id], public_index: 2)
+        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
 
-      france =
-        insert(:location, name_en: "France", ancestry: [europe.id], public_index: 3)
-
-      berlin =
+      bavaria =
         insert(:location,
-          name_en: "Berlin",
-          ancestry: [europe.id, germany.id],
-          public_index: 4
+          name_en: "Bavaria",
+          location_type: :subdivision1,
+          country_id: germany.id,
+          public_index: 2
         )
 
-      result = Geo.get_lifelist_location_context(germany)
-
-      assert Enum.map(result.ancestors, & &1.id) == [europe.id]
-      assert Enum.map(result.siblings, & &1.id) == [france.id]
-      assert Enum.map(result.children, & &1.id) == [berlin.id]
-    end
-
-    test "deep location preserves ancestor order from ancestry" do
-      continent = insert(:location, name_en: "Europe", ancestry: [], public_index: 1)
-      country = insert(:location, name_en: "Germany", ancestry: [continent.id], public_index: 2)
-
-      city =
+      hesse =
         insert(:location,
-          name_en: "Berlin",
-          ancestry: [continent.id, country.id],
+          name_en: "Hesse",
+          location_type: :subdivision1,
+          country_id: germany.id,
           public_index: 3
         )
 
-      result = Geo.get_lifelist_location_context(city)
+      munich =
+        insert(:location,
+          name_en: "Munich",
+          location_type: :subdivision2,
+          country_id: germany.id,
+          subdivision1_id: bavaria.id,
+          public_index: 4
+        )
 
-      assert Enum.map(result.ancestors, & &1.id) == [continent.id, country.id]
+      result = Geo.get_lifelist_location_context(bavaria)
+
+      assert Enum.map(result.ancestors, & &1.id) == [germany.id]
+      assert Enum.map(result.siblings, & &1.id) == [hesse.id]
+      assert Enum.map(result.children, & &1.id) == [munich.id]
+    end
+
+    test "deep location preserves ancestor order from the level FK chain" do
+      germany =
+        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
+
+      bavaria =
+        insert(:location,
+          name_en: "Bavaria",
+          location_type: :subdivision1,
+          country_id: germany.id,
+          public_index: 2
+        )
+
+      munich =
+        insert(:location,
+          name_en: "Munich",
+          location_type: :subdivision2,
+          country_id: germany.id,
+          subdivision1_id: bavaria.id,
+          public_index: 3
+        )
+
+      result = Geo.get_lifelist_location_context(munich)
+
+      assert Enum.map(result.ancestors, & &1.id) == [germany.id, bavaria.id]
       assert result.siblings == []
       assert result.children == []
     end
 
     test "excludes locations without public_index" do
-      europe = insert(:location, name_en: "Europe", ancestry: [], public_index: 1)
+      germany =
+        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
 
-      insert(:location, name_en: "Private Country", ancestry: [europe.id], public_index: nil)
+      insert(:location,
+        name_en: "Hidden Subdivision",
+        location_type: :subdivision1,
+        country_id: germany.id,
+        public_index: nil
+      )
 
-      result = Geo.get_lifelist_location_context(europe)
+      result = Geo.get_lifelist_location_context(germany)
 
       assert result.children == []
     end
 
     test "siblings are determined by effective lifelist parent, not exact ancestry" do
-      europe = insert(:location, name_en: "Europe", ancestry: [], public_index: 1)
-      ukraine = insert(:location, name_en: "Ukraine", ancestry: [europe.id], public_index: 2)
+      ukraine =
+        insert(:location, name_en: "Ukraine", location_type: :country, public_index: 1)
 
       oblast =
         insert(:location,
           name_en: "Kyiv Oblast",
-          ancestry: [europe.id, ukraine.id],
-          public_index: 3
+          location_type: :subdivision1,
+          country_id: ukraine.id,
+          public_index: 2
         )
 
-      # district has no public_index — it's an intermediary
+      # district is a subdivision2 with no public_index — an intermediary
       district =
         insert(:location,
           name_en: "Brovary district",
-          ancestry: [europe.id, ukraine.id, oblast.id],
+          location_type: :subdivision2,
+          country_id: ukraine.id,
+          subdivision1_id: oblast.id,
           public_index: nil
         )
 
       kyiv =
         insert(:location,
           name_en: "Kyiv",
-          ancestry: [europe.id, ukraine.id, oblast.id],
-          public_index: 4
+          location_type: :subdivision2,
+          country_id: ukraine.id,
+          subdivision1_id: oblast.id,
+          public_index: 3
         )
 
       brovary =
         insert(:location,
           name_en: "Brovary",
-          ancestry: [europe.id, ukraine.id, oblast.id, district.id],
-          public_index: 5
+          location_type: :city,
+          country_id: ukraine.id,
+          subdivision1_id: oblast.id,
+          subdivision2_id: district.id,
+          public_index: 4
         )
 
       # Both have effective lifelist parent = oblast, so they are siblings
@@ -283,24 +326,35 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "children are determined by nearest lifelist ancestor, skipping intermediaries" do
-      continent = insert(:location, name_en: "Europe", ancestry: [], public_index: 1)
-      country = insert(:location, name_en: "Germany", ancestry: [continent.id], public_index: nil)
+      germany =
+        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
 
-      city =
+      # subdivision with no public_index — an intermediary
+      bavaria =
         insert(:location,
-          name_en: "Berlin",
-          ancestry: [continent.id, country.id],
+          name_en: "Bavaria",
+          location_type: :subdivision1,
+          country_id: germany.id,
+          public_index: nil
+        )
+
+      munich =
+        insert(:location,
+          name_en: "Munich",
+          location_type: :subdivision2,
+          country_id: germany.id,
+          subdivision1_id: bavaria.id,
           public_index: 2
         )
 
-      # Berlin's nearest lifelist ancestor is Europe (Germany has no public_index)
-      result = Geo.get_lifelist_location_context(continent)
+      # Munich's nearest lifelist ancestor is Germany (Bavaria has no public_index)
+      result = Geo.get_lifelist_location_context(germany)
 
-      assert Enum.map(result.children, & &1.id) == [city.id]
+      assert Enum.map(result.children, & &1.id) == [munich.id]
 
-      # And from World view, Berlin should NOT be a child (its effective parent is Europe, a sibling)
+      # And from World view, Munich should still surface (its effective parent is Germany, a top-level sibling)
       world_result = Geo.get_lifelist_location_context(nil)
-      assert Enum.map(world_result.children, & &1.id) == [city.id]
+      assert Enum.map(world_result.children, & &1.id) == [munich.id]
     end
   end
 

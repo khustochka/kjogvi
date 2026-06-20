@@ -185,38 +185,44 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "location card shows breadcrumb with ancestors when filtered", %{conn: conn, user: user} do
-    europe =
-      insert(:location,
-        slug: "europe",
-        name_en: "Europe",
-        ancestry: [],
-        public_index: 1
-      )
-
     ukraine =
       insert(:location,
         slug: "ukraine",
         name_en: "Ukraine",
         location_type: "country",
-        ancestry: [europe.id],
+        public_index: 1
+      )
+
+    oblast =
+      insert(:location,
+        slug: "kyiv-oblast",
+        name_en: "Kyiv Oblast",
+        location_type: "subdivision1",
+        country_id: ukraine.id,
         public_index: 2
       )
 
     brovary =
-      insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [europe.id, ukraine.id])
+      insert(:location,
+        slug: "brovary",
+        name_en: "Brovary",
+        location_type: "city",
+        country_id: ukraine.id,
+        subdivision1_id: oblast.id
+      )
 
     {taxon, _} = Factory.create_species_taxon_with_page()
     card = insert(:card, user: user, location: brovary)
     insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist/ukraine")
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist/kyiv-oblast")
 
     assert has_element?(view, "#lifelist-location-selector")
-    # Breadcrumb shows World and Europe as links
+    # Breadcrumb shows World and Ukraine (the country ancestor) as links
     assert has_element?(view, "#lifelist-location-selector a", "World")
-    assert has_element?(view, "#lifelist-location-selector a", "Europe")
-    # Ukraine is the selected pill in the siblings list
-    assert has_element?(view, "#lifelist-location-selector span.font-bold", "Ukraine")
+    assert has_element?(view, "#lifelist-location-selector a", "Ukraine")
+    # Kyiv Oblast is the selected pill in the siblings list
+    assert has_element?(view, "#lifelist-location-selector span.font-bold", "Kyiv Oblast")
   end
 
   test "location card shows World as bold when no location filter", %{conn: conn, user: user} do

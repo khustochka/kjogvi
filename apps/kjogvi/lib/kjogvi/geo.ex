@@ -48,9 +48,13 @@ defmodule Kjogvi.Geo do
   Returns hierarchical context for the lifelist location filter.
 
   Given a selected location (or nil for "World"), returns:
-  - `ancestors` — lifelist locations in the selected location's ancestry chain
-  - `siblings` — lifelist locations sharing the same ancestry as selected
+  - `ancestors` — lifelist locations in the selected location's level FK chain
+  - `siblings` — lifelist locations sharing the same effective lifelist parent
   - `children` — lifelist locations whose nearest lifelist ancestor is the selected location (or a sibling, for World)
+
+  Hierarchy is read from each location's level FK columns (`country_id …
+  site_id`); the "effective lifelist parent" is the deepest of those ancestors
+  that is itself a lifelist location, so non-lifelist intermediaries are skipped.
   """
   def get_lifelist_location_context(selected_location) do
     all = get_lifelist_locations()
@@ -61,29 +65,30 @@ defmodule Kjogvi.Geo do
         my_parent = nil
 
         siblings =
-          Enum.filter(all, &(effective_lifelist_parent(&1.ancestry, lifelist_ids) == my_parent))
+          Enum.filter(all, &(effective_lifelist_parent(&1, lifelist_ids) == my_parent))
 
         sibling_ids = MapSet.new(siblings, & &1.id)
 
         children =
           Enum.filter(all, fn loc ->
-            effective_lifelist_parent(loc.ancestry, lifelist_ids) in sibling_ids
+            effective_lifelist_parent(loc, lifelist_ids) in sibling_ids
           end)
 
         %{ancestors: [], siblings: siblings, children: children}
 
       loc ->
-        my_parent = effective_lifelist_parent(loc.ancestry, lifelist_ids)
+        my_parent = effective_lifelist_parent(loc, lifelist_ids)
+        ancestor_ids = Location.ancestor_ids(loc)
 
         ancestors =
           all
-          |> Enum.filter(&(&1.id in loc.ancestry))
-          |> Enum.sort_by(fn a -> Enum.find_index(loc.ancestry, &(&1 == a.id)) end)
+          |> Enum.filter(&(&1.id in ancestor_ids))
+          |> Enum.sort_by(fn a -> Enum.find_index(ancestor_ids, &(&1 == a.id)) end)
 
         siblings =
           Enum.filter(all, fn sib ->
             sib.id != loc.id &&
-              effective_lifelist_parent(sib.ancestry, lifelist_ids) == my_parent
+              effective_lifelist_parent(sib, lifelist_ids) == my_parent
           end)
 
         children =
@@ -92,11 +97,11 @@ defmodule Kjogvi.Geo do
             top_level_ids = MapSet.new(siblings, & &1.id) |> MapSet.put(loc.id)
 
             Enum.filter(all, fn child ->
-              effective_lifelist_parent(child.ancestry, lifelist_ids) in top_level_ids
+              effective_lifelist_parent(child, lifelist_ids) in top_level_ids
             end)
           else
             Enum.filter(all, fn child ->
-              effective_lifelist_parent(child.ancestry, lifelist_ids) == loc.id
+              effective_lifelist_parent(child, lifelist_ids) == loc.id
             end)
           end
 
@@ -104,10 +109,11 @@ defmodule Kjogvi.Geo do
     end
   end
 
-  # Returns the nearest lifelist ancestor id — the last id in the ancestry
-  # chain that is present in the lifelist set.
-  defp effective_lifelist_parent(ancestry, lifelist_ids) do
-    ancestry
+  # Returns the nearest lifelist ancestor id — the deepest of the location's
+  # level FK ancestors that is present in the lifelist set.
+  defp effective_lifelist_parent(location, lifelist_ids) do
+    location
+    |> Location.ancestor_ids()
     |> Enum.reverse()
     |> Enum.find(&MapSet.member?(lifelist_ids, &1))
   end
