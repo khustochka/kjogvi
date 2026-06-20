@@ -107,22 +107,36 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     assert has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{location.id}']")
   end
 
-  test "row hides delete button when location has children", %{conn: conn, user: user} do
+  test "deleting a location with children fails with an error and keeps it",
+       %{conn: conn, user: user} do
     parent = insert(:location, name_en: "Canada", location_type: "country", user_id: user.id)
     insert(:location, name_en: "Manitoba", location_type: "subdivision1", country_id: parent.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    refute has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{parent.id}']")
+    html =
+      index_live
+      |> element("button[phx-click='delete'][phx-value-id='#{parent.id}']")
+      |> render_click()
+
+    assert html =~ "sub-locations"
+    refute is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, parent.id))
   end
 
-  test "row hides delete button when location has cards", %{conn: conn, user: user} do
+  test "deleting a location with cards fails with an error and keeps it",
+       %{conn: conn, user: user} do
     location = insert(:location, name_en: "With Cards", location_type: "city", user_id: user.id)
     insert(:card, location: location)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    refute has_element?(index_live, "button[phx-click='delete'][phx-value-id='#{location.id}']")
+    html =
+      index_live
+      |> element("button[phx-click='delete'][phx-value-id='#{location.id}']")
+      |> render_click()
+
+    assert html =~ "has cards"
+    refute is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, location.id))
   end
 
   test "deletes a location", %{conn: conn, user: user} do

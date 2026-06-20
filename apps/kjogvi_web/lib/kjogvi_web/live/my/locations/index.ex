@@ -217,7 +217,6 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <.row_actions
         location={@location}
         can_modify={User.owns?(@current_user, @location)}
-        can_delete={Geo.can_delete_location?(@location)}
       />
       <.lifelist_link slug={@location.slug} />
     </div>
@@ -226,8 +225,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   attr :location, :map, required: true
   attr :can_modify, :boolean, default: false
-  attr :can_delete, :boolean, required: true
 
+  # The delete button is shown for every owned location; deletability (no
+  # children, no cards) is enforced server-side by `Geo.delete_location/2`,
+  # which flashes an error if the location is still in use. This keeps the list
+  # free of a per-row deletability query.
   defp row_actions(assigns) do
     ~H"""
     <div class="shrink-0 flex items-center gap-1">
@@ -240,7 +242,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <.icon name="hero-pencil-square" class="w-4 h-4" />
       </.link>
       <button
-        :if={@can_modify and @can_delete}
+        :if={@can_modify}
         type="button"
         phx-click="delete"
         phx-value-id={@location.id}

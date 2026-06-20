@@ -295,13 +295,6 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Returns true if the location can be deleted (no children, no cards).
-  """
-  def can_delete_location?(%Location{} = location) do
-    children_count(location.id) == 0 and cards_count(location.id) == 0
-  end
-
-  @doc """
   Deletes a location.
 
   Refuses with `{:error, :forbidden}` when the scope may not modify it, or with
