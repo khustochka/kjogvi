@@ -146,9 +146,11 @@ defmodule Kjogvi.Geo do
   end
 
   def get_child_locations(parent_id) do
-    Location
+    parent = Repo.get!(Location, parent_id)
+
+    Location.Query.child_locations(parent)
+    |> where([l], l.id != ^parent_id)
     |> Location.Query.load_cards_count()
-    |> where([l], fragment("? @> ?::bigint[]", l.ancestry, [^parent_id]))
     |> where([l], l.location_type != :special or is_nil(l.location_type))
     |> Repo.all()
   end

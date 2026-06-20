@@ -101,9 +101,67 @@ defmodule Kjogvi.Geo.Location.Query do
       select_merge: %{cards_count: count(c.id)}
   end
 
-  def child_locations(%{id: id}) do
-    from l in Location,
-      where: fragment("? @> ?::bigint[]", l.ancestry, [^id]) or ^id == l.id
+  # Maps a location's own level to the descendant FK column that points back to it.
+  # `section` is the lowest level and is never an ancestor, so it has no column.
+  @descendant_fk %{
+    country: :country_id,
+    subdivision1: :subdivision1_id,
+    subdivision2: :subdivision2_id,
+    city: :city_id,
+    site: :site_id
+  }
+
+  @doc """
+  Query for `location` plus all of its descendants.
+
+  A descendant is any location whose level FK for `location`'s own
+  `location_type` points at it (descendants of a `subdivision1` are the rows with
+  `subdivision1_id == location.id`); `location` itself is always included. A
+  `section` (lowest level) or a location with no descendant column has only
+  itself.
+  """
+  def child_locations(%{id: id, location_type: location_type}) do
+    case Map.fetch(@descendant_fk, location_type) do
+      {:ok, fk} ->
+        from l in Location, where: field(l, ^fk) == ^id or l.id == ^id
+
+      :error ->
+        from l in Location, where: l.id == ^id
+    end
+  end
+
+  @doc """
+  Query selecting the ids of a special location's members plus all their
+  descendants.
+
+  A special is an amalgamation of member locations; a card counts toward it when
+  its location is a member or a descendant of one. Builds `child_locations/1` for
+  each member (selecting ids) and unions them.
+  """
+  def special_descendant_ids(%{location_type: :special, id: id}) do
+    members =
+      from(l in Location,
+        join: sl in "special_locations",
+        on: sl.child_location_id == l.id,
+        where: sl.parent_location_id == ^id,
+        select: %{id: l.id, location_type: l.location_type}
+      )
+      |> Repo.all()
+
+    case members do
+      [] ->
+        from l in Location, where: false, select: l.id
+
+      [first | rest] ->
+        Enum.reduce(rest, member_descendant_ids(first), fn member, acc ->
+          union(acc, ^member_descendant_ids(member))
+        end)
+    end
+  end
+
+  defp member_descendant_ids(member) do
+    child_locations(member)
+    |> select([l], l.id)
   end
 
   def preload_all_locations(things) do

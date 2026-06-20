@@ -271,7 +271,7 @@ defmodule Kjogvi.Birding.Logbook do
 
   # Returns the full ancestor chain for an area, including implicit World (nil).
   defp full_ancestor_chain(nil), do: []
-  defp full_ancestor_chain(area), do: [nil | area.ancestry]
+  defp full_ancestor_chain(area), do: [nil | Geo.Location.ancestor_ids(area)]
 
   defp area_id(nil), do: nil
   defp area_id(%{id: id}), do: id
@@ -322,13 +322,13 @@ defmodule Kjogvi.Birding.Logbook do
       max_total = entries |> Enum.map(fn {_a, t} -> t end) |> Enum.max()
       {area, max_total}
     end)
-    |> Enum.sort_by(fn {area, _} -> length(area.ancestry) end)
+    |> Enum.sort_by(fn {area, _} -> length(Geo.Location.ancestor_ids(area)) end)
   end
 
   # Sort entries: total before year, world before country before subdivision.
   defp entry_sort_key(%Entry{type: type, area: area, year: year}) do
     type_order = if type == :life, do: 0, else: 1
-    depth = if area, do: length(area.ancestry), else: 0
+    depth = if area, do: length(Geo.Location.ancestor_ids(area)), else: 0
     {type_order, depth, year}
   end
 end

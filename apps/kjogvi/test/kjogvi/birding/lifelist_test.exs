@@ -198,7 +198,14 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Lifelist.Scope{user: user, include_private: false}
       ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
       usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
-      brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+      brovary =
+        insert(:location,
+          slug: "brovary",
+          name_en: "Brovary",
+          location_type: "city",
+          country_id: ukraine.id
+        )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, location: brovary, user: user)
@@ -216,7 +223,14 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Lifelist.Scope{user: user, include_private: false}
       ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
       usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
-      brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+      brovary =
+        insert(:location,
+          slug: "brovary",
+          name_en: "Brovary",
+          location_type: "city",
+          country_id: ukraine.id
+        )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, location: brovary, user: user)
@@ -234,7 +248,14 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Lifelist.Scope{user: user, include_private: false}
       ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
       usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
-      brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+
+      brovary =
+        insert(:location,
+          slug: "brovary",
+          name_en: "Brovary",
+          location_type: "city",
+          country_id: ukraine.id
+        )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-11-18", location: brovary, user: user)
@@ -281,13 +302,27 @@ defmodule Kjogvi.Birding.LifelistTest do
     test "filtered by special location" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
-      locus1 = insert(:location, slug: "bunns_creek", name_en: "Bunn's Creek")
-      locus2 = insert(:location, slug: "kildonan_park", name_en: "Kildonan Park")
+
+      locus1 =
+        insert(:location, slug: "bunns_creek", name_en: "Bunn's Creek", location_type: "site")
+
+      locus2 =
+        insert(:location, slug: "kildonan_park", name_en: "Kildonan Park", location_type: "city")
 
       locus3 =
-        insert(:location, slug: "witches_hut", name_en: "Witch's Hut", ancestry: [locus2.id])
+        insert(:location,
+          slug: "witches_hut",
+          name_en: "Witch's Hut",
+          location_type: "site",
+          city_id: locus2.id
+        )
 
-      locus4 = insert(:location, slug: "assiniboine_park", name_en: "Assiniboine Park")
+      locus4 =
+        insert(:location,
+          slug: "assiniboine_park",
+          name_en: "Assiniboine Park",
+          location_type: "site"
+        )
 
       locus_5mr =
         insert(:location,
@@ -668,7 +703,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       canada =
         insert(:location, location_type: "country", name_en: "Canada", public_index: 1)
 
-      winnipeg = insert(:location, ancestry: [canada.id], cached_country_id: canada.id)
+      winnipeg = insert(:location, location_type: "city", country_id: canada.id)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, user: user, location: winnipeg)
@@ -726,8 +761,10 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
 
-      member_loc = insert(:location, name_en: "Member Location")
-      child_of_member = insert(:location, name_en: "Child", ancestry: [member_loc.id])
+      member_loc = insert(:location, name_en: "Member Location", location_type: "city")
+
+      child_of_member =
+        insert(:location, name_en: "Child", location_type: "site", city_id: member_loc.id)
 
       special_loc =
         insert(:location,

@@ -358,6 +358,94 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "Query.child_locations/1" do
+    defp child_location_ids(location) do
+      location |> Query.child_locations() |> Repo.all() |> Enum.map(& &1.id) |> Enum.sort()
+    end
+
+    test "includes the location itself and descendants via its level FK" do
+      country = insert(:location, location_type: "country")
+      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      city =
+        insert(:location,
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision.id
+        )
+
+      assert child_location_ids(country) == Enum.sort([country.id, subdivision.id, city.id])
+    end
+
+    test "dispatches on the location's own level" do
+      country = insert(:location, location_type: "country")
+      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      city =
+        insert(:location,
+          location_type: "city",
+          country_id: country.id,
+          subdivision1_id: subdivision.id
+        )
+
+      # descendants of the subdivision are matched by subdivision1_id, not the country
+      assert child_location_ids(subdivision) == Enum.sort([subdivision.id, city.id])
+    end
+
+    test "a section (lowest level) has only itself" do
+      country = insert(:location, location_type: "country")
+
+      section =
+        insert(:location, location_type: "section", country_id: country.id)
+
+      assert child_location_ids(section) == [section.id]
+    end
+  end
+
+  describe "Query.special_descendant_ids/1" do
+    test "unions each member's descendants and the members themselves" do
+      country = insert(:location, location_type: "country")
+      city = insert(:location, location_type: "city", country_id: country.id)
+      site = insert(:location, location_type: "site", country_id: country.id, city_id: city.id)
+      other = insert(:location, location_type: "city", country_id: country.id)
+
+      special =
+        insert(:location, location_type: "special", special_child_locations: [city])
+
+      ids = special |> Query.special_descendant_ids() |> Repo.all() |> Enum.sort()
+
+      assert ids == Enum.sort([city.id, site.id])
+      refute other.id in ids
+    end
+
+    test "is empty for a special with no members" do
+      special = insert(:location, location_type: "special")
+
+      assert special |> Query.special_descendant_ids() |> Repo.all() == []
+    end
+  end
+
+  describe "ancestor_ids/1" do
+    test "returns the non-null level FK values, top to bottom" do
+      country = insert(:location, location_type: "country")
+      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+
+      site =
+        insert(:location,
+          location_type: "site",
+          country_id: country.id,
+          subdivision1_id: subdivision.id
+        )
+
+      assert Location.ancestor_ids(site) == [country.id, subdivision.id]
+    end
+
+    test "is empty for a top-level country" do
+      country = insert(:location, location_type: "country")
+      assert Location.ancestor_ids(country) == []
+    end
+  end
+
   describe "to_flag_emoji/1" do
     test "returns flag emoji for iso code" do
       location = %Location{iso_code: "ca"}

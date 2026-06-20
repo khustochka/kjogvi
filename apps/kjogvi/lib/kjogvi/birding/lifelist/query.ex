@@ -136,19 +136,24 @@ defmodule Kjogvi.Birding.Lifelist.Query do
       |> distinct(true)
       |> select([_o, c], c.location_id)
 
+    # Each card location's level FK ancestors (`country_id … site_id`), unioned.
     ancestor_ids =
-      from(cl in Kjogvi.Geo.Location,
-        where: cl.id in subquery(card_location_ids),
-        select: fragment("unnest(?)", cl.ancestry)
-      )
+      Kjogvi.Geo.Location.level_fks()
+      |> Enum.map(fn fk ->
+        from(cl in Kjogvi.Geo.Location,
+          where: cl.id in subquery(card_location_ids) and not is_nil(field(cl, ^fk)),
+          select: field(cl, ^fk)
+        )
+      end)
+      |> Enum.reduce(&union(&2, ^&1))
 
+    # A special parent counts when its member is a card location or one of their
+    # ancestors.
     special_parent_ids =
-      from(cl in Kjogvi.Geo.Location,
-        where: cl.id in subquery(card_location_ids),
-        join: sl in "special_locations",
-        on:
-          field(sl, :child_location_id) == cl.id or
-            field(sl, :child_location_id) in cl.ancestry,
+      from(sl in "special_locations",
+        where:
+          field(sl, :child_location_id) in subquery(card_location_ids) or
+            field(sl, :child_location_id) in subquery(ancestor_ids),
         distinct: true,
         select: field(sl, :parent_location_id)
       )

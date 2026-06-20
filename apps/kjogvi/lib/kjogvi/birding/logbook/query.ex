@@ -10,8 +10,8 @@ defmodule Kjogvi.Birding.Logbook.Query do
 
   All scopes (World + each enabled location, total + year) are computed from a
   single scan of `observations ⨝ cards ⨝ species_taxa_mappings`. The base scan
-  is cross-joined against an inline `unnest` of scope ids, filtered by card
-  ancestry membership, and then collapsed with two `DISTINCT ON` queries
+  is cross-joined against an inline `unnest` of scope ids, filtered by the card
+  location's level FK ancestors, and then collapsed with two `DISTINCT ON` queries
   (one for life firsts, one for year firsts) unioned together. This replaces
   the old shape, which scanned the base join `2 × (N + 1)` times for
   N enabled locations.
@@ -26,8 +26,8 @@ defmodule Kjogvi.Birding.Logbook.Query do
   @doc false
   def firsts_in_range(scope, locations, {start_date, end_date}) do
     # Scope ids: nil represents the World scope. Each location id represents
-    # a per-location scope (matched by ancestry: a card belongs to scope L
-    # if its card.location_id == L or L is in card.location.ancestry).
+    # a per-location scope: a card belongs to scope L if its
+    # card.location_id == L or L is one of the card location's level FK ancestors.
     scope_ids = [nil | Enum.map(locations, & &1.id)]
 
     base_query =
@@ -84,8 +84,8 @@ defmodule Kjogvi.Birding.Logbook.Query do
 
   # Cross-join the base join against the list of scope ids and keep only
   # rows where the card belongs to that scope (World matches every card;
-  # a location scope matches when card.location_id == scope or the scope
-  # appears in the card location's ancestry).
+  # a location scope matches when card.location_id == scope or the scope is
+  # one of the card location's level FK ancestors).
   defp scoped_query(base_query, scope_ids) do
     from [observation: o, card: c, stm: stm, card_location: cl] in base_query,
       inner_lateral_join:
@@ -93,7 +93,9 @@ defmodule Kjogvi.Birding.Logbook.Query do
       on: true,
       where:
         is_nil(s.scope_id) or s.scope_id == c.location_id or
-          fragment("? = ANY(?)", s.scope_id, cl.ancestry),
+          s.scope_id == cl.country_id or s.scope_id == cl.subdivision1_id or
+          s.scope_id == cl.subdivision2_id or s.scope_id == cl.city_id or
+          s.scope_id == cl.site_id,
       select: %{
         species_page_id: stm.species_page_id,
         observ_date: c.observ_date,

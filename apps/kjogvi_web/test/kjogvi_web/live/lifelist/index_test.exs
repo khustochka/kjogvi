@@ -122,7 +122,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         public_index: 2
       )
 
-    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+    brovary =
+      insert(:location,
+        slug: "brovary",
+        name_en: "Brovary",
+        location_type: "city",
+        country_id: ukraine.id
+      )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
     card1 = insert(:card, user: user, location: brovary)
@@ -154,7 +160,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         public_index: 2
       )
 
-    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+    brovary =
+      insert(:location,
+        slug: "brovary",
+        name_en: "Brovary",
+        location_type: "city",
+        country_id: ukraine.id
+      )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
     card1 = insert(:card, user: user, observ_date: ~D"2022-11-18", location: brovary)
@@ -230,7 +242,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
       public_index: 2
     )
 
-    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+    brovary =
+      insert(:location,
+        slug: "brovary",
+        name_en: "Brovary",
+        location_type: "city",
+        country_id: ukraine.id
+      )
 
     {taxon, _} = Factory.create_species_taxon_with_page()
     card = insert(:card, user: user, location: brovary)
@@ -262,7 +280,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         public_index: 2
       )
 
-    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+    brovary =
+      insert(:location,
+        slug: "brovary",
+        name_en: "Brovary",
+        location_type: "city",
+        country_id: ukraine.id
+      )
 
     # Ukraine has a 2022 observation; USA only has a 2023 one.
     {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -394,7 +418,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         public_index: 1
       )
 
-    brovary = insert(:location, slug: "brovary", name_en: "Brovary", ancestry: [ukraine.id])
+    brovary =
+      insert(:location,
+        slug: "brovary",
+        name_en: "Brovary",
+        location_type: "city",
+        country_id: ukraine.id
+      )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
     card1 = insert(:card, user: user, observ_date: ~D"2022-11-18", location: brovary)

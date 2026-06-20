@@ -62,16 +62,15 @@ defmodule Kjogvi.GeoTest do
   end
 
   describe "get_logbook_settings_locations/0" do
-    test "includes countries and regions regardless of public_index" do
+    test "includes countries and subdivisions regardless of public_index" do
       country =
         insert(:location, location_type: "country", name_en: "Poland", public_index: nil)
 
-      region =
+      subdivision =
         insert(:location,
-          location_type: "region",
+          location_type: "subdivision1",
           name_en: "Pomerania",
-          ancestry: [country.id],
-          cached_country_id: country.id,
+          country_id: country.id,
           public_index: nil
         )
 
@@ -79,15 +78,15 @@ defmodule Kjogvi.GeoTest do
       ids = Enum.map(result, & &1.id)
 
       assert country.id in ids
-      assert region.id in ids
+      assert subdivision.id in ids
     end
 
-    test "includes non-country/region lifelist filters (e.g. continents)" do
-      continent =
-        insert(:location, location_type: "continent", name_en: "Europe", public_index: 1)
+    test "includes non-country/subdivision lifelist filters (e.g. a site)" do
+      site =
+        insert(:location, location_type: "site", name_en: "Backyard Patch", public_index: 1)
 
       result = Geo.get_logbook_settings_locations()
-      assert continent.id in Enum.map(result, & &1.id)
+      assert site.id in Enum.map(result, & &1.id)
     end
 
     test "excludes sites and other non-lifelist-filter locations" do
@@ -444,8 +443,8 @@ defmodule Kjogvi.GeoTest do
 
   describe "get_child_locations/1" do
     test "returns child locations with card counts" do
-      parent = insert(:location)
-      child = insert(:location, ancestry: [parent.id])
+      parent = insert(:location, location_type: "country")
+      child = insert(:location, location_type: "subdivision1", country_id: parent.id)
       insert(:card, location: child)
 
       results = Geo.get_child_locations(parent.id)
@@ -454,20 +453,25 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "excludes special locations" do
-      parent = insert(:location)
-      insert(:location, ancestry: [parent.id], location_type: "special")
-      insert(:location, ancestry: [parent.id], location_type: nil)
+      parent = insert(:location, location_type: "country")
+      insert(:location, location_type: "special", country_id: parent.id)
+      insert(:location, location_type: "subdivision1", country_id: parent.id)
 
       results = Geo.get_child_locations(parent.id)
       assert length(results) == 1
     end
 
     test "returns nested descendants" do
-      grandparent = insert(:location)
-      parent = insert(:location, ancestry: [grandparent.id])
-      insert(:location, ancestry: [grandparent.id, parent.id])
+      country = insert(:location, location_type: "country")
+      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
 
-      results = Geo.get_child_locations(grandparent.id)
+      insert(:location,
+        location_type: "city",
+        country_id: country.id,
+        subdivision1_id: subdivision.id
+      )
+
+      results = Geo.get_child_locations(country.id)
       assert length(results) == 2
     end
   end
@@ -480,12 +484,14 @@ defmodule Kjogvi.GeoTest do
       assert Enum.any?(results, &(&1.id == country.id))
     end
 
-    test "includes regions" do
+    test "includes subdivisions" do
       country = insert(:location, location_type: "country")
-      region = insert(:location, location_type: "region", ancestry: [country.id])
+
+      subdivision =
+        insert(:location, location_type: "subdivision1", country_id: country.id)
 
       results = Geo.get_upper_level_locations()
-      assert Enum.any?(results, &(&1.id == region.id))
+      assert Enum.any?(results, &(&1.id == subdivision.id))
     end
 
     test "excludes special locations" do

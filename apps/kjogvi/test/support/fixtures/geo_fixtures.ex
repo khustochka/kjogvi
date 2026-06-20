@@ -37,6 +37,11 @@ defmodule Kjogvi.GeoFixtures do
         :public_index,
         :cached_country_id,
         :cached_subdivision_id,
+        :country_id,
+        :subdivision1_id,
+        :subdivision2_id,
+        :city_id,
+        :site_id,
         :user_id
       ])
       |> validate_required([:slug, :name_en, :ancestry, :is_private])

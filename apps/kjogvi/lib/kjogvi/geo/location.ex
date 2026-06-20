@@ -114,6 +114,16 @@ defmodule Kjogvi.Geo.Location do
 
   def level_fks, do: @level_fks
 
+  @doc """
+  The location's ancestor ids, top to bottom: the non-null level FK values
+  (`country_id … site_id`). Reads the FK columns directly — no preload needed.
+  """
+  def ancestor_ids(location) do
+    @level_fks
+    |> Enum.map(&Map.fetch!(location, &1))
+    |> Enum.reject(&is_nil/1)
+  end
+
   @doc false
   def changeset(location, attrs) do
     location

@@ -31,7 +31,6 @@ defmodule Kjogvi.Birding.LogbookTest do
     GeoFixtures.location_fixture(%{
       name_en: name,
       location_type: "country",
-      ancestry: [],
       public_index: public_index
     })
   end
@@ -39,21 +38,18 @@ defmodule Kjogvi.Birding.LogbookTest do
   defp insert_subdivision(name, country, public_index \\ 10) do
     GeoFixtures.location_fixture(%{
       name_en: name,
-      location_type: "region",
-      ancestry: [country.id],
+      location_type: "subdivision1",
       public_index: public_index,
-      cached_country_id: country.id
+      country_id: country.id
     })
   end
 
   defp insert_site(country, subdivision \\ nil) do
-    ancestry =
-      if subdivision, do: [country.id, subdivision.id], else: [country.id]
-
     GeoFixtures.location_fixture(%{
       name_en: "Some Site",
       location_type: "site",
-      ancestry: ancestry
+      country_id: country.id,
+      subdivision1_id: if(subdivision, do: subdivision.id)
     })
   end
 

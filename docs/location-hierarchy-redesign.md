@@ -282,3 +282,34 @@ fixes/implements.
     public *location* for linking/identity — that's `raw_public_location`'s job,
     rebuilt over level FKs in stage 5). Added two cases: private leaf is dropped;
     a private mid-chain ancestor is dropped.
+- **Stage 5 (query primitives) — done (pending review).** Region filtering over
+  level FKs, reads only. **Scoped to the query layer**; the `my/locations`
+  index/show page rebuild (flat search list, dropping the `ancestry` tree view) is
+  split into a separate follow-up per the review-gate decision, so those
+  expand/collapse/tree-view tests stay red on purpose alongside the stage-6 form
+  tests.
+  - **Core primitive.** Rebuilt `Location.Query.child_locations/1` on the level
+    FKs: it dispatches on the location's own `location_type` to the matching
+    descendant column (`@descendant_fk`: `country → country_id … site → site_id`)
+    with `where field(l, fk) == id or l.id == id`; a `section` (no descendant
+    column) or unmapped type matches only itself. Requires `location_type` in the
+    passed map.
+  - **Consumers.** `Geo.get_child_locations/1` now loads the parent and rides
+    `child_locations/1` (excluding self). `Card.Query.by_location_with_descendants/1`
+    special clause + `Lifelist.Query.location_ids_query/2` special parents now use
+    a new `Location.Query.special_descendant_ids/1` — it loads the special's
+    members and unions each member's `child_locations/1` (selecting ids). The
+    lifelist `unnest(ancestry)` ancestor roll-up became a union of the five level
+    FK columns of card locations.
+  - **Logbook.** `Logbook.Query.scoped_query/1` replaced
+    `scope_id = ANY(cl.ancestry)` with explicit `scope_id == cl.<level>_id` across
+    the five FKs. `Logbook` ancestor-chain / depth ordering now use a new
+    `Location.ancestor_ids/1` (the non-null level FK values, read straight off the
+    columns — no preload) instead of `area.ancestry`.
+  - **Tests.** New `child_locations/1`, `special_descendant_ids/1`, and
+    `ancestor_ids/1` describes in `location_test.exs`; `geo_test`, `logbook_test`,
+    `lifelist_test`, `card_search_test`, and `lifelist/index_test` fixtures
+    migrated from `ancestry`/`cached_*` to level FKs. `GeoFixtures.location_fixture`
+    cast whitelist gained the five level FK columns (they were silently dropped).
+    Core `kjogvi` app suite green; remaining red tests are all stage-6
+    (form/create-update) or the deferred index/show tree view.
