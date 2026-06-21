@@ -526,11 +526,10 @@ defmodule Kjogvi.Birding.LifelistTest do
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
       assert length(result.list) == 1
-      # The public-area lifelist must not surface the private location: it resolves
-      # to the nearest public ancestor (the city).
+      # The public-area lifelist must not surface the private location: its public
+      # name drops the private segment, leaving the public ancestors.
       [lifer] = result.list
-      assert lifer.public_location.id == city.id
-      refute lifer.public_location.is_private
+      assert Kjogvi.Geo.Location.long_name(:public, lifer.location) == "Winnipeg, Canada"
     end
 
     test "with heard only separated" do

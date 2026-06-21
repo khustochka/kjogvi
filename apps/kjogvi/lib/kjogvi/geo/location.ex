@@ -396,19 +396,6 @@ defmodule Kjogvi.Geo.Location do
     |> Enum.map_join(", ", & &1.name_en)
   end
 
-  @doc """
-  The nearest non-private location for public display: the location itself if it
-  is public, otherwise its most-specific non-private level FK ancestor.
-
-  Returns `nil` only if the location and all its ancestors are private. Requires
-  the level associations to be preloaded (`Query.preload_levels/1` /
-  `Query.level_assocs/0`).
-  """
-  def public_location_from_levels(location) do
-    [location | level_ancestors(location)]
-    |> Enum.find(&(!&1.is_private))
-  end
-
   defp level_ancestors(location) do
     @name_assocs
     |> Enum.map(&Map.get(location, &1))

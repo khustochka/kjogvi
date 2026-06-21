@@ -103,7 +103,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         location_siblings: location_siblings,
         location_children: location_children
       )
-      |> derive_location_field()
       |> derive_page_header()
       |> derive_page_title()
       |> derive_robots()
@@ -326,7 +325,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             id="lifelist-table"
             show_private_details={@lifelist_scope.include_private}
             groups={@lifer_groups}
-            location_field={@location_field}
             sort={@filter.sort}
           />
         </div>
@@ -340,7 +338,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             id="lifelist-heard-only-table"
             show_private_details={@lifelist_scope.include_private}
             groups={@heard_only_groups}
-            location_field={@location_field}
             sort={@filter.sort}
             anchor_prefix="heard-only-"
           />
@@ -358,18 +355,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       {:ok, filter} -> filter
       {:error, _} -> raise Plug.BadRequestError
     end
-  end
-
-  defp derive_location_field(%{assigns: assigns} = socket) do
-    socket
-    |> assign(
-      :location_field,
-      if assigns.lifelist_scope.include_private do
-        :location
-      else
-        :public_location
-      end
-    )
   end
 
   defp derive_page_header(socket) do

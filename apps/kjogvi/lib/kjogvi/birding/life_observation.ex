@@ -16,7 +16,5 @@ defmodule Kjogvi.Birding.LifeObservation do
 
     belongs_to(:location, Kjogvi.Geo.Location)
     belongs_to(:card, Kjogvi.Birding.Card)
-
-    belongs_to(:public_location, Kjogvi.Geo.Location)
   end
 end

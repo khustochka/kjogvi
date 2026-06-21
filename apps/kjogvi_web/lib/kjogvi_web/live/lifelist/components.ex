@@ -8,7 +8,6 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   attr :id, :string, required: true
   attr :show_private_details, :boolean, default: false
   attr :groups, :list, required: true
-  attr :location_field, :atom, required: true
   attr :sort, :atom, default: :date
   attr :anchor_prefix, :string, default: ""
 
@@ -29,7 +28,6 @@ defmodule KjogviWeb.Live.Lifelist.Components do
                 id={lifer_id(@anchor_prefix, @sort, rank)}
                 value={rank}
                 lifer={lifer}
-                location_field={@location_field}
                 show_private_details={@show_private_details}
               />
             <% end %>
@@ -107,7 +105,6 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   attr :id, :string, default: nil
   attr :value, :integer, default: nil
   attr :lifer, :any, required: true
-  attr :location_field, :atom, required: true
   attr :show_private_details, :boolean, default: false
 
   defp lifer_row(assigns) do
@@ -138,8 +135,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         />
       </div>
       <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
-        <%= with location when not is_nil(location) <-
-                 get_in(@lifer, [Access.key!(@location_field)]) do %>
+        <%= with location when not is_nil(location) <- @lifer.location do %>
           {location_name(location, @show_private_details)}
         <% end %>
       </div>

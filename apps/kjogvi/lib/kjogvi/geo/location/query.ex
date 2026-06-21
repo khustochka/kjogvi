@@ -212,38 +212,13 @@ defmodule Kjogvi.Geo.Location.Query do
     |> select([l], l.id)
   end
 
+  @doc """
+  Preloads each thing's `location` with the level FK associations its display
+  name needs (`Location.long_name/2`).
+  """
   def preload_all_locations(things) do
     level_preload = Enum.map(@level_assocs, &{&1, minimal_select()})
 
-    things
-    |> Repo.preload(location: {minimal_select(), level_preload})
-    |> Enum.map(fn thing ->
-      loc = Location.public_location_from_levels(thing.location)
-
-      thing
-      |> Map.put(:public_location, loc)
-      |> Map.put(:public_location_id, loc && loc.id)
-    end)
-    |> preload_public_location_levels()
-  end
-
-  # The resolved public_location is the card location itself or one of its level
-  # FK ancestors; preload the level assocs on those ancestors so their display
-  # name can be built too.
-  defp preload_public_location_levels(things) do
-    public_locations =
-      things
-      |> Enum.map(& &1.public_location)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.uniq_by(& &1.id)
-      |> Repo.preload(Enum.map(@level_assocs, &{&1, minimal_select()}))
-      |> Map.new(&{&1.id, &1})
-
-    Enum.map(things, fn thing ->
-      case thing.public_location do
-        nil -> thing
-        loc -> Map.put(thing, :public_location, public_locations[loc.id])
-      end
-    end)
+    Repo.preload(things, location: {minimal_select(), level_preload})
   end
 end
