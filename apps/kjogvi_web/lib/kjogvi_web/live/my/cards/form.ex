@@ -335,7 +335,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
   # Display helpers - get names from nested structs
 
   defp location_display(%{location: %Geo.Location{} = loc}),
-    do: Geo.Location.long_name(loc)
+    do: Geo.Location.long_name(:private, loc)
 
   defp location_display(_), do: ""
 

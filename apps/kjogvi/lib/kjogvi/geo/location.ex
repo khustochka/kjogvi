@@ -6,7 +6,7 @@ defmodule Kjogvi.Geo.Location do
   `country_id … site_id` (one per ordered level above `section`). They name the
   ancestor at each level directly, so selecting a region (all locations under a
   country, etc.) and building a full display name are simple FK reads — see
-  `ancestor_ids/1` and `long_name/1`.
+  `ancestor_ids/1` and `long_name/2`.
   """
 
   use Kjogvi.Schema
@@ -366,25 +366,31 @@ defmodule Kjogvi.Geo.Location do
   @name_assocs ~w(site city subdivision2 subdivision1 country)a
 
   @doc """
-  Builds a location's full display name from its level FK ancestors.
+  Builds a location's full display name from its level FK ancestors: the
+  location's own `name_en`, followed by each set ancestor's `name_en` from the
+  most specific level (`site`) up to `country`, joined by `", "`.
 
-  The location's own `name_en`, followed by each set ancestor's `name_en` from
-  the most specific level (`site`) up to `country`, joined by `", "`. Includes
-  every segment regardless of privacy — for owner-facing contexts. Use
-  `public_long_name/1` where private segments must be hidden. Requires the level
-  associations to be preloaded (`Query.preload_levels/1` / `Query.level_assocs/0`).
+  The first argument is the visibility:
+
+    * `:private` — include every segment regardless of privacy. For owner-facing
+      contexts, where the owner may see their own private location names.
+    * `:public` — drop private segments (the location itself or any ancestor with
+      `is_private`), so a private location's name never surfaces. For
+      public-facing display. Note a resolved public location can still carry a
+      private ancestor (privacy is not downward-closed), so this filtering is
+      required even on an already-public location.
+
+  Requires the level associations to be preloaded (`Query.preload_levels/1` /
+  `Query.level_assocs/0`).
   """
-  def long_name(location) do
+  def long_name(visibility, location)
+
+  def long_name(:private, location) do
     [location | level_ancestors(location)]
     |> Enum.map_join(", ", & &1.name_en)
   end
 
-  @doc """
-  Like `long_name/1`, but drops private segments (the location itself or any
-  ancestor with `is_private`), so a private location's name never surfaces. For
-  public-facing display.
-  """
-  def public_long_name(location) do
+  def long_name(:public, location) do
     [location | level_ancestors(location)]
     |> Enum.reject(& &1.is_private)
     |> Enum.map_join(", ", & &1.name_en)

@@ -51,7 +51,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocomplete do
       errors={@errors}
     >
       <:result :let={%{result: result, term: term}}>
-        <Highlight.highlighted_text text={Location.long_name(result)} term={term} />
+        <Highlight.highlighted_text text={Location.long_name(:private, result)} term={term} />
       </:result>
     </.live_component>
     """

@@ -43,6 +43,16 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   defp lifer_id(_prefix, :taxonomy, _rank), do: nil
   defp lifer_id(prefix, :date, rank), do: "#{prefix}lifer-#{rank}"
 
+  # On the owner's private view, show the full name including the owner's own
+  # private locations. On a public list, drop private segments — the resolved
+  # public location can still carry a private ancestor (privacy isn't
+  # downward-closed), and its name must not surface.
+  defp location_name(location, true = _show_private_details),
+    do: Geo.Location.long_name(:private, location)
+
+  defp location_name(location, false = _show_private_details),
+    do: Geo.Location.long_name(:public, location)
+
   attr :header, :any, required: true
   attr :anchor_prefix, :string, default: ""
   attr :class, :any, default: nil
@@ -130,7 +140,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
         <%= with location when not is_nil(location) <-
                  get_in(@lifer, [Access.key!(@location_field)]) do %>
-          {Geo.Location.long_name(location)}
+          {location_name(location, @show_private_details)}
         <% end %>
       </div>
     </li>

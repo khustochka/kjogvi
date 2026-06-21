@@ -211,12 +211,12 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       assert Enum.any?(
                results,
-               &String.contains?(Geo.Location.long_name(&1), "Public")
+               &String.contains?(Geo.Location.long_name(:private, &1), "Public")
              )
 
       assert Enum.any?(
                results,
-               &String.contains?(Geo.Location.long_name(&1), "Private")
+               &String.contains?(Geo.Location.long_name(:private, &1), "Private")
              )
     end
 
@@ -226,7 +226,7 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       results = Search.Location.search_locations(Geo.Location, "Park")
       assert results != []
-      assert Geo.Location.long_name(Enum.at(results, 0)) =~ "Park"
+      assert Geo.Location.long_name(:private, Enum.at(results, 0)) =~ "Park"
     end
   end
 

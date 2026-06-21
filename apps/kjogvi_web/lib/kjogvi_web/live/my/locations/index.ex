@@ -222,10 +222,10 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div class="flex-1 min-w-0">
         <.location_row location={@location} />
         <p
-          :if={Location.long_name(@location) != @location.name_en}
+          :if={Location.long_name(:private, @location) != @location.name_en}
           class="mt-1 text-xs text-stone-400"
         >
-          {Location.long_name(@location)}
+          {Location.long_name(:private, @location)}
         </p>
       </div>
 

@@ -510,7 +510,7 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
-  describe "long_name/1" do
+  describe "long_name/2" do
     setup do
       country = insert(:location, name_en: "Canada", location_type: "country")
 
@@ -546,7 +546,7 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "composes own name then ancestors most-specific to country", %{site: site} do
-      assert site |> preload_levels() |> Location.long_name() ==
+      assert Location.long_name(:private, preload_levels(site)) ==
                "Assiniboine Park, Winnipeg, Manitoba, Canada"
     end
 
@@ -559,15 +559,14 @@ defmodule Kjogvi.Geo.LocationTest do
           country_id: country.id
         )
 
-      assert city |> preload_levels() |> Location.long_name() ==
-               "Lonely City, Canada"
+      assert Location.long_name(:private, preload_levels(city)) == "Lonely City, Canada"
     end
 
     test "a top-level country is just its own name", %{country: country} do
-      assert country |> preload_levels() |> Location.long_name() == "Canada"
+      assert Location.long_name(:private, preload_levels(country)) == "Canada"
     end
 
-    test "includes private segments (owner-facing, no filtering)", %{
+    test ":private includes private segments (owner-facing, no filtering)", %{
       country: country,
       subdivision1: subdivision1,
       city: city
@@ -582,34 +581,11 @@ defmodule Kjogvi.Geo.LocationTest do
           city_id: city.id
         )
 
-      assert private_site |> preload_levels() |> Location.long_name() ==
+      assert Location.long_name(:private, preload_levels(private_site)) ==
                "Secret Patch, Winnipeg, Manitoba, Canada"
     end
-  end
 
-  describe "public_long_name/1" do
-    setup do
-      country = insert(:location, name_en: "Canada", location_type: "country")
-
-      subdivision1 =
-        insert(:location,
-          name_en: "Manitoba",
-          location_type: "subdivision1",
-          country_id: country.id
-        )
-
-      city =
-        insert(:location,
-          name_en: "Winnipeg",
-          location_type: "city",
-          country_id: country.id,
-          subdivision1_id: subdivision1.id
-        )
-
-      %{country: country, subdivision1: subdivision1, city: city}
-    end
-
-    test "drops the location itself when it is private", %{
+    test ":public drops the location itself when it is private", %{
       country: country,
       subdivision1: subdivision1,
       city: city
@@ -624,11 +600,11 @@ defmodule Kjogvi.Geo.LocationTest do
           city_id: city.id
         )
 
-      assert private_site |> preload_levels() |> Location.public_long_name() ==
+      assert Location.long_name(:public, preload_levels(private_site)) ==
                "Winnipeg, Manitoba, Canada"
     end
 
-    test "drops a private ancestor from the chain", %{
+    test ":public drops a private ancestor from the chain", %{
       country: country,
       subdivision1: subdivision1
     } do
@@ -650,7 +626,7 @@ defmodule Kjogvi.Geo.LocationTest do
           city_id: private_city.id
         )
 
-      assert site |> preload_levels() |> Location.public_long_name() ==
+      assert Location.long_name(:public, preload_levels(site)) ==
                "Open Patch, Manitoba, Canada"
     end
   end

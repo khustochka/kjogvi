@@ -190,7 +190,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           <.autocomplete_row
             field="parent"
             label="Parent"
-            current_label={@parent_struct && Location.long_name(@parent_struct)}
+            current_label={@parent_struct && Location.long_name(:private, @parent_struct)}
             current_id={@form[:parent_id].value}
             on_select_event="parent_selected"
             scope={@current_scope}
@@ -233,7 +233,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       </div>
 
       <div :if={@parent_struct} id="location-ancestry-summary" class="text-sm text-stone-500 pt-1">
-        Ancestry: {Location.long_name(@parent_struct)}
+        Ancestry: {Location.long_name(:private, @parent_struct)}
       </div>
 
       <div class="pt-2">

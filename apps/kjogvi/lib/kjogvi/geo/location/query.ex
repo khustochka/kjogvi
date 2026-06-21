@@ -26,7 +26,7 @@ defmodule Kjogvi.Geo.Location.Query do
   ]
 
   # The level FK associations needed to render a location's display name
-  # (`Location.long_name/1`).
+  # (`Location.long_name/2`).
   @level_assocs [:country, :subdivision1, :subdivision2, :city, :site]
 
   @doc """

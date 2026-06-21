@@ -32,6 +32,41 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert get_number_of_species(html) == 1
   end
 
+  test "public lifelist hides a private ancestor's name in the location column",
+       %{conn: conn, user: user} do
+    {taxon, _} = Factory.create_species_taxon_with_page()
+
+    country = insert(:location, name_en: "Canada", location_type: "country")
+
+    # A private subdivision1 between the public country and a public city.
+    secret =
+      insert(:location,
+        name_en: "SecretRegion",
+        location_type: "subdivision1",
+        is_private: true,
+        country_id: country.id
+      )
+
+    city =
+      insert(:location,
+        name_en: "Winnipeg",
+        location_type: "city",
+        country_id: country.id,
+        subdivision1_id: secret.id
+      )
+
+    insert(:observation,
+      taxon_key: Ornitho.Schema.Taxon.key(taxon),
+      card: insert(:card, user: user, location: city)
+    )
+
+    {:ok, _index_live, html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
+
+    assert html =~ "Winnipeg"
+    assert html =~ "Canada"
+    refute html =~ "SecretRegion"
+  end
+
   test "renders with spuh observation", %{conn: conn, user: user} do
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
 
