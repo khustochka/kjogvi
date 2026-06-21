@@ -82,7 +82,20 @@ Keep query-building out of context modules. Each schema has a dedicated `<Schema
 Prefer `:telemetry` for cross-cutting concerns: emit `:telemetry` events for logging and for lifecycle / domain events, and attach handlers (or PubSub broadcasts) to react to them — rather than threading logging and side-effects directly through business logic. This keeps contexts focused on their core work and observable from the outside.
 
 ### Birding Data
-[`Kjogvi.Birding`](./apps/kjogvi/lib/kjogvi/birding.ex) context, `Card`/`Location` models with privacy settings (`is_private`).
+[`Kjogvi.Birding`](./apps/kjogvi/lib/kjogvi/birding.ex) is the cards-and-observations context. A `Card` is a checklist — one dated visit at a `Location` (effort, weather, observers, …) — that `has_many` `Observation`s, each recording a taxon seen. Cards are user-owned.
+
+### Locations
+Locations live in [`Kjogvi.Geo`](./apps/kjogvi/lib/kjogvi/geo.ex), with the [`Location`](./apps/kjogvi/lib/kjogvi/geo/location.ex) schema and its [`Location.Query`](./apps/kjogvi/lib/kjogvi/geo/location/query.ex) module. Every location has a required `location_type` and is either **user-belonging** (a `user_id` owner, managed by and private to that user) or **common** (a `nil` owner, shared across all users — see `Query.for_user/2`). The intended split: `country` and `subdivision1` are common, everything below is user-belonging; lower-level common locations (counties, cities, hotspots) may be added over time.
+
+**Hierarchy via denormalized level FKs.** The ordered levels, top to bottom, are `country → subdivision1 → subdivision2 → city → site → section`. A location's place in the tree is stored not as a single `parent_id` but as one FK per level *above* `section`: `country_id, subdivision1_id, subdivision2_id, city_id, site_id`. Each names the ancestor at that level directly, so "everything under a country", a location's ancestor chain, and its full display name are plain FK reads — no recursion. `section` is the lowest level and is never an ancestor, so it has no FK column. Levels are skippable (a city may hang directly off a country).
+
+- **Editing** sets a virtual `parent_id`; `Location.changeset/2` derives the five level FKs from the chosen parent (`level_fks_from_parent/1`). `parent_id_from_levels/1` / `ancestor_ids/1` read them back.
+- **Invariants** are enforced in the changeset (`validate_slot_occupancy/2`): no FK at the location's own level or below, every non-country belongs to a country, and each ancestor's higher FKs stay prefix-consistent. Changing a `location_type` is band-checked (`validate_location_type_change/1`) and cascades descendants' FKs onto the new level column (`Geo.update_location/3` → `Query.move_descendants/3`).
+- **Descendant queries** read the level FKs in reverse: `Query.child_locations/1` (self + all descendants), `Query.direct_children/1` (immediate children only).
+
+**`special` type.** A `special` sits *outside* the ordered hierarchy (no level, no FK slot) and is an amalgamation of member locations joined via the `special_locations` table (`special_child_locations` / `special_parent_locations`). It cannot be a hierarchy parent. A card counts toward a special when its location is a member or a descendant of one (`Query.special_descendant_ids/1`). Most list queries exclude specials explicitly; `Geo.get_specials/1` and `special_member_locations/1` handle them.
+
+**Display names & privacy.** `Location.long_name/2` builds the comma-joined "own name, …, country" string from the preloaded level associations (`Query.preload_levels/1` / `level_assocs/0`). Pass `:private` to include every segment or `:public` to drop any `is_private` segment — privacy is *not* downward-closed, so a public location can still carry a private ancestor and must be filtered. `public_index` (distinct from `is_private`) marks the subset of locations offered as lifelist filters (`show_on_lifelist?/1`).
 
 ### Taxonomy
 Use `Kjogvi.OrnithoRepo` via [ornithologue](./apps/ornithologue/). Mounted at `/taxonomy` with the `ornitho_web` macro.
@@ -107,7 +120,9 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 | [apps/kjogvi/lib/kjogvi/settings.ex](./apps/kjogvi/lib/kjogvi/settings.ex) | Site-wide settings & feature flags |
 | [apps/kjogvi_web/user_auth.ex](./apps/kjogvi_web/lib/kjogvi_web/user_auth.ex) | Auth + `put_area_*`/`mount_area_*` (in plug.ex/user_auth.ex) |
 | [apps/kjogvi/lib/kjogvi/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex) | Birding context & card logic |
-| [apps/kjogvi/lib/kjogvi/geo/location.ex](./apps/kjogvi/lib/kjogvi/geo/location.ex) | Location model with privacy |
+| [apps/kjogvi/lib/kjogvi/geo.ex](./apps/kjogvi/lib/kjogvi/geo.ex) | Geo context: location CRUD, hierarchy & lifelist queries |
+| [apps/kjogvi/lib/kjogvi/geo/location.ex](./apps/kjogvi/lib/kjogvi/geo/location.ex) | Location schema: level-FK hierarchy, types, privacy |
+| [apps/kjogvi/lib/kjogvi/geo/location/query.ex](./apps/kjogvi/lib/kjogvi/geo/location/query.ex) | Location queries: descendants, specials, name preloads |
 
 ## Essential Libraries
 
