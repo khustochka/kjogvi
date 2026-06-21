@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict M2DpRWXnLuiNYaT73qBP5b3dt12grMf9SXI7IoewoIQdBDvM7juveTBTdvQBOH7
+\restrict iihZTVSKM8rnJJf7kmhS5WQaQqcJc5rTou4bLNfHd2zQhU2tYkcfVXdoXrI3rUG
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -171,7 +171,7 @@ CREATE TABLE public.locations (
     slug character varying(64) NOT NULL,
     name_en character varying(255) NOT NULL,
     location_type character varying(32) NOT NULL,
-    iso_code character varying(3),
+    iso_code character varying(16),
     lat numeric(8,5),
     lon numeric(8,5),
     public_index smallint,
@@ -944,7 +944,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict M2DpRWXnLuiNYaT73qBP5b3dt12grMf9SXI7IoewoIQdBDvM7juveTBTdvQBOH7
+\unrestrict iihZTVSKM8rnJJf7kmhS5WQaQqcJc5rTou4bLNfHd2zQhU2tYkcfVXdoXrI3rUG
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -967,6 +967,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260612000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260613120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260615170413);
 INSERT INTO public."schema_migrations" (version) VALUES (20260618000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260618000100);
 INSERT INTO public."schema_migrations" (version) VALUES (20260618184652);
 INSERT INTO public."schema_migrations" (version) VALUES (20260619120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260620000000);

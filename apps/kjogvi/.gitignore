@@ -24,3 +24,8 @@ erl_crash.dump
 
 # Ignore package tarball (built via "mix hex.build").
 kjogvi-*.tar
+
+# Generated ISO 3166 import data (built via priv/geo/build_iso_3166.exs).
+# Hosted out-of-band (e.g. a GitHub release asset) and fetched at import time,
+# not committed.
+/priv/geo/iso_3166.jsonl
