@@ -498,3 +498,21 @@ fixes/implements.
     `my/logbook/index_test.exs` (the latter's `site` now hangs off `country_id`).
     Full suite green (535 core + 460 web; 6 core skips = 5 disabled legacy-import
     cases + 1 pre-existing, 1 web pre-existing skip). Lint clean.
+- **Post-cleanup: special is not a hierarchy parent; skip a redundant changeset
+  query.** Two related refinements to `Location.changeset/2`:
+  - **`special` rejected as a parent.** A `special` is a member-amalgamation
+    (`special_locations` join), never a regular hierarchy parent. `changeset/2`
+    now rejects a `:special` `parent_id` the same way it rejects `:section`
+    (`@hierarchy_parent_types` = the levels with an FK slot, `country … site`);
+    `level_fks_from_parent/1` consequently only ever receives a hierarchy-level
+    parent, so its old "special parent contributes its FKs but no slot" branch
+    (and the matching test) are gone. This reverses the earlier stage-6
+    "`special` parents are still valid" note.
+  - **No redundant prefix-consistency query.** `put_level_fks_from_parent/1` now
+    returns the loaded parent, threaded into `validate_slot_occupancy/2`. When the
+    level FKs were derived from a (now always hierarchy-level) parent,
+    prefix-consistency holds by construction — the FKs are the parent's own
+    already-validated FKs plus the parent in its slot — so the DB roundtrip in
+    `validate_prefix_consistency` is skipped. The standalone
+    `validate_slot_occupancy/1` (direct FK cast, e.g. the stage-3 unit tests) still
+    queries. Full suite green; lint clean.

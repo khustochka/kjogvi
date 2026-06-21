@@ -34,6 +34,11 @@ defmodule Kjogvi.Geo.Location do
                         fk}
                      end)
 
+  # The levels that can be a regular hierarchy parent: every level that has an FK
+  # slot (so a child can point at it). `section` is the lowest level and never an
+  # ancestor; `special` is a member-amalgamation, not a hierarchy parent.
+  @hierarchy_parent_types Map.keys(@level_fk_by_level)
+
   schema "locations" do
     field :slug, :string
     field :name_en, :string
@@ -117,16 +122,20 @@ defmodule Kjogvi.Geo.Location do
 
   @doc false
   def changeset(location, attrs) do
-    location
-    |> cast(attrs, @editable_fields)
-    |> validate_required([
-      :slug,
-      :name_en,
-      :is_private
-    ])
-    |> unique_constraint(:slug)
-    |> put_level_fks_from_parent()
-    |> validate_slot_occupancy()
+    changeset =
+      location
+      |> cast(attrs, @editable_fields)
+      |> validate_required([
+        :slug,
+        :name_en,
+        :is_private
+      ])
+      |> unique_constraint(:slug)
+
+    {changeset, parent} = put_level_fks_from_parent(changeset)
+
+    changeset
+    |> validate_slot_occupancy(parent)
     |> validate_location_type_change()
   end
 
@@ -134,20 +143,29 @@ defmodule Kjogvi.Geo.Location do
   # columns from the chosen parent. A nil `parent_id` clears them. When
   # `parent_id` was not cast at all (e.g. an edit that touches only the name),
   # the existing FKs are left untouched.
+  #
+  # Returns `{changeset, parent}` — the loaded parent is threaded into
+  # `validate_slot_occupancy/2` so it can skip re-querying the ancestors whose
+  # consistency the parent already guarantees (see `validate_prefix_consistency`).
   defp put_level_fks_from_parent(changeset) do
     case fetch_change(changeset, :parent_id) do
       {:ok, nil} ->
-        clear_level_fks(changeset)
+        {clear_level_fks(changeset), nil}
 
       {:ok, parent_id} ->
         case Repo.get(__MODULE__, parent_id) do
-          nil -> add_error(changeset, :parent_id, "does not exist")
-          %{location_type: :section} -> add_error(changeset, :parent_id, "cannot be a section")
-          parent -> put_level_fks(changeset, parent)
+          nil ->
+            {add_error(changeset, :parent_id, "does not exist"), nil}
+
+          %{location_type: type} when type not in @hierarchy_parent_types ->
+            {add_error(changeset, :parent_id, "cannot be a #{type}"), nil}
+
+          parent ->
+            {put_level_fks(changeset, parent), parent}
         end
 
       :error ->
-        changeset
+        {changeset, nil}
     end
   end
 
@@ -163,18 +181,17 @@ defmodule Kjogvi.Geo.Location do
 
   @doc """
   The five level FK values a child would inherit from `parent`: the parent's own
-  level FKs, plus the parent itself placed into the slot for its `location_type`
-  (when the parent is one of the five ancestor-capable levels). A `special`
-  parent contributes its FKs but no slot of its own. (A `section` can't be a
-  parent — `changeset/2` rejects it before this is reached.)
+  level FKs, plus the parent itself placed into the slot for its `location_type`.
+
+  Only a hierarchy-level parent (`country … site`) reaches here — `changeset/2`
+  rejects `section` and `special` parents before this is called.
   """
   def level_fks_from_parent(parent) do
-    base = Map.new(@level_fks, fn fk -> {fk, Map.get(parent, fk)} end)
+    fk = Map.fetch!(@level_fk_by_level, parent.location_type)
 
-    case Map.get(@level_fk_by_level, parent.location_type) do
-      nil -> base
-      fk -> Map.put(base, fk, parent.id)
-    end
+    @level_fks
+    |> Map.new(fn fk -> {fk, Map.get(parent, fk)} end)
+    |> Map.put(fk, parent.id)
   end
 
   @doc """
@@ -194,22 +211,22 @@ defmodule Kjogvi.Geo.Location do
   is exempt. This is a pure single-row check (it loads the referenced ancestors
   only for prefix-consistency); it does not set any FKs.
   """
-  def validate_slot_occupancy(changeset) do
+  def validate_slot_occupancy(changeset, parent \\ nil) do
     case get_field(changeset, :location_type) do
       nil -> changeset
       :special -> changeset
-      location_type -> validate_levels(changeset, location_type)
+      location_type -> validate_levels(changeset, location_type, parent)
     end
   end
 
-  defp validate_levels(changeset, location_type) do
+  defp validate_levels(changeset, location_type, parent) do
     set_levels =
       for {level, fk} <- @level_fk_by_level, not is_nil(get_field(changeset, fk)), do: level
 
     changeset
     |> validate_own_level_and_below(location_type, set_levels)
     |> validate_has_country(location_type)
-    |> validate_prefix_consistency()
+    |> validate_prefix_consistency(parent)
   end
 
   # No FK at the location's own level or below.
@@ -237,9 +254,17 @@ defmodule Kjogvi.Geo.Location do
   end
 
   # Each set ancestor's own higher-level FKs equal this location's.
-  defp validate_prefix_consistency(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+  defp validate_prefix_consistency(%Ecto.Changeset{valid?: false} = changeset, _parent),
+    do: changeset
 
-  defp validate_prefix_consistency(changeset) do
+  # When the level FKs were derived from a loaded parent, prefix-consistency
+  # holds by construction: the parent is always a hierarchy level (changeset/2
+  # rejects section/special), so the FKs are its own already-validated FKs plus
+  # the parent in its slot, and every ancestor's higher FKs transitively equal
+  # this location's. No query needed.
+  defp validate_prefix_consistency(changeset, %__MODULE__{}), do: changeset
+
+  defp validate_prefix_consistency(changeset, nil) do
     set =
       for {level, fk} <- @level_fk_by_level, id = get_field(changeset, fk), do: {level, fk, id}
 

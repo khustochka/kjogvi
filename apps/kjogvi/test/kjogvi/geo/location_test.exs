@@ -137,6 +137,22 @@ defmodule Kjogvi.Geo.LocationTest do
       assert %{parent_id: ["cannot be a section"]} = errors_on(changeset)
     end
 
+    test "rejects a special parent (a special is not a hierarchy parent)", %{country: country} do
+      special =
+        insert(:location, name_en: "Patch", location_type: :special, country_id: country.id)
+
+      changeset =
+        Location.changeset(%Location{}, %{
+          "slug" => "z",
+          "name_en" => "Z",
+          "is_private" => false,
+          "location_type" => "city",
+          "parent_id" => special.id
+        })
+
+      assert %{parent_id: ["cannot be a special"]} = errors_on(changeset)
+    end
+
     test "rejects a parent at the new location's own level", %{
       country: country,
       subdivision1: subdivision1
@@ -301,17 +317,6 @@ defmodule Kjogvi.Geo.LocationTest do
                city_id: nil,
                site_id: nil
              }
-    end
-
-    test "a special parent contributes its FKs but no slot of its own" do
-      country = insert(:location, name_en: "Canada", location_type: :country)
-
-      special =
-        insert(:location, name_en: "Patch", location_type: :special, country_id: country.id)
-
-      fks = Location.level_fks_from_parent(special)
-      assert fks.country_id == country.id
-      assert fks.subdivision1_id == nil
     end
   end
 
