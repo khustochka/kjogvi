@@ -55,8 +55,8 @@ defmodule Kjogvi.Search.Location do
         ilike(l.slug, ^ilike_term) or
         ilike(l.iso_code, ^ilike_term)
     )
-    |> preload(^Location.Query.level_assocs())
     |> Repo.all()
+    |> Location.Query.put_levels()
     |> Enum.sort_by(&sort_priority(&1, term_lower))
     |> Enum.take(limit)
   end

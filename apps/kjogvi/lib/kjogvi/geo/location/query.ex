@@ -215,10 +215,78 @@ defmodule Kjogvi.Geo.Location.Query do
   @doc """
   Preloads each thing's `location` with the level FK associations its display
   name needs (`Location.long_name/2`).
+
+  Delegates to `put_location_levels/1` so all five levels load in one query
+  instead of one per association.
   """
   def preload_all_locations(things) do
-    level_preload = Enum.map(@level_assocs, &{&1, minimal_select()})
+    put_location_levels(things)
+  end
 
-    Repo.preload(things, location: {minimal_select(), level_preload})
+  @doc """
+  Attaches the level FK associations to each thing's `location` in a single
+  query.
+
+  Accepts cards/observations/etc. that have a `:location` association (loaded or
+  not — it is preloaded first if needed), then batches every level for every
+  location through `put_levels/1`. Replaces the per-level preload (`country …
+  site` = five queries) with one.
+  """
+  def put_location_levels(things) do
+    things = Repo.preload(things, :location)
+
+    locations =
+      things
+      |> List.wrap()
+      |> Enum.map(& &1.location)
+      |> Enum.reject(&is_nil/1)
+      |> put_levels()
+      |> Map.new(&{&1.id, &1})
+
+    map_things(things, fn thing ->
+      case thing.location do
+        nil -> thing
+        location -> %{thing | location: Map.fetch!(locations, location.id)}
+      end
+    end)
+  end
+
+  defp map_things(things, fun) when is_list(things), do: Enum.map(things, fun)
+  defp map_things(thing, fun), do: fun.(thing)
+
+  @doc """
+  Attaches the five level FK associations (`country … site`) to each location in
+  a single query.
+
+  All five FKs reference the same `locations` table, so every ancestor any of the
+  locations needs is fetched with one `id in ...` read and slotted back into the
+  matching association — replacing Ecto's five per-association preload queries.
+  Accepts a single location (or `nil`) or a list; the input locations must carry
+  their level FK columns (e.g. `minimal_select/0`).
+  """
+  def put_levels(nil), do: nil
+
+  def put_levels(locations) do
+    list = List.wrap(locations)
+
+    ids =
+      list
+      |> Enum.flat_map(&Location.ancestor_ids/1)
+      |> Enum.uniq()
+
+    by_id =
+      from(l in minimal_select(), where: l.id in ^ids)
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    placed = Enum.map(list, &put_level_assocs(&1, by_id))
+
+    if is_list(locations), do: placed, else: hd(placed)
+  end
+
+  defp put_level_assocs(location, by_id) do
+    Enum.reduce(Location.level_fk_by_level(), location, fn {assoc, fk}, loc ->
+      %{loc | assoc => Map.get(by_id, Map.get(loc, fk))}
+    end)
   end
 end

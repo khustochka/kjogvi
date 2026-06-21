@@ -860,6 +860,152 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "Query.put_levels/1" do
+    setup do
+      country = insert(:country, name_en: "Canada")
+
+      subdivision1 =
+        insert(:location, name_en: "Manitoba", location_type: "subdivision1", country: country)
+
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: "city",
+          country: country,
+          subdivision1_id: subdivision1.id
+        )
+
+      site =
+        insert(:location,
+          name_en: "Assiniboine Park",
+          location_type: "site",
+          country: country,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      %{country: country, subdivision1: subdivision1, city: city, site: site}
+    end
+
+    test "attaches the level associations, yielding the same long_name", %{site: site} do
+      [loaded] = Query.put_levels([site])
+
+      assert Location.long_name(:private, loaded) ==
+               "Assiniboine Park, Winnipeg, Manitoba, Canada"
+    end
+
+    test "accepts a single location and returns a single location", %{site: site} do
+      loaded = Query.put_levels(site)
+
+      refute is_list(loaded)
+      assert loaded.country.name_en == "Canada"
+      assert loaded.subdivision1.name_en == "Manitoba"
+      assert loaded.city.name_en == "Winnipeg"
+    end
+
+    test "leaves unset levels nil", %{country: country} do
+      city = insert(:location, name_en: "Lonely City", location_type: "city", country: country)
+
+      loaded = Query.put_levels(city)
+
+      assert loaded.country.name_en == "Canada"
+      assert is_nil(loaded.subdivision1)
+      assert is_nil(loaded.city)
+    end
+
+    test "returns nil for nil" do
+      assert is_nil(Query.put_levels(nil))
+    end
+
+    test "loads every level of every location in a single query", %{site: site} do
+      other_country = insert(:country, name_en: "Mexico")
+
+      other_site =
+        insert(:location, name_en: "Chapultepec", location_type: "site", country: other_country)
+
+      assert count_queries(fn -> Query.put_levels([site, other_site]) end) == 1
+    end
+
+    test "matches a per-association preload's long_name", %{site: site} do
+      preloaded = Repo.preload(site, Query.level_assocs())
+      batched = Query.put_levels(site)
+
+      assert Location.long_name(:private, batched) == Location.long_name(:private, preloaded)
+    end
+  end
+
+  describe "Query.put_location_levels/1" do
+    test "batches the levels onto each thing's location in one ancestor query" do
+      country = insert(:country, name_en: "Canada")
+
+      site_one =
+        insert(:location, name_en: "Park One", location_type: "site", country: country)
+
+      other_country = insert(:country, name_en: "Mexico")
+
+      site_two =
+        insert(:location, name_en: "Park Two", location_type: "site", country: other_country)
+
+      card_one = insert(:card, location: site_one)
+      card_two = insert(:card, location: site_two)
+
+      cards = Repo.preload([card_one, card_two], :location)
+
+      # One query to load all ancestors across both cards' locations.
+      assert count_queries(fn -> Query.put_location_levels(cards) end) == 1
+
+      [loaded_one, loaded_two] = Query.put_location_levels(cards)
+
+      assert Location.long_name(:private, loaded_one.location) == "Park One, Canada"
+      assert Location.long_name(:private, loaded_two.location) == "Park Two, Mexico"
+    end
+
+    test "accepts a single thing" do
+      country = insert(:country, name_en: "Canada")
+      site = insert(:location, name_en: "Park", location_type: "site", country: country)
+      card = insert(:card, location: site)
+
+      loaded = Query.put_location_levels(card)
+
+      refute is_list(loaded)
+      assert Location.long_name(:private, loaded.location) == "Park, Canada"
+    end
+  end
+
+  # Counts the `Kjogvi.Repo` queries executed while running `fun`.
+  defp count_queries(fun) do
+    ref = make_ref()
+    test_pid = self()
+    handler_id = {:query_counter, ref}
+
+    # The handler runs in the process that emitted the event. Only count queries
+    # from this test process so concurrent async tests don't leak into the count.
+    :telemetry.attach(
+      handler_id,
+      [:kjogvi, :repo, :query],
+      fn _event, _measurements, _metadata, _config ->
+        if self() == test_pid, do: send(test_pid, {:query, ref})
+      end,
+      nil
+    )
+
+    try do
+      fun.()
+    after
+      :telemetry.detach(handler_id)
+    end
+
+    drain_queries(ref, 0)
+  end
+
+  defp drain_queries(ref, count) do
+    receive do
+      {:query, ^ref} -> drain_queries(ref, count + 1)
+    after
+      0 -> count
+    end
+  end
+
   describe "to_flag_emoji/1" do
     test "returns flag emoji for iso code" do
       location = %Location{iso_code: "ca"}

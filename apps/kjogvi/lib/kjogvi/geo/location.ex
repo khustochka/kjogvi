@@ -102,6 +102,13 @@ defmodule Kjogvi.Geo.Location do
   def level_fks, do: @level_fks
 
   @doc """
+  Maps each ancestor level (`:country … :site`) to its FK column on a child
+  (`:country_id …`). The level association of the same name holds the row that FK
+  points at.
+  """
+  def level_fk_by_level, do: @level_fk_by_level
+
+  @doc """
   The location's ancestor ids, top to bottom: the non-null level FK values
   (`country_id … site_id`). Reads the FK columns directly — no preload needed.
   """
@@ -381,8 +388,8 @@ defmodule Kjogvi.Geo.Location do
       private ancestor (privacy is not downward-closed), so this filtering is
       required even on an already-public location.
 
-  Requires the level associations to be preloaded (`Query.preload_levels/1` /
-  `Query.level_assocs/0`).
+  Requires the level associations to be loaded (`Query.put_levels/1` /
+  `Query.put_location_levels/1`).
   """
   def long_name(visibility, location)
 

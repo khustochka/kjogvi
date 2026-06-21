@@ -46,7 +46,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         parent_id = Location.parent_id_from_levels(location)
 
         parent_struct =
-          parent_id && Repo.preload(load_parent(parent_id), Location.Query.level_assocs())
+          parent_id && Location.Query.put_levels(load_parent(parent_id))
 
         {
           :noreply,
@@ -64,7 +64,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     parent_id = params["parent_id"] && String.to_integer(params["parent_id"])
 
     parent_struct =
-      parent_id && Repo.preload(load_parent(parent_id), Location.Query.level_assocs())
+      parent_id && Location.Query.put_levels(load_parent(parent_id))
 
     {
       :noreply,
@@ -144,7 +144,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   @impl true
   def handle_info({:autocomplete_select, "parent_selected", %{"result" => result}}, socket) do
-    parent_struct = Repo.preload(load_parent(result.id), Location.Query.level_assocs())
+    parent_struct = Location.Query.put_levels(load_parent(result.id))
     params = current_form_params(socket) |> Map.put("parent_id", result.id)
 
     {:noreply,

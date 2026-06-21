@@ -130,7 +130,7 @@ defmodule Kjogvi.Geo do
     |> order_by([l], asc: l.name_en)
     |> Location.Query.load_cards_count()
     |> Repo.all()
-    |> Repo.preload(Location.Query.level_assocs())
+    |> Location.Query.put_levels()
   end
 
   def get_child_locations(parent_id) do

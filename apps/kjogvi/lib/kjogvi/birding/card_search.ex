@@ -14,6 +14,7 @@ defmodule Kjogvi.Birding.CardSearch do
   alias Kjogvi.Birding
   alias Kjogvi.Birding.CardSearch.Filter
   alias Kjogvi.Birding.CardSearch.Query
+  alias Kjogvi.Geo
   alias Kjogvi.Repo
 
   @doc """
@@ -27,11 +28,18 @@ defmodule Kjogvi.Birding.CardSearch do
   def search(user, %Filter{} = filter, %{page: page, page_size: page_size}) do
     Query.matching_cards(user, filter)
     |> Repo.paginate(page: page, page_size: page_size)
+    |> put_location_levels()
     |> attach_observations(filter)
   end
 
   def search(user, filter, pagination) do
     search(user, Filter.discombo!(filter), pagination)
+  end
+
+  # Batches the level FK associations onto every card's location in one query
+  # (see `Geo.Location.Query.put_location_levels/1`).
+  defp put_location_levels(%Scrivener.Page{entries: cards} = page) do
+    %{page | entries: Geo.Location.Query.put_location_levels(cards)}
   end
 
   # Only observation mode attaches observations to the cards; in card mode the

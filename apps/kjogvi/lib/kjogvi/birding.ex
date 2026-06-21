@@ -44,7 +44,7 @@ defmodule Kjogvi.Birding do
         Geo.get_locations_by_ids([int_id])
         # Match the preloads the location autocomplete attaches, so the filter
         # panel can render the location's long name from a shared/bookmarked URL.
-        |> Repo.preload(Geo.Location.Query.level_assocs())
+        |> Geo.Location.Query.put_levels()
         |> List.first()
 
       _ ->
@@ -62,21 +62,23 @@ defmodule Kjogvi.Birding do
   end
 
   def get_cards(user, %{page: page, page_size: page_size}) do
-    Card
-    |> Card.Query.as_card()
-    |> Card.Query.by_user(user)
-    |> order_by([{:desc, :observ_date}, {:desc, :id}])
-    |> Geo.Location.Query.preload_levels()
-    |> Card.Query.load_observation_count()
-    |> Repo.paginate(page: page, page_size: page_size)
+    pagination =
+      Card
+      |> Card.Query.as_card()
+      |> Card.Query.by_user(user)
+      |> order_by([{:desc, :observ_date}, {:desc, :id}])
+      |> Card.Query.load_observation_count()
+      |> Repo.paginate(page: page, page_size: page_size)
+
+    %{pagination | entries: Geo.Location.Query.put_location_levels(pagination.entries)}
   end
 
   def fetch_card_with_observations(user, id) do
     Card
     |> Card.Query.as_card()
     |> Card.Query.by_user(user)
-    |> Geo.Location.Query.preload_levels()
     |> Repo.get!(id)
+    |> Geo.Location.Query.put_location_levels()
     |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
     |> then(fn card ->
       Map.replace(
@@ -91,8 +93,8 @@ defmodule Kjogvi.Birding do
     Card
     |> Card.Query.as_card()
     |> Card.Query.by_user(user)
-    |> Geo.Location.Query.preload_levels()
     |> Repo.get!(id)
+    |> Geo.Location.Query.put_location_levels()
     |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
   end
 

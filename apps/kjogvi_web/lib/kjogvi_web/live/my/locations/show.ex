@@ -18,7 +18,9 @@ defmodule KjogviWeb.Live.My.Locations.Show do
           nil
 
         loc ->
-          Repo.preload(loc, Location.Query.level_assocs() ++ [:special_parent_locations])
+          loc
+          |> Location.Query.put_levels()
+          |> Repo.preload(:special_parent_locations)
       end
 
     if location do
