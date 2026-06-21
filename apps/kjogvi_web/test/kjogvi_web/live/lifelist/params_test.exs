@@ -37,7 +37,7 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   end
 
   test "only public location" do
-    ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
+    ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
 
     result =
       Params.to_filter(%{current_user: nil, area: :community}, %{
@@ -48,10 +48,9 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   end
 
   test "private location unavailable for guest" do
-    insert(:location,
+    insert(:country,
       slug: "ukraine",
       name_en: "Ukraine",
-      location_type: "country",
       is_private: true
     )
 
@@ -66,10 +65,9 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
   test "private location unavailable in public view" do
     user = Kjogvi.AccountsFixtures.user_fixture()
 
-    insert(:location,
+    insert(:country,
       slug: "ukraine",
       name_en: "Ukraine",
-      location_type: "country",
       is_private: true
     )
 
@@ -98,10 +96,9 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
     user = Kjogvi.AccountsFixtures.user_fixture()
 
     ukraine =
-      insert(:location,
+      insert(:country,
         slug: "ukraine",
         name_en: "Ukraine",
-        location_type: "country",
         is_private: true
       )
 

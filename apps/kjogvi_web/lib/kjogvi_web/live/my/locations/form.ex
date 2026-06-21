@@ -214,11 +214,11 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           <select
             id={@form[:location_type].id}
             name={@form[:location_type].name}
-            size={length(Location.location_types()) + 1}
+            size={length(Location.location_types())}
             class="inline-block w-auto min-w-48 pr-8 rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 text-base"
           >
             {Phoenix.HTML.Form.options_for_select(
-              [{"— none —", ""} | Location.location_types()],
+              Location.location_types(),
               @form[:location_type].value || ""
             )}
           </select>

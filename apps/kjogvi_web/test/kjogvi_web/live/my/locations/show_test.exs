@@ -19,13 +19,13 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "shows full long name as subtitle when richer than name_en", %{conn: conn} do
-    country = insert(:location, name_en: "Canada", location_type: :country)
+    country = insert(:country, name_en: "Canada")
 
     location =
       insert(:location,
         name_en: "Manitoba",
         location_type: :subdivision1,
-        country_id: country.id
+        country: country
       )
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
@@ -34,7 +34,7 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "omits full name subtitle when equal to name_en", %{conn: conn} do
-    location = insert(:location, name_en: "Solo")
+    location = insert(:country, name_en: "Solo")
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 
@@ -50,10 +50,10 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "shows ancestor locations in breadcrumbs", %{conn: conn} do
-    parent = insert(:location, name_en: "Canada", location_type: :country)
+    parent = insert(:country, name_en: "Canada")
 
     child =
-      insert(:location, name_en: "Manitoba", location_type: :subdivision1, country_id: parent.id)
+      insert(:location, name_en: "Manitoba", location_type: :subdivision1, country: parent)
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{child.slug}")
 
@@ -71,7 +71,7 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "shows location type badge", %{conn: conn} do
-    location = insert(:location, name_en: "Canada", location_type: "country")
+    location = insert(:country, name_en: "Canada")
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 
@@ -79,13 +79,13 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "lists direct children", %{conn: conn} do
-    parent = insert(:location, name_en: "Canada", location_type: :country)
+    parent = insert(:country, name_en: "Canada")
 
     child1 =
-      insert(:location, name_en: "Manitoba", location_type: :subdivision1, country_id: parent.id)
+      insert(:location, name_en: "Manitoba", location_type: :subdivision1, country: parent)
 
     child2 =
-      insert(:location, name_en: "Ontario", location_type: :subdivision1, country_id: parent.id)
+      insert(:location, name_en: "Ontario", location_type: :subdivision1, country: parent)
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{parent.slug}")
 
@@ -103,7 +103,7 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "shows member locations for special location", %{conn: conn} do
-    special = insert(:location, name_en: "My Patch", location_type: "special")
+    special = insert(:special, name_en: "My Patch")
     member1 = insert(:location, name_en: "Park A")
     member2 = insert(:location, name_en: "Park B")
 
@@ -120,7 +120,7 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "does not show members section for non-special location", %{conn: conn} do
-    location = insert(:location, name_en: "Canada", location_type: "country")
+    location = insert(:country, name_en: "Canada")
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 
@@ -152,12 +152,12 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "delete button disabled when location has children", %{conn: conn, user: user} do
-    parent = insert(:location, name_en: "Canada", location_type: :country, user_id: user.id)
+    parent = insert(:country, name_en: "Canada", user_id: user.id)
 
     insert(:location,
       name_en: "Manitoba",
       location_type: :subdivision1,
-      country_id: parent.id
+      country: parent
     )
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{parent.slug}")
@@ -224,8 +224,8 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "renders a badge per special parent location", %{conn: conn} do
-    five_mr = insert(:location, name_en: "5-Mile Radius", location_type: "special")
-    arabat = insert(:location, name_en: "Arabat Spit", location_type: "special")
+    five_mr = insert(:special, name_en: "5-Mile Radius")
+    arabat = insert(:special, name_en: "Arabat Spit")
     location = insert(:location, name_en: "Home Patch")
 
     Kjogvi.Repo.insert_all("special_locations", [

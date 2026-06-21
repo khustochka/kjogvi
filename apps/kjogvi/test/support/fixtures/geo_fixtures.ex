@@ -14,7 +14,7 @@ defmodule Kjogvi.GeoFixtures do
     default_attrs = %{
       slug: unique_location_slug(),
       name_en: "Test Location #{System.unique_integer()}",
-      location_type: nil,
+      location_type: :site,
       is_private: false
     }
 
@@ -40,7 +40,7 @@ defmodule Kjogvi.GeoFixtures do
         :site_id,
         :user_id
       ])
-      |> validate_required([:slug, :name_en, :is_private])
+      |> validate_required([:slug, :name_en, :location_type, :is_private])
       |> Repo.insert()
 
     location

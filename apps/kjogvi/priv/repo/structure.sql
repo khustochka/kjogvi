@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict y5VDrPg2lmIscC2pIHZu0YpR7OmKcej1gGw3pbJ3sEqd1EOlmAzLNZ6erOt78Dm
+\restrict M2DpRWXnLuiNYaT73qBP5b3dt12grMf9SXI7IoewoIQdBDvM7juveTBTdvQBOH7
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -170,7 +170,7 @@ CREATE TABLE public.locations (
     id bigint NOT NULL,
     slug character varying(64) NOT NULL,
     name_en character varying(255) NOT NULL,
-    location_type character varying(32),
+    location_type character varying(32) NOT NULL,
     iso_code character varying(3),
     lat numeric(8,5),
     lon numeric(8,5),
@@ -676,7 +676,7 @@ CREATE INDEX locations_country_id_index ON public.locations USING btree (country
 -- Name: locations_location_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX locations_location_type_index ON public.locations USING btree (location_type) WHERE (location_type IS NOT NULL);
+CREATE INDEX locations_location_type_index ON public.locations USING btree (location_type);
 
 
 --
@@ -944,7 +944,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict y5VDrPg2lmIscC2pIHZu0YpR7OmKcej1gGw3pbJ3sEqd1EOlmAzLNZ6erOt78Dm
+\unrestrict M2DpRWXnLuiNYaT73qBP5b3dt12grMf9SXI7IoewoIQdBDvM7juveTBTdvQBOH7
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -970,3 +970,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260618000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260618184652);
 INSERT INTO public."schema_migrations" (version) VALUES (20260619120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260620000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260620120000);

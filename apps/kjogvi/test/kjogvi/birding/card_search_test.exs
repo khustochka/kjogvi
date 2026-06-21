@@ -56,8 +56,8 @@ defmodule Kjogvi.Birding.CardSearchTest do
 
     test "with include_subregions, matches cards in descendant locations" do
       user = user_fixture()
-      parent = insert(:location, location_type: "country")
-      child = insert(:location, location_type: "city", country_id: parent.id)
+      parent = insert(:country)
+      child = insert(:location, location_type: "city", country: parent)
 
       parent_card = insert(:card, user: user, location: parent)
       child_card = insert(:card, user: user, location: child)

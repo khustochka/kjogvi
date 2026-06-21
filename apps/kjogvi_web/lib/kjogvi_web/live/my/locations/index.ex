@@ -108,7 +108,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             Add Location
           </.action_button>
           <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
-            <span class="text-lg font-header font-bold tracking-tight">
+            <span id="total-locations-count" class="text-lg font-header font-bold tracking-tight">
               {@total_locations}
             </span>
             <span class="text-forest-100 text-sm font-medium">total</span>

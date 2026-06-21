@@ -14,12 +14,27 @@ defmodule Kjogvi.Geo.LocationTest do
           %Location{
             slug: "test-loc",
             name_en: "Test",
+            location_type: :country,
             is_private: false
           },
           %{}
         )
 
       assert changeset.valid?
+    end
+
+    test "invalid without location_type" do
+      changeset =
+        Location.changeset(
+          %Location{
+            slug: "test-loc",
+            name_en: "Test",
+            is_private: false
+          },
+          %{}
+        )
+
+      assert %{location_type: ["can't be blank"]} = errors_on(changeset)
     end
 
     test "invalid without slug" do
@@ -54,18 +69,19 @@ defmodule Kjogvi.Geo.LocationTest do
       errors = errors_on(changeset)
       assert errors[:slug]
       assert errors[:name_en]
+      assert errors[:location_type]
     end
   end
 
   describe "changeset/2 deriving level FKs from a parent" do
     setup do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           location_type: :subdivision1,
-          country_id: country.id
+          country: country
         )
 
       %{country: country, subdivision1: subdivision1}
@@ -92,7 +108,7 @@ defmodule Kjogvi.Geo.LocationTest do
 
     test "a nil parent_id clears the level FKs", %{country: country} do
       city =
-        insert(:location, name_en: "Old City", location_type: :city, country_id: country.id)
+        insert(:location, name_en: "Old City", location_type: :city, country: country)
 
       changeset = Location.changeset(city, %{"parent_id" => nil, "location_type" => "country"})
 
@@ -101,7 +117,7 @@ defmodule Kjogvi.Geo.LocationTest do
 
     test "an absent parent_id leaves existing FKs untouched", %{country: country} do
       city =
-        insert(:location, name_en: "City", location_type: :city, country_id: country.id)
+        insert(:location, name_en: "City", location_type: :city, country: country)
 
       changeset = Location.changeset(city, %{"name_en" => "City Renamed"})
 
@@ -123,7 +139,7 @@ defmodule Kjogvi.Geo.LocationTest do
 
     test "rejects a section parent (a section can never be an ancestor)", %{country: country} do
       section =
-        insert(:location, name_en: "Trail", location_type: :section, country_id: country.id)
+        insert(:location, name_en: "Trail", location_type: :section, country: country)
 
       changeset =
         Location.changeset(%Location{}, %{
@@ -139,7 +155,7 @@ defmodule Kjogvi.Geo.LocationTest do
 
     test "rejects a special parent (a special is not a hierarchy parent)", %{country: country} do
       special =
-        insert(:location, name_en: "Patch", location_type: :special, country_id: country.id)
+        insert(:special, name_en: "Patch", country_id: country.id)
 
       changeset =
         Location.changeset(%Location{}, %{
@@ -161,7 +177,7 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -180,13 +196,13 @@ defmodule Kjogvi.Geo.LocationTest do
 
   describe "changeset/2 changing location_type" do
     setup do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           location_type: :subdivision1,
-          country_id: country.id
+          country: country
         )
 
       %{country: country, subdivision1: subdivision1}
@@ -200,7 +216,7 @@ defmodule Kjogvi.Geo.LocationTest do
       insert(:location,
         name_en: "Winnipeg",
         location_type: :city,
-        country_id: country.id,
+        country: country,
         subdivision1_id: subdivision1.id
       )
 
@@ -224,14 +240,14 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
       insert(:location,
         name_en: "The Forks",
         location_type: :site,
-        country_id: country.id,
+        country: country,
         subdivision1_id: subdivision1.id,
         city_id: city.id
       )
@@ -253,7 +269,7 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -275,7 +291,7 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -290,7 +306,7 @@ defmodule Kjogvi.Geo.LocationTest do
 
     test "a type change on a childless location is allowed", %{country: country} do
       city =
-        insert(:location, name_en: "Winnipeg", location_type: :city, country_id: country.id)
+        insert(:location, name_en: "Winnipeg", location_type: :city, country: country)
 
       changeset =
         Location.changeset(city, %{"location_type" => "site", "parent_id" => country.id})
@@ -301,13 +317,13 @@ defmodule Kjogvi.Geo.LocationTest do
 
   describe "level_fks_from_parent/1" do
     test "inherits the parent's FKs and slots the parent by its type" do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           location_type: :subdivision1,
-          country_id: country.id
+          country: country
         )
 
       assert Location.level_fks_from_parent(subdivision1) == %{
@@ -345,20 +361,20 @@ defmodule Kjogvi.Geo.LocationTest do
 
   describe "level FK columns" do
     test "persist and load via their associations" do
-      country = insert(:location, name_en: "Canada", location_type: "country")
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           location_type: "subdivision1",
-          country_id: country.id
+          country: country
         )
 
       city =
         insert(:location,
           name_en: "Winnipeg",
           location_type: "city",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -366,7 +382,7 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location,
           name_en: "Assiniboine Park",
           location_type: "site",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id,
           city_id: city.id
         )
@@ -392,10 +408,10 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "valid when only ancestor slots above own level are set" do
-      country = insert(:location, location_type: "country")
+      country = insert(:country)
 
       subdivision1 =
-        insert(:location, location_type: "subdivision1", country_id: country.id)
+        insert(:location, location_type: "subdivision1", country: country)
 
       changeset =
         slot_changeset(%{
@@ -408,10 +424,10 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "valid when an optional intermediate level is skipped" do
-      country = insert(:location, location_type: "country")
+      country = insert(:country)
 
       subdivision1 =
-        insert(:location, location_type: "subdivision1", country_id: country.id)
+        insert(:location, location_type: "subdivision1", country: country)
 
       # city hangs directly off subdivision1, skipping subdivision2
       changeset =
@@ -425,7 +441,7 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "valid when a city hangs directly off a country" do
-      country = insert(:location, location_type: "country")
+      country = insert(:country)
 
       # country -> city -> site, skipping subdivision1/subdivision2
       changeset =
@@ -454,8 +470,8 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "invalid with an FK at its own level" do
-      country = insert(:location, location_type: "country")
-      sub = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      sub = insert(:location, location_type: "subdivision1", country: country)
 
       changeset =
         slot_changeset(%{
@@ -468,11 +484,11 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "invalid with an FK below its own level" do
-      country = insert(:location, location_type: "country")
-      sub = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      sub = insert(:location, location_type: "subdivision1", country: country)
 
       city =
-        insert(:location, location_type: "city", country_id: country.id, subdivision1_id: sub.id)
+        insert(:location, location_type: "city", country: country, subdivision1_id: sub.id)
 
       changeset =
         slot_changeset(%{
@@ -492,12 +508,12 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "invalid when an ancestor's higher-level FK is inconsistent" do
-      country = insert(:location, location_type: "country")
-      other_country = insert(:location, location_type: "country")
+      country = insert(:country)
+      other_country = insert(:country)
 
       # subdivision1 belongs to other_country, not country
       subdivision1 =
-        insert(:location, location_type: "subdivision1", country_id: other_country.id)
+        insert(:location, location_type: "subdivision1", country: other_country)
 
       changeset =
         slot_changeset(%{
@@ -512,20 +528,20 @@ defmodule Kjogvi.Geo.LocationTest do
 
   describe "long_name/2" do
     setup do
-      country = insert(:location, name_en: "Canada", location_type: "country")
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           location_type: "subdivision1",
-          country_id: country.id
+          country: country
         )
 
       city =
         insert(:location,
           name_en: "Winnipeg",
           location_type: "city",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -533,7 +549,7 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location,
           name_en: "Assiniboine Park",
           location_type: "site",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id,
           city_id: city.id
         )
@@ -556,7 +572,7 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location,
           name_en: "Lonely City",
           location_type: "city",
-          country_id: country.id
+          country: country
         )
 
       assert Location.long_name(:private, preload_levels(city)) == "Lonely City, Canada"
@@ -576,7 +592,7 @@ defmodule Kjogvi.Geo.LocationTest do
           name_en: "Secret Patch",
           location_type: "site",
           is_private: true,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id,
           city_id: city.id
         )
@@ -595,7 +611,7 @@ defmodule Kjogvi.Geo.LocationTest do
           name_en: "Secret Patch",
           location_type: "site",
           is_private: true,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id,
           city_id: city.id
         )
@@ -613,7 +629,7 @@ defmodule Kjogvi.Geo.LocationTest do
           name_en: "Hidden City",
           location_type: "city",
           is_private: true,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -621,7 +637,7 @@ defmodule Kjogvi.Geo.LocationTest do
         insert(:location,
           name_en: "Open Patch",
           location_type: "site",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id,
           city_id: private_city.id
         )
@@ -632,14 +648,14 @@ defmodule Kjogvi.Geo.LocationTest do
 
     test ":public is empty when the location and all ancestors are private" do
       private_country =
-        insert(:location, name_en: "Hidden Country", location_type: "country", is_private: true)
+        insert(:country, name_en: "Hidden Country", is_private: true)
 
       private_site =
         insert(:location,
           name_en: "Secret Patch",
           location_type: "site",
           is_private: true,
-          country_id: private_country.id
+          country: private_country
         )
 
       assert Location.long_name(:public, preload_levels(private_site)) == ""
@@ -668,13 +684,13 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "includes the location itself and descendants via its level FK" do
-      country = insert(:location, location_type: "country")
-      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      subdivision = insert(:location, location_type: "subdivision1", country: country)
 
       city =
         insert(:location,
           location_type: "city",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision.id
         )
 
@@ -682,13 +698,13 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "dispatches on the location's own level" do
-      country = insert(:location, location_type: "country")
-      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      subdivision = insert(:location, location_type: "subdivision1", country: country)
 
       city =
         insert(:location,
           location_type: "city",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision.id
         )
 
@@ -697,10 +713,10 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "a section (lowest level) has only itself" do
-      country = insert(:location, location_type: "country")
+      country = insert(:country)
 
       section =
-        insert(:location, location_type: "section", country_id: country.id)
+        insert(:location, location_type: "section", country: country)
 
       assert child_location_ids(section) == [section.id]
     end
@@ -712,34 +728,34 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "returns only descendants whose deepest set FK is this location" do
-      country = insert(:location, location_type: "country")
-      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      subdivision = insert(:location, location_type: "subdivision1", country: country)
 
       # A city nested under the subdivision is NOT a direct child of the country.
       _city =
         insert(:location,
           location_type: "city",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision.id
         )
 
       # A city hanging directly off the country IS a direct child.
-      direct_city = insert(:location, location_type: "city", country_id: country.id)
+      direct_city = insert(:location, location_type: "city", country: country)
 
       assert direct_child_ids(country) == Enum.sort([subdivision.id, direct_city.id])
     end
 
     test "excludes the location itself" do
-      country = insert(:location, location_type: "country")
-      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      subdivision = insert(:location, location_type: "subdivision1", country: country)
 
       refute country.id in direct_child_ids(country)
       assert direct_child_ids(country) == [subdivision.id]
     end
 
     test "a section has no children" do
-      country = insert(:location, location_type: "country")
-      section = insert(:location, location_type: "section", country_id: country.id)
+      country = insert(:country)
+      section = insert(:location, location_type: "section", country: country)
 
       assert direct_child_ids(section) == []
     end
@@ -747,20 +763,20 @@ defmodule Kjogvi.Geo.LocationTest do
 
   describe "Query.move_descendants/3" do
     test "re-points descendants from the old level column to the new one" do
-      country = insert(:location, location_type: "country")
-      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      subdivision = insert(:location, location_type: "subdivision1", country: country)
 
       city =
         insert(:location,
           location_type: "city",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision.id
         )
 
       site =
         insert(:location,
           location_type: "site",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision.id,
           city_id: city.id
         )
@@ -782,9 +798,9 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "leaves unrelated locations alone" do
-      country = insert(:location, location_type: "country")
-      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
-      other = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      subdivision = insert(:location, location_type: "subdivision1", country: country)
+      other = insert(:location, location_type: "subdivision1", country: country)
 
       Query.move_descendants(subdivision.id, :subdivision1, :subdivision2)
 
@@ -793,8 +809,8 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "a move to/from section touches nothing" do
-      country = insert(:location, location_type: "country")
-      section = insert(:location, location_type: "section", country_id: country.id)
+      country = insert(:country)
+      section = insert(:location, location_type: "section", country: country)
 
       assert {0, nil} = Query.move_descendants(section.id, :section, :city)
     end
@@ -802,13 +818,13 @@ defmodule Kjogvi.Geo.LocationTest do
 
   describe "Query.special_descendant_ids/1" do
     test "unions each member's descendants and the members themselves" do
-      country = insert(:location, location_type: "country")
-      city = insert(:location, location_type: "city", country_id: country.id)
-      site = insert(:location, location_type: "site", country_id: country.id, city_id: city.id)
-      other = insert(:location, location_type: "city", country_id: country.id)
+      country = insert(:country)
+      city = insert(:location, location_type: "city", country: country)
+      site = insert(:location, location_type: "site", country: country, city_id: city.id)
+      other = insert(:location, location_type: "city", country: country)
 
       special =
-        insert(:location, location_type: "special", special_child_locations: [city])
+        insert(:special, special_child_locations: [city])
 
       ids = special |> Query.special_descendant_ids() |> Repo.all() |> Enum.sort()
 
@@ -817,7 +833,7 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "is empty for a special with no members" do
-      special = insert(:location, location_type: "special")
+      special = insert(:special)
 
       assert special |> Query.special_descendant_ids() |> Repo.all() == []
     end
@@ -825,13 +841,13 @@ defmodule Kjogvi.Geo.LocationTest do
 
   describe "ancestor_ids/1" do
     test "returns the non-null level FK values, top to bottom" do
-      country = insert(:location, location_type: "country")
-      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      subdivision = insert(:location, location_type: "subdivision1", country: country)
 
       site =
         insert(:location,
           location_type: "site",
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision.id
         )
 
@@ -839,7 +855,7 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "is empty for a top-level country" do
-      country = insert(:location, location_type: "country")
+      country = insert(:country)
       assert Location.ancestor_ids(country) == []
     end
   end

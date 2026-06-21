@@ -15,20 +15,20 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
 
   # A country → subdivision1 → city chain wired with level FKs.
   defp build_chain do
-    country = insert(:location, name_en: "Canada", location_type: :country)
+    country = insert(:country, name_en: "Canada")
 
     subdivision1 =
       insert(:location,
         name_en: "Manitoba",
         location_type: :subdivision1,
-        country_id: country.id
+        country: country
       )
 
     city =
       insert(:location,
         name_en: "Winnipeg",
         location_type: :city,
-        country_id: country.id,
+        country: country,
         subdivision1_id: subdivision1.id
       )
 
@@ -67,7 +67,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     end
 
     test "prefills parent and shows clear button when parent_id query param given", %{conn: conn} do
-      parent = insert(:location, name_en: "Canada", location_type: :country)
+      parent = insert(:country, name_en: "Canada")
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{parent.id}")
 
@@ -159,7 +159,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       %{country: country} = build_chain()
 
       section =
-        insert(:location, name_en: "Trail", location_type: :section, country_id: country.id)
+        insert(:location, name_en: "Trail", location_type: :section, country: country)
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{section.id}")
 
@@ -252,7 +252,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
   describe "parent selected via autocomplete" do
     test "updates the ancestry summary and re-derives FKs on save", %{conn: conn} do
       %{country: canada} = build_chain()
-      france = insert(:location, name_en: "France", location_type: :country)
+      france = insert(:country, name_en: "France")
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{canada.id}")
 
@@ -280,7 +280,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
 
     test "changing parent keeps user-typed slug/name/iso", %{conn: conn} do
       %{city: city} = build_chain()
-      other_country = insert(:location, name_en: "France", location_type: :country)
+      other_country = insert(:country, name_en: "France")
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
 
@@ -335,9 +335,8 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
 
     test "renders parent coords as data attributes when no coords set", %{conn: conn} do
       parent =
-        insert(:location,
+        insert(:country,
           name_en: "Canada",
-          location_type: :country,
           lat: Decimal.new("56.13040"),
           lon: Decimal.new("-106.34680")
         )
@@ -392,14 +391,14 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     end
 
     test "prefills the parent from the location's level FKs", %{conn: conn, user: user} do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       location =
         insert(:location,
           name_en: "Manitoba",
           slug: "mb",
           location_type: :subdivision1,
-          country_id: country.id,
+          country: country,
           user_id: user.id
         )
 
@@ -410,14 +409,14 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     end
 
     test "updates a location without touching its ancestry", %{conn: conn, user: user} do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       location =
         insert(:location,
           name_en: "Winnipeg",
           slug: "wpg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           user_id: user.id
         )
 
@@ -442,14 +441,14 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     end
 
     test "changing location_type cascades the descendants' level FKs", %{conn: conn, user: user} do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           slug: "mb",
           location_type: :subdivision1,
-          country_id: country.id,
+          country: country,
           user_id: user.id
         )
 
@@ -457,7 +456,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -484,21 +483,21 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     end
 
     test "rejects a location_type change that collides with a child", %{conn: conn, user: user} do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           slug: "mb",
           location_type: :subdivision1,
-          country_id: country.id,
+          country: country,
           user_id: user.id
         )
 
       insert(:location,
         name_en: "Winnipeg",
         location_type: :city,
-        country_id: country.id,
+        country: country,
         subdivision1_id: subdivision1.id
       )
 
@@ -525,7 +524,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     end
 
     test "redirects to the show page when editing a common location", %{conn: conn} do
-      location = insert(:location, name_en: "Canada", slug: "ca", location_type: :country)
+      location = insert(:country, name_en: "Canada", slug: "ca")
 
       assert {:error, {:live_redirect, %{to: "/my/locations/ca"}}} =
                live(conn, ~p"/my/locations/#{location.slug}/edit")

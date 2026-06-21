@@ -196,15 +196,15 @@ defmodule Kjogvi.Birding.LifelistTest do
     test "filtered by country" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
-      ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
-      usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+      ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
+      usa = insert(:country, slug: "usa", name_en: "United States")
 
       brovary =
         insert(:location,
           slug: "brovary",
           name_en: "Brovary",
           location_type: "city",
-          country_id: ukraine.id
+          country: ukraine
         )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -221,15 +221,15 @@ defmodule Kjogvi.Birding.LifelistTest do
     test "filtered by location" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
-      ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
-      usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+      ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
+      usa = insert(:country, slug: "usa", name_en: "United States")
 
       brovary =
         insert(:location,
           slug: "brovary",
           name_en: "Brovary",
           location_type: "city",
-          country_id: ukraine.id
+          country: ukraine
         )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -246,15 +246,15 @@ defmodule Kjogvi.Birding.LifelistTest do
     test "filtered by year and country" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
-      ukraine = insert(:location, slug: "ukraine", name_en: "Ukraine", location_type: "country")
-      usa = insert(:location, slug: "usa", name_en: "United States", location_type: "country")
+      ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
+      usa = insert(:country, slug: "usa", name_en: "United States")
 
       brovary =
         insert(:location,
           slug: "brovary",
           name_en: "Brovary",
           location_type: "city",
-          country_id: ukraine.id
+          country: ukraine
         )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -325,10 +325,9 @@ defmodule Kjogvi.Birding.LifelistTest do
         )
 
       locus_5mr =
-        insert(:location,
+        insert(:special,
           slug: "5mr",
           name_en: "5MR",
-          location_type: "special",
           special_child_locations: [locus1, locus2]
         )
 
@@ -503,15 +502,15 @@ defmodule Kjogvi.Birding.LifelistTest do
     end
 
     test "works with private locations, resolving the public ancestor for display" do
-      country = insert(:location, name_en: "Canada", location_type: "country")
-      city = insert(:location, name_en: "Winnipeg", location_type: "city", country_id: country.id)
+      country = insert(:country, name_en: "Canada")
+      city = insert(:location, name_en: "Winnipeg", location_type: "city", country: country)
 
       private_loc =
         insert(:location,
           name_en: "Secret Patch",
           location_type: "site",
           is_private: true,
-          country_id: country.id,
+          country: country,
           city_id: city.id
         )
 
@@ -708,9 +707,9 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Lifelist.Scope{user: user, include_private: false}
 
       canada =
-        insert(:location, location_type: "country", name_en: "Canada", public_index: 1)
+        insert(:country, name_en: "Canada", public_index: 1)
 
-      winnipeg = insert(:location, location_type: "city", country_id: canada.id)
+      winnipeg = insert(:location, location_type: "city", country: canada)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, user: user, location: winnipeg)
@@ -732,7 +731,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Lifelist.Scope{user: user, include_private: false}
 
       canada =
-        insert(:location, location_type: "country", name_en: "Canada", public_index: 1)
+        insert(:country, name_en: "Canada", public_index: 1)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, user: user, location: canada)
@@ -749,9 +748,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       member_loc = insert(:location, name_en: "Member Location")
 
       special_loc =
-        insert(:location,
+        insert(:special,
           name_en: "Special Area",
-          location_type: "special",
           public_index: 1,
           special_child_locations: [member_loc]
         )
@@ -774,9 +772,8 @@ defmodule Kjogvi.Birding.LifelistTest do
         insert(:location, name_en: "Child", location_type: "site", city_id: member_loc.id)
 
       special_loc =
-        insert(:location,
+        insert(:special,
           name_en: "Special Area",
-          location_type: "special",
           public_index: 1,
           special_child_locations: [member_loc]
         )
@@ -794,7 +791,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Lifelist.Scope{user: user, include_private: false}
 
       canada =
-        insert(:location, location_type: "country", name_en: "Canada", public_index: nil)
+        insert(:country, name_en: "Canada", public_index: nil)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, user: user, location: canada)

@@ -128,6 +128,7 @@ defmodule Kjogvi.Geo.Location do
       |> validate_required([
         :slug,
         :name_en,
+        :location_type,
         :is_private
       ])
       |> unique_constraint(:slug)

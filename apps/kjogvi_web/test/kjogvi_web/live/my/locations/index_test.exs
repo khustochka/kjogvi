@@ -39,12 +39,11 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
   end
 
   test "shows the user's own special location but not another user's", %{conn: conn, user: user} do
-    own = insert(:location, name_en: "My List", location_type: "special", user_id: user.id)
+    own = insert(:special, name_en: "My List", user_id: user.id)
 
     other =
-      insert(:location,
+      insert(:special,
         name_en: "Their List",
-        location_type: "special",
         user_id: user_fixture().id
       )
 
@@ -55,13 +54,13 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
   end
 
   test "shows total location count", %{conn: conn} do
+    # Two sites plus the country they share — three locations total.
     insert(:location)
     insert(:location)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    # Total count is shown in a stat pill with the number in its own span
-    assert has_element?(index_live, "span", "2")
+    assert has_element?(index_live, "#total-locations-count", "3")
     assert has_element?(index_live, "span", "total")
   end
 
@@ -109,8 +108,8 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
   test "deleting a location with children fails with an error and keeps it",
        %{conn: conn, user: user} do
-    parent = insert(:location, name_en: "Canada", location_type: "country", user_id: user.id)
-    insert(:location, name_en: "Manitoba", location_type: "subdivision1", country_id: parent.id)
+    parent = insert(:country, name_en: "Canada", user_id: user.id)
+    insert(:location, name_en: "Manitoba", location_type: "subdivision1", country: parent)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
@@ -186,8 +185,8 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
   end
 
   test "lists all locations flat regardless of hierarchy", %{conn: conn} do
-    country = insert(:location, name_en: "Germany", location_type: "country")
-    insert(:location, name_en: "Berlin", location_type: "city", country_id: country.id)
+    country = insert(:country, name_en: "Germany")
+    insert(:location, name_en: "Berlin", location_type: "city", country: country)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 

@@ -3,11 +3,55 @@ defmodule Kjogvi.Factory do
 
   use ExMachina.Ecto, repo: Kjogvi.Repo
 
-  def location_factory do
-    %Kjogvi.Geo.Location{
+  # A `:site` under the shared country. Use `country_factory` for a top-level
+  # country; pass `country:` to place it under a different one.
+  def location_factory(attrs) do
+    base = %Kjogvi.Geo.Location{
       slug: sequence(:slug, &"winnipeg#{&1}"),
-      name_en: sequence(:slug, &"Winnipeg - #{&1}")
+      name_en: sequence(:slug, &"Winnipeg - #{&1}"),
+      location_type: :site
     }
+
+    # The shared country inserts on access, so only reach for it when the caller
+    # didn't pin one — otherwise every override would leave a stray country.
+    base =
+      if Map.has_key?(attrs, :country),
+        do: base,
+        else: %{base | country: shared_country()}
+
+    merge_attributes(base, attrs)
+  end
+
+  def country_factory do
+    %Kjogvi.Geo.Location{
+      slug: sequence(:slug, &"country#{&1}"),
+      name_en: sequence(:name_en, &"Country #{&1}"),
+      location_type: :country
+    }
+  end
+
+  def special_factory do
+    %Kjogvi.Geo.Location{
+      slug: sequence(:slug, &"special#{&1}"),
+      name_en: sequence(:name_en, &"Special #{&1}"),
+      location_type: :special
+    }
+  end
+
+  @doc """
+  One country reused across the current test, inserted lazily and memoized in the
+  process (the Ecto sandbox makes that test-scoped). Backs `location_factory`.
+  """
+  def shared_country do
+    case Process.get(:factory_shared_country) do
+      nil ->
+        country = insert(:country)
+        Process.put(:factory_shared_country, country)
+        country
+
+      country ->
+        country
+    end
   end
 
   def card_factory do

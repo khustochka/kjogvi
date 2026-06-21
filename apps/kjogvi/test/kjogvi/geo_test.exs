@@ -38,22 +38,22 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "counts direct children" do
-      parent = insert(:location, location_type: "country")
-      insert(:location, location_type: "subdivision1", country_id: parent.id)
-      insert(:location, location_type: "subdivision2", country_id: parent.id)
+      parent = insert(:country)
+      insert(:location, location_type: "subdivision1", country: parent)
+      insert(:location, location_type: "subdivision2", country: parent)
 
       assert Geo.children_count(parent.id) == 2
     end
 
     test "counts nested descendants" do
-      grandparent = insert(:location, location_type: "country")
+      grandparent = insert(:country)
 
       parent =
-        insert(:location, location_type: "subdivision1", country_id: grandparent.id)
+        insert(:location, location_type: "subdivision1", country: grandparent)
 
       insert(:location,
         location_type: "city",
-        country_id: grandparent.id,
+        country: grandparent,
         subdivision1_id: parent.id
       )
 
@@ -61,8 +61,8 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "does not count unrelated locations" do
-      location = insert(:location, location_type: "country")
-      insert(:location, location_type: "country")
+      location = insert(:country)
+      insert(:country)
 
       assert Geo.children_count(location.id) == 0
     end
@@ -70,27 +70,27 @@ defmodule Kjogvi.GeoTest do
 
   describe "direct_children/1" do
     test "returns direct children ordered by name, not deeper descendants" do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       manitoba =
         insert(:location,
           name_en: "Manitoba",
           location_type: :subdivision1,
-          country_id: country.id
+          country: country
         )
 
       _alberta =
         insert(:location,
           name_en: "Alberta",
           location_type: :subdivision1,
-          country_id: country.id
+          country: country
         )
 
       _winnipeg =
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: manitoba.id
         )
 
@@ -102,20 +102,20 @@ defmodule Kjogvi.GeoTest do
 
   describe "ancestor_locations/1" do
     test "returns ancestors top to bottom from the level FKs" do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       manitoba =
         insert(:location,
           name_en: "Manitoba",
           location_type: :subdivision1,
-          country_id: country.id
+          country: country
         )
 
       winnipeg =
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: manitoba.id
         )
 
@@ -123,7 +123,7 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "is empty for a top-level location" do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       assert Geo.ancestor_locations(country) == []
     end
@@ -132,13 +132,13 @@ defmodule Kjogvi.GeoTest do
   describe "get_logbook_settings_locations/0" do
     test "includes countries and subdivisions regardless of public_index" do
       country =
-        insert(:location, location_type: "country", name_en: "Poland", public_index: nil)
+        insert(:country, name_en: "Poland", public_index: nil)
 
       subdivision =
         insert(:location,
           location_type: "subdivision1",
           name_en: "Pomerania",
-          country_id: country.id,
+          country: country,
           public_index: nil
         )
 
@@ -166,7 +166,7 @@ defmodule Kjogvi.GeoTest do
 
     test "does not duplicate a country that is also a lifelist filter" do
       country =
-        insert(:location, location_type: "country", name_en: "Canada", public_index: 1)
+        insert(:country, name_en: "Canada", public_index: 1)
 
       result = Geo.get_logbook_settings_locations()
       assert Enum.count(result, &(&1.id == country.id)) == 1
@@ -176,18 +176,18 @@ defmodule Kjogvi.GeoTest do
   describe "get_lifelist_location_context/1" do
     test "World (nil) returns top-level locations as siblings and their children as children" do
       germany =
-        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
+        insert(:country, name_en: "Germany", public_index: 1)
 
       bavaria =
         insert(:location,
           name_en: "Bavaria",
           location_type: :subdivision1,
-          country_id: germany.id,
+          country: germany,
           public_index: 2
         )
 
       # Location without public_index should not appear
-      insert(:location, name_en: "Hidden", location_type: :country, public_index: nil)
+      insert(:country, name_en: "Hidden", public_index: nil)
 
       result = Geo.get_lifelist_location_context(nil)
 
@@ -198,13 +198,13 @@ defmodule Kjogvi.GeoTest do
 
     test "specific location returns ancestors, siblings, and children" do
       germany =
-        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
+        insert(:country, name_en: "Germany", public_index: 1)
 
       bavaria =
         insert(:location,
           name_en: "Bavaria",
           location_type: :subdivision1,
-          country_id: germany.id,
+          country: germany,
           public_index: 2
         )
 
@@ -212,7 +212,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Hesse",
           location_type: :subdivision1,
-          country_id: germany.id,
+          country: germany,
           public_index: 3
         )
 
@@ -220,7 +220,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Munich",
           location_type: :subdivision2,
-          country_id: germany.id,
+          country: germany,
           subdivision1_id: bavaria.id,
           public_index: 4
         )
@@ -234,13 +234,13 @@ defmodule Kjogvi.GeoTest do
 
     test "deep location preserves ancestor order from the level FK chain" do
       germany =
-        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
+        insert(:country, name_en: "Germany", public_index: 1)
 
       bavaria =
         insert(:location,
           name_en: "Bavaria",
           location_type: :subdivision1,
-          country_id: germany.id,
+          country: germany,
           public_index: 2
         )
 
@@ -248,7 +248,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Munich",
           location_type: :subdivision2,
-          country_id: germany.id,
+          country: germany,
           subdivision1_id: bavaria.id,
           public_index: 3
         )
@@ -262,12 +262,12 @@ defmodule Kjogvi.GeoTest do
 
     test "excludes locations without public_index" do
       germany =
-        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
+        insert(:country, name_en: "Germany", public_index: 1)
 
       insert(:location,
         name_en: "Hidden Subdivision",
         location_type: :subdivision1,
-        country_id: germany.id,
+        country: germany,
         public_index: nil
       )
 
@@ -278,13 +278,13 @@ defmodule Kjogvi.GeoTest do
 
     test "siblings are determined by effective lifelist parent, not exact ancestry" do
       ukraine =
-        insert(:location, name_en: "Ukraine", location_type: :country, public_index: 1)
+        insert(:country, name_en: "Ukraine", public_index: 1)
 
       oblast =
         insert(:location,
           name_en: "Kyiv Oblast",
           location_type: :subdivision1,
-          country_id: ukraine.id,
+          country: ukraine,
           public_index: 2
         )
 
@@ -293,7 +293,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Brovary district",
           location_type: :subdivision2,
-          country_id: ukraine.id,
+          country: ukraine,
           subdivision1_id: oblast.id,
           public_index: nil
         )
@@ -302,7 +302,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Kyiv",
           location_type: :subdivision2,
-          country_id: ukraine.id,
+          country: ukraine,
           subdivision1_id: oblast.id,
           public_index: 3
         )
@@ -311,7 +311,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Brovary",
           location_type: :city,
-          country_id: ukraine.id,
+          country: ukraine,
           subdivision1_id: oblast.id,
           subdivision2_id: district.id,
           public_index: 4
@@ -327,14 +327,14 @@ defmodule Kjogvi.GeoTest do
 
     test "children are determined by nearest lifelist ancestor, skipping intermediaries" do
       germany =
-        insert(:location, name_en: "Germany", location_type: :country, public_index: 1)
+        insert(:country, name_en: "Germany", public_index: 1)
 
       # subdivision with no public_index — an intermediary
       bavaria =
         insert(:location,
           name_en: "Bavaria",
           location_type: :subdivision1,
-          country_id: germany.id,
+          country: germany,
           public_index: nil
         )
 
@@ -342,7 +342,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Munich",
           location_type: :subdivision2,
-          country_id: germany.id,
+          country: germany,
           subdivision1_id: bavaria.id,
           public_index: 2
         )
@@ -360,26 +360,28 @@ defmodule Kjogvi.GeoTest do
 
   describe "get_countries/0" do
     test "returns only locations with country type" do
-      insert(:location, location_type: "country", name_en: "Canada")
-      insert(:location, location_type: "subdivision1", name_en: "Manitoba")
-      insert(:location, name_en: "Winnipeg")
+      canada = insert(:country, name_en: "Canada")
+      insert(:location, location_type: "subdivision1", name_en: "Manitoba", country: canada)
+      insert(:location, name_en: "Winnipeg", country: canada)
 
       countries = Geo.get_countries()
       assert length(countries) == 1
       assert hd(countries).name_en == "Canada"
     end
 
-    test "returns empty list when no countries exist" do
+    test "returns only the country a sub-location hangs off" do
+      country = shared_country()
       insert(:location, location_type: "subdivision1")
 
-      assert Geo.get_countries() == []
+      assert [returned] = Geo.get_countries()
+      assert returned.id == country.id
     end
   end
 
   describe "get_specials/1" do
     test "returns only special locations" do
-      insert(:location, location_type: "special", name_en: "5MR")
-      insert(:location, location_type: "country", name_en: "Canada")
+      insert(:special, name_en: "5MR")
+      insert(:country, name_en: "Canada")
 
       specials = Geo.get_specials(%Kjogvi.Scope{area: :admin})
       assert length(specials) == 1
@@ -387,7 +389,7 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "returns empty list when no specials exist" do
-      insert(:location, location_type: "country")
+      insert(:country)
 
       assert Geo.get_specials(%Kjogvi.Scope{area: :admin}) == []
     end
@@ -396,9 +398,9 @@ defmodule Kjogvi.GeoTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{current_user: user, area: :private}
 
-      own = insert(:location, location_type: "special", user_id: user.id)
-      common = insert(:location, location_type: "special")
-      _other = insert(:location, location_type: "special", user_id: user_fixture().id)
+      own = insert(:special, user_id: user.id)
+      common = insert(:special)
+      _other = insert(:special, user_id: user_fixture().id)
 
       ids = Geo.get_specials(scope) |> Enum.map(& &1.id) |> Enum.sort()
       assert ids == Enum.sort([own.id, common.id])
@@ -522,20 +524,27 @@ defmodule Kjogvi.GeoTest do
   describe "list_locations/1" do
     test "returns scoped non-special locations ordered by name with card counts" do
       scope = %Kjogvi.Scope{area: :admin}
-      insert(:location, name_en: "Zürich", location_type: "city")
-      with_cards = insert(:location, name_en: "Aarau", location_type: "city")
+      country = shared_country()
+      insert(:location, name_en: "Zürich", location_type: "city", country: country)
+
+      with_cards =
+        insert(:location, name_en: "Aarau", location_type: "city", country: country)
+
       insert(:card, location: with_cards)
 
       result = Geo.list_locations(scope)
 
-      assert Enum.map(result, & &1.name_en) == ["Aarau", "Zürich"]
-      assert hd(result).cards_count == 1
+      # The two cities (the shared country they hang off is also listed),
+      # ordered by name; the one with a card carries its count.
+      cities = Enum.reject(result, &(&1.id == country.id))
+      assert Enum.map(cities, & &1.name_en) == ["Aarau", "Zürich"]
+      assert hd(cities).cards_count == 1
     end
 
     test "excludes special locations" do
       scope = %Kjogvi.Scope{area: :admin}
-      insert(:location, location_type: "special")
-      country = insert(:location, location_type: "country")
+      insert(:special)
+      country = insert(:country)
 
       ids = Geo.list_locations(scope) |> Enum.map(& &1.id)
 
@@ -560,8 +569,8 @@ defmodule Kjogvi.GeoTest do
 
   describe "get_child_locations/1" do
     test "returns child locations with card counts" do
-      parent = insert(:location, location_type: "country")
-      child = insert(:location, location_type: "subdivision1", country_id: parent.id)
+      parent = insert(:country)
+      child = insert(:location, location_type: "subdivision1", country: parent)
       insert(:card, location: child)
 
       results = Geo.get_child_locations(parent.id)
@@ -570,21 +579,21 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "excludes special locations" do
-      parent = insert(:location, location_type: "country")
-      insert(:location, location_type: "special", country_id: parent.id)
-      insert(:location, location_type: "subdivision1", country_id: parent.id)
+      parent = insert(:country)
+      insert(:special, country_id: parent.id)
+      insert(:location, location_type: "subdivision1", country: parent)
 
       results = Geo.get_child_locations(parent.id)
       assert length(results) == 1
     end
 
     test "returns nested descendants" do
-      country = insert(:location, location_type: "country")
-      subdivision = insert(:location, location_type: "subdivision1", country_id: country.id)
+      country = insert(:country)
+      subdivision = insert(:location, location_type: "subdivision1", country: country)
 
       insert(:location,
         location_type: "city",
-        country_id: country.id,
+        country: country,
         subdivision1_id: subdivision.id
       )
 
@@ -599,13 +608,13 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "derives the level FKs from the chosen parent", %{scope: scope} do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           location_type: :subdivision1,
-          country_id: country.id
+          country: country
         )
 
       {:ok, created} =
@@ -654,7 +663,7 @@ defmodule Kjogvi.GeoTest do
     end
 
     test "stamps the creating user as the owner", %{user: user, scope: scope} do
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       # Non-country levels need a country parent to satisfy slot occupancy.
       for location_type <- ~w(country subdivision1 subdivision2 city site section special) do
@@ -679,12 +688,12 @@ defmodule Kjogvi.GeoTest do
       %{user: owner, scope: owner_scope} = scope_fixture()
       %{user: _other, scope: other_scope} = scope_fixture()
 
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       location =
         insert(:location,
           location_type: :city,
-          country_id: country.id,
+          country: country,
           user_id: owner.id,
           slug: "owned-city"
         )
@@ -720,13 +729,13 @@ defmodule Kjogvi.GeoTest do
   describe "update_location/3 with a location_type change" do
     setup do
       %{user: owner, scope: scope} = scope_fixture()
-      country = insert(:location, name_en: "Canada", location_type: :country)
+      country = insert(:country, name_en: "Canada")
 
       subdivision1 =
         insert(:location,
           name_en: "Manitoba",
           location_type: :subdivision1,
-          country_id: country.id,
+          country: country,
           user_id: owner.id,
           slug: "manitoba"
         )
@@ -743,7 +752,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -751,7 +760,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "The Forks",
           location_type: :site,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id,
           city_id: city.id
         )
@@ -783,7 +792,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 
@@ -810,7 +819,7 @@ defmodule Kjogvi.GeoTest do
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
-          country_id: country.id,
+          country: country,
           subdivision1_id: subdivision1.id
         )
 

@@ -36,7 +36,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
        %{conn: conn, user: user} do
     {taxon, _} = Factory.create_species_taxon_with_page()
 
-    country = insert(:location, name_en: "Canada", location_type: "country")
+    country = insert(:country, name_en: "Canada")
 
     # A private subdivision1 between the public country and a public city.
     secret =
@@ -44,14 +44,14 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         name_en: "SecretRegion",
         location_type: "subdivision1",
         is_private: true,
-        country_id: country.id
+        country: country
       )
 
     city =
       insert(:location,
         name_en: "Winnipeg",
         location_type: "city",
-        country_id: country.id,
+        country: country,
         subdivision1_id: secret.id
       )
 
@@ -142,18 +142,16 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   test "lifelist filtered by location", %{conn: conn, user: user} do
     ukraine =
-      insert(:location,
+      insert(:country,
         slug: "ukraine",
         name_en: "Ukraine",
-        location_type: "country",
         public_index: 1
       )
 
     usa =
-      insert(:location,
+      insert(:country,
         slug: "usa",
         name_en: "United States",
-        location_type: "country",
         public_index: 2
       )
 
@@ -162,7 +160,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         slug: "brovary",
         name_en: "Brovary",
         location_type: "city",
-        country_id: ukraine.id
+        country: ukraine
       )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -180,18 +178,16 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   test "lifelist filtered by year and location", %{conn: conn, user: user} do
     ukraine =
-      insert(:location,
+      insert(:country,
         slug: "ukraine",
         name_en: "Ukraine",
-        location_type: "country",
         public_index: 1
       )
 
     usa =
-      insert(:location,
+      insert(:country,
         slug: "usa",
         name_en: "United States",
-        location_type: "country",
         public_index: 2
       )
 
@@ -200,7 +196,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         slug: "brovary",
         name_en: "Brovary",
         location_type: "city",
-        country_id: ukraine.id
+        country: ukraine
       )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -221,10 +217,9 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   test "location card shows breadcrumb with ancestors when filtered", %{conn: conn, user: user} do
     ukraine =
-      insert(:location,
+      insert(:country,
         slug: "ukraine",
         name_en: "Ukraine",
-        location_type: "country",
         public_index: 1
       )
 
@@ -233,7 +228,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         slug: "kyiv-oblast",
         name_en: "Kyiv Oblast",
         location_type: "subdivision1",
-        country_id: ukraine.id,
+        country: ukraine,
         public_index: 2
       )
 
@@ -242,7 +237,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         slug: "brovary",
         name_en: "Brovary",
         location_type: "city",
-        country_id: ukraine.id,
+        country: ukraine,
         subdivision1_id: oblast.id
       )
 
@@ -268,18 +263,16 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   test "location selector only lists locations with observations", %{conn: conn, user: user} do
     ukraine =
-      insert(:location,
+      insert(:country,
         slug: "ukraine",
         name_en: "Ukraine",
-        location_type: "country",
         public_index: 1
       )
 
     # Lifelist location with no observations at all — must not appear.
-    insert(:location,
+    insert(:country,
       slug: "usa",
       name_en: "United States",
-      location_type: "country",
       public_index: 2
     )
 
@@ -288,7 +281,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         slug: "brovary",
         name_en: "Brovary",
         location_type: "city",
-        country_id: ukraine.id
+        country: ukraine
       )
 
     {taxon, _} = Factory.create_species_taxon_with_page()
@@ -306,18 +299,16 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     user: user
   } do
     ukraine =
-      insert(:location,
+      insert(:country,
         slug: "ukraine",
         name_en: "Ukraine",
-        location_type: "country",
         public_index: 1
       )
 
     usa =
-      insert(:location,
+      insert(:country,
         slug: "usa",
         name_en: "United States",
-        location_type: "country",
         public_index: 2
       )
 
@@ -326,7 +317,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         slug: "brovary",
         name_en: "Brovary",
         location_type: "city",
-        country_id: ukraine.id
+        country: ukraine
       )
 
     # Ukraine has a 2022 observation; USA only has a 2023 one.
@@ -452,10 +443,9 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   test "correct links for guest user", %{conn: conn, user: user} do
     ukraine =
-      insert(:location,
+      insert(:country,
         slug: "ukraine",
         name_en: "Ukraine",
-        location_type: "country",
         public_index: 1
       )
 
@@ -464,7 +454,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         slug: "brovary",
         name_en: "Brovary",
         location_type: "city",
-        country_id: ukraine.id
+        country: ukraine
       )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
