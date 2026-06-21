@@ -357,6 +357,47 @@ defmodule Kjogvi.Geo.LocationTest do
       assert Location.location_types() ==
                ~w(country subdivision1 subdivision2 city site section special)a
     end
+
+    test "user_assignable_types excludes the common-only types" do
+      assert Location.user_assignable_types() ==
+               ~w(subdivision2 city site section special)a
+    end
+  end
+
+  describe "validate_user_owned_type/1" do
+    defp typed_changeset(attrs) do
+      Location.changeset(%Location{}, Map.merge(%{slug: "s", name_en: "N"}, attrs))
+    end
+
+    test "rejects a common-only type when user_id is set" do
+      changeset =
+        %{location_type: :country, country_id: nil}
+        |> typed_changeset()
+        |> Ecto.Changeset.put_change(:user_id, 7)
+        |> Location.validate_user_owned_type()
+
+      assert {"can't be country for a user location", _} =
+               changeset.errors[:location_type]
+    end
+
+    test "allows a common-only type when user_id is nil (a common location)" do
+      changeset =
+        %{location_type: :country}
+        |> typed_changeset()
+        |> Location.validate_user_owned_type()
+
+      refute changeset.errors[:location_type]
+    end
+
+    test "allows a user-assignable type when user_id is set" do
+      changeset =
+        %{location_type: :section, country_id: nil}
+        |> typed_changeset()
+        |> Ecto.Changeset.put_change(:user_id, 7)
+        |> Location.validate_user_owned_type()
+
+      refute changeset.errors[:location_type]
+    end
   end
 
   describe "level FK columns" do

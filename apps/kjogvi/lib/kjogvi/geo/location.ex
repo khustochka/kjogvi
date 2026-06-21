@@ -39,6 +39,11 @@ defmodule Kjogvi.Geo.Location do
   # ancestor; `special` is a member-amalgamation, not a hierarchy parent.
   @hierarchy_parent_types Map.keys(@level_fk_by_level)
 
+  # Types that may only exist as common locations (`nil` owner): the top of the
+  # hierarchy, shared across all users. A user-belonging location (a set
+  # `user_id`) may not be one of these — see `validate_user_owned_type/1`.
+  @common_only_types ~w(country subdivision1)a
+
   schema "locations" do
     field :slug, :string
     field :name_en, :string
@@ -363,6 +368,34 @@ defmodule Kjogvi.Geo.Location do
     else
       changeset
     end
+  end
+
+  @doc """
+  Rejects a `location_type` that may only exist as a common location (`country`,
+  `subdivision1`) when the location is user-belonging (its `user_id` is set).
+
+  These top-of-hierarchy types are shared across all users and are populated by
+  the ISO 3166 import (`Kjogvi.Geo.Import`); a user creates locations below them.
+  The changeset itself is ownership-agnostic, so the context applies this after
+  `user_id` is known (`Kjogvi.Geo.create_location/2`, `update_location/3`).
+  """
+  def validate_user_owned_type(changeset) do
+    user_id = get_field(changeset, :user_id)
+    type = get_field(changeset, :location_type)
+
+    if not is_nil(user_id) and type in @common_only_types do
+      add_error(changeset, :location_type, "can't be #{type} for a user location")
+    else
+      changeset
+    end
+  end
+
+  @doc """
+  The `location_type`s a user may pick for their own locations: every type except
+  the common-only ones (`country`, `subdivision1`).
+  """
+  def user_assignable_types do
+    @location_types -- @common_only_types
   end
 
   def show_on_lifelist?(location) do

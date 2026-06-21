@@ -43,27 +43,32 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert has_element?(view, "#location-breadcrumbs a", "Locations")
     end
 
-    test "creates a top-level country", %{conn: conn} do
+    test "rejects a country: a user may not create a common-only type", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/my/locations/new")
 
-      {:ok, _show, _html} =
-        view
-        |> form("#location-form",
-          location: %{
-            slug: "greenland",
-            name_en: "Greenland",
-            location_type: "country",
-            is_private: "false"
-          }
-        )
-        |> render_submit()
-        |> follow_redirect(conn)
+      # The select hides `country` (see the next test), so a normal form helper
+      # can't even submit it. Push the params directly to exercise the
+      # server-side guard, which must still reject it.
+      render_submit(element(view, "#location-form"), %{
+        location: %{
+          slug: "greenland",
+          name_en: "Greenland",
+          location_type: "country",
+          is_private: "false"
+        }
+      })
 
-      loc = Geo.location_by_slug("greenland")
-      assert loc.name_en == "Greenland"
-      assert loc.location_type == :country
-      assert loc.country_id == nil
-      assert loc.subdivision1_id == nil
+      assert has_element?(view, "#location-type-errors")
+      refute Geo.location_by_slug("greenland")
+    end
+
+    test "the type select offers only user-assignable types (no country/subdivision1)",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new")
+
+      refute has_element?(view, "#location_location_type option[value='country']")
+      refute has_element?(view, "#location_location_type option[value='subdivision1']")
+      assert has_element?(view, "#location_location_type option[value='site']")
     end
 
     test "prefills parent and shows clear button when parent_id query param given", %{conn: conn} do
@@ -190,7 +195,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
         location: %{
           slug: "my-spot",
           name_en: "My Spot",
-          location_type: "country",
+          location_type: "site",
           iso_code: "ca",
           is_private: "true"
         }
@@ -215,7 +220,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert iso_input =~ ~s|value="ca"|
     end
 
-    test "saving after clear persists a top-level location with no level FKs", %{conn: conn} do
+    test "clearing the parent clears the derived FKs, so saving needs a country", %{conn: conn} do
       %{city: city} = build_chain()
 
       {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{city.id}")
@@ -225,7 +230,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
         location: %{
           slug: "no-parent-spot",
           name_en: "No Parent Spot",
-          location_type: "country",
+          location_type: "site",
           is_private: "false"
         }
       )
@@ -239,13 +244,11 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       |> form("#location-form")
       |> render_submit()
 
-      saved = Geo.location_by_slug("no-parent-spot")
-      assert saved
-      assert saved.country_id == nil
-      assert saved.subdivision1_id == nil
-      assert saved.subdivision2_id == nil
-      assert saved.city_id == nil
-      assert saved.site_id == nil
+      # The level FKs were cleared with the parent, so the location is now
+      # parentless — and a non-country user location must belong to a country,
+      # so the save is rejected rather than persisting a floating location.
+      assert has_element?(view, "#location-ancestry-errors")
+      refute Geo.location_by_slug("no-parent-spot")
     end
   end
 

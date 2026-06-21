@@ -631,16 +631,16 @@ defmodule Kjogvi.GeoTest do
       assert created.city_id == nil
     end
 
-    test "a top-level country has no level FKs", %{scope: scope} do
-      {:ok, created} =
-        Geo.create_location(scope, %{
-          "slug" => "greenland",
-          "name_en" => "Greenland",
-          "is_private" => "false",
-          "location_type" => "country"
-        })
+    test "rejects a country: a user may not create a common-only type", %{scope: scope} do
+      assert {:error, changeset} =
+               Geo.create_location(scope, %{
+                 "slug" => "greenland",
+                 "name_en" => "Greenland",
+                 "is_private" => "false",
+                 "location_type" => "country"
+               })
 
-      assert created.country_id == nil
+      assert %{location_type: ["can't be country for a user location"]} = errors_on(changeset)
     end
 
     test "rejects a non-country location with no parent", %{scope: scope} do
@@ -665,9 +665,11 @@ defmodule Kjogvi.GeoTest do
     test "stamps the creating user as the owner", %{user: user, scope: scope} do
       country = insert(:country, name_en: "Canada")
 
-      # Non-country levels need a country parent to satisfy slot occupancy.
-      for location_type <- ~w(country subdivision1 subdivision2 city site section special) do
-        parent_id = if location_type == "country", do: nil, else: country.id
+      # `country`/`subdivision1` are common-only and can't be user-owned, so a
+      # user's locations span the assignable types below them (all need a country
+      # parent to satisfy slot occupancy).
+      for location_type <- ~w(subdivision2 city site section special) do
+        parent_id = country.id
 
         {:ok, created} =
           Geo.create_location(scope, %{
@@ -680,6 +682,22 @@ defmodule Kjogvi.GeoTest do
 
         assert created.user_id == user.id
       end
+    end
+
+    test "rejects a subdivision1 for a user", %{scope: scope} do
+      country = insert(:country, name_en: "Canada")
+
+      assert {:error, changeset} =
+               Geo.create_location(scope, %{
+                 "slug" => "manitoba",
+                 "name_en" => "Manitoba",
+                 "is_private" => "false",
+                 "location_type" => "subdivision1",
+                 "parent_id" => country.id
+               })
+
+      assert %{location_type: ["can't be subdivision1 for a user location"]} =
+               errors_on(changeset)
     end
   end
 
@@ -740,7 +758,7 @@ defmodule Kjogvi.GeoTest do
           slug: "manitoba"
         )
 
-      %{scope: scope, country: country, subdivision1: subdivision1}
+      %{scope: scope, owner: owner, country: country, subdivision1: subdivision1}
     end
 
     test "cascades descendants' level FKs when the type moves", %{
@@ -812,27 +830,38 @@ defmodule Kjogvi.GeoTest do
 
     test "a same-type update does not touch descendants", %{
       scope: scope,
-      country: country,
-      subdivision1: subdivision1
+      owner: owner,
+      country: country
     } do
+      # A user-assignable level (a user can't own `subdivision1`), kept at the
+      # same type across the update.
+      subdivision2 =
+        insert(:location,
+          name_en: "Some County",
+          location_type: :subdivision2,
+          country: country,
+          user_id: owner.id,
+          slug: "some-county"
+        )
+
       city =
         insert(:location,
           name_en: "Winnipeg",
           location_type: :city,
           country: country,
-          subdivision1_id: subdivision1.id
+          subdivision2_id: subdivision2.id
         )
 
       assert {:ok, _} =
-               Geo.update_location(scope, subdivision1, %{
-                 "name_en" => "Manitoba (renamed)",
-                 "location_type" => "subdivision1",
+               Geo.update_location(scope, subdivision2, %{
+                 "name_en" => "Some County (renamed)",
+                 "location_type" => "subdivision2",
                  "parent_id" => country.id
                })
 
       reloaded_city = Repo.get!(Kjogvi.Geo.Location, city.id)
-      assert reloaded_city.subdivision1_id == subdivision1.id
-      assert reloaded_city.subdivision2_id == nil
+      assert reloaded_city.subdivision2_id == subdivision2.id
+      assert reloaded_city.city_id == nil
     end
   end
 

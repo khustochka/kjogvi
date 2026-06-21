@@ -268,6 +268,7 @@ defmodule Kjogvi.Geo do
     %Location{}
     |> Location.changeset(attrs)
     |> Ecto.Changeset.put_change(:user_id, scope.current_user && scope.current_user.id)
+    |> Location.validate_user_owned_type()
     |> Repo.insert()
   end
 
@@ -295,7 +296,12 @@ defmodule Kjogvi.Geo do
   defp update_and_cascade(location, attrs) do
     old_type = location.location_type
 
-    with {:ok, updated} <- Repo.update(Location.changeset(location, attrs)) do
+    changeset =
+      location
+      |> Location.changeset(attrs)
+      |> Location.validate_user_owned_type()
+
+    with {:ok, updated} <- Repo.update(changeset) do
       if updated.location_type != old_type do
         Location.Query.move_descendants(updated.id, old_type, updated.location_type)
       end
