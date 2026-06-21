@@ -171,8 +171,8 @@ defmodule Kjogvi.Geo.Import do
 
         config :kjogvi, #{inspect(__MODULE__)}, url: "https://.../iso_3166.jsonl"
 
-    (e.g. the raw URL of a GitHub release asset, via the ISO_3166_URL env var),
-    or pass a URL or local path to import/1 explicitly.
+    (e.g. the raw URL of a GitHub release asset, via the LOCATIONS_IMPORT_URL
+    env var), or pass a URL or local path to import/1 explicitly.
     """
   end
 end

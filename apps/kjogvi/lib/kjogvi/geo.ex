@@ -16,6 +16,16 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
+  A map of `location_type => count` over all locations, used to report what the
+  ISO 3166 import produced (or what already occupies the table).
+  """
+  def location_counts_by_type do
+    Location.Query.count_by_type()
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  @doc """
   Returns locations with `public_index` set, ordered by `public_index`.
   These are locations shown as filter options on the lifelist.
   """

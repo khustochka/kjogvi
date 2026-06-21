@@ -74,6 +74,15 @@ defmodule Kjogvi.Geo.Location.Query do
       where: l.location_type == @special_location_type
   end
 
+  @doc """
+  Groups locations by `location_type`, selecting `{location_type, count}` pairs.
+  """
+  def count_by_type(query \\ Location) do
+    from l in query,
+      group_by: l.location_type,
+      select: {l.location_type, count(l.id)}
+  end
+
   def load_cards_count(query) do
     from l in query,
       left_join: c in assoc(l, :cards),

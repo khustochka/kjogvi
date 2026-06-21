@@ -40,6 +40,8 @@ defmodule KjogviWeb.Live.My.Imports.Index do
   defp imports do
     [
       {Imports.Legacy, "Legacy Import", "legacy-import", fn user -> Accounts.admin?(user) end},
+      {Imports.Locations, "Locations Import", "locations-import",
+       fn user -> Accounts.admin?(user) end},
       {Imports.Ebird, "eBird preload", "ebird-import", fn _ -> true end}
     ]
   end
