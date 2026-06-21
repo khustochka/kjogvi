@@ -19,6 +19,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       |> assign_locations(scope)
       |> assign(:search_term, "")
       |> assign(:search_results, [])
+      |> assign(:delete_error, nil)
       |> assign(:specials, Geo.get_specials(scope))
     }
   end
@@ -42,14 +43,16 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     {:noreply,
      socket
      |> assign(:search_term, search_term)
-     |> assign(:search_results, search_results)}
+     |> assign(:search_results, search_results)
+     |> assign(:delete_error, nil)}
   end
 
   def handle_event("clear_location_filter", _params, socket) do
     {:noreply,
      socket
      |> assign(:search_term, "")
-     |> assign(:search_results, [])}
+     |> assign(:search_results, [])
+     |> assign(:delete_error, nil)}
   end
 
   @impl true
@@ -61,20 +64,26 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         {:noreply,
          socket
          |> put_flash(:info, "Location deleted")
+         |> assign(:delete_error, nil)
          |> assign_locations(socket.assigns.current_scope)}
 
       {:error, :has_children} ->
-        {:noreply, put_flash(socket, :error, "Cannot delete: location has sub-locations")}
+        {:noreply, row_delete_error(socket, location.id, "Has sub-locations — can't delete")}
 
       {:error, :has_cards} ->
-        {:noreply, put_flash(socket, :error, "Cannot delete: location has cards")}
+        {:noreply, row_delete_error(socket, location.id, "Has cards — can't delete")}
 
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, "You can only delete your own locations")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not delete location")}
+        {:noreply, row_delete_error(socket, location.id, "Could not delete")}
     end
+  end
+
+  # Records a delete failure against a single row; the row renders it inline.
+  defp row_delete_error(socket, id, message) do
+    assign(socket, :delete_error, {id, message})
   end
 
   defp assign_locations(socket, scope) do
@@ -149,6 +158,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             <.location_entry
               location={location}
               current_user={@current_scope.current_user}
+              delete_error={delete_error_for(@delete_error, location.id)}
             />
           </li>
         </ul>
@@ -170,7 +180,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             :for={location <- @locations}
             class="p-3"
           >
-            <.location_entry location={location} current_user={@current_scope.current_user} />
+            <.location_entry
+              location={location}
+              current_user={@current_scope.current_user}
+              delete_error={delete_error_for(@delete_error, location.id)}
+            />
           </li>
         </ul>
 
@@ -200,6 +214,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   attr :location, :map, required: true
   attr :current_user, :any, default: nil
+  attr :delete_error, :string, default: nil
 
   defp location_entry(assigns) do
     ~H"""
@@ -208,20 +223,36 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         <.location_row location={@location} />
         <p
           :if={Location.long_name(@location) != @location.name_en}
-          class="mt-1 text-xs text-stone-400 truncate"
+          class="mt-1 text-xs text-stone-400"
         >
           {Location.long_name(@location)}
         </p>
       </div>
 
-      <.row_actions
-        location={@location}
-        can_modify={User.owns?(@current_user, @location)}
-      />
-      <.lifelist_link slug={@location.slug} />
+      <div class="flex flex-col items-end gap-1">
+        <div class="flex items-center gap-2">
+          <.row_actions
+            location={@location}
+            can_modify={User.owns?(@current_user, @location)}
+          />
+          <.lifelist_link slug={@location.slug} />
+        </div>
+        <p
+          :if={@delete_error}
+          id={"location-delete-error-#{@location.id}"}
+          class="text-right text-xs text-rose-600"
+        >
+          {@delete_error}
+        </p>
+      </div>
     </div>
     """
   end
+
+  # The delete-failure message for `id`, or `nil` when the failure (if any) is
+  # for a different row.
+  defp delete_error_for({id, message}, id), do: message
+  defp delete_error_for(_, _), do: nil
 
   attr :location, :map, required: true
   attr :can_modify, :boolean, default: false

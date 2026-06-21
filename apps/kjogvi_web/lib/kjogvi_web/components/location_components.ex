@@ -24,7 +24,7 @@ defmodule KjogviWeb.LocationComponents do
     <div class="min-w-0">
       <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-0.5 sm:space-y-0">
         <div class="flex items-center space-x-2 min-w-0">
-          <span class="text-sm font-medium text-stone-800 truncate">
+          <span class="text-sm font-medium text-stone-800">
             <.link
               href={~p"/my/locations/#{@location.slug}"}
               class="text-stone-800 hover:underline no-underline"
@@ -46,7 +46,7 @@ defmodule KjogviWeb.LocationComponents do
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
-        <span class="text-xs text-stone-500 truncate">{@location.slug}</span>
+        <span class="text-xs text-stone-500">{@location.slug}</span>
         <.type_badge :if={@location.location_type} type={@location.location_type} />
         <.lifelist_badge :if={Location.show_on_lifelist?(@location)} />
       </div>

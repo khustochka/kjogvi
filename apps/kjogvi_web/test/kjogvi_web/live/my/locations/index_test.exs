@@ -114,12 +114,11 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    html =
-      index_live
-      |> element("button[phx-click='delete'][phx-value-id='#{parent.id}']")
-      |> render_click()
+    index_live
+    |> element("button[phx-click='delete'][phx-value-id='#{parent.id}']")
+    |> render_click()
 
-    assert html =~ "sub-locations"
+    assert has_element?(index_live, "#location-delete-error-#{parent.id}", "sub-locations")
     refute is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, parent.id))
   end
 
@@ -130,12 +129,11 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    html =
-      index_live
-      |> element("button[phx-click='delete'][phx-value-id='#{location.id}']")
-      |> render_click()
+    index_live
+    |> element("button[phx-click='delete'][phx-value-id='#{location.id}']")
+    |> render_click()
 
-    assert html =~ "has cards"
+    assert has_element?(index_live, "#location-delete-error-#{location.id}", "cards")
     refute is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, location.id))
   end
 
