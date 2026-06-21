@@ -214,6 +214,12 @@ config :kjogvi, :setup_code, System.get_env("SETUP_CODE")
 
 config :kjogvi, Kjogvi.Legacy.Import, taxonomy_slug: System.get_env("LEGACY_TAXONOMY_SLUG")
 
+# URL of the generated ISO 3166 JSONL (e.g. a GitHub release asset), fetched by
+# `Kjogvi.Geo.Import.import_from_url/1` to fill an empty `locations` table. The
+# data is not committed; set this env var to the raw asset URL to enable the
+# import. Read at runtime so the host's value applies to the release.
+config :kjogvi, Kjogvi.Geo.Import, url: System.get_env("ISO_3166_URL")
+
 config :kjogvi_web, :google_maps, api_key: System.get_env("GOOGLE_MAPS_API_KEY")
 
 # IMAGES

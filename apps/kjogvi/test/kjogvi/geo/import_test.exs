@@ -11,9 +11,20 @@ defmodule Kjogvi.Geo.ImportTest do
     path =
       Path.join(System.tmp_dir!(), "iso_3166_test_#{System.unique_integer([:positive])}.jsonl")
 
-    File.write!(path, Enum.map_join(rows, "\n", &Jason.encode!/1) <> "\n")
+    File.write!(path, jsonl(rows))
     on_exit(fn -> File.rm(path) end)
     path
+  end
+
+  # Renders rows (maps) as a JSONL string body, as a fetched URL would return.
+  defp jsonl(rows) do
+    Enum.map_join(rows, "\n", &Jason.encode!/1) <> "\n"
+  end
+
+  # A `Req` plug option that serves `body` for any request, so the URL form of
+  # `import/2` can be exercised without hitting the network.
+  defp serving(body) do
+    [plug: fn conn -> Plug.Conn.send_resp(conn, 200, body) end]
   end
 
   defp country_row(iso, name, attrs \\ %{}) do
@@ -43,7 +54,7 @@ defmodule Kjogvi.Geo.ImportTest do
     Repo.get_by!(Location, iso_code: iso)
   end
 
-  describe "import/1" do
+  describe "import/2 from a local path" do
     test "imports a country as a top-level common location" do
       path = write_jsonl([country_row("UA", "Ukraine", %{"numeric" => "804"})])
 
@@ -107,6 +118,55 @@ defmodule Kjogvi.Geo.ImportTest do
       assert {:error, {:missing_parent, "ZZ-01", "ZZ"}} = Import.import(path)
       # Nothing is committed — the earlier country is rolled back too.
       assert Repo.aggregate(Location, :count) == 0
+    end
+
+    test "refuses to run when a country already exists" do
+      insert(:country, iso_code: "US")
+
+      path = write_jsonl([country_row("UA", "Ukraine")])
+
+      assert {:error, :already_imported} = Import.import(path)
+      refute Repo.get_by(Location, iso_code: "UA")
+    end
+  end
+
+  describe "import/2 from a URL" do
+    test "imports the JSONL fetched from an http(s) URL" do
+      body = jsonl([country_row("UA", "Ukraine"), subdivision_row("UA-30", "Kyiv City", "UA")])
+
+      assert {:ok, _} =
+               Import.import("https://example.test/iso.jsonl", req_options: serving(body))
+
+      assert by_iso("UA-30").country_id == by_iso("UA").id
+    end
+
+    test "refuses to run when a country already exists" do
+      insert(:country, iso_code: "US")
+
+      body = jsonl([country_row("UA", "Ukraine")])
+
+      assert {:error, :already_imported} =
+               Import.import("https://example.test/iso.jsonl", req_options: serving(body))
+
+      refute Repo.get_by(Location, iso_code: "UA")
+    end
+
+    test "raises when no source is given and no URL is configured" do
+      assert is_nil(Import.default_url())
+
+      assert_raise RuntimeError, ~r/URL is not configured/, fn ->
+        Import.import()
+      end
+    end
+  end
+
+  describe "country_exists?/0" do
+    test "is false on an empty table and true once a country is present" do
+      refute Import.country_exists?()
+
+      insert(:country, iso_code: "US")
+
+      assert Import.country_exists?()
     end
   end
 end
