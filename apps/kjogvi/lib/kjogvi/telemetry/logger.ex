@@ -11,7 +11,9 @@ defmodule Kjogvi.Telemetry.Logger do
   def install do
     handlers = %{
       [:kjogvi, :legacy, :import, :start] => &__MODULE__.legacy_import_start/4,
-      [:kjogvi, :legacy, :import, :stop] => &__MODULE__.legacy_import_stop/4
+      [:kjogvi, :legacy, :import, :stop] => &__MODULE__.legacy_import_stop/4,
+      [:kjogvi, :geo, :import, :start] => &__MODULE__.geo_import_start/4,
+      [:kjogvi, :geo, :import, :stop] => &__MODULE__.geo_import_stop/4
     }
 
     for {key, fun} <- handlers do
@@ -34,6 +36,26 @@ defmodule Kjogvi.Telemetry.Logger do
 
   def legacy_import_stop(_, %{duration: duration}, metadata, _) do
     Logger.info("[Kjogvi.Legacy.Import] Finished: duration=#{duration_ms(duration)}ms", metadata)
+  end
+
+  @doc false
+  def geo_import_start(_, _, metadata, _) do
+    Logger.info("[Kjogvi.Geo.Import] Started.", metadata)
+  end
+
+  @doc false
+  def geo_import_stop(_, %{duration: duration}, %{result: :error, reason: reason} = metadata, _) do
+    Logger.error(
+      "[Kjogvi.Geo.Import] Failed after #{duration_ms(duration)}ms: #{inspect(reason)}",
+      metadata
+    )
+  end
+
+  def geo_import_stop(_, %{duration: duration}, %{count: count} = metadata, _) do
+    Logger.info(
+      "[Kjogvi.Geo.Import] Finished: #{count} locations in #{duration_ms(duration)}ms",
+      metadata
+    )
   end
 
   defp duration_ms(duration), do: System.convert_time_unit(duration, :native, :millisecond)

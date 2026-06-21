@@ -5,9 +5,10 @@ defmodule Kjogvi.Geo.Import do
   locations.
 
   Reads a pre-built JSONL file (see `priv/geo/build_iso_3166.exs`), one location
-  per line, parents before children. Each row is inserted through
-  `Location.changeset/2` with the parent's id as the virtual `parent_id`, so the
-  level FK columns (`country_id` …) are derived from the parent.
+  per line. The data is strictly two-level — countries, then their subdivisions —
+  so it is bulk-inserted with `Repo.insert_all` in two passes (countries first,
+  then subdivisions with `country_id` taken from the countries just inserted)
+  rather than one changeset per row, keeping the whole import well under a second.
 
   The single entry point is `import/2`, which dispatches on its source: an
   `http(s)://` URL is fetched over HTTP, any other string is a local file path,
@@ -93,61 +94,90 @@ defmodule Kjogvi.Geo.Import do
   # Runs the import for a stream/enumerable of JSONL lines (strings). Refuses
   # when ISO data is already present, then inserts every row in one transaction,
   # parents before children, resolving each child's parent by iso_code.
+  #
+  # Wrapped in a `:telemetry.span/3` so the whole run's duration is measured; the
+  # `:stop` metadata carries the outcome and, on success, the number of locations
+  # inserted (see `stop_metadata/1`).
   defp run(lines) do
-    if country_exists?() do
-      {:error, :already_imported}
-    else
-      insert_all(lines)
-    end
+    :telemetry.span([:kjogvi, :geo, :import], %{}, fn ->
+      result =
+        if country_exists?() do
+          {:error, :already_imported}
+        else
+          insert_all(lines)
+        end
+
+      {result, stop_metadata(result)}
+    end)
   end
 
+  defp stop_metadata({:ok, ids_by_iso}), do: %{result: :ok, count: map_size(ids_by_iso)}
+  defp stop_metadata({:error, reason}), do: %{result: :error, reason: reason}
+
+  # The data is strictly two-level (countries, then their subdivisions), so the
+  # rows are bulk-inserted with `Repo.insert_all` in two passes instead of one
+  # changeset + parent lookup per row: countries first, then subdivisions with
+  # `country_id` taken from the countries' returned ids. Returns the same
+  # `%{iso_code => id}` map the per-row version did.
   defp insert_all(lines) do
     imported_at = DateTime.utc_now()
+    parsed = Enum.map(lines, &Jason.decode!/1)
+    {countries, subdivisions} = Enum.split_with(parsed, &(&1["parent_iso"] == nil))
 
     Repo.transaction(
       fn ->
-        lines
-        |> Stream.map(&Jason.decode!/1)
-        |> Enum.reduce(%{}, fn row, ids_by_iso ->
-          parent_id = parent_id(row, ids_by_iso)
-          location = insert!(row, parent_id, imported_at)
-          Map.put(ids_by_iso, row["iso_code"], location.id)
-        end)
+        ids_by_iso = insert_countries(countries, imported_at)
+        insert_subdivisions(subdivisions, ids_by_iso, imported_at)
       end,
       timeout: :infinity
     )
   end
 
-  defp parent_id(%{"parent_iso" => nil}, _ids_by_iso), do: nil
+  defp insert_countries(countries, imported_at) do
+    rows = Enum.map(countries, &base_row(&1, imported_at))
 
-  defp parent_id(%{"parent_iso" => parent_iso, "iso_code" => iso}, ids_by_iso) do
+    {_, inserted} = Repo.insert_all(Location, rows, returning: [:id, :iso_code])
+
+    Map.new(inserted, &{&1.iso_code, &1.id})
+  end
+
+  defp insert_subdivisions(subdivisions, ids_by_iso, imported_at) do
+    rows =
+      Enum.map(subdivisions, fn row ->
+        country_id = country_id!(row, ids_by_iso)
+        Map.put(base_row(row, imported_at), :country_id, country_id)
+      end)
+
+    # Each row carries ~9 columns; chunk so a batch stays well under Postgres's
+    # 65535 bind-parameter limit.
+    rows
+    |> Enum.chunk_every(5000)
+    |> Enum.each(&Repo.insert_all(Location, &1))
+
+    Map.merge(ids_by_iso, Map.new(rows, &{&1.iso_code, nil}))
+  end
+
+  defp country_id!(%{"parent_iso" => parent_iso, "iso_code" => iso}, ids_by_iso) do
     case Map.fetch(ids_by_iso, parent_iso) do
-      {:ok, id} ->
-        id
-
-      :error ->
-        Repo.rollback({:missing_parent, iso, parent_iso})
+      {:ok, id} -> id
+      :error -> Repo.rollback({:missing_parent, iso, parent_iso})
     end
   end
 
-  defp insert!(row, parent_id, imported_at) do
-    attrs = %{
-      "slug" => slug(row["iso_code"]),
-      "name_en" => row["name_en"],
-      "location_type" => row["type"],
-      "iso_code" => row["iso_code"],
-      "is_private" => false,
-      "parent_id" => parent_id,
-      "extras" => extras(row, imported_at)
+  # A plain attribute map for `Repo.insert_all` (which bypasses the schema's
+  # changeset and timestamps, so both are set here). The level FKs default to
+  # null — `country_id` is overlaid on subdivisions by the caller.
+  defp base_row(row, imported_at) do
+    %{
+      slug: slug(row["iso_code"]),
+      name_en: row["name_en"],
+      location_type: String.to_existing_atom(row["type"]),
+      iso_code: row["iso_code"],
+      is_private: false,
+      extras: extras(row, imported_at),
+      inserted_at: imported_at,
+      updated_at: imported_at
     }
-
-    %Location{}
-    |> Location.changeset(attrs)
-    |> Repo.insert()
-    |> case do
-      {:ok, location} -> location
-      {:error, changeset} -> Repo.rollback({:invalid, row["iso_code"], changeset})
-    end
   end
 
   defp slug(iso_code) do

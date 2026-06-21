@@ -99,8 +99,11 @@ defmodule KjogviWeb.Live.My.Imports.Locations do
           </p>
         <% @already_imported -> %>
           <p class="text-sm text-slate-500" id="locations-import-done">
-            Already has {Map.get(@counts, :country, 0)} countries and
-            {Map.get(@counts, :subdivision1, 0)} subdivisions — import disabled.
+            Already has {Map.get(@counts, :country, 0)} countries and {Map.get(
+              @counts,
+              :subdivision1,
+              0
+            )} subdivisions — import disabled.
           </p>
         <% true -> %>
           <.form

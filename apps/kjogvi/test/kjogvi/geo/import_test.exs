@@ -69,6 +69,9 @@ defmodule Kjogvi.Geo.ImportTest do
       assert is_nil(country.user_id)
       # A country has no level FKs.
       assert Location.ancestor_ids(country) == []
+      # Bulk insert sets timestamps explicitly (it bypasses the changeset).
+      assert %DateTime{} = country.inserted_at
+      assert %DateTime{} = country.updated_at
     end
 
     test "derives the subdivision's level FKs from its country" do
@@ -167,6 +170,49 @@ defmodule Kjogvi.Geo.ImportTest do
       insert(:country, iso_code: "US")
 
       assert Import.country_exists?()
+    end
+  end
+
+  describe "telemetry" do
+    # Forwards each named import span event (`:start` / `:stop`) to the test
+    # process, tagged with its suffix so a test can assert on either.
+    defp attach_handlers(suffixes) do
+      ref = make_ref()
+      test_pid = self()
+      events = Enum.map(suffixes, &[:kjogvi, :geo, :import, &1])
+
+      :telemetry.attach_many(
+        {__MODULE__, ref},
+        events,
+        fn [:kjogvi, :geo, :import, suffix], measurements, metadata, _ ->
+          send(test_pid, {:telemetry, suffix, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach({__MODULE__, ref}) end)
+    end
+
+    test "emits start then stop with the duration and inserted count on success" do
+      attach_handlers([:start, :stop])
+
+      path = write_jsonl([country_row("UA", "Ukraine"), subdivision_row("UA-30", "Kyiv", "UA")])
+      assert {:ok, _} = Import.import(path)
+
+      assert_received {:telemetry, :start, %{system_time: _}, _}
+      assert_received {:telemetry, :stop, %{duration: duration}, %{result: :ok, count: 2}}
+      assert is_integer(duration) and duration > 0
+    end
+
+    test "emits a stop event carrying the failure reason" do
+      attach_handlers([:stop])
+      insert(:country, iso_code: "US")
+
+      path = write_jsonl([country_row("UA", "Ukraine")])
+      assert {:error, :already_imported} = Import.import(path)
+
+      assert_received {:telemetry, :stop, %{duration: _},
+                       %{result: :error, reason: :already_imported}}
     end
   end
 end
