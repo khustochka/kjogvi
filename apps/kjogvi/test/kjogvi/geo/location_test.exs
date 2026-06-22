@@ -71,6 +71,61 @@ defmodule Kjogvi.Geo.LocationTest do
       assert errors[:name_en]
       assert errors[:location_type]
     end
+
+    test "ignores iso_code — users can't set it" do
+      changeset =
+        Location.changeset(
+          %Location{
+            slug: "test-loc",
+            name_en: "Test",
+            location_type: :country,
+            is_private: false
+          },
+          %{"iso_code" => "ZZ"}
+        )
+
+      assert changeset.valid?
+      refute Map.has_key?(changeset.changes, :iso_code)
+    end
+
+    test "ignores iso_code on an existing location — users can't edit it" do
+      changeset =
+        Location.changeset(
+          %Location{
+            slug: "ua",
+            name_en: "Ukraine",
+            location_type: :country,
+            iso_code: "UA",
+            is_private: false
+          },
+          %{"iso_code" => "ZZ"}
+        )
+
+      refute Map.has_key?(changeset.changes, :iso_code)
+    end
+  end
+
+  describe "iso_code unique index" do
+    test "rejects a second location with the same iso_code" do
+      insert(:country, iso_code: "UA")
+
+      assert_raise Ecto.ConstraintError, ~r/locations_iso_code_index/, fn ->
+        Repo.insert!(%Location{
+          slug: "ua-dup",
+          name_en: "Ukraine (dup)",
+          location_type: :country,
+          iso_code: "UA",
+          is_private: false
+        })
+      end
+    end
+
+    test "allows many locations with a null iso_code" do
+      insert(:location, iso_code: nil)
+      insert(:location, iso_code: nil)
+
+      assert Repo.aggregate(Location, :count) >= 2
+    end
   end
 
   describe "changeset/2 deriving level FKs from a parent" do

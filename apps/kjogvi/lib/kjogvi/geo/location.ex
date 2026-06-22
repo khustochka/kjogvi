@@ -87,7 +87,6 @@ defmodule Kjogvi.Geo.Location do
     slug
     name_en
     location_type
-    iso_code
     is_private
     lat
     lon

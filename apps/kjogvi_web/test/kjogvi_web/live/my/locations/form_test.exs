@@ -196,7 +196,6 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
           slug: "my-spot",
           name_en: "My Spot",
           location_type: "site",
-          iso_code: "ca",
           is_private: "true"
         }
       )
@@ -213,11 +212,9 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
 
       slug_input = view |> element("#location_slug") |> render()
       name_input = view |> element("#location_name_en") |> render()
-      iso_input = view |> element("#location_iso_code") |> render()
 
       assert slug_input =~ ~s|value="my-spot"|
       assert name_input =~ ~s|value="My Spot"|
-      assert iso_input =~ ~s|value="ca"|
     end
 
     test "clearing the parent clears the derived FKs, so saving needs a country", %{conn: conn} do
@@ -281,7 +278,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert saved.country_id == france.id
     end
 
-    test "changing parent keeps user-typed slug/name/iso", %{conn: conn} do
+    test "changing parent keeps user-typed slug/name", %{conn: conn} do
       %{city: city} = build_chain()
       other_country = insert(:country, name_en: "France")
 
@@ -292,7 +289,6 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
         location: %{
           slug: "my-spot",
           name_en: "My Spot",
-          iso_code: "fr",
           is_private: "false"
         }
       )
@@ -308,11 +304,9 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
 
       slug_input = view |> element("#location_slug") |> render()
       name_input = view |> element("#location_name_en") |> render()
-      iso_input = view |> element("#location_iso_code") |> render()
 
       assert slug_input =~ ~s|value="my-spot"|
       assert name_input =~ ~s|value="My Spot"|
-      assert iso_input =~ ~s|value="fr"|
     end
   end
 

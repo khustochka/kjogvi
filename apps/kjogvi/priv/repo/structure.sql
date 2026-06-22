@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict iihZTVSKM8rnJJf7kmhS5WQaQqcJc5rTou4bLNfHd2zQhU2tYkcfVXdoXrI3rUG
+\restrict szl2ecwHO22ZC0lQU6ethk1doaEmqVLfkObr4h1lgscpklrZbmaFNjhHs9Fqmau
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -673,6 +673,13 @@ CREATE INDEX locations_country_id_index ON public.locations USING btree (country
 
 
 --
+-- Name: locations_iso_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX locations_iso_code_index ON public.locations USING btree (iso_code) WHERE (iso_code IS NOT NULL);
+
+
+--
 -- Name: locations_location_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -944,7 +951,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict iihZTVSKM8rnJJf7kmhS5WQaQqcJc5rTou4bLNfHd2zQhU2tYkcfVXdoXrI3rUG
+\unrestrict szl2ecwHO22ZC0lQU6ethk1doaEmqVLfkObr4h1lgscpklrZbmaFNjhHs9Fqmau
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -972,3 +979,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260618184652);
 INSERT INTO public."schema_migrations" (version) VALUES (20260619120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260620000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260620120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260621120000);

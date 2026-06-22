@@ -241,9 +241,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       </div>
 
       <div class="flex flex-wrap items-end gap-6 pt-2">
-        <div class="w-20">
-          <CoreComponents.input type="text" field={@form[:iso_code]} label="ISO" />
-        </div>
         <div class="flex items-center h-[38px]">
           <CoreComponents.input type="checkbox" field={@form[:is_private]} label="Private loc" />
         </div>
@@ -371,7 +368,6 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       "slug" => location.slug,
       "name_en" => location.name_en,
       "location_type" => location.location_type,
-      "iso_code" => location.iso_code,
       "is_private" => location.is_private,
       "lat" => location.lat,
       "lon" => location.lon,
