@@ -136,6 +136,14 @@ defmodule Kjogvi.Geo.ImportTest do
       assert {:error, :already_imported} = Import.import(path)
       refute Repo.get_by(Location, iso_code: "UA")
     end
+
+    test "imported locations take ids in the reserved upper range" do
+      path = write_jsonl([country_row("UA", "Ukraine")])
+
+      assert {:ok, _} = Import.import(path)
+
+      assert by_iso("UA").id >= 10_000
+    end
   end
 
   describe "import/2 from a URL" do

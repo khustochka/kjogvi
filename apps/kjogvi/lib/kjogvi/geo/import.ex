@@ -36,6 +36,11 @@ defmodule Kjogvi.Geo.Import do
   alias Kjogvi.Geo.Location.Query
   alias Kjogvi.Repo
 
+  # Imported locations start at this id, reserving the lower range for
+  # hand-managed rows. The sequence is bumped to at least this value (or past the
+  # current max id) before the import inserts anything.
+  @min_start_seq 10_000
+
   @doc """
   Imports the ISO 3166 JSONL from `source`.
 
@@ -126,10 +131,21 @@ defmodule Kjogvi.Geo.Import do
 
     Repo.transaction(
       fn ->
+        bump_id_sequence()
         ids_by_iso = insert_countries(countries, imported_at)
         insert_subdivisions(subdivisions, ids_by_iso, imported_at)
       end,
       timeout: :infinity
+    )
+  end
+
+  # Move `locations_id_seq` to at least `@min_start_seq`, but never below the
+  # current max id, so imported rows take ids in the reserved upper range without
+  # colliding with any existing row.
+  defp bump_id_sequence do
+    Repo.query!(
+      "SELECT setval('locations_id_seq', GREATEST($1, (SELECT COALESCE(MAX(id), 0) FROM locations)))",
+      [@min_start_seq]
     )
   end
 
