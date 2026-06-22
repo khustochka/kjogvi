@@ -1,6 +1,11 @@
 defmodule Kjogvi.Geo.ImportTest do
   use Kjogvi.DataCase, async: true
 
+  # The import's telemetry handler logs an error on each deliberate failure-path
+  # test (`:already_imported`, `:missing_parent`); capture it so it only surfaces
+  # when a test actually fails.
+  @moduletag :capture_log
+
   alias Kjogvi.Geo.Import
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
