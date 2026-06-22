@@ -1,9 +1,9 @@
 defmodule Kjogvi.Geo.ImportTest do
-  use Kjogvi.DataCase, async: true
+  use Kjogvi.DataCase, async: false
 
   # The import's telemetry handler logs an error on each deliberate failure-path
-  # test (`:already_imported`, `:missing_parent`); capture it so it only surfaces
-  # when a test actually fails.
+  # test (`:missing_parent`); capture it so it only surfaces when a test actually
+  # fails.
   @moduletag :capture_log
 
   alias Kjogvi.Geo.Import
@@ -128,13 +128,13 @@ defmodule Kjogvi.Geo.ImportTest do
       assert Repo.aggregate(Location, :count) == 0
     end
 
-    test "refuses to run when a country already exists" do
+    test "runs against a non-empty table, adding new locations" do
       insert(:country, iso_code: "US")
 
       path = write_jsonl([country_row("UA", "Ukraine")])
 
-      assert {:error, :already_imported} = Import.import(path)
-      refute Repo.get_by(Location, iso_code: "UA")
+      assert {:ok, _} = Import.import(path)
+      assert by_iso("UA").location_type == :country
     end
 
     test "imported locations take ids in the reserved upper range" do
@@ -146,6 +146,61 @@ defmodule Kjogvi.Geo.ImportTest do
     end
   end
 
+  describe "re-running the import (upsert on iso_code)" do
+    test "updates an existing country in place instead of duplicating it" do
+      assert {:ok, _} = Import.import(write_jsonl([country_row("UA", "Ukraine")]))
+      original = by_iso("UA")
+
+      assert {:ok, _} =
+               Import.import(write_jsonl([country_row("UA", "Ukraine (renamed)")]))
+
+      updated = by_iso("UA")
+      assert updated.id == original.id
+      assert updated.name_en == "Ukraine (renamed)"
+      assert Repo.aggregate(Location, :count) == 1
+    end
+
+    test "refreshes provenance extras on a re-run" do
+      assert {:ok, _} = Import.import(write_jsonl([country_row("UA", "Ukraine")]))
+
+      assert {:ok, _} =
+               Import.import(
+                 write_jsonl([
+                   country_row("UA", "Ukraine", %{"iso_codes_version" => "5.0.0"})
+                 ])
+               )
+
+      assert by_iso("UA").extras["iso_codes_version"] == "5.0.0"
+    end
+
+    test "re-points a subdivision's country_id to the existing country" do
+      seed = [country_row("UA", "Ukraine"), subdivision_row("UA-30", "Kyiv City", "UA")]
+      assert {:ok, _} = Import.import(write_jsonl(seed))
+      country_id = by_iso("UA").id
+
+      assert {:ok, _} = Import.import(write_jsonl(seed))
+
+      assert by_iso("UA-30").country_id == country_id
+      assert Repo.aggregate(Location, :count) == 2
+    end
+
+    test "preserves user-editable columns the import does not own" do
+      assert {:ok, _} = Import.import(write_jsonl([country_row("UA", "Ukraine")]))
+
+      by_iso("UA")
+      |> Ecto.Changeset.change(is_private: true, slug: "custom_slug")
+      |> Repo.update!()
+
+      assert {:ok, _} =
+               Import.import(write_jsonl([country_row("UA", "Ukraine (renamed)")]))
+
+      updated = by_iso("UA")
+      assert updated.name_en == "Ukraine (renamed)"
+      assert updated.is_private == true
+      assert updated.slug == "custom_slug"
+    end
+  end
+
   describe "import/2 from a URL" do
     test "imports the JSONL fetched from an http(s) URL" do
       body = jsonl([country_row("UA", "Ukraine"), subdivision_row("UA-30", "Kyiv City", "UA")])
@@ -154,17 +209,6 @@ defmodule Kjogvi.Geo.ImportTest do
                Import.import("https://example.test/iso.jsonl", req_options: serving(body))
 
       assert by_iso("UA-30").country_id == by_iso("UA").id
-    end
-
-    test "refuses to run when a country already exists" do
-      insert(:country, iso_code: "US")
-
-      body = jsonl([country_row("UA", "Ukraine")])
-
-      assert {:error, :already_imported} =
-               Import.import("https://example.test/iso.jsonl", req_options: serving(body))
-
-      refute Repo.get_by(Location, iso_code: "UA")
     end
 
     test "raises when no source is given and no URL is configured" do
@@ -219,13 +263,17 @@ defmodule Kjogvi.Geo.ImportTest do
 
     test "emits a stop event carrying the failure reason" do
       attach_handlers([:stop])
-      insert(:country, iso_code: "US")
 
-      path = write_jsonl([country_row("UA", "Ukraine")])
-      assert {:error, :already_imported} = Import.import(path)
+      path =
+        write_jsonl([
+          country_row("UA", "Ukraine"),
+          subdivision_row("ZZ-01", "Nowhere", "ZZ")
+        ])
+
+      assert {:error, {:missing_parent, "ZZ-01", "ZZ"}} = Import.import(path)
 
       assert_received {:telemetry, :stop, %{duration: _},
-                       %{result: :error, reason: :already_imported}}
+                       %{result: :error, reason: {:missing_parent, "ZZ-01", "ZZ"}}}
     end
   end
 end

@@ -64,18 +64,16 @@ defmodule KjogviWeb.Live.My.Imports.LocationsTest do
 
       {:ok, lv, _html} = conn |> login_admin() |> live(~p"/my/imports")
 
-      assert has_element?(lv, "#locations-import-form")
-      refute has_element?(lv, "#locations-import-done")
+      assert has_element?(lv, "#locations-import-form button", "Import")
     end
 
-    test "shows an already-imported notice when a country exists", %{conn: conn} do
+    test "offers a re-import when a country already exists", %{conn: conn} do
       configure_url([country_row("UA", "Ukraine")])
       insert(:country, iso_code: "US")
 
       {:ok, lv, _html} = conn |> login_admin() |> live(~p"/my/imports")
 
-      assert has_element?(lv, "#locations-import-done")
-      refute has_element?(lv, "#locations-import-form")
+      assert has_element?(lv, "#locations-import-form button", "Re-import")
     end
   end
 
@@ -103,8 +101,8 @@ defmodule KjogviWeb.Live.My.Imports.LocationsTest do
 
       assert html =~ "Imported 1 countries and 1 subdivisions."
       assert Repo.aggregate(Location, :count) == 2
-      # Once imported, the button is replaced by the already-imported notice.
-      assert has_element?(lv, "#locations-import-done")
+      # The import is re-runnable; the button stays, now labelled Re-import.
+      assert has_element?(lv, "#locations-import-form button", "Re-import")
     end
   end
 end

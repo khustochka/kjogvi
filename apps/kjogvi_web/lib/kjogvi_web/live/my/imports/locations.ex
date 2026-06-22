@@ -2,13 +2,15 @@ defmodule KjogviWeb.Live.My.Imports.Locations do
   @moduledoc """
   Admin-only import of ISO 3166 countries and subdivisions into locations.
 
-  A one-shot fill of an empty `locations` table from the configured JSONL URL
+  Fills (or refreshes) the `locations` table from the configured JSONL URL
   (`Kjogvi.Geo.Import`). The import runs in a single transaction and finishes in
   seconds, so it is run directly via `start_async/3` with no progress reporting —
   the button shows a loading state and the result is reported with a flash.
 
-  Blocked when no URL is configured (`LOCATIONS_IMPORT_URL`) or when ISO data is already
-  present; the underlying `Kjogvi.Geo.Import` enforces the latter regardless.
+  The import upserts on `iso_code`, so it is re-runnable: with ISO data already
+  present the button re-imports (updates existing rows from a newer release)
+  rather than being disabled. Blocked only when no URL is configured
+  (`LOCATIONS_IMPORT_URL`).
   """
 
   use KjogviWeb, :live_component
@@ -24,11 +26,11 @@ defmodule KjogviWeb.Live.My.Imports.Locations do
   end
 
   # Reads the import's preconditions and the current type counts so the template
-  # can show what's there and whether importing is possible.
+  # can show what's there and whether this is a fresh import or a re-import.
   defp assign_state(socket) do
     socket
     |> assign(:url, Import.default_url())
-    |> assign(:already_imported, Import.country_exists?())
+    |> assign(:imported, Import.country_exists?())
     |> assign(:counts, Geo.location_counts_by_type())
   end
 
@@ -68,13 +70,13 @@ defmodule KjogviWeb.Live.My.Imports.Locations do
     )
   end
 
-  defp flash_for_result(socket, {:error, :already_imported}) do
-    put_flash(socket, :error, "Locations are already imported.")
-  end
-
   defp flash_for_result(socket, {:error, reason}) do
     put_flash(socket, :error, "Locations import failed: #{inspect(reason)}")
   end
+
+  defp import_button_label(true, _imported), do: "Importing…"
+  defp import_button_label(false, true), do: "Re-import"
+  defp import_button_label(false, false), do: "Import"
 
   def render(assigns) do
     ~H"""
@@ -82,8 +84,9 @@ defmodule KjogviWeb.Live.My.Imports.Locations do
       <.main_flash id="locations-import-flash" flash={@flash} />
 
       <p class="text-sm text-slate-600 mb-4">
-        Fills the empty locations table with ISO 3166 countries and subdivisions.
-        One-shot: it is disabled once any country exists.
+        Fills the locations table with ISO 3166 countries and subdivisions.
+        Re-runnable: it upserts on the ISO code, so running it again updates
+        existing rows from a newer release.
       </p>
 
       <ul class="text-sm text-slate-700 mb-4 space-y-1">
@@ -97,14 +100,6 @@ defmodule KjogviWeb.Live.My.Imports.Locations do
             No import URL configured. Set the <code>LOCATIONS_IMPORT_URL</code>
             environment variable to enable the import.
           </p>
-        <% @already_imported -> %>
-          <p class="text-sm text-slate-500" id="locations-import-done">
-            Already has {Map.get(@counts, :country, 0)} countries and {Map.get(
-              @counts,
-              :subdivision1,
-              0
-            )} subdivisions — import disabled.
-          </p>
         <% true -> %>
           <.form
             id="locations-import-form"
@@ -113,7 +108,7 @@ defmodule KjogviWeb.Live.My.Imports.Locations do
             phx-target={@myself}
           >
             <.button disabled={@running}>
-              {if @running, do: "Importing…", else: "Import"}
+              {import_button_label(@running, @imported)}
             </.button>
           </.form>
       <% end %>

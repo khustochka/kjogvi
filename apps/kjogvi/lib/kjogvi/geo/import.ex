@@ -1,13 +1,12 @@
 defmodule Kjogvi.Geo.Import do
   @moduledoc """
-  One-shot import of ISO 3166-1 (countries/territories) and ISO 3166-2
-  (subdivisions) into `Kjogvi.Geo.Location` as `country` and `subdivision1`
-  locations.
+  Import of ISO 3166-1 (countries/territories) and ISO 3166-2 (subdivisions)
+  into `Kjogvi.Geo.Location` as `country` and `subdivision1` locations.
 
   Reads a pre-built JSONL file (see `priv/geo/build_iso_3166.exs`), one location
   per line. The data is strictly two-level — countries, then their subdivisions —
   so it is bulk-inserted with `Repo.insert_all` in two passes (countries first,
-  then subdivisions with `country_id` taken from the countries just inserted)
+  then subdivisions with `country_id` taken from the countries just upserted)
   rather than one changeset per row, keeping the whole import well under a second.
 
   The single entry point is `import/2`, which dispatches on its source: an
@@ -20,16 +19,19 @@ defmodule Kjogvi.Geo.Import do
   The dataset is small (a few hundred KB), so the HTTP body is buffered whole
   rather than streamed end-to-end; only the local-file path streams from disk.
 
-  Both refuse to run when ISO data is already present (`country_exists?/0`),
-  so the import stays a clean one-shot.
+  ## Re-runnable upsert
 
-  TODO: re-import / upsert path. This importer assumes an empty table; it has no
-  reconciliation for a *re-run* against an existing dataset (new iso-codes
-  version, renamed country, added/removed subdivision). A future version should
-  match on `iso_code` and update `name_en`/`extras` while preserving each row's
-  `id` (cards reference locations by id) and any user edits, and decide what to
-  do with subdivisions that disappear from a newer ISO release but still have
-  cards. Until then, `country_exists?/0` blocks any second run.
+  The import upserts on `iso_code`: a row already present (same `iso_code`) is
+  updated rather than skipped or duplicated, so it can be re-run against a newer
+  iso-codes release. The conflict update refreshes only the ISO-sourced columns
+  (`name_en`, `extras`, `updated_at`, and a subdivision's `country_id`) and
+  leaves each row's `id` intact (cards reference locations by id). Columns a user
+  may have edited locally — `slug`, `is_private`, `lat`, `lon` — are *not*
+  overwritten on conflict.
+
+  TODO: it still does not reconcile *removals* — a subdivision that disappears
+  from a newer ISO release stays in the table (it may carry cards). Pruning such
+  orphans is left to a future pass.
   """
 
   alias Kjogvi.Geo.Location
@@ -87,8 +89,7 @@ defmodule Kjogvi.Geo.Import do
   end
 
   @doc """
-  Whether any `country` location already exists. The import refuses to run when
-  it does, keeping it a one-shot fill of an empty table.
+  Whether any `country` location already exists.
   """
   def country_exists? do
     Location
@@ -96,22 +97,9 @@ defmodule Kjogvi.Geo.Import do
     |> Repo.exists?()
   end
 
-  # Runs the import for a stream/enumerable of JSONL lines (strings). Refuses
-  # when ISO data is already present, then inserts every row in one transaction,
-  # parents before children, resolving each child's parent by iso_code.
-  #
-  # Wrapped in a `:telemetry.span/3` so the whole run's duration is measured; the
-  # `:stop` metadata carries the outcome and, on success, the number of locations
-  # inserted (see `stop_metadata/1`).
   defp run(lines) do
     :telemetry.span([:kjogvi, :geo, :import], %{}, fn ->
-      result =
-        if country_exists?() do
-          {:error, :already_imported}
-        else
-          insert_all(lines)
-        end
-
+      result = upsert_all(lines)
       {result, stop_metadata(result)}
     end)
   end
@@ -119,12 +107,10 @@ defmodule Kjogvi.Geo.Import do
   defp stop_metadata({:ok, ids_by_iso}), do: %{result: :ok, count: map_size(ids_by_iso)}
   defp stop_metadata({:error, reason}), do: %{result: :error, reason: reason}
 
-  # The data is strictly two-level (countries, then their subdivisions), so the
-  # rows are bulk-inserted with `Repo.insert_all` in two passes instead of one
-  # changeset + parent lookup per row: countries first, then subdivisions with
-  # `country_id` taken from the countries' returned ids. Returns the same
-  # `%{iso_code => id}` map the per-row version did.
-  defp insert_all(lines) do
+  # Two passes (the data is strictly two-level): countries first, then
+  # subdivisions whose `country_id` comes from the countries' resolved ids.
+  # Returns a `%{iso_code => id}` map.
+  defp upsert_all(lines) do
     imported_at = DateTime.utc_now()
     parsed = Enum.map(lines, &Jason.decode!/1)
     {countries, subdivisions} = Enum.split_with(parsed, &(&1["parent_iso"] == nil))
@@ -152,9 +138,16 @@ defmodule Kjogvi.Geo.Import do
   defp insert_countries(countries, imported_at) do
     rows = Enum.map(countries, &base_row(&1, imported_at))
 
-    {_, inserted} = Repo.insert_all(Location, rows, returning: [:id, :iso_code])
+    # `DO UPDATE` (not `DO NOTHING`) also returns existing rows, so the id map
+    # stays complete on a re-run for subdivisions to resolve `country_id`.
+    {_, upserted} =
+      Repo.insert_all(Location, rows,
+        on_conflict: on_conflict(),
+        conflict_target: conflict_target(),
+        returning: [:id, :iso_code]
+      )
 
-    Map.new(inserted, &{&1.iso_code, &1.id})
+    Map.new(upserted, &{&1.iso_code, &1.id})
   end
 
   defp insert_subdivisions(subdivisions, ids_by_iso, imported_at) do
@@ -168,9 +161,26 @@ defmodule Kjogvi.Geo.Import do
     # 65535 bind-parameter limit.
     rows
     |> Enum.chunk_every(5000)
-    |> Enum.each(&Repo.insert_all(Location, &1))
+    |> Enum.each(
+      &Repo.insert_all(Location, &1,
+        on_conflict: on_conflict(),
+        conflict_target: conflict_target()
+      )
+    )
 
     Map.merge(ids_by_iso, Map.new(rows, &{&1.iso_code, nil}))
+  end
+
+  # Refresh only ISO-sourced columns; leave user-editable ones (`slug`,
+  # `is_private`, `lat`, `lon`) and `id`/`inserted_at` untouched.
+  defp on_conflict do
+    {:replace, [:name_en, :country_id, :extras, :updated_at]}
+  end
+
+  # The `iso_code` unique index is partial, so the conflict target must repeat
+  # its predicate for Postgres to infer it.
+  defp conflict_target do
+    {:unsafe_fragment, "(iso_code) WHERE iso_code IS NOT NULL"}
   end
 
   defp country_id!(%{"parent_iso" => parent_iso, "iso_code" => iso}, ids_by_iso) do
