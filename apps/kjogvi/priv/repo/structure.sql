@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict szl2ecwHO22ZC0lQU6ethk1doaEmqVLfkObr4h1lgscpklrZbmaFNjhHs9Fqmau
+\restrict dC7sT3myuvUbyEHelYBrKLhYC3URsIsWs9OtPKTG5TvWUMZ5Zf1k1kP6fRQxQ0H
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -31,6 +31,20 @@ CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;
 --
 
 COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
+
+
+--
+-- Name: unaccent; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION unaccent; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION unaccent IS 'text search dictionary that removes accents';
 
 
 SET default_tablespace = '';
@@ -864,7 +878,7 @@ ALTER TABLE ONLY public.images
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT locations_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.locations(id) ON DELETE RESTRICT DEFERRABLE;
 
 
 --
@@ -872,7 +886,7 @@ ALTER TABLE ONLY public.locations
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_country_id_fkey FOREIGN KEY (country_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT locations_country_id_fkey FOREIGN KEY (country_id) REFERENCES public.locations(id) ON DELETE RESTRICT DEFERRABLE;
 
 
 --
@@ -880,7 +894,7 @@ ALTER TABLE ONLY public.locations
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT locations_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.locations(id) ON DELETE RESTRICT DEFERRABLE;
 
 
 --
@@ -888,7 +902,7 @@ ALTER TABLE ONLY public.locations
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_subdivision1_id_fkey FOREIGN KEY (subdivision1_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT locations_subdivision1_id_fkey FOREIGN KEY (subdivision1_id) REFERENCES public.locations(id) ON DELETE RESTRICT DEFERRABLE;
 
 
 --
@@ -896,7 +910,7 @@ ALTER TABLE ONLY public.locations
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT locations_subdivision2_id_fkey FOREIGN KEY (subdivision2_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT locations_subdivision2_id_fkey FOREIGN KEY (subdivision2_id) REFERENCES public.locations(id) ON DELETE RESTRICT DEFERRABLE;
 
 
 --
@@ -951,7 +965,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict szl2ecwHO22ZC0lQU6ethk1doaEmqVLfkObr4h1lgscpklrZbmaFNjhHs9Fqmau
+\unrestrict dC7sT3myuvUbyEHelYBrKLhYC3URsIsWs9OtPKTG5TvWUMZ5Zf1k1kP6fRQxQ0H
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -980,3 +994,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260619120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260620000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260620120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260621120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260623000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260623120000);

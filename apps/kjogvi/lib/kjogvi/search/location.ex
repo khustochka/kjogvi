@@ -3,6 +3,7 @@ defmodule Kjogvi.Search.Location do
   Location search with priority ordering.
 
   Matches against `name_en`, `slug`, and `iso_code` (case-insensitive contains).
+  `name_en` is additionally accent-insensitive, so "Rhone" finds "Rhône".
   Results are sorted by:
 
   1. Exact match on `iso_code`, `name_en`, or `slug`
@@ -51,7 +52,8 @@ defmodule Kjogvi.Search.Location do
     query
     |> where(
       [l],
-      ilike(l.name_en, ^ilike_term) or
+      # `name_en` is matched accent-insensitively (e.g. "Rhone" finds "Rhône").
+      ilike(fragment("unaccent(?)", l.name_en), fragment("unaccent(?)", ^ilike_term)) or
         ilike(l.slug, ^ilike_term) or
         ilike(l.iso_code, ^ilike_term)
     )
@@ -62,7 +64,9 @@ defmodule Kjogvi.Search.Location do
   end
 
   defp sort_priority(location, term) do
-    name = location.name_en |> to_string() |> String.downcase()
+    # `name_en` is matched accent-insensitively in the query, so normalize it the
+    # same way here to keep exact/prefix ordering meaningful (e.g. "rhone" → "Rhône").
+    name = location.name_en |> to_string() |> unaccent() |> String.downcase()
     slug = location.slug |> to_string() |> String.downcase()
     iso = location.iso_code |> to_string() |> String.downcase()
 
@@ -75,5 +79,13 @@ defmodule Kjogvi.Search.Location do
       end
 
     {bucket, name}
+  end
+
+  # Strips diacritics by decomposing to NFD and dropping combining marks,
+  # mirroring Postgres `unaccent()` for the in-memory sort ordering.
+  defp unaccent(string) do
+    string
+    |> String.normalize(:nfd)
+    |> String.replace(~r/\p{Mn}/u, "")
   end
 end

@@ -61,6 +61,28 @@ defmodule Kjogvi.Search.LocationTest do
       assert Enum.any?(results, fn r -> r.id == loc.id end)
     end
 
+    test "matches name_en accent-insensitively" do
+      loc = GeoFixtures.location_fixture(%{slug: "rhone", name_en: "Rhône"})
+
+      results = Search.search_locations(Location, "Rhone")
+      assert Enum.any?(results, fn r -> r.id == loc.id end)
+    end
+
+    test "matches an accented term against an accented name_en" do
+      loc = GeoFixtures.location_fixture(%{slug: "rhone", name_en: "Rhône"})
+
+      results = Search.search_locations(Location, "Rhône")
+      assert Enum.any?(results, fn r -> r.id == loc.id end)
+    end
+
+    test "prioritizes an accent-insensitive exact name match" do
+      exact = GeoFixtures.location_fixture(%{slug: "rhone", name_en: "Rhône"})
+      _contains = GeoFixtures.location_fixture(%{slug: "rhone-valley", name_en: "Rhône Valley"})
+
+      results = Search.search_locations(Location, "Rhone")
+      assert hd(results).id == exact.id
+    end
+
     test "prioritizes exact iso_code match over substring matches" do
       us =
         GeoFixtures.location_fixture(%{
