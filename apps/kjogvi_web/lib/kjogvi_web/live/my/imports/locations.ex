@@ -83,12 +83,6 @@ defmodule KjogviWeb.Live.My.Imports.Locations do
     <div>
       <.main_flash id="locations-import-flash" flash={@flash} />
 
-      <p class="text-sm text-slate-600 mb-4">
-        Fills the locations table with ISO 3166 countries and subdivisions.
-        Re-runnable: it upserts on the ISO code, so running it again updates
-        existing rows from a newer release.
-      </p>
-
       <ul class="text-sm text-slate-700 mb-4 space-y-1">
         <li>Countries: {Map.get(@counts, :country, 0)}</li>
         <li>Subdivisions: {Map.get(@counts, :subdivision1, 0)}</li>
