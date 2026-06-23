@@ -8,26 +8,21 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
   alias Kjogvi.Legacy.Import.Locations
   alias Kjogvi.Repo
 
-  import Ecto.Query
   import Kjogvi.AccountsFixtures
 
   @columns [
     "id",
     "slug",
     "name_en",
-    "name_ru",
-    "name_uk",
     "loc_type",
+    "new_type",
     "ancestry",
     "iso_code",
     "private_loc",
-    "patch",
     "five_mile_radius",
     "lat",
     "lon",
-    "public_index",
-    "ebird_location_id",
-    "cached_public_locus_id"
+    "public_index"
   ]
 
   defp row(overrides) do
@@ -35,133 +30,285 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
       "id" => 0,
       "slug" => "",
       "name_en" => "",
-      "name_ru" => nil,
-      "name_uk" => nil,
       "loc_type" => "",
+      "new_type" => "",
       "ancestry" => nil,
       "iso_code" => nil,
       "private_loc" => false,
-      "patch" => false,
       "five_mile_radius" => false,
       "lat" => nil,
       "lon" => nil,
-      "public_index" => nil,
-      "ebird_location_id" => nil,
-      "cached_public_locus_id" => nil
+      "public_index" => nil
     }
 
     attrs = Map.merge(defaults, overrides)
     Enum.map(@columns, &Map.fetch!(attrs, &1))
   end
 
-  # Disabled: `Locations.import/3` is a no-op until the legacy importer is
-  # rebuilt onto the level-FK model (it relied on the dropped `ancestry` /
-  # `cached_public_location_id` columns). See the module note.
-  describe "import/3" do
-    @describetag :skip
+  defp run(rows, opts), do: Locations.import(@columns, rows, opts)
+
+  setup do
+    %{opts: [user: user_fixture()]}
+  end
+
+  describe "country / subdivision1 upsert onto ISO rows" do
+    test "renumbers the matching ISO country to the legacy id and copies slug/lat/lon",
+         %{opts: opts} do
+      iso = insert(:country, iso_code: "US", slug: "us", name_en: "United States")
+
+      run(
+        [
+          row(%{
+            "id" => 42,
+            "slug" => "usa",
+            "name_en" => "Legacy USA",
+            "new_type" => "country",
+            "iso_code" => "US",
+            "lat" => "39.0",
+            "lon" => "-98.0"
+          })
+        ],
+        opts
+      )
+
+      refute Repo.get(Location, iso.id)
+      moved = Repo.get!(Location, 42)
+      assert moved.slug == "usa"
+      assert Decimal.equal?(moved.lat, Decimal.new("39.0"))
+      assert Decimal.equal?(moved.lon, Decimal.new("-98.0"))
+      # ISO-sourced fields are left intact (only id/slug/lat/lon change).
+      assert moved.name_en == "United States"
+      assert moved.iso_code == "US"
+      assert moved.user_id == nil
+    end
+
+    test "matches a subdivision1 on the full ISO code built from its country ancestor",
+         %{opts: opts} do
+      insert(:country, iso_code: "US", slug: "us")
+      iso_tx = insert(:subdivision1, iso_code: "US-TX", slug: "us_tx", name_en: "Texas")
+
+      run(
+        [
+          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
+          row(%{
+            "id" => 2,
+            "slug" => "texas",
+            "new_type" => "subdivision1",
+            "iso_code" => "TX",
+            "ancestry" => "1"
+          })
+        ],
+        opts
+      )
+
+      moved = Repo.get!(Location, 2)
+      refute Repo.get(Location, iso_tx.id)
+      assert moved.slug == "texas"
+      assert moved.iso_code == "US-TX"
+      assert moved.country_id == 1
+    end
+
+    test "repoints unvisited ISO subdivisions to the renumbered country's new id",
+         %{opts: opts} do
+      iso_us = insert(:country, iso_code: "US", slug: "us")
+      # An ISO subdivision NOT present in the legacy data — must follow the country.
+      iso_ak = insert(:subdivision1, iso_code: "US-AK", slug: "us_ak", country: iso_us)
+
+      run(
+        [
+          row(%{"id" => 42, "slug" => "usa", "new_type" => "country", "iso_code" => "US"})
+        ],
+        opts
+      )
+
+      refute Repo.get(Location, iso_us.id)
+      assert Repo.get!(Location, 42).iso_code == "US"
+      # The unvisited Alaska keeps its own id but now points at the new country id.
+      assert Repo.get!(Location, iso_ak.id).country_id == 42
+    end
+
+    test "resolves the country ancestor past a special continent above the country",
+         %{opts: opts} do
+      insert(:country, iso_code: "US", slug: "us")
+      insert(:subdivision1, iso_code: "US-VA", slug: "us_va", name_en: "Virginia")
+
+      run(
+        [
+          row(%{"id" => 140, "slug" => "north_america", "new_type" => "special"}),
+          row(%{
+            "id" => 42,
+            "slug" => "usa",
+            "new_type" => "country",
+            "iso_code" => "US",
+            "ancestry" => "140"
+          }),
+          row(%{
+            "id" => 54,
+            "slug" => "virginia",
+            "new_type" => "subdivision1",
+            "iso_code" => "VA",
+            "ancestry" => "140/42"
+          })
+        ],
+        opts
+      )
+
+      moved = Repo.get!(Location, 54)
+      assert moved.iso_code == "US-VA"
+      assert moved.country_id == 42
+    end
+
+    test "fails when a country has no matching ISO row", %{opts: opts} do
+      assert_raise RuntimeError, ~r/no matching ISO row/, fn ->
+        run([row(%{"id" => 1, "new_type" => "country", "iso_code" => "ZZ"})], opts)
+      end
+    end
+
+    test "fails when a country has no iso_code", %{opts: opts} do
+      assert_raise RuntimeError, ~r/no iso_code/, fn ->
+        run([row(%{"id" => 1, "slug" => "blank", "new_type" => "country"})], opts)
+      end
+    end
+  end
+
+  describe "hierarchy locations" do
     setup do
-      %{opts: [user: user_fixture()]}
+      insert(:country, iso_code: "US", slug: "us")
+      :ok
     end
 
-    test "links five-mile-radius locations as special_child_locations of the 5mr location",
-         %{opts: opts} do
-      rows = [
-        row(%{"id" => 1, "slug" => "5mr", "name_en" => "5MR"}),
-        row(%{"id" => 10, "slug" => "arabat_spit", "name_en" => "Arabat Spit"}),
-        row(%{
-          "id" => 2,
-          "slug" => "home_patch",
-          "name_en" => "Home Patch",
-          "five_mile_radius" => true
-        }),
-        row(%{
-          "id" => 3,
-          "slug" => "nearby_park",
-          "name_en" => "Nearby Park",
-          "five_mile_radius" => true
-        }),
-        row(%{"id" => 4, "slug" => "far_away", "name_en" => "Far Away"})
-      ]
-
-      Locations.import(@columns, rows, opts)
-
-      five_mr =
-        from(l in Location, where: l.slug == "5mr")
-        |> preload(:special_child_locations)
-        |> Repo.one()
-
-      assert Enum.map(five_mr.special_child_locations, & &1.slug) |> Enum.sort() ==
-               ["home_patch", "nearby_park"]
-    end
-
-    test "marks imported locations with the :legacy import source", %{opts: opts} do
-      rows = [
-        row(%{"id" => 1, "slug" => "5mr", "name_en" => "5MR"}),
-        row(%{"id" => 10, "slug" => "arabat_spit", "name_en" => "Arabat Spit"})
-      ]
-
-      Locations.import(@columns, rows, opts)
-
-      location = Repo.get_by!(Location, slug: "arabat_spit")
-      assert location.import_source == :legacy
-    end
-
-    test "normalizes blank loc_type and iso_code to nil", %{opts: opts} do
-      rows = [
-        row(%{
-          "id" => 5,
-          "slug" => "blanks",
-          "name_en" => "Blanks",
-          "loc_type" => "  ",
-          "iso_code" => "  "
-        })
-      ]
-
-      Locations.import(@columns, rows, opts)
-
-      location = Repo.get_by!(Location, slug: "blanks")
-      assert location.location_type == nil
-      assert location.iso_code == nil
-    end
-
-    test "trims and keeps a non-blank iso_code", %{opts: opts} do
-      rows = [
-        row(%{"id" => 6, "slug" => "withiso", "name_en" => "With ISO", "iso_code" => " UA "})
-      ]
-
-      Locations.import(@columns, rows, opts)
-
-      location = Repo.get_by!(Location, slug: "withiso")
-      assert location.iso_code == "UA"
-    end
-
-    test "assigns the importing user to ownable and untyped locations but not to common ones",
-         %{opts: opts} do
+    test "derives level FKs from ancestry, owned by the importing user", %{opts: opts} do
       user = opts[:user]
 
-      rows = [
-        row(%{"id" => 20, "slug" => "canada", "name_en" => "Canada", "loc_type" => "country"}),
-        row(%{"id" => 21, "slug" => "winnipeg", "name_en" => "Winnipeg", "loc_type" => "city"}),
-        row(%{"id" => 22, "slug" => "highway-81", "name_en" => "Highway 81", "loc_type" => ""})
-      ]
+      run(
+        [
+          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
+          row(%{
+            "id" => 5,
+            "slug" => "dallas",
+            "new_type" => "city",
+            "ancestry" => "1"
+          }),
+          row(%{
+            "id" => 6,
+            "slug" => "park",
+            "new_type" => "site",
+            "ancestry" => "1/5"
+          })
+        ],
+        opts
+      )
 
-      Locations.import(@columns, rows, opts)
+      city = Repo.get!(Location, 5)
+      assert city.location_type == :city
+      assert city.country_id == 1
+      assert city.user_id == user.id
 
-      assert Repo.get_by!(Location, slug: "canada").user_id == nil
-      assert Repo.get_by!(Location, slug: "winnipeg").user_id == user.id
-      assert Repo.get_by!(Location, slug: "highway-81").user_id == user.id
+      site = Repo.get!(Location, 6)
+      assert site.country_id == 1
+      assert site.city_id == 5
+      assert site.user_id == user.id
     end
 
-    test "advances the id sequence past @min_start_seq for new locations", %{opts: opts} do
-      rows = [
-        row(%{"id" => 1, "slug" => "5mr", "name_en" => "5MR"}),
-        row(%{"id" => 10, "slug" => "arabat_spit", "name_en" => "Arabat Spit"})
-      ]
+    test "preserves legacy ids and marks the import source", %{opts: opts} do
+      run(
+        [
+          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
+          row(%{"id" => 777, "slug" => "spot", "new_type" => "site", "ancestry" => "1"})
+        ],
+        opts
+      )
 
-      Locations.import(@columns, rows, opts)
+      site = Repo.get!(Location, 777)
+      assert site.id == 777
+      assert site.import_source == :legacy
+    end
+  end
 
-      next_location = Repo.insert!(%Location{slug: "fresh", name_en: "Fresh"})
-      assert next_location.id >= 2_000
+  describe "specials inside the hierarchy" do
+    test "creates the special, skips it in descendants' FKs, and links its direct children",
+         %{opts: opts} do
+      insert(:country, iso_code: "US", slug: "us")
+
+      run(
+        [
+          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
+          row(%{"id" => 2, "slug" => "region", "new_type" => "special", "ancestry" => "1"}),
+          row(%{"id" => 3, "slug" => "city", "new_type" => "city", "ancestry" => "1/2"}),
+          row(%{"id" => 4, "slug" => "site", "new_type" => "site", "ancestry" => "1/2/3"})
+        ],
+        opts
+      )
+
+      special = Repo.get!(Location, 2) |> Repo.preload(:special_child_locations)
+      assert special.location_type == :special
+      # The special carries its own ancestor FKs (skipping special ancestors).
+      assert special.country_id == 1
+
+      # The special is outside the hierarchy: descendants' FKs jump over it.
+      city = Repo.get!(Location, 3)
+      assert city.country_id == 1
+      assert city.subdivision1_id == nil
+      assert city.subdivision2_id == nil
+
+      site = Repo.get!(Location, 4)
+      assert site.country_id == 1
+      assert site.city_id == 3
+      assert site.subdivision2_id == nil
+
+      # Only the special's direct ancestry child (deepest ancestor == 2) is linked.
+      assert Enum.map(special.special_child_locations, & &1.id) == [3]
+    end
+  end
+
+  describe "5mr amalgamation" do
+    setup do
+      insert(:country, iso_code: "US", slug: "us")
+      :ok
+    end
+
+    test "forces 5mr to special by slug and links five_mile_radius members",
+         %{opts: opts} do
+      run(
+        [
+          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
+          # Forced special despite a non-special new_type.
+          row(%{"id" => 10, "slug" => "5mr", "name_en" => "5MR", "new_type" => "site"}),
+          row(%{
+            "id" => 20,
+            "slug" => "home_patch",
+            "new_type" => "site",
+            "ancestry" => "1",
+            "five_mile_radius" => true
+          }),
+          row(%{
+            "id" => 21,
+            "slug" => "nearby_park",
+            "new_type" => "site",
+            "ancestry" => "1",
+            "five_mile_radius" => true
+          }),
+          row(%{"id" => 22, "slug" => "far_away", "new_type" => "site", "ancestry" => "1"})
+        ],
+        opts
+      )
+
+      five_mr = Repo.get!(Location, 10) |> Repo.preload(:special_child_locations)
+      assert five_mr.location_type == :special
+
+      assert five_mr.special_child_locations |> Enum.map(& &1.slug) |> Enum.sort() ==
+               ["home_patch", "nearby_park"]
+    end
+  end
+
+  describe "id sequence" do
+    test "advances the sequence past @min_start_seq", %{opts: opts} do
+      insert(:country, iso_code: "US", slug: "us")
+
+      run([row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"})], opts)
+
+      next = Repo.insert!(%Location{slug: "fresh", name_en: "Fresh", location_type: :section})
+      assert next.id >= 10_000
     end
   end
 end

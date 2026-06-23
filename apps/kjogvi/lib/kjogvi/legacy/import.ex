@@ -85,12 +85,39 @@ defmodule Kjogvi.Legacy.Import do
 
   def perform_import(object_type, opts \\ [])
 
+  # Locations are imported in a single shot rather than page by page: resolving
+  # each location's level FKs and special-children means walking its ancestry,
+  # whose ancestors may sit anywhere in the set, so the whole set must be in hand
+  # at once. The legacy dataset is well under one page (`@per_page`), so a single
+  # `fetch_page` holds it all; a second non-empty page would mean the dataset
+  # outgrew that assumption, so we fail loudly rather than silently truncate.
+  def perform_import(:locations, opts) do
+    :telemetry.span([:kjogvi, :legacy, :import, :locations], telemetry_metadata(opts), fn ->
+      result = load_all_at_once(:locations, opts)
+
+      {result, stop_metadata(result, opts)}
+    end)
+  end
+
   def perform_import(object_type, opts) do
     :telemetry.span([:kjogvi, :legacy, :import, object_type], telemetry_metadata(opts), fn ->
       result = load(object_type, adapter().init(), {1, 0}, opts)
 
       {result, stop_metadata(result, opts)}
     end)
+  end
+
+  defp load_all_at_once(object_type, opts) do
+    fetcher = adapter().init()
+    first = adapter().fetch_page(object_type, fetcher, 1)
+
+    if Enum.empty?(adapter().fetch_page(object_type, fetcher, 2).rows) do
+      with :ok <- put_loaded(object_type, first.columns, first.rows, opts) do
+        after_import(object_type, opts)
+      end
+    else
+      raise "Legacy #{object_type} import expects a single page; the dataset has more than one."
+    end
   end
 
   defp load(object_type, fetcher, {page, loaded}, opts) do

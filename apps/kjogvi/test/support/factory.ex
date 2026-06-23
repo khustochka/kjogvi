@@ -30,6 +30,14 @@ defmodule Kjogvi.Factory do
     }
   end
 
+  def subdivision1_factory do
+    %Kjogvi.Geo.Location{
+      slug: sequence(:slug, &"subdivision#{&1}"),
+      name_en: sequence(:name_en, &"Subdivision #{&1}"),
+      location_type: :subdivision1
+    }
+  end
+
   def special_factory do
     %Kjogvi.Geo.Location{
       slug: sequence(:slug, &"special#{&1}"),
