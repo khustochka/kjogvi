@@ -9,6 +9,10 @@ defmodule Kjogvi.Geo do
   alias Kjogvi.Repo
   alias __MODULE__.Location
 
+  # Maps each hierarchy level to its rank, so tree siblings can be ordered top
+  # level first (subdivision2 before city before site …) rather than purely by name.
+  @level_rank Location.hierarchy_levels() |> Enum.with_index() |> Map.new()
+
   def get_countries do
     Location
     |> Location.Query.countries()
@@ -144,82 +148,63 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Builds the location tree for `scope`'s locations index: the user's personal
-  locations grouped under the common `country` / `subdivision1` they belong to.
+  Builds the full location tree for `scope`'s locations index.
 
-  Only common countries and subdivisions the user actually has personal locations
-  under are included — the shared scaffold the user has never touched is omitted.
-  Each level is ordered by name. Specials are excluded (they render separately).
+  Every location is placed under its direct parent — the deepest ancestor named
+  by its level FKs (`Location.parent_id_from_levels/1`) — so the tree follows the
+  real hierarchy to any depth, with skipped levels handled (a site with no city
+  hangs off its subdivision). The common `country` / `subdivision1` scaffold is
+  included only where the user has locations under it; the untouched shared
+  scaffold is omitted. Specials are excluded (they render separately). Each level
+  is ordered by name.
 
-  Returns a list of country nodes:
+  Returns a list of uniform nodes, recursively:
 
-      [
-        %{
-          location: %Location{}=country,
-          subdivisions: [%{location: %Location{}=subdivision1, locations: [personal...]}],
-          direct_locations: [personal...]
-        }
-      ]
+      [%{location: %Location{}, children: [%{location: ..., children: [...]}]}]
 
-  `direct_locations` holds personal locations whose `subdivision1` is not itself a
-  visible common node (so they hang straight off the country).
+  A node's `children` are the locations whose direct parent is that node; a leaf
+  has an empty `children` list.
   """
   def location_tree(scope) do
-    {common, personal} =
+    locations =
       list_locations(scope)
-      |> Enum.split_with(&is_nil(&1.user_id))
+      |> reject_orphan_common()
 
-    common_by_id = Map.new(common, &{&1.id, &1})
-    by_country = Enum.group_by(personal, & &1.country_id)
+    by_parent = Enum.group_by(locations, &Location.parent_id_from_levels/1)
+    present_ids = MapSet.new(locations, & &1.id)
 
-    personal
-    |> referenced_country_ids()
-    |> Enum.map(&common_by_id[&1])
-    |> Enum.reject(&is_nil/1)
-    |> Enum.sort_by(& &1.name_en)
-    |> Enum.map(&country_node(&1, Map.get(by_country, &1.id, []), common_by_id))
-  end
-
-  # Country ids referenced by personal locations, plus personal locations that are
-  # themselves countries (defensive — none today).
-  defp referenced_country_ids(personal) do
-    personal
-    |> Enum.flat_map(fn loc ->
-      [loc.country_id, if(loc.location_type == :country, do: loc.id)]
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.uniq()
-  end
-
-  defp country_node(country, members, common_by_id) do
-    members = Enum.reject(members, &(&1.id == country.id))
-    by_subdivision = Enum.group_by(members, & &1.subdivision1_id)
-
-    subdivisions =
-      members
-      |> Enum.map(& &1.subdivision1_id)
-      |> Enum.uniq()
-      |> Enum.map(&common_by_id[&1])
-      |> Enum.reject(&is_nil/1)
-      |> Enum.sort_by(& &1.name_en)
-      |> Enum.map(fn subdivision ->
-        locations =
-          by_subdivision
-          |> Map.get(subdivision.id, [])
-          |> Enum.reject(&(&1.id == subdivision.id))
-          |> Enum.sort_by(& &1.name_en)
-
-        %{location: subdivision, locations: locations}
+    # Roots: locations with no parent (countries) or whose parent isn't shown.
+    roots =
+      Enum.reject(locations, fn loc ->
+        parent_id = Location.parent_id_from_levels(loc)
+        parent_id && MapSet.member?(present_ids, parent_id)
       end)
 
-    visible_subdivision_ids = MapSet.new(subdivisions, & &1.location.id)
+    build_nodes(roots, by_parent)
+  end
 
-    direct_locations =
-      members
-      |> Enum.reject(&MapSet.member?(visible_subdivision_ids, &1.subdivision1_id))
-      |> Enum.sort_by(& &1.name_en)
+  # `list_locations` returns the user's own locations plus the *entire* common
+  # scaffold (every country and subdivision). Keep only common locations that are
+  # an ancestor of some personal location, so the untouched scaffold is dropped.
+  defp reject_orphan_common(locations) do
+    needed_common_ids =
+      locations
+      |> Enum.reject(&is_nil(&1.user_id))
+      |> Enum.flat_map(&Location.ancestor_ids/1)
+      |> MapSet.new()
 
-    %{location: country, subdivisions: subdivisions, direct_locations: direct_locations}
+    Enum.filter(locations, fn loc ->
+      not is_nil(loc.user_id) or MapSet.member?(needed_common_ids, loc.id)
+    end)
+  end
+
+  defp build_nodes(locations, by_parent) do
+    locations
+    |> Enum.sort_by(&{Map.get(@level_rank, &1.location_type, 99), &1.name_en})
+    |> Enum.map(fn location ->
+      children = Map.get(by_parent, location.id, [])
+      %{location: location, children: build_nodes(children, by_parent)}
+    end)
   end
 
   def get_child_locations(parent_id) do

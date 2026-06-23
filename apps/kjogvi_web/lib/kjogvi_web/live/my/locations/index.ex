@@ -178,11 +178,11 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       <div :if={@search_term == ""}>
         <ul :if={length(@location_tree) > 0} class="space-y-4">
           <li
-            :for={country <- @location_tree}
+            :for={node <- @location_tree}
             class="border border-stone-200 rounded-lg overflow-hidden"
           >
-            <.country_node
-              node={country}
+            <.tree_node
+              node={node}
               current_user={@current_scope.current_user}
               delete_error={@delete_error}
             />
@@ -217,107 +217,67 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   attr :current_user, :any, default: nil
   attr :delete_error, :any, default: nil
 
-  # A country and everything nested under it: common subdivisions, then personal
-  # locations that hang straight off the country. The country's body (its
-  # subdivisions and direct locations) starts expanded so only the common scaffold
-  # — countries and subdivisions — is visible at first; the personal locations
-  # under each subdivision stay collapsed.
-  defp country_node(assigns) do
-    body_id = "country-body-#{assigns.node.location.id}"
-    direct_id = "country-direct-#{assigns.node.location.id}"
-    assigns = assign(assigns, body_id: body_id, direct_id: direct_id)
+  # One tree node, rendered recursively. Common scaffold (country / subdivision1)
+  # uses the bigger, tinted `common_node` header; personal locations use the
+  # `location_entry` row with its full actions. A node with children gets a chevron
+  # that toggles them. Only countries start expanded, so the common scaffold —
+  # countries and their subdivisions — is what shows initially; everything below a
+  # subdivision stays collapsed until expanded.
+  defp tree_node(assigns) do
+    location = assigns.node.location
+    body_id = "tree-body-#{location.id}"
+    has_children = assigns.node.children != []
+    expanded = location.location_type == :country
 
-    ~H"""
-    <div class="bg-sky-50 border-b border-sky-200 px-3 py-2.5 flex items-center gap-1.5">
-      <.tree_toggle target={@body_id} label={"Toggle #{@node.location.name_en}"} expanded />
-      <div class="flex-1 min-w-0">
-        <.common_node location={@node.location} />
-      </div>
-    </div>
-
-    <div id={@body_id}>
-      <ul :if={length(@node.subdivisions) > 0} class="divide-y divide-stone-300">
-        <li :for={subdivision <- @node.subdivisions}>
-          <.subdivision_node
-            node={subdivision}
-            current_user={@current_user}
-            delete_error={@delete_error}
-          />
-        </li>
-      </ul>
-
-      <div :if={length(@node.direct_locations) > 0} class="bg-stone-50 border-l border-stone-300">
-        <button
-          type="button"
-          phx-click={toggle_branch(@direct_id)}
-          aria-expanded="false"
-          aria-controls={@direct_id}
-          class="w-full flex items-center gap-1.5 px-3 py-2 text-sm text-stone-500 hover:bg-stone-100"
-        >
-          <span
-            id={"#{@direct_id}-chevron"}
-            class="inline-flex shrink-0 transition-transform"
-          >
-            <.icon name="hero-chevron-right" class="w-4 h-4" />
-          </span>
-          <span>Other locations</span>
-        </button>
-
-        <ul
-          id={@direct_id}
-          class="hidden divide-y divide-stone-300 border-l border-stone-200 ml-3 bg-white"
-        >
-          <li :for={location <- @node.direct_locations} class="px-3 py-3">
-            <.location_entry
-              location={location}
-              current_user={@current_user}
-              delete_error={delete_error_for(@delete_error, location.id)}
-            />
-          </li>
-        </ul>
-      </div>
-    </div>
-    """
-  end
-
-  attr :node, :map, required: true
-  attr :current_user, :any, default: nil
-  attr :delete_error, :any, default: nil
-
-  # A common subdivision and the personal locations grouped under it, collapsed
-  # initially so the subdivision header is all that shows until expanded.
-  defp subdivision_node(assigns) do
-    body_id = "subdivision-body-#{assigns.node.location.id}"
-    assigns = assign(assigns, :body_id, body_id)
-
-    ~H"""
-    <div class={[
-      "bg-amber-50 px-3 py-2 border-l border-amber-200 flex items-center gap-1.5",
-      if(length(@node.locations) > 0,
-        do: "border-b border-b-amber-400",
-        else: "border-b border-b-amber-200"
+    assigns =
+      assign(assigns,
+        body_id: body_id,
+        has_children: has_children,
+        expanded: expanded,
+        common?: is_nil(location.user_id)
       )
-    ]}>
-      <.tree_toggle target={@body_id} label={"Toggle #{@node.location.name_en}"} />
+
+    ~H"""
+    <div class={["flex items-center gap-1.5 px-3", tree_header_class(@node.location)]}>
+      <.tree_toggle
+        :if={@has_children}
+        target={@body_id}
+        label={"Toggle #{@node.location.name_en}"}
+        expanded={@expanded}
+      />
+      <span :if={!@has_children} class="w-5 shrink-0" aria-hidden="true"></span>
       <div class="flex-1 min-w-0">
-        <.common_node location={@node.location} />
+        <.common_node :if={@common?} location={@node.location} />
+        <.location_entry
+          :if={!@common?}
+          location={@node.location}
+          current_user={@current_user}
+          delete_error={delete_error_for(@delete_error, @node.location.id)}
+        />
       </div>
     </div>
 
     <ul
+      :if={@has_children}
       id={@body_id}
-      class="hidden divide-y divide-stone-300 border-l border-stone-200 ml-3 bg-white"
+      class={["border-l border-stone-200 ml-3", !@expanded && "hidden"]}
     >
-      <li :for={location <- @node.locations} class="px-3 py-3">
-        <.location_entry
-          location={location}
+      <li :for={child <- @node.children} class="border-t border-stone-200">
+        <.tree_node
+          node={child}
           current_user={@current_user}
-          delete_error={delete_error_for(@delete_error, location.id)}
+          delete_error={@delete_error}
         />
       </li>
     </ul>
     """
   end
+
+  # Background / border for a node header, keyed on its type: sky for countries,
+  # amber for subdivisions, plain white for personal locations.
+  defp tree_header_class(%{location_type: :country}), do: "bg-sky-50 py-2.5"
+  defp tree_header_class(%{location_type: :subdivision1}), do: "bg-amber-50 py-2"
+  defp tree_header_class(_personal), do: "bg-white py-3"
 
   # Chevron toggle for a tree branch. `target` is the id (no `#`) of the body to
   # show/hide. `expanded` sets the initial state (chevron down + body shown).

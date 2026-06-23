@@ -413,10 +413,12 @@ defmodule Kjogvi.GeoTest do
       %{user: user, scope: %Kjogvi.Scope{current_user: user, area: :private}}
     end
 
-    test "groups personal locations under their country and subdivision", %{
-      user: user,
-      scope: scope
-    } do
+    # Finds the child node for `location` among a node list.
+    defp child_node(nodes, location) do
+      Enum.find(nodes, &(&1.location.id == location.id))
+    end
+
+    test "nests each location under its direct parent", %{user: user, scope: scope} do
       country = insert(:country, name_en: "Canada")
       subdivision = insert(:subdivision1, name_en: "Manitoba", country: country)
 
@@ -431,24 +433,79 @@ defmodule Kjogvi.GeoTest do
       [country_node] = Geo.location_tree(scope)
       assert country_node.location.id == country.id
 
-      [subdivision_node] = country_node.subdivisions
-      assert subdivision_node.location.id == subdivision.id
-      assert Enum.map(subdivision_node.locations, & &1.id) == [site.id]
-      assert country_node.direct_locations == []
+      subdivision_node = child_node(country_node.children, subdivision)
+      assert subdivision_node
+
+      site_node = child_node(subdivision_node.children, site)
+      assert site_node
+      assert site_node.children == []
     end
 
-    test "places a location with no in-tree subdivision directly under the country", %{
+    test "builds the full hierarchy to any depth, each node holding only its direct children",
+         %{user: user, scope: scope} do
+      country = insert(:country, name_en: "Canada")
+      subdivision = insert(:subdivision1, name_en: "Manitoba", country: country)
+
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: "city",
+          country: country,
+          subdivision1: subdivision,
+          user_id: user.id
+        )
+
+      site =
+        insert(:location,
+          name_en: "Assiniboine Park",
+          location_type: "site",
+          country: country,
+          subdivision1: subdivision,
+          city: city,
+          user_id: user.id
+        )
+
+      [country_node] = Geo.location_tree(scope)
+      subdivision_node = child_node(country_node.children, subdivision)
+
+      # The subdivision's direct child is the city, not the deeper site.
+      assert Enum.map(subdivision_node.children, & &1.location.id) == [city.id]
+
+      city_node = child_node(subdivision_node.children, city)
+      assert Enum.map(city_node.children, & &1.location.id) == [site.id]
+    end
+
+    test "places a location with a skipped level under its deepest common ancestor", %{
       user: user,
       scope: scope
     } do
       country = insert(:country, name_en: "Germany")
+      subdivision = insert(:subdivision1, name_en: "Bavaria", country: country)
 
+      # A site directly under the subdivision (no city in between).
       site =
-        insert(:location, name_en: "Berlin", country: country, user_id: user.id)
+        insert(:location,
+          name_en: "Berlin",
+          location_type: "site",
+          country: country,
+          subdivision1: subdivision,
+          user_id: user.id
+        )
 
       [country_node] = Geo.location_tree(scope)
-      assert country_node.subdivisions == []
-      assert Enum.map(country_node.direct_locations, & &1.id) == [site.id]
+      subdivision_node = child_node(country_node.children, subdivision)
+      assert Enum.map(subdivision_node.children, & &1.location.id) == [site.id]
+    end
+
+    test "places a location with no subdivision directly under the country", %{
+      user: user,
+      scope: scope
+    } do
+      country = insert(:country, name_en: "Germany")
+      site = insert(:location, name_en: "Berlin", country: country, user_id: user.id)
+
+      [country_node] = Geo.location_tree(scope)
+      assert Enum.map(country_node.children, & &1.location.id) == [site.id]
     end
 
     test "excludes common countries and subdivisions with no personal descendants", %{
@@ -463,7 +520,8 @@ defmodule Kjogvi.GeoTest do
 
       [country_node] = Geo.location_tree(scope)
       assert country_node.location.id == used.id
-      assert country_node.subdivisions == []
+      # The empty subdivision is not pulled in.
+      assert Enum.all?(country_node.children, &(&1.location.location_type != :subdivision1))
     end
 
     test "excludes specials", %{scope: scope, user: user} do
@@ -478,11 +536,10 @@ defmodule Kjogvi.GeoTest do
       _other = insert(:location, name_en: "Theirs", country: country, user_id: user_fixture().id)
 
       [country_node] = Geo.location_tree(scope)
-      ids = Enum.map(country_node.direct_locations, & &1.id)
-      assert ids == [own.id]
+      assert Enum.map(country_node.children, & &1.location.id) == [own.id]
     end
 
-    test "orders countries, subdivisions, and locations by name", %{user: user, scope: scope} do
+    test "orders each level by name", %{user: user, scope: scope} do
       country_b = insert(:country, name_en: "Brazil")
       country_a = insert(:country, name_en: "Argentina")
       sub_z = insert(:subdivision1, name_en: "Zulia", country: country_a)
@@ -509,10 +566,53 @@ defmodule Kjogvi.GeoTest do
       assert Enum.map(tree, & &1.location.name_en) == ["Argentina", "Brazil"]
 
       argentina = hd(tree)
-      assert Enum.map(argentina.subdivisions, & &1.location.name_en) == ["Aragua", "Zulia"]
+      assert Enum.map(argentina.children, & &1.location.name_en) == ["Aragua", "Zulia"]
 
-      aragua = hd(argentina.subdivisions)
-      assert Enum.map(aragua.locations, & &1.name_en) == ["A site", "B site"]
+      aragua = child_node(argentina.children, sub_a)
+      assert Enum.map(aragua.children, & &1.location.name_en) == ["A site", "B site"]
+    end
+
+    test "orders direct children by hierarchy rank, then name", %{user: user, scope: scope} do
+      country = insert(:country, name_en: "Canada")
+      subdivision = insert(:subdivision1, name_en: "Manitoba", country: country)
+
+      # Names chosen so alphabetical order (Aaa site, Mmm county, Zzz city) differs
+      # from hierarchy order (subdivision2, city, site).
+      site =
+        insert(:location,
+          name_en: "Aaa Site",
+          location_type: "site",
+          country: country,
+          subdivision1: subdivision,
+          user_id: user.id
+        )
+
+      county =
+        insert(:location,
+          name_en: "Mmm County",
+          location_type: "subdivision2",
+          country: country,
+          subdivision1: subdivision,
+          user_id: user.id
+        )
+
+      city =
+        insert(:location,
+          name_en: "Zzz City",
+          location_type: "city",
+          country: country,
+          subdivision1: subdivision,
+          user_id: user.id
+        )
+
+      [country_node] = Geo.location_tree(scope)
+      subdivision_node = child_node(country_node.children, subdivision)
+
+      assert Enum.map(subdivision_node.children, & &1.location.id) == [
+               county.id,
+               city.id,
+               site.id
+             ]
     end
   end
 

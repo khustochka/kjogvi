@@ -251,11 +251,44 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    # The country body is expanded (no `hidden`), so subdivisions show; the
+    # The country body is expanded (no `hidden`), so its subdivisions show; the
     # subdivision body holding personal locations starts collapsed.
-    assert has_element?(index_live, "#country-body-#{country.id}:not(.hidden)")
-    assert has_element?(index_live, "#subdivision-body-#{subdivision.id}.hidden")
-    assert has_element?(index_live, "button[aria-controls='subdivision-body-#{subdivision.id}']")
+    assert has_element?(index_live, "#tree-body-#{country.id}:not(.hidden)")
+    assert has_element?(index_live, "#tree-body-#{subdivision.id}.hidden")
+    assert has_element?(index_live, "button[aria-controls='tree-body-#{subdivision.id}']")
+  end
+
+  test "a personal location with sub-locations gets its own collapsible toggle", %{
+    conn: conn,
+    user: user
+  } do
+    country = insert(:country, name_en: "Canada")
+    subdivision = insert(:subdivision1, name_en: "Manitoba", country: country)
+
+    city =
+      insert(:location,
+        name_en: "Winnipeg",
+        location_type: "city",
+        country: country,
+        subdivision1: subdivision,
+        user_id: user.id
+      )
+
+    insert(:location,
+      name_en: "Assiniboine Park",
+      location_type: "site",
+      country: country,
+      subdivision1: subdivision,
+      city: city,
+      user_id: user.id
+    )
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    # The city is a personal location that is itself a parent, so it has a
+    # collapsible body, hidden by default.
+    assert has_element?(index_live, "#tree-body-#{city.id}.hidden")
+    assert has_element?(index_live, "button[aria-controls='tree-body-#{city.id}']")
   end
 
   test "omits a common country the user has no locations under", %{conn: conn, user: user} do
