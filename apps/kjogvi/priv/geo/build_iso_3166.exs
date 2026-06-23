@@ -8,8 +8,10 @@
 # Reads ISO 3166-1 (countries/territories) and ISO 3166-2 (subdivisions) and
 # emits one JSON object per line, parents before children, so the importer can
 # resolve ancestry in a single pass. Countries become `country` locations and
-# subdivisions become `subdivision1` locations (the level directly below a
-# country).
+# the top-level subdivisions become `subdivision1` locations (the level directly
+# below a country). Lower-level ISO 3166-2 entries — those with a `parent`
+# (council areas, departments, …) — are NOT emitted; only the subdivisions that
+# hang directly off the country are imported.
 #
 # Dual-entity rule (eBird-style): an ISO 3166-2 entry `XX-YY` denotes the same
 # place as ISO 3166-1 code `YY` only when (1) `YY` is a valid alpha-2 code AND
@@ -103,6 +105,10 @@ defmodule BuildIso3166 do
     subdivision_lines =
       subdivisions
       |> Enum.reject(&dual_entity?(&1, by_alpha_2))
+      # Only the top-level subdivisions (directly under the country) are imported.
+      # ISO 3166-2 entries with a `parent` are lower-level (council areas,
+      # departments, …); they are skipped rather than flattened to subdivision1.
+      |> Enum.reject(&Map.has_key?(&1, "parent"))
       |> Enum.map(fn s ->
         [parent_iso, _] = String.split(s["code"], "-", parts: 2)
         base_row("subdivision1", s["code"], s["name"], String.upcase(parent_iso))
