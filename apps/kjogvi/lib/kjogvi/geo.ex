@@ -143,6 +143,85 @@ defmodule Kjogvi.Geo do
     |> Location.Query.put_levels()
   end
 
+  @doc """
+  Builds the location tree for `scope`'s locations index: the user's personal
+  locations grouped under the common `country` / `subdivision1` they belong to.
+
+  Only common countries and subdivisions the user actually has personal locations
+  under are included — the shared scaffold the user has never touched is omitted.
+  Each level is ordered by name. Specials are excluded (they render separately).
+
+  Returns a list of country nodes:
+
+      [
+        %{
+          location: %Location{}=country,
+          subdivisions: [%{location: %Location{}=subdivision1, locations: [personal...]}],
+          direct_locations: [personal...]
+        }
+      ]
+
+  `direct_locations` holds personal locations whose `subdivision1` is not itself a
+  visible common node (so they hang straight off the country).
+  """
+  def location_tree(scope) do
+    {common, personal} =
+      list_locations(scope)
+      |> Enum.split_with(&is_nil(&1.user_id))
+
+    common_by_id = Map.new(common, &{&1.id, &1})
+    by_country = Enum.group_by(personal, & &1.country_id)
+
+    personal
+    |> referenced_country_ids()
+    |> Enum.map(&common_by_id[&1])
+    |> Enum.reject(&is_nil/1)
+    |> Enum.sort_by(& &1.name_en)
+    |> Enum.map(&country_node(&1, Map.get(by_country, &1.id, []), common_by_id))
+  end
+
+  # Country ids referenced by personal locations, plus personal locations that are
+  # themselves countries (defensive — none today).
+  defp referenced_country_ids(personal) do
+    personal
+    |> Enum.flat_map(fn loc ->
+      [loc.country_id, if(loc.location_type == :country, do: loc.id)]
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp country_node(country, members, common_by_id) do
+    members = Enum.reject(members, &(&1.id == country.id))
+    by_subdivision = Enum.group_by(members, & &1.subdivision1_id)
+
+    subdivisions =
+      members
+      |> Enum.map(& &1.subdivision1_id)
+      |> Enum.uniq()
+      |> Enum.map(&common_by_id[&1])
+      |> Enum.reject(&is_nil/1)
+      |> Enum.sort_by(& &1.name_en)
+      |> Enum.map(fn subdivision ->
+        locations =
+          by_subdivision
+          |> Map.get(subdivision.id, [])
+          |> Enum.reject(&(&1.id == subdivision.id))
+          |> Enum.sort_by(& &1.name_en)
+
+        %{location: subdivision, locations: locations}
+      end)
+
+    visible_subdivision_ids = MapSet.new(subdivisions, & &1.location.id)
+
+    direct_locations =
+      members
+      |> Enum.reject(&MapSet.member?(visible_subdivision_ids, &1.subdivision1_id))
+      |> Enum.sort_by(& &1.name_en)
+
+    %{location: country, subdivisions: subdivisions, direct_locations: direct_locations}
+  end
+
   def get_child_locations(parent_id) do
     parent = Repo.get!(Location, parent_id)
 

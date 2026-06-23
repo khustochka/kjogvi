@@ -11,6 +11,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
+    specials = Geo.get_specials(scope)
 
     {
       :ok,
@@ -20,7 +21,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       |> assign(:search_term, "")
       |> assign(:search_results, [])
       |> assign(:delete_error, nil)
-      |> assign(:specials, Geo.get_specials(scope))
+      |> assign(:specials, specials)
+      |> assign(:own_specials_count, Enum.count(specials, &User.owns?(scope.current_user, &1)))
     }
   end
 
@@ -87,11 +89,13 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   end
 
   defp assign_locations(socket, scope) do
-    locations = Geo.list_locations(scope)
+    own_count =
+      Geo.list_locations(scope)
+      |> Enum.count(&User.owns?(scope.current_user, &1))
 
     socket
-    |> assign(:locations, locations)
-    |> assign(:total_locations, length(locations))
+    |> assign(:location_tree, Geo.location_tree(scope))
+    |> assign(:own_locations_count, own_count)
   end
 
   @impl true
@@ -108,17 +112,17 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             Add Location
           </.action_button>
           <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
-            <span id="total-locations-count" class="text-lg font-header font-bold tracking-tight">
-              {@total_locations}
+            <span id="own-locations-count" class="text-lg font-header font-bold tracking-tight">
+              {@own_locations_count}
             </span>
-            <span class="text-forest-100 text-sm font-medium">total</span>
+            <span class="text-forest-100 text-sm font-medium">mine</span>
           </div>
           <div
-            :if={length(@specials) > 0}
+            :if={@own_specials_count > 0}
             class="inline-flex items-baseline gap-2 bg-stone-500 text-white px-3 py-2 rounded-lg"
           >
-            <span class="text-lg font-header font-bold tracking-tight">
-              {length(@specials)}
+            <span id="own-specials-count" class="text-lg font-header font-bold tracking-tight">
+              {@own_specials_count}
             </span>
             <span class="text-stone-200 text-sm font-medium">special</span>
           </div>
@@ -170,28 +174,25 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
       </div>
 
-      <%!-- Full location list (hidden when searching) --%>
+      <%!-- Location tree (hidden when searching) --%>
       <div :if={@search_term == ""}>
-        <ul
-          :if={length(@locations) > 0}
-          class="border border-stone-200 rounded-lg divide-y divide-stone-100"
-        >
+        <ul :if={length(@location_tree) > 0} class="space-y-4">
           <li
-            :for={location <- @locations}
-            class="p-3"
+            :for={country <- @location_tree}
+            class="border border-stone-200 rounded-lg overflow-hidden"
           >
-            <.location_entry
-              location={location}
+            <.country_node
+              node={country}
               current_user={@current_scope.current_user}
-              delete_error={delete_error_for(@delete_error, location.id)}
+              delete_error={@delete_error}
             />
           </li>
         </ul>
 
-        <div :if={length(@locations) == 0} class="text-center py-8 text-stone-500">
+        <div :if={length(@location_tree) == 0} class="text-center py-8 text-stone-500">
           <.icon name="hero-map-pin" class="w-12 h-12 mx-auto mb-4 text-stone-300" />
           <p class="text-lg font-medium">No locations found</p>
-          <p class="text-sm">Locations will appear here once they are added to the system.</p>
+          <p class="text-sm">Locations will appear here once you add them.</p>
         </div>
       </div>
 
@@ -210,6 +211,146 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       </div>
     </div>
     """
+  end
+
+  attr :node, :map, required: true
+  attr :current_user, :any, default: nil
+  attr :delete_error, :any, default: nil
+
+  # A country and everything nested under it: common subdivisions, then personal
+  # locations that hang straight off the country. The country's body (its
+  # subdivisions and direct locations) starts expanded so only the common scaffold
+  # — countries and subdivisions — is visible at first; the personal locations
+  # under each subdivision stay collapsed.
+  defp country_node(assigns) do
+    body_id = "country-body-#{assigns.node.location.id}"
+    direct_id = "country-direct-#{assigns.node.location.id}"
+    assigns = assign(assigns, body_id: body_id, direct_id: direct_id)
+
+    ~H"""
+    <div class="bg-sky-50 border-b border-sky-200 px-3 py-2.5 flex items-center gap-1.5">
+      <.tree_toggle target={@body_id} label={"Toggle #{@node.location.name_en}"} expanded />
+      <div class="flex-1 min-w-0">
+        <.common_node location={@node.location} />
+      </div>
+    </div>
+
+    <div id={@body_id}>
+      <ul :if={length(@node.subdivisions) > 0} class="divide-y divide-stone-300">
+        <li :for={subdivision <- @node.subdivisions}>
+          <.subdivision_node
+            node={subdivision}
+            current_user={@current_user}
+            delete_error={@delete_error}
+          />
+        </li>
+      </ul>
+
+      <div :if={length(@node.direct_locations) > 0} class="bg-stone-50 border-l border-stone-300">
+        <button
+          type="button"
+          phx-click={toggle_branch(@direct_id)}
+          aria-expanded="false"
+          aria-controls={@direct_id}
+          class="w-full flex items-center gap-1.5 px-3 py-2 text-sm text-stone-500 hover:bg-stone-100"
+        >
+          <span
+            id={"#{@direct_id}-chevron"}
+            class="inline-flex shrink-0 transition-transform"
+          >
+            <.icon name="hero-chevron-right" class="w-4 h-4" />
+          </span>
+          <span>Other locations</span>
+        </button>
+
+        <ul
+          id={@direct_id}
+          class="hidden divide-y divide-stone-300 border-l border-stone-200 ml-3 bg-white"
+        >
+          <li :for={location <- @node.direct_locations} class="px-3 py-3">
+            <.location_entry
+              location={location}
+              current_user={@current_user}
+              delete_error={delete_error_for(@delete_error, location.id)}
+            />
+          </li>
+        </ul>
+      </div>
+    </div>
+    """
+  end
+
+  attr :node, :map, required: true
+  attr :current_user, :any, default: nil
+  attr :delete_error, :any, default: nil
+
+  # A common subdivision and the personal locations grouped under it, collapsed
+  # initially so the subdivision header is all that shows until expanded.
+  defp subdivision_node(assigns) do
+    body_id = "subdivision-body-#{assigns.node.location.id}"
+    assigns = assign(assigns, :body_id, body_id)
+
+    ~H"""
+    <div class={[
+      "bg-amber-50 px-3 py-2 border-l border-amber-200 flex items-center gap-1.5",
+      if(length(@node.locations) > 0,
+        do: "border-b border-b-amber-400",
+        else: "border-b border-b-amber-200"
+      )
+    ]}>
+      <.tree_toggle target={@body_id} label={"Toggle #{@node.location.name_en}"} />
+      <div class="flex-1 min-w-0">
+        <.common_node location={@node.location} />
+      </div>
+    </div>
+
+    <ul
+      id={@body_id}
+      class="hidden divide-y divide-stone-300 border-l border-stone-200 ml-3 bg-white"
+    >
+      <li :for={location <- @node.locations} class="px-3 py-3">
+        <.location_entry
+          location={location}
+          current_user={@current_user}
+          delete_error={delete_error_for(@delete_error, location.id)}
+        />
+      </li>
+    </ul>
+    """
+  end
+
+  # Chevron toggle for a tree branch. `target` is the id (no `#`) of the body to
+  # show/hide. `expanded` sets the initial state (chevron down + body shown).
+  attr :target, :string, required: true
+  attr :label, :string, required: true
+  attr :expanded, :boolean, default: false
+
+  defp tree_toggle(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click={toggle_branch(@target)}
+      aria-expanded={to_string(@expanded)}
+      aria-controls={@target}
+      aria-label={@label}
+      class="shrink-0 p-0.5 text-stone-400 hover:text-stone-700 rounded"
+    >
+      <span
+        id={"#{@target}-chevron"}
+        class={["inline-flex transition-transform", @expanded && "rotate-90"]}
+      >
+        <.icon name="hero-chevron-right" class="w-4 h-4" />
+      </span>
+    </button>
+    """
+  end
+
+  # Toggles a branch body (`#target`) and rotates its chevron (`#target-chevron`),
+  # keeping the two in sync client-side without tracking expanded state on the
+  # server.
+  defp toggle_branch(target) do
+    Phoenix.LiveView.JS.toggle(to: "##{target}")
+    |> Phoenix.LiveView.JS.toggle_class("rotate-90", to: "##{target}-chevron")
   end
 
   attr :location, :map, required: true

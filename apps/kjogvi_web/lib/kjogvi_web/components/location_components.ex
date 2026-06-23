@@ -55,6 +55,61 @@ defmodule KjogviWeb.LocationComponents do
   end
 
   @doc """
+  Renders a common (country / subdivision) scaffold node in the locations tree.
+
+  Common locations are the shared "big tent" the user's own locations hang under,
+  so they read larger and muted, with a flag for countries. They carry no
+  edit/delete actions (commons aren't user-owned), only a link to their page and
+  a lifelist link.
+  """
+  attr :location, :map, required: true
+
+  def common_node(assigns) do
+    ~H"""
+    <div class="flex items-center justify-between gap-2">
+      <div class="min-w-0">
+        <.link
+          href={~p"/my/locations/#{@location.slug}"}
+          class={[
+            "min-w-0 flex items-center gap-2 font-header tracking-tight text-stone-700 no-underline hover:underline",
+            common_node_text_size(@location.location_type)
+          ]}
+        >
+          <span :if={country_flag(@location) != ""} aria-hidden="true">
+            {country_flag(@location)}
+          </span>
+          <span class="truncate">{@location.name_en}</span>
+          <span
+            :if={@location.iso_code && @location.iso_code != ""}
+            class="text-stone-400 font-mono text-sm font-normal shrink-0"
+          >
+            {String.upcase(@location.iso_code)}
+          </span>
+          <.icon
+            :if={@location.is_private}
+            name="hero-lock-closed"
+            class="w-4 h-4 text-stone-500 shrink-0"
+          />
+        </.link>
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+          <span class="text-xs text-stone-400 truncate">{@location.slug}</span>
+          <.type_badge :if={@location.location_type} type={@location.location_type} />
+        </div>
+      </div>
+      <.lifelist_link slug={@location.slug} />
+    </div>
+    """
+  end
+
+  # Countries read largest, subdivisions a step down; deeper commons stay modest.
+  defp common_node_text_size(:country), do: "text-xl font-bold"
+  defp common_node_text_size(:subdivision1), do: "text-lg font-semibold"
+  defp common_node_text_size(_), do: "text-base font-semibold"
+
+  defp country_flag(%{location_type: :country} = location), do: Location.to_flag_emoji(location)
+  defp country_flag(_), do: ""
+
+  @doc """
   Renders a lifelist link for a location.
   """
   attr :slug, :string, required: true
@@ -63,7 +118,7 @@ defmodule KjogviWeb.LocationComponents do
     ~H"""
     <.link
       href={~p"/my/lifelist/#{@slug}"}
-      class="shrink-0 ml-4 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-600 bg-forest-50 hover:bg-forest-100 rounded no-underline"
+      class="shrink-0 ml-4 px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-700 bg-forest-50 hover:bg-forest-100 border border-forest-300 rounded no-underline"
     >
       Lifelist
     </.link>

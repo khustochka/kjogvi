@@ -15,26 +15,28 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     assert has_element?(index_live, "h1", "Locations")
   end
 
-  test "renders a location in the hierarchy", %{conn: conn} do
-    location = insert(:location, name_en: "Winnipeg")
+  test "renders a personal location nested under its common country", %{conn: conn, user: user} do
+    country = insert(:country, name_en: "Canada")
+    location = insert(:location, name_en: "Winnipeg", country: country, user_id: user.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
+    assert has_element?(index_live, "a", country.name_en)
     assert has_element?(index_live, "a", location.name_en)
   end
 
-  test "shows the user's own and common locations but not another user's",
+  test "shows the user's own locations under the common scaffold but not another user's",
        %{conn: conn, user: user} do
-    own = insert(:location, name_en: "My Patch", location_type: "city", user_id: user.id)
-    common = insert(:location, name_en: "Shared Place", location_type: "city")
+    country = insert(:country, name_en: "Canada")
+    own = insert(:location, name_en: "My Patch", country: country, user_id: user.id)
 
     other =
-      insert(:location, name_en: "Their Patch", location_type: "city", user_id: user_fixture().id)
+      insert(:location, name_en: "Their Patch", country: country, user_id: user_fixture().id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
+    assert has_element?(index_live, "a", country.name_en)
     assert has_element?(index_live, "a", own.name_en)
-    assert has_element?(index_live, "a", common.name_en)
     refute has_element?(index_live, "a", other.name_en)
   end
 
@@ -53,27 +55,38 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     refute has_element?(index_live, "*", other.name_en)
   end
 
-  test "shows total location count", %{conn: conn} do
-    # Two sites plus the country they share — three locations total.
-    insert(:location)
-    insert(:location)
+  test "counts only the user's own locations, not common ones", %{conn: conn, user: user} do
+    country = insert(:country, name_en: "Canada")
+    insert(:location, name_en: "My Patch", country: country, user_id: user.id)
+    insert(:location, name_en: "My Other", country: country, user_id: user.id)
+    # A common location the user can see but does not own — excluded from the count.
+    insert(:location, name_en: "Shared", country: country)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
-    assert has_element?(index_live, "#total-locations-count", "3")
-    assert has_element?(index_live, "span", "total")
+    assert has_element?(index_live, "#own-locations-count", "2")
+    assert has_element?(index_live, "span", "mine")
   end
 
-  test "shows lifelist badge for location with public_index", %{conn: conn} do
-    insert(:location, name_en: "Canada", public_index: 1)
+  test "counts only the user's own specials", %{conn: conn, user: user} do
+    insert(:special, name_en: "My List", user_id: user.id)
+    insert(:special, name_en: "Shared List")
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "#own-specials-count", "1")
+  end
+
+  test "shows lifelist badge for location with public_index", %{conn: conn, user: user} do
+    insert(:location, name_en: "Local Park", public_index: 1, user_id: user.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
     assert has_element?(index_live, "span", "lifelist filter")
   end
 
-  test "does not show lifelist badge for location without public_index", %{conn: conn} do
-    insert(:location, name_en: "Local Park", public_index: nil)
+  test "does not show lifelist badge for location without public_index", %{conn: conn, user: user} do
+    insert(:location, name_en: "Local Park", public_index: nil, user_id: user.id)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
@@ -108,8 +121,23 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
   test "deleting a location with children fails with an error and keeps it",
        %{conn: conn, user: user} do
-    parent = insert(:country, name_en: "Canada", user_id: user.id)
-    insert(:location, name_en: "Manitoba", location_type: "subdivision1", country: parent)
+    country = insert(:country, name_en: "Canada")
+
+    parent =
+      insert(:location,
+        name_en: "Winnipeg",
+        location_type: "city",
+        country: country,
+        user_id: user.id
+      )
+
+    insert(:location,
+      name_en: "My Patch",
+      location_type: "site",
+      country: country,
+      city: parent,
+      user_id: user.id
+    )
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
@@ -184,13 +212,92 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     end
   end
 
-  test "lists all locations flat regardless of hierarchy", %{conn: conn} do
+  test "nests a personal location under its common country and subdivision", %{
+    conn: conn,
+    user: user
+  } do
     country = insert(:country, name_en: "Germany")
-    insert(:location, name_en: "Berlin", location_type: "city", country: country)
+    subdivision = insert(:subdivision1, name_en: "Bavaria", country: country)
+
+    insert(:location,
+      name_en: "Berlin",
+      location_type: "site",
+      country: country,
+      subdivision1: subdivision,
+      user_id: user.id
+    )
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
     assert has_element?(index_live, "a", "Germany")
+    assert has_element?(index_live, "a", "Bavaria")
     assert has_element?(index_live, "a", "Berlin")
+  end
+
+  test "subdivisions stay visible while their locations start collapsed", %{
+    conn: conn,
+    user: user
+  } do
+    country = insert(:country, name_en: "Germany")
+    subdivision = insert(:subdivision1, name_en: "Bavaria", country: country)
+
+    insert(:location,
+      name_en: "Berlin",
+      location_type: "site",
+      country: country,
+      subdivision1: subdivision,
+      user_id: user.id
+    )
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    # The country body is expanded (no `hidden`), so subdivisions show; the
+    # subdivision body holding personal locations starts collapsed.
+    assert has_element?(index_live, "#country-body-#{country.id}:not(.hidden)")
+    assert has_element?(index_live, "#subdivision-body-#{subdivision.id}.hidden")
+    assert has_element?(index_live, "button[aria-controls='subdivision-body-#{subdivision.id}']")
+  end
+
+  test "omits a common country the user has no locations under", %{conn: conn, user: user} do
+    used = insert(:country, name_en: "Canada")
+    insert(:location, name_en: "My Patch", country: used, user_id: user.id)
+
+    _unused = insert(:country, name_en: "Mongolia")
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "a", "Canada")
+    refute has_element?(index_live, "a", "Mongolia")
+  end
+
+  test "shows a flag for a country with an ISO code", %{conn: conn, user: user} do
+    country = insert(:country, name_en: "Canada", iso_code: "ca")
+    insert(:location, name_en: "My Patch", country: country, user_id: user.id)
+
+    {:ok, _index_live, html} = live(conn, ~p"/my/locations")
+
+    assert html =~ Kjogvi.Geo.Location.to_flag_emoji(country)
+  end
+
+  test "shows the slug and type badge for a common country and subdivision", %{
+    conn: conn,
+    user: user
+  } do
+    country = insert(:country, name_en: "Canada", slug: "canada")
+    subdivision = insert(:subdivision1, name_en: "Manitoba", slug: "manitoba", country: country)
+
+    insert(:location,
+      name_en: "My Patch",
+      country: country,
+      subdivision1: subdivision,
+      user_id: user.id
+    )
+
+    {:ok, index_live, html} = live(conn, ~p"/my/locations")
+
+    assert html =~ "canada"
+    assert html =~ "manitoba"
+    assert has_element?(index_live, "span", "country")
+    assert has_element?(index_live, "span", "subdivision1")
   end
 end

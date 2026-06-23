@@ -407,6 +407,115 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "location_tree/1" do
+    setup do
+      user = user_fixture()
+      %{user: user, scope: %Kjogvi.Scope{current_user: user, area: :private}}
+    end
+
+    test "groups personal locations under their country and subdivision", %{
+      user: user,
+      scope: scope
+    } do
+      country = insert(:country, name_en: "Canada")
+      subdivision = insert(:subdivision1, name_en: "Manitoba", country: country)
+
+      site =
+        insert(:location,
+          name_en: "My Patch",
+          country: country,
+          subdivision1: subdivision,
+          user_id: user.id
+        )
+
+      [country_node] = Geo.location_tree(scope)
+      assert country_node.location.id == country.id
+
+      [subdivision_node] = country_node.subdivisions
+      assert subdivision_node.location.id == subdivision.id
+      assert Enum.map(subdivision_node.locations, & &1.id) == [site.id]
+      assert country_node.direct_locations == []
+    end
+
+    test "places a location with no in-tree subdivision directly under the country", %{
+      user: user,
+      scope: scope
+    } do
+      country = insert(:country, name_en: "Germany")
+
+      site =
+        insert(:location, name_en: "Berlin", country: country, user_id: user.id)
+
+      [country_node] = Geo.location_tree(scope)
+      assert country_node.subdivisions == []
+      assert Enum.map(country_node.direct_locations, & &1.id) == [site.id]
+    end
+
+    test "excludes common countries and subdivisions with no personal descendants", %{
+      scope: scope,
+      user: user
+    } do
+      used = insert(:country, name_en: "Used")
+      _used_site = insert(:location, country: used, user_id: user.id)
+
+      _unused_country = insert(:country, name_en: "Unused")
+      _unused_subdivision = insert(:subdivision1, name_en: "Empty", country: used)
+
+      [country_node] = Geo.location_tree(scope)
+      assert country_node.location.id == used.id
+      assert country_node.subdivisions == []
+    end
+
+    test "excludes specials", %{scope: scope, user: user} do
+      _special = insert(:special, user_id: user.id)
+
+      assert Geo.location_tree(scope) == []
+    end
+
+    test "does not include another user's locations", %{scope: scope, user: user} do
+      country = insert(:country, name_en: "Canada")
+      own = insert(:location, name_en: "Mine", country: country, user_id: user.id)
+      _other = insert(:location, name_en: "Theirs", country: country, user_id: user_fixture().id)
+
+      [country_node] = Geo.location_tree(scope)
+      ids = Enum.map(country_node.direct_locations, & &1.id)
+      assert ids == [own.id]
+    end
+
+    test "orders countries, subdivisions, and locations by name", %{user: user, scope: scope} do
+      country_b = insert(:country, name_en: "Brazil")
+      country_a = insert(:country, name_en: "Argentina")
+      sub_z = insert(:subdivision1, name_en: "Zulia", country: country_a)
+      sub_a = insert(:subdivision1, name_en: "Aragua", country: country_a)
+
+      insert(:location,
+        name_en: "B site",
+        country: country_a,
+        subdivision1: sub_a,
+        user_id: user.id
+      )
+
+      insert(:location,
+        name_en: "A site",
+        country: country_a,
+        subdivision1: sub_a,
+        user_id: user.id
+      )
+
+      insert(:location, country: country_a, subdivision1: sub_z, user_id: user.id)
+      insert(:location, country: country_b, user_id: user.id)
+
+      tree = Geo.location_tree(scope)
+      assert Enum.map(tree, & &1.location.name_en) == ["Argentina", "Brazil"]
+
+      argentina = hd(tree)
+      assert Enum.map(argentina.subdivisions, & &1.location.name_en) == ["Aragua", "Zulia"]
+
+      aragua = hd(argentina.subdivisions)
+      assert Enum.map(aragua.locations, & &1.name_en) == ["A site", "B site"]
+    end
+  end
+
   describe "location_by_slug/1" do
     test "returns location matching the slug" do
       location = insert(:location, slug: "winnipeg-main")
