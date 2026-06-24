@@ -176,6 +176,57 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert get_number_of_species(resp) == 1
   end
 
+  test "toggling Motorless only in-session narrows the list to motorless cards",
+       %{conn: conn, user: user} do
+    {motorless_taxon, _} = Factory.create_species_taxon_with_page()
+    {motorized_taxon, _} = Factory.create_species_taxon_with_page()
+
+    motorless_card = insert(:card, user: user, motorless: true)
+
+    insert(:observation,
+      card: motorless_card,
+      taxon_key: Ornitho.Schema.Taxon.key(motorless_taxon)
+    )
+
+    motorized_card = insert(:card, user: user, motorless: false)
+
+    insert(:observation,
+      card: motorized_card,
+      taxon_key: Ornitho.Schema.Taxon.key(motorized_taxon)
+    )
+
+    {:ok, view, html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
+    assert get_number_of_species(html) == 2
+
+    html =
+      view
+      |> element("a[role=switch][aria-label='Motorless only']")
+      |> render_click()
+
+    assert get_number_of_species(html) == 1
+    assert html =~ motorless_taxon.name_en
+    refute html =~ motorized_taxon.name_en
+  end
+
+  test "toggling Motorless only in-session empties the list when no motorless cards exist",
+       %{conn: conn, user: user} do
+    {taxon, _} = Factory.create_species_taxon_with_page()
+
+    card = insert(:card, user: user, motorless: false)
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, view, html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
+    assert get_number_of_species(html) == 1
+
+    html =
+      view
+      |> element("a[role=switch][aria-label='Motorless only']")
+      |> render_click()
+
+    assert get_number_of_species(html) == 0
+    refute html =~ taxon.name_en
+  end
+
   test "lifelist filtered by year and location", %{conn: conn, user: user} do
     ukraine =
       insert(:country,

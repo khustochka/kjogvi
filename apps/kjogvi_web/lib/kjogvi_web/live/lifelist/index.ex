@@ -28,7 +28,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       |> assign(:lifelist_scope, lifelist_scope)
       |> assign(:all_years, all_years)
       |> assign(:container_class, "max-w-7xl"),
-      temporary_assigns: [lifelist: [], lifer_groups: [], heard_only_groups: []]
+      temporary_assigns: [lifelist: nil, lifer_groups: nil, heard_only_groups: nil]
     }
   end
 
