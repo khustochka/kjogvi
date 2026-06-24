@@ -49,11 +49,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       Lifelist.months(lifelist_scope, Map.put(filter, :month, nil))
       |> then(&Util.Enum.zip_inclusion(@all_months, &1))
 
-    # Which locations to show as pills: any location with observations across
-    # the whole lifelist (ignoring the current filter).
-    present_location_ids =
-      Lifelist.location_ids(lifelist_scope)
-      |> MapSet.new()
+    # Which locations to show as pills: countries/subdivisions with observations
+    # across the whole lifelist (ignoring the current filter).
+    present_locations = Kjogvi.Geo.get_locations_by_ids(Lifelist.location_ids(lifelist_scope))
 
     # Which of those pills are active: locations with observations within the
     # current filtered subset.
@@ -61,15 +59,15 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       Lifelist.location_ids(lifelist_scope, Map.put(filter, :location, nil))
       |> MapSet.new()
 
-    location_context = Kjogvi.Geo.get_lifelist_location_context(filter.location)
+    location_context =
+      Kjogvi.Geo.get_lifelist_location_context(present_locations, filter.location)
 
     location_siblings =
       location_context.siblings
-      |> Enum.filter(&MapSet.member?(present_location_ids, &1.id))
       |> then(fn siblings ->
         case filter.location do
           nil -> siblings
-          loc -> (siblings ++ [loc]) |> Enum.sort_by(& &1.public_index)
+          loc -> (siblings ++ [loc]) |> Enum.sort_by(& &1.name_en)
         end
       end)
       |> Enum.map(fn loc ->
@@ -79,7 +77,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     location_children =
       location_context.children
-      |> Enum.filter(&MapSet.member?(present_location_ids, &1.id))
       |> Enum.map(fn loc -> {loc, MapSet.member?(active_location_ids, loc.id)} end)
 
     lifer_groups = group_lifelist(lifelist)

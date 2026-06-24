@@ -30,18 +30,6 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Returns locations with `public_index` set, ordered by `public_index`.
-  These are locations shown as filter options on the lifelist.
-  """
-  def get_lifelist_locations do
-    from(l in Location,
-      where: not is_nil(l.public_index),
-      order_by: l.public_index
-    )
-    |> Repo.all()
-  end
-
-  @doc """
   Returns the set of locations the logbook settings UI can offer as toggles:
   all countries, all regions, and any other lifelist filter location
   (e.g. continents or specials) that doesn't fall into those types.
@@ -59,68 +47,60 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Returns hierarchical context for the lifelist location filter.
+  Returns hierarchical context for the lifelist location filter, as a strict
+  drill-down: World lists the countries, selecting a country reveals its
+  subdivisions, and so on one level at a time.
 
-  Given a selected location (or nil for "World"), returns:
-  - `ancestors` — lifelist locations in the selected location's level FK chain
-  - `siblings` — lifelist locations sharing the same effective lifelist parent
-  - `children` — lifelist locations whose nearest lifelist ancestor is the selected location (or a sibling, for World)
+  `locations` is the area's filter universe — the `country`/`subdivision1` rows
+  that have observations (see `Birding.Lifelist.location_ids/1`). Given a
+  selected location (or nil for "World"), returns, each ordered by name:
+  - `ancestors` — filter locations in the selected location's level FK chain
+  - `siblings` — filter locations sharing the selected location's effective filter parent (the countries, at World)
+  - `children` — filter locations whose effective filter parent is the selected location (empty at World)
 
   Hierarchy is read from each location's level FK columns (`country_id …
-  site_id`); the "effective lifelist parent" is the deepest of those ancestors
-  that is itself a lifelist location, so non-lifelist intermediaries are skipped.
+  site_id`); the "effective filter parent" is the deepest of those ancestors
+  that is itself in `locations`, so non-filter intermediaries are skipped.
   """
-  def get_lifelist_location_context(selected_location) do
-    all = get_lifelist_locations()
+  def get_lifelist_location_context(locations, selected_location) do
+    all = Enum.sort_by(locations, & &1.name_en)
     lifelist_ids = MapSet.new(all, & &1.id)
 
-    case selected_location do
-      nil ->
-        my_parent = nil
+    selected_id = selected_location && selected_location.id
+    my_parent = selected_location && effective_lifelist_parent(selected_location, lifelist_ids)
 
-        siblings =
-          Enum.filter(all, &(effective_lifelist_parent(&1, lifelist_ids) == my_parent))
+    ancestors =
+      case selected_location do
+        nil ->
+          []
 
-        sibling_ids = MapSet.new(siblings, & &1.id)
+        loc ->
+          ancestor_ids = Location.ancestor_ids(loc)
 
-        children =
-          Enum.filter(all, fn loc ->
-            effective_lifelist_parent(loc, lifelist_ids) in sibling_ids
-          end)
-
-        %{ancestors: [], siblings: siblings, children: children}
-
-      loc ->
-        my_parent = effective_lifelist_parent(loc, lifelist_ids)
-        ancestor_ids = Location.ancestor_ids(loc)
-
-        ancestors =
           all
           |> Enum.filter(&(&1.id in ancestor_ids))
           |> Enum.sort_by(fn a -> Enum.find_index(ancestor_ids, &(&1 == a.id)) end)
+      end
 
-        siblings =
-          Enum.filter(all, fn sib ->
-            sib.id != loc.id &&
-              effective_lifelist_parent(sib, lifelist_ids) == my_parent
+    siblings =
+      Enum.filter(all, fn loc ->
+        loc.id != selected_id && effective_lifelist_parent(loc, lifelist_ids) == my_parent
+      end)
+
+    # Only the selected location's own children — at World nothing is selected,
+    # so there are none; drilling into a country reveals its subdivisions.
+    children =
+      case selected_id do
+        nil ->
+          []
+
+        id ->
+          Enum.filter(all, fn loc ->
+            effective_lifelist_parent(loc, lifelist_ids) == id
           end)
+      end
 
-        children =
-          if my_parent == nil do
-            # Top-level location: show children of all top-level locations
-            top_level_ids = MapSet.new(siblings, & &1.id) |> MapSet.put(loc.id)
-
-            Enum.filter(all, fn child ->
-              effective_lifelist_parent(child, lifelist_ids) in top_level_ids
-            end)
-          else
-            Enum.filter(all, fn child ->
-              effective_lifelist_parent(child, lifelist_ids) == loc.id
-            end)
-          end
-
-        %{ancestors: ancestors, siblings: siblings, children: children}
-    end
+    %{ancestors: ancestors, siblings: siblings, children: children}
   end
 
   # Returns the nearest lifelist ancestor id — the deepest of the location's

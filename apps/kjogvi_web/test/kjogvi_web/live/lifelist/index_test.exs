@@ -144,15 +144,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     ukraine =
       insert(:country,
         slug: "ukraine",
-        name_en: "Ukraine",
-        public_index: 1
+        name_en: "Ukraine"
       )
 
     usa =
       insert(:country,
         slug: "usa",
-        name_en: "United States",
-        public_index: 2
+        name_en: "United States"
       )
 
     brovary =
@@ -231,15 +229,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     ukraine =
       insert(:country,
         slug: "ukraine",
-        name_en: "Ukraine",
-        public_index: 1
+        name_en: "Ukraine"
       )
 
     usa =
       insert(:country,
         slug: "usa",
-        name_en: "United States",
-        public_index: 2
+        name_en: "United States"
       )
 
     brovary =
@@ -270,8 +266,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     ukraine =
       insert(:country,
         slug: "ukraine",
-        name_en: "Ukraine",
-        public_index: 1
+        name_en: "Ukraine"
       )
 
     oblast =
@@ -279,8 +274,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
         slug: "kyiv-oblast",
         name_en: "Kyiv Oblast",
         location_type: "subdivision1",
-        country: ukraine,
-        public_index: 2
+        country: ukraine
       )
 
     brovary =
@@ -316,15 +310,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     ukraine =
       insert(:country,
         slug: "ukraine",
-        name_en: "Ukraine",
-        public_index: 1
+        name_en: "Ukraine"
       )
 
-    # Lifelist location with no observations at all — must not appear.
+    # A country with no observations at all — must not appear.
     insert(:country,
       slug: "usa",
-      name_en: "United States",
-      public_index: 2
+      name_en: "United States"
     )
 
     brovary =
@@ -352,15 +344,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     ukraine =
       insert(:country,
         slug: "ukraine",
-        name_en: "Ukraine",
-        public_index: 1
+        name_en: "Ukraine"
       )
 
     usa =
       insert(:country,
         slug: "usa",
-        name_en: "United States",
-        public_index: 2
+        name_en: "United States"
       )
 
     brovary =
@@ -496,8 +486,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     ukraine =
       insert(:country,
         slug: "ukraine",
-        name_en: "Ukraine",
-        public_index: 1
+        name_en: "Ukraine"
       )
 
     brovary =

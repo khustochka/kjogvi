@@ -127,8 +127,9 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   end
 
   @doc """
-  Query returning IDs of lifelist locations (those with `public_index` set)
-  that have observations matching the given filter.
+  Query returning IDs of lifelist filter locations — the `country` and
+  `subdivision1` rows that have observations matching the given filter, either
+  directly or among their descendants.
   """
   def location_ids_query(scope, filter) do
     card_location_ids =
@@ -147,23 +148,11 @@ defmodule Kjogvi.Birding.Lifelist.Query do
       end)
       |> Enum.reduce(&union(&2, ^&1))
 
-    # A special parent counts when its member is a card location or one of their
-    # ancestors.
-    special_parent_ids =
-      from(sl in "special_locations",
-        where:
-          field(sl, :child_location_id) in subquery(card_location_ids) or
-            field(sl, :child_location_id) in subquery(ancestor_ids),
-        distinct: true,
-        select: field(sl, :parent_location_id)
-      )
-
     from(ll in Kjogvi.Geo.Location,
-      where: not is_nil(ll.public_index),
+      where: ll.location_type in [:country, :subdivision1],
       where:
         ll.id in subquery(card_location_ids) or
-          ll.id in subquery(ancestor_ids) or
-          ll.id in subquery(special_parent_ids),
+          ll.id in subquery(ancestor_ids),
       select: ll.id
     )
   end

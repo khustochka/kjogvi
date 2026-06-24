@@ -702,13 +702,11 @@ defmodule Kjogvi.Birding.LifelistTest do
   end
 
   describe "location_ids/2" do
-    test "returns lifelist location ids that have observations" do
+    test "returns the country ancestor of a location that has observations" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
 
-      canada =
-        insert(:country, name_en: "Canada", public_index: 1)
-
+      canada = insert(:country, name_en: "Canada")
       winnipeg = insert(:location, location_type: "city", country: canada)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
@@ -726,12 +724,11 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert Lifelist.location_ids(scope) == []
     end
 
-    test "includes location when observation is at the location itself" do
+    test "includes a country when the observation is at the country itself" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
 
-      canada =
-        insert(:country, name_en: "Canada", public_index: 1)
+      canada = insert(:country, name_en: "Canada")
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, user: user, location: canada)
@@ -741,64 +738,45 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert canada.id in ids
     end
 
-    test "includes special locations whose members have observations" do
+    test "returns both the country and subdivision1 ancestors" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
 
-      member_loc = insert(:location, name_en: "Member Location")
+      canada = insert(:country, name_en: "Canada")
 
-      special_loc =
-        insert(:special,
-          name_en: "Special Area",
-          public_index: 1,
-          special_child_locations: [member_loc]
+      manitoba =
+        insert(:location, name_en: "Manitoba", location_type: "subdivision1", country: canada)
+
+      winnipeg =
+        insert(:location,
+          location_type: "city",
+          country: canada,
+          subdivision1_id: manitoba.id
         )
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user, location: member_loc)
+      card = insert(:card, user: user, location: winnipeg)
       insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       ids = Lifelist.location_ids(scope)
-      assert special_loc.id in ids
+      assert canada.id in ids
+      assert manitoba.id in ids
     end
 
-    test "includes special locations when descendant of member has observations" do
+    test "excludes locations below subdivision1 even when they have observations" do
       user = user_fixture()
       scope = %Lifelist.Scope{user: user, include_private: false}
 
-      member_loc = insert(:location, name_en: "Member Location", location_type: "city")
-
-      child_of_member =
-        insert(:location, name_en: "Child", location_type: "site", city_id: member_loc.id)
-
-      special_loc =
-        insert(:special,
-          name_en: "Special Area",
-          public_index: 1,
-          special_child_locations: [member_loc]
-        )
+      canada = insert(:country, name_en: "Canada")
+      winnipeg = insert(:location, location_type: "city", country: canada)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user, location: child_of_member)
+      card = insert(:card, user: user, location: winnipeg)
       insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       ids = Lifelist.location_ids(scope)
-      assert special_loc.id in ids
-    end
-
-    test "excludes locations without public_index" do
-      user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
-
-      canada =
-        insert(:country, name_en: "Canada", public_index: nil)
-
-      {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user, location: canada)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
-
-      ids = Lifelist.location_ids(scope)
-      assert ids == []
+      assert winnipeg.id not in ids
+      assert ids == [canada.id]
     end
   end
 

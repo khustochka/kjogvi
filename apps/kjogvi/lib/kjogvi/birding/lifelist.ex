@@ -92,8 +92,8 @@ defmodule Kjogvi.Birding.Lifelist do
   @spec location_ids(scope()) :: list(integer())
   @spec location_ids(scope(), filter()) :: list(integer())
   @doc """
-  Get IDs of lifelist locations (those with `public_index` set) that have
-  observations matching the given filter.
+  Get IDs of lifelist filter locations — `country`/`subdivision1` rows that have
+  observations matching the given filter, directly or among their descendants.
   """
   def location_ids(scope, filter \\ []) do
     Lifelist.Query.location_ids_query(scope, filter)
