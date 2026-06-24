@@ -55,6 +55,23 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     refute has_element?(index_live, "*", other.name_en)
   end
 
+  test "a special location row links to its lifelist", %{conn: conn, user: user} do
+    special = insert(:special, name_en: "My List", slug: "my-list", user_id: user.id)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "a[href='/my/lifelist/#{special.slug}']", "Lifelist")
+  end
+
+  test "a special location row shows its full name from ancestors", %{conn: conn, user: user} do
+    country = insert(:country, name_en: "Canada")
+    special = insert(:special, name_en: "My List", country: country, user_id: user.id)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "*", "#{special.name_en}, #{country.name_en}")
+  end
+
   test "counts only the user's own locations, not common ones", %{conn: conn, user: user} do
     country = insert(:country, name_en: "Canada")
     insert(:location, name_en: "My Patch", country: country, user_id: user.id)
@@ -75,6 +92,15 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 
     assert has_element?(index_live, "#own-specials-count", "1")
+  end
+
+  test "the specials count links to the specials section", %{conn: conn, user: user} do
+    insert(:special, name_en: "My List", user_id: user.id)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "a[href='#special-locations'] #own-specials-count")
+    assert has_element?(index_live, "#special-locations")
   end
 
   test "shows lifelist badge for location with public_index", %{conn: conn, user: user} do
@@ -191,6 +217,20 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
       assert has_element?(index_live, "h2", "Search Results")
       assert html =~ "Winnipeg"
+    end
+
+    test "hides the specials section while searching", %{conn: conn, user: user} do
+      insert(:special, name_en: "My List", user_id: user.id)
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+      assert has_element?(index_live, "#special-locations")
+
+      index_live
+      |> element("#location-search")
+      |> render_keyup(%{"value" => "My"})
+
+      refute has_element?(index_live, "#special-locations")
     end
 
     test "clears results when the input is emptied", %{conn: conn} do

@@ -117,15 +117,16 @@ defmodule KjogviWeb.Live.My.Locations.Index do
             </span>
             <span class="text-forest-100 text-sm font-medium">mine</span>
           </div>
-          <div
+          <a
             :if={@own_specials_count > 0}
-            class="inline-flex items-baseline gap-2 bg-stone-500 text-white px-3 py-2 rounded-lg"
+            href="#special-locations"
+            class="inline-flex items-baseline gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg no-underline"
           >
             <span id="own-specials-count" class="text-lg font-header font-bold tracking-tight">
               {@own_specials_count}
             </span>
-            <span class="text-stone-200 text-sm font-medium">special</span>
-          </div>
+            <span class="text-rose-100 text-sm font-medium">special</span>
+          </a>
         </div>
       </div>
 
@@ -196,16 +197,19 @@ defmodule KjogviWeb.Live.My.Locations.Index do
         </div>
       </div>
 
-      <%!-- Special locations section --%>
-      <div :if={@specials && length(@specials) > 0}>
+      <%!-- Special locations section (hidden when searching) --%>
+      <div
+        :if={@search_term == "" && @specials && length(@specials) > 0}
+        id="special-locations"
+      >
         <.h2>Special Locations</.h2>
 
-        <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <ul class="space-y-2">
           <li
             :for={location <- @specials}
-            class="border border-stone-200 bg-stone-50 rounded-lg p-4"
+            class="border border-rose-100 bg-rose-50 rounded-lg p-4"
           >
-            <.location_row location={location} />
+            <.special_row location={location} />
           </li>
         </ul>
       </div>
@@ -346,6 +350,28 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           {@delete_error}
         </p>
       </div>
+    </div>
+    """
+  end
+
+  attr :location, :map, required: true
+
+  # A special location row: full-width, with its full (comma-joined) name and a
+  # lifelist link. Specials sit outside the hierarchy and aren't user-editable
+  # here, so they carry no edit/delete actions.
+  defp special_row(assigns) do
+    ~H"""
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex-1 min-w-0">
+        <.location_row location={@location} />
+        <p
+          :if={Location.long_name(:private, @location) != @location.name_en}
+          class="mt-1 text-xs text-stone-400"
+        >
+          {Location.long_name(:private, @location)}
+        </p>
+      </div>
+      <.lifelist_link slug={@location.slug} />
     </div>
     """
   end

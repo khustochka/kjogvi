@@ -394,6 +394,15 @@ defmodule Kjogvi.GeoTest do
       assert Geo.get_specials(%Kjogvi.Scope{area: :admin}) == []
     end
 
+    test "preloads level ancestors so long_name resolves" do
+      country = insert(:country, name_en: "Canada")
+      insert(:special, name_en: "5MR", country: country)
+
+      [special] = Geo.get_specials(%Kjogvi.Scope{area: :admin})
+
+      assert Kjogvi.Geo.Location.long_name(:private, special) == "5MR, Canada"
+    end
+
     test "with a private scope, returns own and common specials but not another user's" do
       user = user_fixture()
       scope = %Kjogvi.Scope{current_user: user, area: :private}

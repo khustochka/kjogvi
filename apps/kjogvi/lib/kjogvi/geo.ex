@@ -245,6 +245,7 @@ defmodule Kjogvi.Geo do
     scoped_locations(scope)
     |> Location.Query.specials()
     |> Repo.all()
+    |> Location.Query.put_levels()
   end
 
   def location_by_slug(slug) do
