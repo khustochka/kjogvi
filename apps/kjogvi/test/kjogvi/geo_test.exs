@@ -907,6 +907,54 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "create_location/2 slug uniqueness" do
+    setup do
+      country = insert(:country, name_en: "Canada")
+      %{country: country}
+    end
+
+    defp create_city(scope, slug, country) do
+      Geo.create_location(scope, %{
+        "slug" => slug,
+        "name_en" => "City #{slug}",
+        "is_private" => "false",
+        "location_type" => "city",
+        "parent_id" => country.id
+      })
+    end
+
+    test "rejects a duplicate slug within one user", %{country: country} do
+      %{scope: scope} = scope_fixture()
+
+      assert {:ok, _} = create_city(scope, "shared-slug", country)
+      assert {:error, changeset} = create_city(scope, "shared-slug", country)
+      assert %{slug: ["has already been taken"]} = errors_on(changeset)
+    end
+
+    test "allows the same slug for two different users", %{country: country} do
+      %{scope: scope_a} = scope_fixture()
+      %{scope: scope_b} = scope_fixture()
+
+      assert {:ok, _} = create_city(scope_a, "shared-slug", country)
+      assert {:ok, _} = create_city(scope_b, "shared-slug", country)
+    end
+  end
+
+  describe "common locations slug uniqueness" do
+    test "rejects a second common location with the same slug" do
+      insert(:country, slug: "canada")
+
+      assert_raise Ecto.ConstraintError, ~r/locations_common_slug_index/, fn ->
+        Repo.insert!(%Kjogvi.Geo.Location{
+          slug: "canada",
+          name_en: "Canada (dup)",
+          location_type: :country,
+          is_private: false
+        })
+      end
+    end
+  end
+
   describe "update_location/3 and delete_location/2 authorization" do
     setup do
       %{user: owner, scope: owner_scope} = scope_fixture()

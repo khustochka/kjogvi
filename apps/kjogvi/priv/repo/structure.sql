@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict dC7sT3myuvUbyEHelYBrKLhYC3URsIsWs9OtPKTG5TvWUMZ5Zf1k1kP6fRQxQ0H
+\restrict 7iiNodc0Xiq9OXtWPPdEwhV1oJOednCwCaq5MSOxWPdgcitthvPvCcJVr9BUXqz
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -680,6 +680,13 @@ CREATE INDEX locations_city_id_index ON public.locations USING btree (city_id);
 
 
 --
+-- Name: locations_common_slug_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX locations_common_slug_index ON public.locations USING btree (slug) WHERE (user_id IS NULL);
+
+
+--
 -- Name: locations_country_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -708,13 +715,6 @@ CREATE INDEX locations_site_id_index ON public.locations USING btree (site_id);
 
 
 --
--- Name: locations_slug_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX locations_slug_index ON public.locations USING btree (slug);
-
-
---
 -- Name: locations_subdivision1_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -733,6 +733,13 @@ CREATE INDEX locations_subdivision2_id_index ON public.locations USING btree (su
 --
 
 CREATE INDEX locations_user_id_index ON public.locations USING btree (user_id);
+
+
+--
+-- Name: locations_user_id_slug_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX locations_user_id_slug_index ON public.locations USING btree (user_id, slug);
 
 
 --
@@ -965,7 +972,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict dC7sT3myuvUbyEHelYBrKLhYC3URsIsWs9OtPKTG5TvWUMZ5Zf1k1kP6fRQxQ0H
+\unrestrict 7iiNodc0Xiq9OXtWPPdEwhV1oJOednCwCaq5MSOxWPdgcitthvPvCcJVr9BUXqz
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -996,3 +1003,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260620120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260621120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260623000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260623120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260623130000);

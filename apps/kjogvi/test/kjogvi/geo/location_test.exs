@@ -8,6 +8,13 @@ defmodule Kjogvi.Geo.LocationTest do
   alias Kjogvi.Repo
 
   describe "changeset/2" do
+    defp slug_changeset(slug) do
+      Location.changeset(
+        %Location{name_en: "Test", location_type: :country, is_private: false},
+        %{"slug" => slug}
+      )
+    end
+
     test "valid with required fields" do
       changeset =
         Location.changeset(
@@ -61,6 +68,30 @@ defmodule Kjogvi.Geo.LocationTest do
         )
 
       assert %{name_en: ["can't be blank"]} = errors_on(changeset)
+    end
+
+    test "invalid with an all-digits slug" do
+      assert %{slug: ["can't be only digits"]} = errors_on(slug_changeset("12345"))
+    end
+
+    test "valid with a slug of letters, digits, underscores and hyphens" do
+      assert slug_changeset("loc-123_x").valid?
+    end
+
+    test "invalid with a slug shorter than 3 characters" do
+      assert %{slug: ["should be at least 3 character(s)"]} = errors_on(slug_changeset("ab"))
+    end
+
+    test "invalid with uppercase letters in the slug" do
+      assert %{
+               slug: ["must contain only lowercase letters, digits, underscores and hyphens"]
+             } = errors_on(slug_changeset("Loc"))
+    end
+
+    test "invalid with disallowed characters in the slug" do
+      assert %{
+               slug: ["must contain only lowercase letters, digits, underscores and hyphens"]
+             } = errors_on(slug_changeset("foo bar"))
     end
 
     test "requires all mandatory fields" do
@@ -182,7 +213,7 @@ defmodule Kjogvi.Geo.LocationTest do
     test "errors when the parent does not exist" do
       changeset =
         Location.changeset(%Location{}, %{
-          "slug" => "x",
+          "slug" => "xxx",
           "name_en" => "X",
           "is_private" => false,
           "location_type" => "city",
@@ -421,7 +452,7 @@ defmodule Kjogvi.Geo.LocationTest do
 
   describe "validate_user_owned_type/1" do
     defp typed_changeset(attrs) do
-      Location.changeset(%Location{}, Map.merge(%{slug: "s", name_en: "N"}, attrs))
+      Location.changeset(%Location{}, Map.merge(%{slug: "loc", name_en: "N"}, attrs))
     end
 
     test "rejects a common-only type when user_id is set" do

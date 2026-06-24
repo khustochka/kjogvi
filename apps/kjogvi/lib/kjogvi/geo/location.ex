@@ -142,7 +142,16 @@ defmodule Kjogvi.Geo.Location do
         :location_type,
         :is_private
       ])
-      |> unique_constraint(:slug)
+      |> validate_length(:slug, min: 3)
+      |> validate_format(:slug, ~r/\A[a-z0-9_-]+\z/,
+        message: "must contain only lowercase letters, digits, underscores and hyphens"
+      )
+      # An all-digits slug would be ambiguous with a year in Lifelist URL.
+      |> validate_format(:slug, ~r/\D/, message: "can't be only digits")
+      # Slugs are unique per owner; common locations (`nil` user) share a
+      # partial index keeping their slugs globally unique.
+      |> unique_constraint(:slug, name: :locations_user_id_slug_index)
+      |> unique_constraint(:slug, name: :locations_common_slug_index)
 
     {changeset, parent} = put_level_fks_from_parent(changeset)
 
