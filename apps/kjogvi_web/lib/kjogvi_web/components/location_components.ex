@@ -12,6 +12,7 @@ defmodule KjogviWeb.LocationComponents do
 
   import KjogviWeb.IconComponents
 
+  alias Kjogvi.Accounts.User
   alias Kjogvi.Geo.Location
 
   @doc """
@@ -100,6 +101,163 @@ defmodule KjogviWeb.LocationComponents do
     </div>
     """
   end
+
+  @doc """
+  Renders a single location, picking the body by kind — common (the tinted
+  scaffold header), personal (a row with edit/delete actions), or special (the
+  rose, action-less amalgamation row) — over a type-keyed background.
+
+  `variant` controls the surrounding chrome:
+
+    * `:tree` — sits inside a tree branch (the caller supplies the chevron and
+      `px-3` wrapper), so the card adds only its type-keyed tint and padding.
+    * `:flat` — a standalone card (search results, the specials section), so it
+      carries its own padding.
+
+  `current_user` and `delete_error` are only consulted for personal locations.
+  """
+  attr :location, :map, required: true
+  attr :variant, :atom, default: :flat, values: [:tree, :flat]
+  attr :current_user, :any, default: nil
+  attr :delete_error, :any, default: nil
+
+  def location_card(assigns) do
+    assigns = assign(assigns, :kind, location_kind(assigns.location))
+
+    ~H"""
+    <div class={location_card_class(@kind, @location.location_type, @variant)}>
+      <.common_node :if={@kind == :common} location={@location} />
+      <.personal_body
+        :if={@kind == :personal}
+        location={@location}
+        current_user={@current_user}
+        delete_error={delete_error_for(@delete_error, @location.id)}
+      />
+      <.special_body :if={@kind == :special} location={@location} />
+    </div>
+    """
+  end
+
+  defp location_kind(%{location_type: :special}), do: :special
+  defp location_kind(%{user_id: nil}), do: :common
+  defp location_kind(_), do: :personal
+
+  # Background + padding for a card, keyed on kind/type and variant. Common
+  # scaffold reads sky (countries) or amber (subdivisions); specials read rose;
+  # personal locations are plain white. `:tree` cards omit horizontal padding —
+  # the tree branch wrapper provides it — while `:flat` cards are self-contained.
+  # `:flat` cards carry horizontal padding; `:tree` cards leave it to the branch
+  # wrapper. Literal class strings (not interpolated) so Tailwind's scanner sees
+  # them.
+  defp location_card_class(:special, _type, :flat), do: "bg-rose-50 border border-rose-100 p-4"
+  defp location_card_class(:special, _type, :tree), do: "bg-rose-50 py-2.5"
+  defp location_card_class(:common, :country, :flat), do: "bg-sky-50 px-3 py-2.5"
+  defp location_card_class(:common, :country, :tree), do: "bg-sky-50 py-2.5"
+  defp location_card_class(:common, :subdivision1, :flat), do: "bg-amber-50 px-3 py-2"
+  defp location_card_class(:common, :subdivision1, :tree), do: "bg-amber-50 py-2"
+  defp location_card_class(:common, _type, :flat), do: "bg-stone-50 px-3 py-2"
+  defp location_card_class(:common, _type, :tree), do: "bg-stone-50 py-2"
+  defp location_card_class(:personal, _type, :flat), do: "bg-white px-3 py-3"
+  defp location_card_class(:personal, _type, :tree), do: "bg-white py-3"
+
+  attr :location, :map, required: true
+  attr :current_user, :any, default: nil
+  attr :delete_error, :any, default: nil
+
+  # A personal (user-owned) location: name/details plus edit & delete actions and
+  # a lifelist link. Shows the comma-joined long name when it adds detail beyond
+  # the bare name, and any inline delete-failure message.
+  defp personal_body(assigns) do
+    ~H"""
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex-1 min-w-0">
+        <.location_row location={@location} />
+        <p
+          :if={Location.long_name(:private, @location) != @location.name_en}
+          class="mt-1 text-xs text-stone-400"
+        >
+          {Location.long_name(:private, @location)}
+        </p>
+      </div>
+
+      <div class="flex flex-col items-end gap-1">
+        <div class="flex items-center gap-2">
+          <.row_actions
+            location={@location}
+            can_modify={User.owns?(@current_user, @location)}
+          />
+          <.lifelist_link slug={@location.slug} />
+        </div>
+        <p
+          :if={@delete_error}
+          id={"location-delete-error-#{@location.id}"}
+          class="text-right text-xs text-rose-600"
+        >
+          {@delete_error}
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  attr :location, :map, required: true
+
+  # A special location: full name and a lifelist link. Specials sit outside the
+  # hierarchy and aren't user-editable here, so they carry no edit/delete actions.
+  defp special_body(assigns) do
+    ~H"""
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex-1 min-w-0">
+        <.location_row location={@location} />
+        <p
+          :if={Location.long_name(:private, @location) != @location.name_en}
+          class="mt-1 text-xs text-stone-400"
+        >
+          {Location.long_name(:private, @location)}
+        </p>
+      </div>
+      <.lifelist_link slug={@location.slug} />
+    </div>
+    """
+  end
+
+  # The delete button is shown for every owned location; deletability (no
+  # children, no cards) is enforced server-side by `Geo.delete_location/2`,
+  # which flashes an error if the location is still in use. This keeps the list
+  # free of a per-row deletability query.
+  attr :location, :map, required: true
+  attr :can_modify, :boolean, default: false
+
+  defp row_actions(assigns) do
+    ~H"""
+    <div class="shrink-0 flex items-center gap-1">
+      <.link
+        :if={@can_modify}
+        href={~p"/my/locations/#{@location.slug}/edit"}
+        class="p-1.5 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded"
+        title="Edit"
+      >
+        <.icon name="hero-pencil-square" class="w-4 h-4" />
+      </.link>
+      <button
+        :if={@can_modify}
+        type="button"
+        phx-click="delete"
+        phx-value-id={@location.id}
+        data-confirm={"Delete location \"#{@location.name_en}\"? This cannot be undone."}
+        class="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded"
+        title="Delete"
+      >
+        <.icon name="hero-trash" class="w-4 h-4" />
+      </button>
+    </div>
+    """
+  end
+
+  # The delete-failure message for `id`, or `nil` when the failure (if any) is
+  # for a different row.
+  defp delete_error_for({id, message}, id), do: message
+  defp delete_error_for(_, _), do: nil
 
   # Countries read largest, subdivisions a step down; deeper commons stay modest.
   defp common_node_text_size(:country), do: "text-xl font-bold"

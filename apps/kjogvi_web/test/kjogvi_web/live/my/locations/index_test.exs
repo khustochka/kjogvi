@@ -250,6 +250,51 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
       refute has_element?(index_live, "h2", "Search Results")
     end
+
+    test "a matching country renders with the common scaffold styling, like the tree",
+         %{conn: conn} do
+      country = insert(:country, name_en: "Canada", iso_code: "ca")
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+      html =
+        index_live
+        |> element("#location-search")
+        |> render_keyup(%{"value" => "Canada"})
+
+      # The common node shows a flag and the type badge — the tree look, not the
+      # old generic row.
+      assert html =~ Kjogvi.Geo.Location.to_flag_emoji(country)
+      assert has_element?(index_live, "span", "country")
+    end
+
+    test "a matching personal location keeps its edit and delete actions",
+         %{conn: conn, user: user} do
+      insert(:location, name_en: "Winnipeg", user_id: user.id)
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+      index_live
+      |> element("#location-search")
+      |> render_keyup(%{"value" => "Winnipeg"})
+
+      assert has_element?(index_live, "a[title='Edit']")
+      assert has_element?(index_live, "button[title='Delete']")
+    end
+
+    test "a matching special location renders without edit or delete actions",
+         %{conn: conn, user: user} do
+      insert(:special, name_en: "My Big Year", user_id: user.id)
+
+      {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+      index_live
+      |> element("#location-search")
+      |> render_keyup(%{"value" => "Big Year"})
+
+      assert has_element?(index_live, "h2", "Search Results")
+      refute has_element?(index_live, "button[title='Delete']")
+    end
   end
 
   test "nests a personal location under its common country and subdivision", %{
