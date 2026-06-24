@@ -36,7 +36,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   def handle_params(params, _url, %{assigns: assigns} = socket) do
     lifelist_scope = assigns.lifelist_scope
 
-    filter = build_filter(assigns.current_scope, params)
+    filter =
+      KjogviWeb.Live.Lifelist.Params.to_filter(assigns.current_scope, params)
+      |> case do
+        {:ok, filter} -> filter
+        {:error, _} -> raise KjogviWeb.NotFoundError
+      end
 
     lifelist = Lifelist.generate(lifelist_scope, filter)
 
@@ -344,14 +349,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       </div>
     </div>
     """
-  end
-
-  defp build_filter(scope, params) do
-    KjogviWeb.Live.Lifelist.Params.to_filter(scope, params)
-    |> case do
-      {:ok, filter} -> filter
-      {:error, _} -> raise Plug.BadRequestError
-    end
   end
 
   defp derive_page_header(socket) do

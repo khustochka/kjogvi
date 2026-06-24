@@ -87,9 +87,9 @@ defmodule KjogviWeb.Live.Lifelist.ParamsTest do
     assert result == {:ok, Filter.discombo!([])}
   end
 
-  test "invalid sort parameter" do
+  test "invalid sort parameter is ignored and falls back to the default" do
     result = Params.to_filter(%{current_user: nil, area: :community}, %{"sort" => "bogus"})
-    assert {:error, _} = result
+    assert result == {:ok, Filter.discombo!([])}
   end
 
   test "private location available in private view for user" do

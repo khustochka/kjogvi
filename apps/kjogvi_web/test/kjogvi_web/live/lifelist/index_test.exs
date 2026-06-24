@@ -379,7 +379,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
   end
 
   test "lifelist with valid year and invalid location", %{conn: conn, user: user} do
-    assert_error_sent :bad_request, fn ->
+    assert_error_sent :not_found, fn ->
       get(conn, "/users/#{user.nickname}/lifelist/2022/testtest")
     end
   end

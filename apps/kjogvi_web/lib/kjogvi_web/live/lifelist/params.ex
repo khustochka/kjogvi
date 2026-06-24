@@ -74,7 +74,8 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     case sort do
       "taxonomy" -> add_success(acc, {:sort, :taxonomy})
       "date" -> acc
-      _ -> add_error(acc, "Invalid sort value.")
+      # Ignore wrong sort param, do not fail, use default
+      _ -> acc
     end
   end
 
