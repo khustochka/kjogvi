@@ -101,14 +101,27 @@ defmodule Kjogvi.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "ecto.setup"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run #{__DIR__}/priv/repo/seeds.exs"],
-      # Function alias so that `-r`/`--repo` flags are forwarded to the underlying
+      # Function aliases so that `-r`/`--repo` flags are forwarded to the underlying
       # ecto tasks; with a plain list alias they would be dropped and every repo
-      # in `:ecto_repos` would be reset. Seeds only target `Kjogvi.Repo`, so they
-      # run only when the reset is not scoped to a different repo.
+      # in `:ecto_repos` would be affected. Seeds only target `Kjogvi.Repo`, so they
+      # run only when the task is not scoped to a different repo.
+      "ecto.setup": &ecto_setup/1,
       "ecto.reset": &ecto_reset/1,
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
+  end
+
+  # Sets up the database(s), forwarding any `-r`/`--repo` (and other) flags to the
+  # underlying ecto tasks. Without a `-r` flag every repo in `:ecto_repos` is
+  # set up; with one, only that repo is.
+  defp ecto_setup(args) do
+    Mix.Task.run("ecto.create", args)
+    Mix.Task.run("ecto.load", args)
+    Mix.Task.run("ecto.migrate", args)
+
+    if seed_main_repo?(args) do
+      Mix.Task.run("run", ["#{__DIR__}/priv/repo/seeds.exs"])
+    end
   end
 
   # Resets the database(s), forwarding any `-r`/`--repo` (and other) flags to the
@@ -116,12 +129,7 @@ defmodule Kjogvi.MixProject do
   # reset; with one, only that repo is.
   defp ecto_reset(args) do
     Mix.Task.run("ecto.drop", args)
-    Mix.Task.run("ecto.create", args)
-    Mix.Task.run("ecto.migrate", args)
-
-    if seed_main_repo?(args) do
-      Mix.Task.run("run", ["#{__DIR__}/priv/repo/seeds.exs"])
-    end
+    Mix.Task.run("ecto.setup", args)
   end
 
   # Seeds belong to Kjogvi.Repo, so only run them when the reset is not scoped to
