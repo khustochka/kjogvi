@@ -177,6 +177,23 @@ defmodule Kjogvi.Birding.CardTest do
       refute changeset.valid?
       assert %{observ_date: ["can't be blank"]} = errors_on(changeset)
     end
+
+    test "invalid with a special location" do
+      special = insert(:special)
+
+      changeset =
+        Card.changeset(%Card{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => special.id,
+          "effort_type" => "STATIONARY",
+          "start_time" => "08:00:00",
+          "duration_minutes" => 30,
+          "user_id" => 1
+        })
+
+      refute changeset.valid?
+      assert %{location_id: ["is not available"]} = errors_on(changeset)
+    end
   end
 
   describe "effort-type-dependent validations" do

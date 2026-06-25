@@ -14,6 +14,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
 
   alias Kjogvi.Birding
   alias Kjogvi.Geo
+  alias Kjogvi.Geo.Location
   alias KjogviWeb.BaseComponents
   alias KjogviWeb.Live.Components.LocationAutocomplete
   alias KjogviWeb.Live.Components.MonthCalendar
@@ -186,6 +187,7 @@ defmodule KjogviWeb.Live.My.Cards.Form do
                 hidden_value={@form[:location_id].value || ""}
                 on_select_event="location_selected"
                 scope={@current_scope}
+                filter={Location.Filter.for_card_input()}
                 errors={
                   if show_field_error?(@form, :location_id),
                     do: Enum.map(@form[:location_id].errors, &BaseComponents.translate_error/1),

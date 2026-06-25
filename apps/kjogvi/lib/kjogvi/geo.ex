@@ -243,10 +243,26 @@ defmodule Kjogvi.Geo do
   @doc """
   Searches locations visible to `scope`, restricting the base query to what the
   scope may see before delegating to `Kjogvi.Search.Location`.
+
+  A `Location.Filter` may be passed via the `:filter` option to further narrow the
+  base query by purpose (e.g. hide `special` locations); it defaults to a blank,
+  no-op filter.
   """
   def search_locations(scope, term, opts \\ []) do
+    {filter, opts} = Keyword.pop(opts, :filter, %Location.Filter{})
+
     scoped_locations(scope)
+    |> Location.Query.apply_filter(filter)
     |> Kjogvi.Search.Location.search_locations(term, opts)
+  end
+
+  @doc """
+  Autocomplete entrypoint: `search_locations/3` with the `filter` ahead of `term`,
+  so the `{module, fun, args}` form used by `LocationAutocomplete` (which appends
+  `term` last) can carry a `Location.Filter`.
+  """
+  def suggest_locations(scope, %Location.Filter{} = filter, term) do
+    search_locations(scope, term, filter: filter)
   end
 
   # The base query of locations a scope may see.

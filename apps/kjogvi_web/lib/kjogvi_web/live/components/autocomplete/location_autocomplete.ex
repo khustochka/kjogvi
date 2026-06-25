@@ -32,8 +32,12 @@ defmodule KjogviWeb.Live.Components.LocationAutocomplete do
   # Scope whose visible locations the search is restricted to.
   attr :scope, Kjogvi.Scope, required: true
 
+  # Purpose-driven refinement of the suggestions (e.g. hide `special` locations).
+  attr :filter, Location.Filter, default: %Location.Filter{}
+
   def location_autocomplete(assigns) do
-    assigns = assign(assigns, :search_fn, {Geo, :search_locations, [assigns.scope]})
+    assigns =
+      assign(assigns, :search_fn, {Geo, :suggest_locations, [assigns.scope, assigns.filter]})
 
     ~H"""
     <.live_component

@@ -191,6 +191,17 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
       assert html =~ "Common"
       refute html =~ "Other Park"
     end
+
+    test "location autocomplete does not suggest special locations", %{conn: conn} do
+      _regular = GeoFixtures.location_fixture(name_en: "Regular Park", location_type: "city")
+      _special = GeoFixtures.location_fixture(name_en: "Special Park", location_type: "special")
+
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      html = lv |> element("#location_search") |> render_keyup(%{"value" => "Park"})
+
+      assert html =~ "Regular"
+      refute html =~ "Special"
+    end
   end
 
   describe "location search" do
@@ -1083,6 +1094,24 @@ defmodule KjogviWeb.Live.My.Cards.FormTest do
 
       # Should show validation error for missing taxon
       assert html =~ "can&#39;t be blank" or html =~ "can't be blank"
+    end
+
+    test "rejects a special location on save", %{conn: conn, user: user} do
+      special = GeoFixtures.location_fixture(name_en: "Special Park", location_type: "special")
+      {:ok, lv, _html} = live(conn, "/my/cards/new")
+
+      form_data = %{
+        "card" => %{
+          "observ_date" => "2026-01-20",
+          "effort_type" => "INCIDENTAL",
+          "location_id" => to_string(special.id)
+        }
+      }
+
+      html = lv |> render_submit("save", form_data)
+
+      assert html =~ "is not available"
+      assert Birding.get_cards(user, %{page: 1, page_size: 50}).entries == []
     end
 
     test "card with no observations saves successfully", %{conn: conn, user: user} do

@@ -86,7 +86,7 @@ defmodule Kjogvi.Birding.Card do
       :effort_type,
       :user_id
     ])
-    |> validate_location_ownership()
+    |> validate_location()
     |> validate_effort_fields()
     |> cast_assoc(:observations,
       with: &Kjogvi.Birding.Observation.changeset/2,
@@ -95,17 +95,23 @@ defmodule Kjogvi.Birding.Card do
     )
   end
 
-  # Skip the ownership lookup (a DB query) when the changeset is already invalid.
-  defp validate_location_ownership(%Ecto.Changeset{valid?: false} = changeset) do
+  # Skip the location lookup (a DB query) when the changeset is already invalid.
+  defp validate_location(%Ecto.Changeset{valid?: false} = changeset) do
     changeset
   end
 
-  defp validate_location_ownership(changeset) do
+  # A card's location must be a concrete hierarchy location owned by the user (or
+  # common). A `special` is an amalgamation of members, not a place to bird at, so
+  # it can't be referenced directly.
+  defp validate_location(changeset) do
     location_id = get_field(changeset, :location_id)
     user_id = get_field(changeset, :user_id)
 
     case Kjogvi.Repo.get(Kjogvi.Geo.Location, location_id) do
       %{user_id: owner_id} when not is_nil(owner_id) and owner_id != user_id ->
+        add_error(changeset, :location_id, "is not available")
+
+      %{location_type: :special} ->
         add_error(changeset, :location_id, "is not available")
 
       _ ->

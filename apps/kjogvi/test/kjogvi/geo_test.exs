@@ -713,6 +713,28 @@ defmodule Kjogvi.GeoTest do
 
       assert owned.id in ids
     end
+
+    test "includes specials by default" do
+      scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
+      special = insert(:special, name_en: "Park Special")
+
+      ids = Geo.search_locations(scope, "Park") |> Enum.map(& &1.id)
+
+      assert special.id in ids
+    end
+
+    test "card-input filter excludes specials" do
+      scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
+      regular = insert(:location, slug: "park-site", name_en: "Park Site")
+      special = insert(:special, name_en: "Park Special")
+
+      ids =
+        Geo.search_locations(scope, "Park", filter: Geo.Location.Filter.for_card_input())
+        |> Enum.map(& &1.id)
+
+      assert regular.id in ids
+      refute special.id in ids
+    end
   end
 
   describe "get_locations/0" do
