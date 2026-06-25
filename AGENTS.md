@@ -154,7 +154,19 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 - Before committing, run `mix lint.fix` (to auto-fix formatting + linting) and the tests.
 - Follow the LiveView naming pattern: `KjogviWeb.Live.Something` lives in `apps/kjogvi_web/lib/kjogvi_web/live/something.ex` (this contradicts the Phoenix recommended pattern of `KjogviWeb.SmthLive`, but is my preference).
 - Avoid adding utility functions unrelated to a module's topic (whether in a LiveView or elsewhere), especially trivial ones like converting `nil` to an empty string. Put them in `Utils`, or avoid them altogether.
+- For multi-step database writes, use `Repo.transact/1` rather than `Ecto.Multi`.
 - When designing frontend, always make it responsive (check on smaller screen sizes).
 - Be mindful of how it will present on text-based browsers (e.g. lynx) and for screen readers.
 - When creating a bunch of homogenous elements, implement them using `<ul>` and `<li>`, even if they are not rendered visually as a list.
 - Do not overuse icons.
+- Don't truncate text (CSS `truncate`, `…`, or otherwise) unless explicitly asked.
+- In HEEx, don't let a link's text break onto its own line — a line break after the opening tag renders as a stray space (e.g. an underlined space before/after the link text). Keep the content between the opening tag's `>` and the closing `<` on one line: `<.link href={...}>Text</.link>`. If the formatter insists on wrapping it, add `phx-no-format` to the tag to suppress reformatting.
+
+## Committing
+
+- Never commit without explicit, in-the-moment approval. "Commit" means run `git commit` directly — the tool-confirmation dialog is the approval gate. If `git commit` would run with no confirmation prompt at all, ask first; never let a commit land with zero confirmation.
+- Before committing, run `mix lint.fix` and the tests (`mix test`). Fix lint errors; pre-existing TODO/FIXME tags can be ignored.
+- End the commit subject (first line) with a period.
+- Use an `Assisted-by:` trailer, not `Co-Authored-By:`.
+- Never override git config on commit (no `-c commit.gpgsign=false` or similar).
+- For multi-stage work, stop after each stage for review before committing or continuing.
