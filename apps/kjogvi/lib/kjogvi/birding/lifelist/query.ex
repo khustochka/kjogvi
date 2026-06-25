@@ -15,9 +15,9 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   @doc """
   Full query to generate lifelist.
   """
-  @spec lifelist_query(Lifelist.Scope.t()) :: Ecto.Query.t()
-  @spec lifelist_query(Lifelist.Scope.t(), filter_or_keyword()) :: Ecto.Query.t()
-  @spec lifelist_query(Lifelist.Scope.t(), filter_or_keyword(), keyword()) :: Ecto.Query.t()
+  @spec lifelist_query(Kjogvi.Scope.t()) :: Ecto.Query.t()
+  @spec lifelist_query(Kjogvi.Scope.t(), filter_or_keyword()) :: Ecto.Query.t()
+  @spec lifelist_query(Kjogvi.Scope.t(), filter_or_keyword(), keyword()) :: Ecto.Query.t()
   def lifelist_query(scope, filter \\ [], opts \\ [])
 
   def lifelist_query(scope, %Filter{sort: :taxonomy} = filter, opts) do
@@ -73,8 +73,8 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   @doc """
   Main entrypoint that converts filter into a query that returns observations matching it.
   """
-  @spec observations_filtered(Lifelist.Scope.t()) :: Ecto.Query.t()
-  @spec observations_filtered(Lifelist.Scope.t(), Lifelist.filter()) :: Ecto.Query.t()
+  @spec observations_filtered(Kjogvi.Scope.t()) :: Ecto.Query.t()
+  @spec observations_filtered(Kjogvi.Scope.t(), Lifelist.filter()) :: Ecto.Query.t()
   def observations_filtered(scope, filter \\ [])
 
   def observations_filtered(scope, %Filter{} = filter) do

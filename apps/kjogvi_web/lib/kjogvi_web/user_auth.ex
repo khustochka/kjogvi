@@ -7,7 +7,6 @@ defmodule KjogviWeb.UserAuth do
   import Phoenix.Controller
 
   alias Kjogvi.Accounts
-  alias Kjogvi.Scope
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -97,7 +96,7 @@ defmodule KjogviWeb.UserAuth do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
 
-    assign(conn, :current_scope, %Scope{current_user: user})
+    assign(conn, :current_scope, %Kjogvi.Scope{current_user: user})
   end
 
   defp ensure_user_token(conn) do
@@ -251,7 +250,7 @@ defmodule KjogviWeb.UserAuth do
           Accounts.get_user_by_session_token(user_token)
         end
 
-      %Scope{current_user: user}
+      %Kjogvi.Scope{current_user: user}
     end)
   end
 

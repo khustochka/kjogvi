@@ -23,9 +23,16 @@ defmodule Kjogvi.Scope do
     * `:community` - aggregate public data across all users (the default area).
     * `:user` - the public data of a specific `subject_user`.
     * `:private` - all data, including private, of the logged-in `current_user`.
-    * `:admin` - administrative area.
+    * `:admin` - administrative area: all data across all users, including
+      private.
   """
   @type area() :: :community | :user | :private | :admin
+
+  @typedoc """
+  Data visibility implied by the area: `:private` exposes the subject user's
+  private data, `:public` only their public data.
+  """
+  @type visibility() :: :public | :private
 
   @type t() :: %__MODULE__{
           current_user: Kjogvi.Accounts.User.t() | nil,
@@ -34,4 +41,26 @@ defmodule Kjogvi.Scope do
         }
 
   defstruct current_user: nil, area: :community, subject_user: nil
+
+  @doc """
+  The user whose data the scope selects, or `nil` for an aggregate across all
+  users:
+
+    * `:private` — the logged-in `current_user`.
+    * `:user` — the `subject_user`.
+    * `:community` / `:admin` — `nil` (aggregate of all users; `:admin` includes
+      private data, see `visibility/1`).
+  """
+  @spec subject_user(t()) :: Kjogvi.Accounts.User.t() | nil
+  def subject_user(%__MODULE__{area: :private, current_user: user}), do: user
+  def subject_user(%__MODULE__{area: :user, subject_user: user}), do: user
+  def subject_user(%__MODULE__{area: area}) when area in [:community, :admin], do: nil
+
+  @doc """
+  Whether the scope may see private data: `:private` for the owner's own area
+  (`:private`) and the administrative area (`:admin`), `:public` otherwise.
+  """
+  @spec visibility(t()) :: visibility()
+  def visibility(%__MODULE__{area: area}) when area in [:private, :admin], do: :private
+  def visibility(%__MODULE__{area: area}) when area in [:user, :community], do: :public
 end

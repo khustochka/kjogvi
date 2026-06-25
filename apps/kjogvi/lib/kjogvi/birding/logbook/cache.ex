@@ -9,7 +9,7 @@ defmodule Kjogvi.Birding.Logbook.Cache do
   date in the key ensures stale results don't survive day boundaries.
 
   Only the public feed is cached. The private view (site owner viewing
-  their own data, `include_private: true`) is a single-user code path
+  their own data, `view: :private`) is a single-user code path
   with negligible cache benefit and is computed directly on every call.
 
   Invalidation enumerates all known variants for a user. The set of

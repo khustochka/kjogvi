@@ -20,7 +20,6 @@ defmodule Kjogvi.Birding.Logbook do
   alias Kjogvi.Birding.Logbook.Cache
   alias Kjogvi.Birding.Logbook.Entry
   alias Kjogvi.Birding.Logbook.Query
-  alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Geo
 
   @default_limit 5
@@ -29,8 +28,8 @@ defmodule Kjogvi.Birding.Logbook do
   @doc """
   Returns logbook entries for the most recent days that have entries.
 
-  Logbook settings are read from `scope.user.extras.logbook_settings`. Results for
-  the public feed (`include_private: false`) are cached per
+  Logbook settings are read from the subject user's `extras.logbook_settings`.
+  Results for the public feed (`view: :public`) are cached per
   `(user_id, limit, cutoff_days)` and the current date; cache entries are
   evicted when observations or `logbook_settings` change (see
   `Kjogvi.Birding.Logbook.Cache`). The private view bypasses the cache.
@@ -41,7 +40,7 @@ defmodule Kjogvi.Birding.Logbook do
 
   Returns a list of `{date, [%Entry{}]}` tuples, newest first.
   """
-  @spec recent_entries(Lifelist.scope(), keyword()) :: [{Date.t(), [Entry.t()]}]
+  @spec recent_entries(Kjogvi.Scope.t(), keyword()) :: [{Date.t(), [Entry.t()]}]
   def recent_entries(scope, opts \\ []) do
     limit = Keyword.get(opts, :limit, @default_limit)
     cutoff_days = Keyword.get(opts, :cutoff_days, @cutoff_days)
@@ -57,13 +56,13 @@ defmodule Kjogvi.Birding.Logbook do
         ]
       end
 
-    if scope.include_private do
+    if Kjogvi.Scope.visibility(scope) == :private do
       compute_recent_entries(scope, filter)
     else
       # Shortcut: since year filter is only used for private view, we only use
       # the cache with limit and cutoff_days filters, which are relevant for the public view.
       Cache.fetch(
-        {scope.user.id, limit, cutoff_days},
+        {Kjogvi.Scope.subject_user(scope).id, limit, cutoff_days},
         fn -> compute_recent_entries(scope, filter) end
       )
     end
@@ -80,7 +79,7 @@ defmodule Kjogvi.Birding.Logbook do
         {Date.add(Date.utc_today(), -Keyword.get(filter, :cutoff_days)), nil}
       end
 
-    logbook_settings = scope.user.extras.logbook_settings
+    logbook_settings = Kjogvi.Scope.subject_user(scope).extras.logbook_settings
 
     location_ids =
       logbook_settings
@@ -116,13 +115,15 @@ defmodule Kjogvi.Birding.Logbook do
   Returns true if the user has any logbook entries enabled based on their settings.
   When no settings are configured, the logbook is disabled.
   """
-  @spec any_enabled?(Lifelist.scope()) :: boolean()
-  def any_enabled?(%{user: %{extras: %{logbook_settings: []}}}), do: false
+  @spec any_enabled?(Kjogvi.Scope.t()) :: boolean()
+  def any_enabled?(%Kjogvi.Scope{} = scope) do
+    case Kjogvi.Scope.subject_user(scope) do
+      %{extras: %{logbook_settings: logbook_settings}} ->
+        Enum.any?(logbook_settings, &(&1.life || &1.year))
 
-  def any_enabled?(%{user: %{extras: %{logbook_settings: logbook_settings}}}) do
-    Enum.any?(logbook_settings, fn setting ->
-      setting.life || setting.year
-    end)
+      _ ->
+        false
+    end
   end
 
   # Filter built entries based on logbook_settings (removing specific type entries)

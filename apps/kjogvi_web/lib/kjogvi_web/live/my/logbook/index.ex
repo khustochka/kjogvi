@@ -12,14 +12,13 @@ defmodule KjogviWeb.Live.My.Logbook.Index do
 
   @impl true
   def mount(_params, _session, %{assigns: assigns} = socket) do
-    lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
-    all_years = Lifelist.years(lifelist_scope)
-    logbook_enabled? = Logbook.any_enabled?(lifelist_scope)
+    scope = assigns.current_scope
+    all_years = Lifelist.years(scope)
+    logbook_enabled? = Logbook.any_enabled?(scope)
 
     {
       :ok,
       socket
-      |> assign(:lifelist_scope, lifelist_scope)
       |> assign(:all_years, all_years)
       |> assign(:logbook_enabled?, logbook_enabled?)
     }
@@ -37,7 +36,7 @@ defmodule KjogviWeb.Live.My.Logbook.Index do
         {nil, @default_opts}
       end
 
-    logbook_entries = Logbook.recent_entries(assigns.lifelist_scope, opts)
+    logbook_entries = Logbook.recent_entries(assigns.current_scope, opts)
 
     {
       :noreply,

@@ -8,7 +8,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   describe "years/1" do
     test "returns years that have cards and observation" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
       insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
@@ -19,7 +19,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "returns years in correct order" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
       insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
@@ -30,7 +30,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "does not include years with unreported observations only" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
 
@@ -49,7 +49,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   describe "months/1" do
     test "returns months that have cards and observation" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
       insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
@@ -60,7 +60,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "returns months in correct order" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
       insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
@@ -71,7 +71,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "does not include years with unreported observations only" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
 
@@ -91,7 +91,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   describe "generate/1" do
     test "works with no observations of the desired user" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       taxon = Ornitho.Factory.insert(:taxon, category: "species")
       insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
@@ -102,7 +102,7 @@ defmodule Kjogvi.Birding.LifelistTest do
     test "includes species observation" do
       {taxon, _} = Factory.create_species_taxon_with_page()
       obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
-      scope = %Lifelist.Scope{user: obs.card.user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: obs.card.user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
@@ -115,7 +115,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-      scope = %Lifelist.Scope{user: obs.card.user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: obs.card.user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
@@ -125,7 +125,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "uses subspecies observation date if it is earlier than the full species" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {%{parent_species: species} = subspecies, _} = Factory.create_subspecies_taxon_with_page()
 
       card1 = insert(:card, observ_date: ~D[2022-06-11], user: user)
@@ -149,7 +149,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       obs =
         insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-      scope = %Lifelist.Scope{user: obs.card.user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: obs.card.user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
       assert result.list == []
@@ -159,7 +159,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       obs =
         insert(:observation, taxon_key: "/abc/v1/taxon")
 
-      scope = %Lifelist.Scope{user: obs.card.user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: obs.card.user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
       assert result.list == []
@@ -167,7 +167,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "filtered by year" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
       insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
@@ -181,7 +181,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "filtered by missing year" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
       insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
@@ -195,7 +195,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "filtered by country" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
       usa = insert(:country, slug: "usa", name_en: "United States")
 
@@ -220,7 +220,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "filtered by location" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
       usa = insert(:country, slug: "usa", name_en: "United States")
 
@@ -245,7 +245,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "filtered by year and country" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
       usa = insert(:country, slug: "usa", name_en: "United States")
 
@@ -273,7 +273,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "filtered by month" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
       insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
@@ -287,7 +287,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "filtered by motorless" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-11-18", user: user, motorless: true)
       insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
@@ -301,7 +301,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "filtered by special location" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       locus1 =
         insert(:location, slug: "bunns_creek", name_en: "Bunn's Creek", location_type: "site")
@@ -350,7 +350,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "exclude heard only has the species at the later date" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       locus = insert(:location)
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
@@ -381,7 +381,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "unreported observations not included in private view" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
@@ -407,7 +407,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "hidden observations are included in private view" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: true}
+      scope = %Kjogvi.Scope{current_user: user, area: :private}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
@@ -435,7 +435,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "hidden observations are not included in public view" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
@@ -462,7 +462,7 @@ defmodule Kjogvi.Birding.LifelistTest do
     test "community scope aggregates observations across all users" do
       user1 = user_fixture()
       user2 = user_fixture()
-      scope = %Lifelist.Scope{user: nil, include_private: false}
+      scope = %Kjogvi.Scope{area: :community}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
@@ -482,7 +482,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "community scope excludes hidden observations" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: nil, include_private: false}
+      scope = %Kjogvi.Scope{area: :community}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
@@ -520,7 +520,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       {taxon, _} = Factory.create_species_taxon_with_page()
       insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
@@ -549,7 +549,7 @@ defmodule Kjogvi.Birding.LifelistTest do
         taxon_key: Ornitho.Schema.Taxon.key(taxon2)
       )
 
-      scope = %Lifelist.Scope{user: user}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
       result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true)
 
       assert length(result.list) == 1
@@ -558,7 +558,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "heard only extras is empty when all species have been seen" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, observ_date: ~D"2023-06-01", user: user)
@@ -573,7 +573,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "heard only extras respects year filter" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-05-10", user: user)
@@ -592,7 +592,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "heard only species uses earliest voice-only observation date" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D"2022-03-01", user: user)
@@ -612,7 +612,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   describe "generate/2 with sort: :taxonomy" do
     test "orders species by taxonomic sort_order ascending, ignoring date" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       # Earlier date but later sort_order
       {taxon_late_taxonomy, _} = Factory.create_species_taxon_with_page()
@@ -649,7 +649,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   describe "top/3" do
     test "returns the N newest species" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D[2022-03-10], user: user)
@@ -672,7 +672,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "returns all species when n exceeds total" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, observ_date: ~D[2023-06-15], user: user)
@@ -685,7 +685,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "accepts keyword filter" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       card1 = insert(:card, observ_date: ~D[2022-03-10], user: user)
@@ -704,7 +704,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   describe "location_ids/2" do
     test "returns the country ancestor of a location that has observations" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       canada = insert(:country, name_en: "Canada")
       winnipeg = insert(:location, location_type: "city", country: canada)
@@ -719,14 +719,14 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "returns empty list when no observations exist" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       assert Lifelist.location_ids(scope) == []
     end
 
     test "includes a country when the observation is at the country itself" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       canada = insert(:country, name_en: "Canada")
 
@@ -740,7 +740,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "returns both the country and subdivision1 ancestors" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       canada = insert(:country, name_en: "Canada")
 
@@ -765,7 +765,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
     test "excludes locations below subdivision1 even when they have observations" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       canada = insert(:country, name_en: "Canada")
       winnipeg = insert(:location, location_type: "city", country: canada)
@@ -783,7 +783,7 @@ defmodule Kjogvi.Birding.LifelistTest do
   describe "generate/2 result structure" do
     test "returns a Result struct with correct fields" do
       user = user_fixture()
-      scope = %Lifelist.Scope{user: user, include_private: false}
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon, _} = Factory.create_species_taxon_with_page()
       card = insert(:card, user: user)
@@ -792,52 +792,9 @@ defmodule Kjogvi.Birding.LifelistTest do
       result = Lifelist.generate(scope)
       assert %Lifelist.Result{} = result
       assert result.user == user
-      assert result.include_private == false
+      assert result.visibility == :public
       assert result.total == 1
       assert %Lifelist.Filter{} = result.filter
-    end
-  end
-
-  describe "Lifelist.Scope.from_scope/1" do
-    test "returns the current user's list with private observations for the :private section" do
-      user = user_fixture()
-      app_scope = %Kjogvi.Scope{current_user: user, area: :private}
-
-      lifelist_scope = Lifelist.Scope.from_scope(app_scope)
-      assert lifelist_scope.user == user
-      assert lifelist_scope.include_private == true
-    end
-
-    test "returns the current user's list with private observations for the :admin section" do
-      user = user_fixture()
-      app_scope = %Kjogvi.Scope{current_user: user, area: :admin}
-
-      lifelist_scope = Lifelist.Scope.from_scope(app_scope)
-      assert lifelist_scope.user == user
-      assert lifelist_scope.include_private == true
-    end
-
-    test "returns the subject user's public list for the :user section" do
-      current_user = user_fixture()
-      subject_user = user_fixture()
-
-      app_scope = %Kjogvi.Scope{
-        current_user: current_user,
-        area: :user,
-        subject_user: subject_user
-      }
-
-      lifelist_scope = Lifelist.Scope.from_scope(app_scope)
-      assert lifelist_scope.user == subject_user
-      assert lifelist_scope.include_private == false
-    end
-
-    test "returns the aggregate public list with no user for the :community section" do
-      app_scope = %Kjogvi.Scope{area: :community}
-
-      lifelist_scope = Lifelist.Scope.from_scope(app_scope)
-      assert lifelist_scope.user == nil
-      assert lifelist_scope.include_private == false
     end
   end
 

@@ -18,16 +18,16 @@ defmodule KjogviWeb.Live.Users.Show do
 
   @impl true
   def mount(_params, _session, %{assigns: assigns} = socket) do
-    lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
+    scope = assigns.current_scope
 
     primary_lists = [
       {
         "Last #{@top_lifelist_num} lifers",
-        Lifelist.top(lifelist_scope, @top_lifelist_num)
+        Lifelist.top(scope, @top_lifelist_num)
       },
       {
         Live.Lifelist.Presenter.title(year: 2026),
-        Lifelist.top(lifelist_scope, @top_lifelist_num, year: 2026)
+        Lifelist.top(scope, @top_lifelist_num, year: 2026)
       }
     ]
 
@@ -43,13 +43,13 @@ defmodule KjogviWeb.Live.Users.Show do
               [
                 {
                   Live.Lifelist.Presenter.title(location: loc),
-                  Lifelist.top(lifelist_scope, @top_lifelist_num, location: loc)
+                  Lifelist.top(scope, @top_lifelist_num, location: loc)
                 }
               ]
         end
       end)
 
-    logbook_entries = Logbook.recent_entries(lifelist_scope)
+    logbook_entries = Logbook.recent_entries(scope)
 
     {:ok,
      socket

@@ -4,12 +4,12 @@ defmodule Kjogvi.Birding.LogbookTest do
   import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Birding.Logbook
-  alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Factory
   alias Kjogvi.GeoFixtures
+  alias Kjogvi.Scope
 
-  # Build a scope for a given user
-  defp scope(user), do: %Lifelist.Scope{user: user, include_private: false}
+  # Build a public scope for a given user.
+  defp scope(user), do: %Scope{subject_user: user, area: :user}
 
   # Persist logbook_settings on the user through the real changeset path.
   defp put_logbook_settings(user, settings) do

@@ -16,16 +16,13 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @impl true
   def mount(_params, _session, %{assigns: assigns} = socket) do
-    lifelist_scope = Lifelist.Scope.from_scope(assigns.current_scope)
-
     all_years =
-      Lifelist.years(lifelist_scope)
+      Lifelist.years(assigns.current_scope)
       |> Enum.reverse()
 
     {
       :ok,
       socket
-      |> assign(:lifelist_scope, lifelist_scope)
       |> assign(:all_years, all_years)
       |> assign(:container_class, "max-w-7xl"),
       temporary_assigns: [lifelist: nil, lifer_groups: nil, heard_only_groups: nil]
@@ -34,34 +31,34 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @impl true
   def handle_params(params, _url, %{assigns: assigns} = socket) do
-    lifelist_scope = assigns.lifelist_scope
+    scope = assigns.current_scope
 
     filter =
-      KjogviWeb.Live.Lifelist.Params.to_filter(assigns.current_scope, params)
+      KjogviWeb.Live.Lifelist.Params.to_filter(scope, params)
       |> case do
         {:ok, filter} -> filter
         {:error, _} -> raise KjogviWeb.NotFoundError
       end
 
-    lifelist = Lifelist.generate(lifelist_scope, filter)
+    lifelist = Lifelist.generate(scope, filter)
 
     years =
-      Lifelist.years(lifelist_scope, Map.put(filter, :year, nil))
+      Lifelist.years(scope, Map.put(filter, :year, nil))
       |> Enum.reverse()
       |> then(&Util.Enum.zip_inclusion(assigns.all_years, &1))
 
     months =
-      Lifelist.months(lifelist_scope, Map.put(filter, :month, nil))
+      Lifelist.months(scope, Map.put(filter, :month, nil))
       |> then(&Util.Enum.zip_inclusion(@all_months, &1))
 
     # Which locations to show as pills: countries/subdivisions with observations
     # across the whole lifelist (ignoring the current filter).
-    present_locations = Kjogvi.Geo.get_locations_by_ids(Lifelist.location_ids(lifelist_scope))
+    present_locations = Kjogvi.Geo.get_locations_by_ids(Lifelist.location_ids(scope))
 
     # Which of those pills are active: locations with observations within the
     # current filtered subset.
     active_location_ids =
-      Lifelist.location_ids(lifelist_scope, Map.put(filter, :location, nil))
+      Lifelist.location_ids(scope, Map.put(filter, :location, nil))
       |> MapSet.new()
 
     location_context =
@@ -325,7 +322,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <div class="mb-8">
           <.lifers_list
             id="lifelist-table"
-            show_private_details={@lifelist_scope.include_private}
+            show_private_details={Kjogvi.Scope.visibility(@current_scope) == :private}
             groups={@lifer_groups}
             sort={@filter.sort}
           />
@@ -338,7 +335,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
           <.lifers_list
             id="lifelist-heard-only-table"
-            show_private_details={@lifelist_scope.include_private}
+            show_private_details={Kjogvi.Scope.visibility(@current_scope) == :private}
             groups={@heard_only_groups}
             sort={@filter.sort}
             anchor_prefix="heard-only-"
@@ -362,7 +359,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   # Private view not indexed
-  defp derive_robots(%{assigns: %{lifelist_scope: %{include_private: true}}} = socket) do
+  defp derive_robots(%{assigns: %{current_scope: %Kjogvi.Scope{area: area}}} = socket)
+       when area in [:private, :admin] do
     socket
     |> assign(:robots, [:noindex])
   end

@@ -11,7 +11,7 @@ defmodule Kjogvi.Birding.Lifelist do
   alias __MODULE__.Filter
   alias __MODULE__.Result
 
-  @type scope() :: Lifelist.Scope.t()
+  @type scope() :: Kjogvi.Scope.t()
   @type filter() :: %Filter{} | keyword()
 
   # === MAIN API ===
@@ -29,8 +29,8 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Location.Query.preload_all_locations()
     |> then(fn list ->
       %Result{
-        user: scope.user,
-        include_private: scope.include_private,
+        user: Kjogvi.Scope.subject_user(scope),
+        visibility: Kjogvi.Scope.visibility(scope),
         filter: filter,
         list: list,
         total: length(list)
@@ -55,8 +55,8 @@ defmodule Kjogvi.Birding.Lifelist do
     total_species = length(list)
 
     %Result{
-      user: scope.user,
-      include_private: scope.include_private,
+      user: Kjogvi.Scope.subject_user(scope),
+      visibility: Kjogvi.Scope.visibility(scope),
       filter: filter,
       list: Enum.take(list, n),
       total: total_species
