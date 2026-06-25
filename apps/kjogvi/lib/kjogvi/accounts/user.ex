@@ -19,8 +19,6 @@ defmodule Kjogvi.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime_usec
     field :roles, {:array, :string}, default: []
-    # FIXME: remove the column and this field when merging user refactor.
-    # field :is_main_user, :boolean, default: false
     field :default_book_signature, :string
     # Opaque, stable public identifier (used e.g. in image storage paths).
     field :public_token, :string

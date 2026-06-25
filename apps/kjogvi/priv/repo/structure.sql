@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 7iiNodc0Xiq9OXtWPPdEwhV1oJOednCwCaq5MSOxWPdgcitthvPvCcJVr9BUXqz
+\restrict tq58DgqxaQcuTConDj01ARfPOS8G7vdhhdDJy6XoG4dBhvSOU9nlr53SeKlpgze
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -385,7 +385,6 @@ CREATE TABLE public.users (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     default_book_signature character varying(255),
-    is_main_user boolean DEFAULT false NOT NULL,
     public_token character varying(255) NOT NULL,
     nickname character varying(255) NOT NULL,
     display_name character varying(255)
@@ -806,13 +805,6 @@ CREATE UNIQUE INDEX users_email_index ON public.users USING btree (email);
 
 
 --
--- Name: users_is_main_user_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX users_is_main_user_index ON public.users USING btree (is_main_user) WHERE is_main_user;
-
-
---
 -- Name: users_nickname_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -972,7 +964,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7iiNodc0Xiq9OXtWPPdEwhV1oJOednCwCaq5MSOxWPdgcitthvPvCcJVr9BUXqz
+\unrestrict tq58DgqxaQcuTConDj01ARfPOS8G7vdhhdDJy6XoG4dBhvSOU9nlr53SeKlpgze
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1004,3 +996,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260621120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260623000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260623120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260623130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260625120000);
