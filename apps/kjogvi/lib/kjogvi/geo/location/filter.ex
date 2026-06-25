@@ -15,6 +15,10 @@ defmodule Kjogvi.Geo.Location.Filter do
     exclude_specials: [
       type: :boolean,
       default: false
+    ],
+    exclude_sections: [
+      type: :boolean,
+      default: false
     ]
   ]
 
@@ -28,5 +32,14 @@ defmodule Kjogvi.Geo.Location.Filter do
   """
   def for_card_input do
     %__MODULE__{exclude_specials: true}
+  end
+
+  @doc """
+  Filter for the location parent picker: hides locations that can't be a parent —
+  `special` (outside the hierarchy) and `section` (the lowest level, never an
+  ancestor).
+  """
+  def for_parent_pick do
+    %__MODULE__{exclude_specials: true, exclude_sections: true}
   end
 end

@@ -735,6 +735,23 @@ defmodule Kjogvi.GeoTest do
       assert regular.id in ids
       refute special.id in ids
     end
+
+    test "parent-pick filter excludes specials and sections" do
+      scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
+      city = insert(:location, slug: "park-city", name_en: "Park City", location_type: :city)
+      special = insert(:special, name_en: "Park Special")
+
+      section =
+        insert(:location, slug: "park-section", name_en: "Park Section", location_type: :section)
+
+      ids =
+        Geo.search_locations(scope, "Park", filter: Geo.Location.Filter.for_parent_pick())
+        |> Enum.map(& &1.id)
+
+      assert city.id in ids
+      refute special.id in ids
+      refute section.id in ids
+    end
   end
 
   describe "get_locations/0" do

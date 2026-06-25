@@ -5,13 +5,19 @@ defmodule Kjogvi.Geo.Location.FilterTest do
 
   describe "%Filter{}" do
     test "is a blank, no-op filter by default" do
-      assert %Filter{exclude_specials: false} = %Filter{}
+      assert %Filter{exclude_specials: false, exclude_sections: false} = %Filter{}
     end
   end
 
   describe "for_card_input/0" do
     test "excludes specials" do
-      assert %Filter{exclude_specials: true} = Filter.for_card_input()
+      assert %Filter{exclude_specials: true, exclude_sections: false} = Filter.for_card_input()
+    end
+  end
+
+  describe "for_parent_pick/0" do
+    test "excludes specials and sections" do
+      assert %Filter{exclude_specials: true, exclude_sections: true} = Filter.for_parent_pick()
     end
   end
 

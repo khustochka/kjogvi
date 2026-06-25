@@ -194,6 +194,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
             current_id={@form[:parent_id].value}
             on_select_event="parent_selected"
             scope={@current_scope}
+            filter={Location.Filter.for_parent_pick()}
           />
           <ul
             :if={ancestry_errors(@form) != []}
@@ -294,6 +295,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   attr :on_select_event, :string, required: true
   attr :on_select_params, :map, default: %{}
   attr :scope, Kjogvi.Scope, required: true
+  attr :filter, Location.Filter, default: %Location.Filter{}
 
   defp autocomplete_row(assigns) do
     ~H"""
@@ -307,6 +309,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
       on_select_event={@on_select_event}
       on_select_params={@on_select_params}
       scope={@scope}
+      filter={@filter}
     />
     """
   end

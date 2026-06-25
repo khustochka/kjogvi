@@ -310,6 +310,23 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
     end
   end
 
+  describe "parent autocomplete suggestions" do
+    test "do not include special or section locations", %{conn: conn} do
+      _city = insert(:location, name_en: "Park City", location_type: :city)
+      _special = insert(:special, name_en: "Park Special")
+      _section = insert(:location, name_en: "Park Section", location_type: :section)
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new")
+
+      html =
+        view |> element("#location_parent_search") |> render_keyup(%{"value" => "Park"})
+
+      assert html =~ "City"
+      refute html =~ "Special"
+      refute html =~ "Section"
+    end
+  end
+
   describe "map picker" do
     test "renders map container with current coords as data attributes", %{conn: conn, user: user} do
       location =

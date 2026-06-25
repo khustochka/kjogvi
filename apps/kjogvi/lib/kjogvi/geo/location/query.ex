@@ -5,6 +5,7 @@ defmodule Kjogvi.Geo.Location.Query do
 
   @country_location_type :country
   @special_location_type :special
+  @section_location_type :section
 
   import Ecto.Query
 
@@ -79,16 +80,25 @@ defmodule Kjogvi.Geo.Location.Query do
       where: l.location_type != @special_location_type
   end
 
+  def exclude_sections(query) do
+    from [..., l] in query,
+      where: l.location_type != @section_location_type
+  end
+
   @doc """
   Folds a `Location.Filter` into `query`, applying each set refinement.
   """
   def apply_filter(query, %Location.Filter{} = filter) do
     query
     |> maybe_exclude_specials(filter.exclude_specials)
+    |> maybe_exclude_sections(filter.exclude_sections)
   end
 
   defp maybe_exclude_specials(query, true), do: exclude_specials(query)
   defp maybe_exclude_specials(query, _), do: query
+
+  defp maybe_exclude_sections(query, true), do: exclude_sections(query)
+  defp maybe_exclude_sections(query, _), do: query
 
   @doc """
   Groups locations by `location_type`, selecting `{location_type, count}` pairs.
