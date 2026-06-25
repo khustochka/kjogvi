@@ -11,6 +11,10 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   attr :sort, :atom, default: :date
   attr :anchor_prefix, :string, default: ""
 
+  attr :relative_to, :any,
+    default: nil,
+    doc: "The filter location whose segments to omit from each row's location name."
+
   def lifers_list(assigns) do
     ~H"""
     <div id={@id}>
@@ -29,6 +33,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
                 value={rank}
                 lifer={lifer}
                 show_private_details={@show_private_details}
+                relative_to={@relative_to}
               />
             <% end %>
           </ol>
@@ -45,11 +50,11 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   # private locations. On a public list, drop private segments — the resolved
   # public location can still carry a private ancestor (privacy isn't
   # downward-closed), and its name must not surface.
-  defp location_name(location, true = _show_private_details),
-    do: Geo.Location.long_name(:private, location)
+  defp location_name(location, true = _show_private_details, relative_to),
+    do: Geo.Location.long_name(:private, location, relative_to: relative_to)
 
-  defp location_name(location, false = _show_private_details),
-    do: Geo.Location.long_name(:public, location)
+  defp location_name(location, false = _show_private_details, relative_to),
+    do: Geo.Location.long_name(:public, location, relative_to: relative_to)
 
   attr :header, :any, required: true
   attr :anchor_prefix, :string, default: ""
@@ -106,6 +111,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   attr :value, :integer, default: nil
   attr :lifer, :any, required: true
   attr :show_private_details, :boolean, default: false
+  attr :relative_to, :any, default: nil
 
   defp lifer_row(assigns) do
     ~H"""
@@ -136,7 +142,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
       </div>
       <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
         <%= with location when not is_nil(location) <- @lifer.location do %>
-          {location_name(location, @show_private_details)}
+          {location_name(location, @show_private_details, @relative_to)}
         <% end %>
       </div>
     </li>

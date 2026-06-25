@@ -325,6 +325,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             show_private_details={Kjogvi.Scope.visibility(@current_scope) == :private}
             groups={@lifer_groups}
             sort={@filter.sort}
+            relative_to={@filter.location}
           />
         </div>
 
@@ -339,6 +340,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             groups={@heard_only_groups}
             sort={@filter.sort}
             anchor_prefix="heard-only-"
+            relative_to={@filter.location}
           />
         <% end %>
 

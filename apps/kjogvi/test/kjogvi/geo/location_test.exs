@@ -789,6 +789,115 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "long_name/3 with :relative_to" do
+    setup do
+      country = insert(:country, name_en: "Canada")
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: "subdivision1",
+          country: country
+        )
+
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: "city",
+          country: country,
+          subdivision1_id: subdivision1.id
+        )
+
+      site =
+        insert(:location,
+          name_en: "Assiniboine Park",
+          location_type: "site",
+          country: country,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      %{country: country, subdivision1: subdivision1, city: city, site: site}
+    end
+
+    test "nil :relative_to behaves like the bare call", %{site: site} do
+      assert Location.long_name(:private, preload_levels(site), relative_to: nil) ==
+               "Assiniboine Park, Winnipeg, Manitoba, Canada"
+    end
+
+    test "drops the relative location and its ancestors", %{
+      site: site,
+      subdivision1: subdivision1
+    } do
+      assert Location.long_name(:private, preload_levels(site), relative_to: subdivision1) ==
+               "Assiniboine Park, Winnipeg"
+    end
+
+    test "relative to the country drops only the country", %{site: site, country: country} do
+      assert Location.long_name(:private, preload_levels(site), relative_to: country) ==
+               "Assiniboine Park, Winnipeg, Manitoba"
+    end
+
+    test "falls back to own name when the location is the relative location", %{site: site} do
+      assert Location.long_name(:private, preload_levels(site), relative_to: site) ==
+               "Assiniboine Park"
+    end
+
+    test "skipped intermediate levels are unaffected by the cutoff", %{country: country} do
+      city =
+        insert(:location,
+          name_en: "Lonely City",
+          location_type: "city",
+          country: country
+        )
+
+      assert Location.long_name(:private, preload_levels(city), relative_to: country) ==
+               "Lonely City"
+    end
+
+    test ":public still drops private segments before the cutoff", %{
+      country: country,
+      subdivision1: subdivision1,
+      city: city
+    } do
+      private_site =
+        insert(:location,
+          name_en: "Secret Patch",
+          location_type: "site",
+          is_private: true,
+          country: country,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      assert Location.long_name(:public, preload_levels(private_site), relative_to: subdivision1) ==
+               "Winnipeg"
+    end
+
+    test "a special relative drops its common denominator, keeping rows' own ancestors", %{
+      country: country,
+      site: site
+    } do
+      # Mirrors Arabat Spit: a special placed under the country (its members'
+      # common denominator). Its level FKs are just `country_id`, so rows keep
+      # their own subdivision but drop the shared country.
+      arabat_spit =
+        insert(:special,
+          name_en: "Arabat Spit",
+          country_id: country.id
+        )
+
+      assert Location.long_name(:private, preload_levels(site), relative_to: arabat_spit) ==
+               "Assiniboine Park, Winnipeg, Manitoba"
+
+      # A multi-country special carries no level FK, so nothing is dropped.
+      worldwide = insert(:special, name_en: "Worldwide")
+
+      assert Location.long_name(:private, preload_levels(site), relative_to: worldwide) ==
+               "Assiniboine Park, Winnipeg, Manitoba, Canada"
+    end
+  end
+
   describe "Query.for_user/2" do
     test "returns own and common locations but not another user's" do
       user = user_fixture()

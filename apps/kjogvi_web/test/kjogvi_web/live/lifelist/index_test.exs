@@ -174,6 +174,34 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert get_number_of_species(resp) == 1
   end
 
+  test "filtered-by-location list omits the filter location from each row's name",
+       %{conn: conn, user: user} do
+    ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
+
+    brovary =
+      insert(:location,
+        slug: "brovary",
+        name_en: "Brovary",
+        location_type: "city",
+        country: ukraine
+      )
+
+    {taxon, _} = Factory.create_species_taxon_with_page()
+    card = insert(:card, user: user, location: brovary)
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, _view, html} = live(conn, "/users/#{user.nickname}/lifelist/ukraine")
+
+    {:ok, doc} = Floki.parse_document(html)
+
+    row_name =
+      Floki.find(doc, "#lifelist-table li[id^=lifer-]")
+      |> Floki.text()
+
+    assert row_name =~ "Brovary"
+    refute row_name =~ "Ukraine"
+  end
+
   test "toggling Motorless only in-session narrows the list to motorless cards",
        %{conn: conn, user: user} do
     {motorless_taxon, _} = Factory.create_species_taxon_with_page()

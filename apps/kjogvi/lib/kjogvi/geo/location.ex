@@ -429,21 +429,38 @@ defmodule Kjogvi.Geo.Location do
       private ancestor (privacy is not downward-closed), so this filtering is
       required even on an already-public location.
 
+  Options:
+
+    * `:relative_to` — a location whose segments are already implied by the
+      surrounding context (e.g. a lifelist filtered by Manitoba). Drops that
+      location and all its ancestors from the name, so a row need not repeat
+      ", Manitoba, Canada". Levels are skippable, so the cutoff is by ancestor id
+      (not rank). When every segment would be dropped (the location *is*
+      `:relative_to`), falls back to the location's own `name_en`.
+
   Requires the level associations to be loaded (`Query.put_levels/1` /
   `Query.put_location_levels/1`).
   """
-  def long_name(visibility, location)
+  def long_name(visibility, location, opts \\ []) do
+    visible = visible_segments([location | level_ancestors(location)], visibility)
 
-  def long_name(:private, location) do
-    [location | level_ancestors(location)]
-    |> Enum.map_join(", ", & &1.name_en)
+    case drop_relative_to(visible, opts[:relative_to]) do
+      # Only `:relative_to` truncating away every visible segment falls back to
+      # the bare name; visibility filtering alone keeps the empty-string result.
+      [] when visible != [] -> location.name_en
+      segments -> Enum.map_join(segments, ", ", & &1.name_en)
+    end
   end
 
-  def long_name(:public, location) do
-    [location | level_ancestors(location)]
-    |> Enum.reject(& &1.is_private)
-    |> Enum.map_join(", ", & &1.name_en)
+  defp drop_relative_to(segments, nil), do: segments
+
+  defp drop_relative_to(segments, %__MODULE__{} = relative_to) do
+    cutoff = MapSet.new([relative_to.id | ancestor_ids(relative_to)])
+    Enum.reject(segments, &MapSet.member?(cutoff, &1.id))
   end
+
+  defp visible_segments(segments, :private), do: segments
+  defp visible_segments(segments, :public), do: Enum.reject(segments, & &1.is_private)
 
   defp level_ancestors(location) do
     @name_assocs
