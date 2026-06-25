@@ -212,13 +212,10 @@ defmodule KjogviWeb.UserAuth do
     socket = mount_current_scope(socket, session)
     scope = socket.assigns.current_scope
 
+    # No subject_user: the admin area spans all users (see Kjogvi.Scope.subject_user/1).
     {:cont,
      socket
-     |> Phoenix.Component.assign(:current_scope, %{
-       scope
-       | area: :admin,
-         subject_user: scope.current_user
-     })}
+     |> Phoenix.Component.assign(:current_scope, %{scope | area: :admin})}
   end
 
   def on_mount(:mount_area_user, %{"username" => username}, session, socket) do
