@@ -80,6 +80,25 @@ defmodule Kjogvi.BirdingTest do
       assert hd(card.observations).taxon_key == "ebird/eBird_2023/bkcchi1"
       assert hd(card.observations).quantity == "3"
     end
+
+    test "promotes observed taxa that lack a species page" do
+      user = user_fixture()
+      location = insert(:location)
+      taxon = Ornitho.Factory.insert(:taxon, category: "species")
+      key = Ornitho.Schema.Taxon.key(taxon)
+
+      refute Kjogvi.Pages.Species.from_taxon_key(key)
+
+      attrs = %{
+        "observ_date" => "2024-05-10",
+        "location_id" => location.id,
+        "effort_type" => "INCIDENTAL",
+        "observations" => %{"0" => %{"taxon_key" => key}}
+      }
+
+      assert {:ok, _card} = Birding.create_card(user, attrs)
+      assert Kjogvi.Pages.Species.from_taxon_key(key)
+    end
   end
 
   describe "card location ownership" do
@@ -149,6 +168,20 @@ defmodule Kjogvi.BirdingTest do
 
       assert {:error, changeset} = Birding.update_card(card, %{"observ_date" => nil})
       refute changeset.valid?
+    end
+
+    test "promotes taxa added to the card" do
+      user = user_fixture()
+      card = insert(:card, user: user) |> Repo.preload(:observations)
+      taxon = Ornitho.Factory.insert(:taxon, category: "species")
+      key = Ornitho.Schema.Taxon.key(taxon)
+
+      refute Kjogvi.Pages.Species.from_taxon_key(key)
+
+      assert {:ok, _updated} =
+               Birding.update_card(card, %{"observations" => %{"0" => %{"taxon_key" => key}}})
+
+      assert Kjogvi.Pages.Species.from_taxon_key(key)
     end
   end
 

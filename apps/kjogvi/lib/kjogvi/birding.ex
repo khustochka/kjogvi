@@ -128,6 +128,7 @@ defmodule Kjogvi.Birding do
     %Card{}
     |> Card.changeset(attrs)
     |> Repo.insert()
+    |> tap_promote_observations()
     |> tap_invalidate_logbook_cache(user.id)
   end
 
@@ -135,6 +136,7 @@ defmodule Kjogvi.Birding do
     card
     |> Card.changeset(attrs)
     |> Repo.update()
+    |> tap_promote_observations()
     |> tap_invalidate_logbook_cache(card.user_id)
   end
 
@@ -172,6 +174,17 @@ defmodule Kjogvi.Birding do
   def card_deletable?(%Card{id: id}) do
     not Repo.exists?(from(obs in Observation, where: obs.card_id == ^id))
   end
+
+  # Create species pages for any of the card's observed taxa that lack one,
+  # otherwise the species never appears in the lifelist (see Pages.Promotion).
+  defp tap_promote_observations({:ok, card} = result) do
+    Observation.Query.by_card(Observation, card)
+    |> Kjogvi.Pages.Promotion.promote_observations_by_query()
+
+    result
+  end
+
+  defp tap_promote_observations(other), do: other
 
   defp tap_invalidate_logbook_cache({:ok, _} = result, user_id) do
     Kjogvi.Birding.Logbook.Cache.invalidate(user_id)

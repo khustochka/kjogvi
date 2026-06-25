@@ -7,6 +7,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
 
   alias Kjogvi.Birding
   alias Kjogvi.Geo
+  alias Ornitho.Schema.Taxon
 
   @impl true
   def mount(_params, _session, socket) do
@@ -190,6 +191,14 @@ defmodule KjogviWeb.Live.My.Cards.Show do
           </:col>
           <:col :let={obs} label="Taxon">
             {present_taxon(Map.take(obs, [:taxon_key, :taxon]))}
+            <span
+              :if={missing_species_page?(obs)}
+              id={"observation-#{obs.id}-no-species-page"}
+              title="This taxon counts toward the lifelist but has no species page yet, so it won't appear there. Re-save the card to fix it."
+              class="mt-1 inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-sm font-medium text-amber-700 ring-1 ring-amber-200 ring-inset"
+            >
+              <.icon name="hero-exclamation-triangle" class="h-4 w-4" /> No species page
+            </span>
           </:col>
         </.table>
       </div>
@@ -248,6 +257,14 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     </div>
     """
   end
+
+  # The taxon resolves to a countable species, but no species page exists for
+  # it yet — so this observation is silently excluded from the lifelist.
+  defp missing_species_page?(%{taxon: taxon, species: nil}) do
+    not is_nil(Taxon.species(taxon))
+  end
+
+  defp missing_species_page?(_obs), do: false
 
   defp counts(observations) do
     %{

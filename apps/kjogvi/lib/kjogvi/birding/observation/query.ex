@@ -43,6 +43,10 @@ defmodule Kjogvi.Birding.Observation.Query do
   defp maybe_exclude_hidden(query, true = _include_private), do: query
   defp maybe_exclude_hidden(query, false = _include_private), do: exclude_hidden(query)
 
+  def by_card(query, %{id: card_id}) do
+    where(query, [o], o.card_id == ^card_id)
+  end
+
   def exclude_heard_only(query) do
     if has_named_binding?(query, :observation) do
       query

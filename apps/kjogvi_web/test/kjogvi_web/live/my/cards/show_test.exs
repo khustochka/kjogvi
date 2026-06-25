@@ -209,4 +209,35 @@ defmodule KjogviWeb.Live.My.Cards.ShowTest do
     assert html =~ "Card ##{card.id}"
     assert html =~ "Undefined taxon!"
   end
+
+  test "alerts when a countable taxon has no species page", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+    # A real species taxon, but never promoted to a species page.
+    taxon = Ornitho.Factory.insert(:taxon, category: "species")
+    obs = insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    assert has_element?(show_live, "#observation-#{obs.id}-no-species-page")
+  end
+
+  test "no alert when a countable taxon has a species page", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+    {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
+    obs = insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    refute has_element?(show_live, "#observation-#{obs.id}-no-species-page")
+  end
+
+  test "no alert for a non-countable taxon without a species page", %{conn: conn, user: user} do
+    card = insert(:card, user: user)
+    taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
+    obs = insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{card.id}")
+
+    refute has_element?(show_live, "#observation-#{obs.id}-no-species-page")
+  end
 end
