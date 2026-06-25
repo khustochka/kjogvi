@@ -4,6 +4,7 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Accounts
+  alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Geo
 
   def render(assigns) do
@@ -138,7 +139,8 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
   end
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_scope.current_user
+    scope = socket.assigns.current_scope
+    user = scope.current_user
     settings_changeset = Accounts.User.settings_changeset(user, %{})
 
     books = Ornitho.Finder.Book.all()
@@ -146,7 +148,7 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     book_options =
       Enum.map(books, fn b -> {"#{b.name} (#{b.slug}/#{b.version})", "#{b.slug}/#{b.version}"} end)
 
-    logbook_location_rows = build_logbook_location_rows(user)
+    logbook_location_rows = build_logbook_location_rows(scope, user)
 
     socket =
       socket
@@ -172,7 +174,10 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     {:noreply,
      socket
      |> assign(:settings_form, to_form(changeset))
-     |> assign(:logbook_location_rows, build_logbook_location_rows(edited_user))}
+     |> assign(
+       :logbook_location_rows,
+       build_logbook_location_rows(socket.assigns.current_scope, edited_user)
+     )}
   end
 
   def handle_event("update_settings", %{"user" => user_params}, socket) do
@@ -192,7 +197,7 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
           |> put_flash(:info, "User account updated.")
           |> assign(:current_scope, scope)
           |> assign(:settings_form, settings_form)
-          |> assign(:logbook_location_rows, build_logbook_location_rows(user))
+          |> assign(:logbook_location_rows, build_logbook_location_rows(scope, user))
 
         {:noreply, socket}
 
@@ -202,21 +207,25 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
   end
 
   # Build the list of rows for the logbook settings table.
-  # World + all countries/regions/lifelist filters + any locations that already
-  # have settings but aren't otherwise in the list (e.g. private ones).
-  defp build_logbook_location_rows(user) do
+  # World + the countries/regions the user has observations in + any location
+  # with an enabled setting that isn't otherwise in the list (so a deliberate
+  # toggle survives even if the user currently has no observations there).
+  defp build_logbook_location_rows(scope, user) do
     logbook_settings = user.extras.logbook_settings
     existing_settings = Map.new(logbook_settings, &{&1.location_id, &1})
 
-    offered_locations = Geo.get_logbook_settings_locations()
+    offered_locations = Geo.get_locations_by_ids(Lifelist.location_ids(scope))
     offered_ids = MapSet.new(offered_locations, & &1.id)
 
-    # Locations that already have settings but aren't in the offered set
-    # (e.g. private locations, or anything outside countries/regions/lifelist filters).
+    # Re-add a location only if it has an enabled setting and isn't already
+    # offered. All-false placeholder rows (e.g. leftovers from when every
+    # country was saved) are dropped.
     extra_location_ids =
       existing_settings
-      |> Map.keys()
-      |> Enum.filter(&(&1 && !MapSet.member?(offered_ids, &1)))
+      |> Enum.filter(fn {id, setting} ->
+        id && !MapSet.member?(offered_ids, id) && (setting.life || setting.year)
+      end)
+      |> Enum.map(fn {id, _setting} -> id end)
 
     extra_locations =
       if extra_location_ids != [] do

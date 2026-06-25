@@ -129,50 +129,6 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "get_logbook_settings_locations/0" do
-    test "includes countries and subdivisions regardless of public_index" do
-      country =
-        insert(:country, name_en: "Poland", public_index: nil)
-
-      subdivision =
-        insert(:location,
-          location_type: "subdivision1",
-          name_en: "Pomerania",
-          country: country,
-          public_index: nil
-        )
-
-      result = Geo.get_logbook_settings_locations()
-      ids = Enum.map(result, & &1.id)
-
-      assert country.id in ids
-      assert subdivision.id in ids
-    end
-
-    test "includes non-country/subdivision lifelist filters (e.g. a site)" do
-      site =
-        insert(:location, location_type: "site", name_en: "Backyard Patch", public_index: 1)
-
-      result = Geo.get_logbook_settings_locations()
-      assert site.id in Enum.map(result, & &1.id)
-    end
-
-    test "excludes sites and other non-lifelist-filter locations" do
-      site = insert(:location, location_type: "site", name_en: "Backyard", public_index: nil)
-
-      result = Geo.get_logbook_settings_locations()
-      refute site.id in Enum.map(result, & &1.id)
-    end
-
-    test "does not duplicate a country that is also a lifelist filter" do
-      country =
-        insert(:country, name_en: "Canada", public_index: 1)
-
-      result = Geo.get_logbook_settings_locations()
-      assert Enum.count(result, &(&1.id == country.id)) == 1
-    end
-  end
-
   describe "get_lifelist_location_context/2" do
     test "World (nil) lists countries as siblings and no children" do
       germany = insert(:country, name_en: "Germany")

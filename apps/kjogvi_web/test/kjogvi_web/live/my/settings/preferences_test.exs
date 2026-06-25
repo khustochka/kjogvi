@@ -4,7 +4,15 @@ defmodule KjogviWeb.Live.My.Settings.PreferencesTest do
   import Phoenix.LiveViewTest
   import Kjogvi.AccountsFixtures
 
+  alias Kjogvi.Factory
   alias Kjogvi.Repo
+
+  defp observe_in(user, location) do
+    {taxon, _} = Factory.create_species_taxon_with_page()
+    card = insert(:card, user: user, location: location)
+    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+    :ok
+  end
 
   describe "Preferences page" do
     test "redirects if user is not logged in", %{conn: conn} do
@@ -47,6 +55,72 @@ defmodule KjogviWeb.Live.My.Settings.PreferencesTest do
       assert html =~ "World"
       assert html =~ "Life"
       assert html =~ "Year"
+    end
+
+    test "only offers countries/subdivisions the user has observations in", %{conn: conn} do
+      user = user_fixture()
+
+      seen_country = insert(:country, name_en: "Canada")
+
+      seen_region =
+        insert(:location,
+          location_type: "subdivision1",
+          name_en: "Manitoba",
+          country: seen_country
+        )
+
+      winnipeg =
+        insert(:location,
+          location_type: "city",
+          country: seen_country,
+          subdivision1_id: seen_region.id
+        )
+
+      observe_in(user, winnipeg)
+
+      # A country with no observations from this user.
+      insert(:country, name_en: "Poland")
+
+      {:ok, _lv, html} = conn |> login_user(user) |> live(~p"/my/settings/preferences")
+
+      assert html =~ "Canada"
+      assert html =~ "Manitoba"
+      refute html =~ "Poland"
+    end
+
+    test "another user's observations don't widen the offered locations", %{conn: conn} do
+      user = user_fixture()
+      other = user_fixture()
+
+      poland = insert(:country, name_en: "Poland")
+      observe_in(other, poland)
+
+      {:ok, _lv, html} = conn |> login_user(user) |> live(~p"/my/settings/preferences")
+
+      refute html =~ "Poland"
+    end
+
+    test "re-adds a saved location only when it has an enabled setting", %{conn: conn} do
+      user = user_fixture()
+
+      enabled = insert(:country, name_en: "Ukraine")
+      disabled = insert(:country, name_en: "Poland")
+
+      {:ok, user} =
+        Kjogvi.Accounts.update_user_settings(user, %{
+          "extras" => %{
+            "logbook_settings" => %{
+              "0" => %{"location_id" => "#{enabled.id}", "life" => "true", "year" => "false"},
+              "1" => %{"location_id" => "#{disabled.id}", "life" => "false", "year" => "false"}
+            }
+          }
+        })
+
+      {:ok, _lv, html} = conn |> login_user(user) |> live(~p"/my/settings/preferences")
+
+      # Enabled-but-no-observations location is kept; all-false leftover is dropped.
+      assert html =~ "Ukraine"
+      refute html =~ "Poland"
     end
 
     test "saving logbook settings persists them", %{conn: conn} do
