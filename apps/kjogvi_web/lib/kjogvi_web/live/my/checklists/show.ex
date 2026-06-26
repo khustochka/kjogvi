@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.My.Cards.Show do
+defmodule KjogviWeb.Live.My.Checklists.Show do
   @moduledoc false
 
   use KjogviWeb, :live_view
@@ -19,32 +19,36 @@ defmodule KjogviWeb.Live.My.Cards.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _url, %{assigns: assigns} = socket) do
-    card = Birding.fetch_card_with_observations(assigns.current_scope.current_user, id)
+    checklist = Birding.fetch_checklist_with_observations(assigns.current_scope.current_user, id)
 
     {
       :noreply,
       socket
-      |> assign(:page_title, "Card ##{card.id}")
-      |> assign(:card, card)
-      |> assign(:counts, counts(card.observations))
+      |> assign(:page_title, "Checklist ##{checklist.id}")
+      |> assign(:checklist, checklist)
+      |> assign(:counts, counts(checklist.observations))
     }
   end
 
   @impl true
-  def handle_event("delete", _params, %{assigns: %{card: card}} = socket) do
-    case Birding.delete_card(card) do
-      {:ok, _card} ->
+  def handle_event("delete", _params, %{assigns: %{checklist: checklist}} = socket) do
+    case Birding.delete_checklist(checklist) do
+      {:ok, _checklist} ->
         {
           :noreply,
           socket
-          |> put_flash(:info, "Card ##{card.id} deleted.")
-          |> push_navigate(to: ~p"/my/cards")
+          |> put_flash(:info, "Checklist ##{checklist.id} deleted.")
+          |> push_navigate(to: ~p"/my/checklists")
         }
 
       {:error, :has_observations} ->
         {
           :noreply,
-          put_flash(socket, :error, "Card ##{card.id} has observations and cannot be deleted.")
+          put_flash(
+            socket,
+            :error,
+            "Checklist ##{checklist.id} has observations and cannot be deleted."
+          )
         }
     end
   end
@@ -52,38 +56,40 @@ defmodule KjogviWeb.Live.My.Cards.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <nav id="card-breadcrumbs" class="text-sm text-stone-500 mb-4">
-      <.breadcrumb_link href={~p"/my/cards"}>Cards</.breadcrumb_link>
+    <nav id="checklist-breadcrumbs" class="text-sm text-stone-500 mb-4">
+      <.breadcrumb_link href={~p"/my/checklists"}>Checklists</.breadcrumb_link>
       <span class="mx-1 text-stone-400">/</span>
-      <span class="text-stone-700">Card #{@card.id}</span>
+      <span class="text-stone-700">Checklist #{@checklist.id}</span>
     </nav>
 
     <%!-- Heading: identity + actions --%>
     <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div class="min-w-0">
-        <p class="font-mono text-sm text-stone-400">#{@card.id}</p>
+        <p class="font-mono text-sm text-stone-400">#{@checklist.id}</p>
         <h1 class="mt-0.5 text-3xl font-bold tracking-tight text-stone-600">
-          {format_date(@card.observ_date)}
+          {format_date(@checklist.observ_date)}
         </h1>
         <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <p class="text-lg text-stone-600">{Geo.Location.long_name(:private, @card.location)}</p>
+          <p class="text-lg text-stone-600">
+            {Geo.Location.long_name(:private, @checklist.location)}
+          </p>
           <span
-            :if={@card.import_source}
-            id="card-import-source"
+            :if={@checklist.import_source}
+            id="checklist-import-source"
             class="text-sm text-stone-400"
           >
-            Imported from: {Kjogvi.Types.ImportSource.label(@card.import_source)}
+            Imported from: {Kjogvi.Types.ImportSource.label(@checklist.import_source)}
           </span>
           <span
-            :if={not @card.resolved}
-            id="card-unresolved"
-            title="This card is marked unresolved and may still need amending"
+            :if={not @checklist.resolved}
+            id="checklist-unresolved"
+            title="This checklist is marked unresolved and may still need amending"
             class="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-sm font-medium text-red-700 ring-1 ring-red-200 ring-inset"
           >
             <.icon name="hero-exclamation-triangle" class="h-4 w-4" /> Unresolved
           </span>
           <span
-            :if={@card.motorless}
+            :if={@checklist.motorless}
             title="Motorless"
             class="inline-flex items-center gap-1 rounded-md bg-forest-50 px-2 py-0.5 text-sm font-medium text-forest-600"
           >
@@ -93,24 +99,24 @@ defmodule KjogviWeb.Live.My.Cards.Show do
       </div>
 
       <div class="flex shrink-0 items-center gap-4 sm:mt-6">
-        <.action_button navigate={~p"/my/cards/#{@card.id}/edit"} icon="hero-pencil-square">
+        <.action_button navigate={~p"/my/checklists/#{@checklist.id}/edit"} icon="hero-pencil-square">
           Edit
         </.action_button>
         <button
-          :if={Birding.card_deletable?(@card)}
+          :if={Birding.checklist_deletable?(@checklist)}
           type="button"
-          id="delete-card"
+          id="delete-checklist"
           phx-click="delete"
-          data-confirm={"Delete card ##{@card.id}? This cannot be undone."}
-          title="Delete card"
+          data-confirm={"Delete checklist ##{@checklist.id}? This cannot be undone."}
+          title="Delete checklist"
           class="inline-flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-red-700 ring-1 ring-inset ring-red-300 hover:bg-red-50"
         >
           <.icon name="hero-trash" class="h-4 w-4" /> Delete
         </button>
         <span
-          :if={not Birding.card_deletable?(@card)}
-          id="delete-card"
-          title="Cards with observations cannot be deleted"
+          :if={not Birding.checklist_deletable?(@checklist)}
+          id="delete-checklist"
+          title="Checklists with observations cannot be deleted"
           class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-stone-400 ring-1 ring-inset ring-stone-200"
         >
           <.icon name="hero-trash" class="h-4 w-4" /> Delete
@@ -119,32 +125,36 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     </header>
 
     <%!-- eBird details --%>
-    <section :if={@card.ebird_id} id="card-ebird-details" class="mt-6">
-      <.ebird_panel ebird_id={@card.ebird_id} ebird_complete={@card.ebird_complete} />
+    <section :if={@checklist.ebird_id} id="checklist-ebird-details" class="mt-6">
+      <.ebird_panel ebird_id={@checklist.ebird_id} ebird_complete={@checklist.ebird_complete} />
     </section>
 
     <%!-- Effort (left) + counts (bottom right) --%>
     <div class="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
       <div class="flex min-w-0 flex-wrap items-center gap-x-8 gap-y-3">
-        <.effort_badge effort_type={@card.effort_type} class="px-4 py-1.5 text-xl" />
+        <.effort_badge effort_type={@checklist.effort_type} class="px-4 py-1.5 text-xl" />
         <.ebird_completeness_badge
-          :if={!@card.ebird_id && not is_nil(@card.ebird_complete)}
-          ebird_complete={@card.ebird_complete}
+          :if={!@checklist.ebird_id && not is_nil(@checklist.ebird_complete)}
+          ebird_complete={@checklist.ebird_complete}
         />
         <dl class="flex flex-wrap items-center gap-x-8 gap-y-3">
-          <.detail :if={@card.start_time} label="Start time">{format_time(@card.start_time)}</.detail>
-          <.detail :if={@card.duration_minutes} label="Duration">
-            {format_duration(@card.duration_minutes)}
+          <.detail :if={@checklist.start_time} label="Start time">
+            {format_time(@checklist.start_time)}
           </.detail>
-          <.detail :if={@card.distance_kms} label="Distance">
-            {format_number(@card.distance_kms)} km
+          <.detail :if={@checklist.duration_minutes} label="Duration">
+            {format_duration(@checklist.duration_minutes)}
           </.detail>
-          <.detail :if={@card.area_acres} label="Area">
-            {format_number(@card.area_acres)} acres
+          <.detail :if={@checklist.distance_kms} label="Distance">
+            {format_number(@checklist.distance_kms)} km
           </.detail>
-          <.detail :if={present?(@card.observers)} label="Observers">{@card.observers}</.detail>
-          <.detail :if={present?(@card.biotope)} label="Biotope">{@card.biotope}</.detail>
-          <.detail :if={present?(@card.weather)} label="Weather">{@card.weather}</.detail>
+          <.detail :if={@checklist.area_acres} label="Area">
+            {format_number(@checklist.area_acres)} acres
+          </.detail>
+          <.detail :if={present?(@checklist.observers)} label="Observers">
+            {@checklist.observers}
+          </.detail>
+          <.detail :if={present?(@checklist.biotope)} label="Biotope">{@checklist.biotope}</.detail>
+          <.detail :if={present?(@checklist.weather)} label="Weather">{@checklist.weather}</.detail>
         </dl>
       </div>
 
@@ -161,23 +171,23 @@ defmodule KjogviWeb.Live.My.Cards.Show do
     </div>
 
     <%!-- Notes --%>
-    <section :if={present?(@card.notes)} class="mt-6">
+    <section :if={present?(@checklist.notes)} class="mt-6">
       <.h2 class="mb-3">Notes</.h2>
-      <p class="whitespace-pre-line text-stone-700">{@card.notes}</p>
+      <p class="whitespace-pre-line text-stone-700">{@checklist.notes}</p>
     </section>
 
     <%!-- Observations --%>
     <section class="mt-10">
       <.h2 class="mb-0">Observations</.h2>
 
-      <p :if={Enum.empty?(@card.observations)} class="text-stone-500">
-        This card has no observations.
+      <p :if={Enum.empty?(@checklist.observations)} class="text-stone-500">
+        This checklist has no observations.
       </p>
       <div class="-mt-8">
         <.table
-          :if={!Enum.empty?(@card.observations)}
+          :if={!Enum.empty?(@checklist.observations)}
           id="observation"
-          rows={@card.observations}
+          rows={@checklist.observations}
         >
           <:col :let={obs} label="id">{obs.id}</:col>
           <:col :let={obs} label="Quantity">
@@ -194,7 +204,7 @@ defmodule KjogviWeb.Live.My.Cards.Show do
             <span
               :if={missing_species_page?(obs)}
               id={"observation-#{obs.id}-no-species-page"}
-              title="This taxon counts toward the lifelist but has no species page yet, so it won't appear there. Re-save the card to fix it."
+              title="This taxon counts toward the lifelist but has no species page yet, so it won't appear there. Re-save the checklist to fix it."
               class="mt-1 inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-sm font-medium text-amber-700 ring-1 ring-amber-200 ring-inset"
             >
               <.icon name="hero-exclamation-triangle" class="h-4 w-4" /> No species page

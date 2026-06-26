@@ -37,9 +37,9 @@ defmodule Kjogvi.Images.ImageTest do
   end
 
   describe "observations_changeset/2" do
-    test "accepts observations that share a card" do
+    test "accepts observations that share a checklist" do
       image = %Image{observations: []}
-      observations = [%Observation{id: 1, card_id: 7}, %Observation{id: 2, card_id: 7}]
+      observations = [%Observation{id: 1, checklist_id: 7}, %Observation{id: 2, checklist_id: 7}]
 
       changeset = Image.observations_changeset(image, observations)
       assert changeset.valid?
@@ -47,13 +47,13 @@ defmodule Kjogvi.Images.ImageTest do
 
     test "accepts a single observation" do
       image = %Image{observations: []}
-      changeset = Image.observations_changeset(image, [%Observation{id: 1, card_id: 7}])
+      changeset = Image.observations_changeset(image, [%Observation{id: 1, checklist_id: 7}])
       assert changeset.valid?
     end
 
     test "sets multi_species when more than one observation is attached" do
       image = %Image{observations: []}
-      observations = [%Observation{id: 1, card_id: 7}, %Observation{id: 2, card_id: 7}]
+      observations = [%Observation{id: 1, checklist_id: 7}, %Observation{id: 2, checklist_id: 7}]
 
       changeset = Image.observations_changeset(image, observations)
       assert Ecto.Changeset.get_change(changeset, :multi_species) == true
@@ -61,7 +61,7 @@ defmodule Kjogvi.Images.ImageTest do
 
     test "clears multi_species for a single observation" do
       image = %Image{observations: [], multi_species: true}
-      changeset = Image.observations_changeset(image, [%Observation{id: 1, card_id: 7}])
+      changeset = Image.observations_changeset(image, [%Observation{id: 1, checklist_id: 7}])
       assert Ecto.Changeset.get_change(changeset, :multi_species) == false
     end
 
@@ -71,13 +71,13 @@ defmodule Kjogvi.Images.ImageTest do
       assert "can't be empty" in errors_on(changeset).observations
     end
 
-    test "rejects observations from different cards" do
+    test "rejects observations from different checklists" do
       image = %Image{observations: []}
-      observations = [%Observation{id: 1, card_id: 7}, %Observation{id: 2, card_id: 9}]
+      observations = [%Observation{id: 1, checklist_id: 7}, %Observation{id: 2, checklist_id: 9}]
 
       changeset = Image.observations_changeset(image, observations)
       refute changeset.valid?
-      assert "must all belong to the same card" in errors_on(changeset).observations
+      assert "must all belong to the same checklist" in errors_on(changeset).observations
     end
   end
 end

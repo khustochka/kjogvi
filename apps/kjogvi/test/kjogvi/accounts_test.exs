@@ -90,8 +90,8 @@ defmodule Kjogvi.UsersTest do
 
   describe "list_users_by_lifelist_size/1" do
     defp observe_species(user, taxon) do
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
     end
 
     test "orders users by number of distinct public species, descending" do
@@ -123,16 +123,16 @@ defmodule Kjogvi.UsersTest do
       {taxon, _} = create_species_taxon_with_page()
       {visible_taxon, _} = create_species_taxon_with_page()
       user = user_fixture()
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
       insert(:observation,
-        card: card,
+        checklist: checklist,
         taxon_key: Ornitho.Schema.Taxon.key(taxon),
         unreported: true
       )
 
       insert(:observation,
-        card: card,
+        checklist: checklist,
         taxon_key: Ornitho.Schema.Taxon.key(taxon),
         hidden: true
       )

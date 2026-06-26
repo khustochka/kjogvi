@@ -39,7 +39,7 @@ defmodule Kjogvi.Geo.Location.Query do
   def level_assocs, do: @level_assocs
 
   @doc """
-  Preloads the level FK associations onto each card/observation's `location`.
+  Preloads the level FK associations onto each checklist/observation's `location`.
   """
   def preload_levels(query) do
     preload(query, location: ^@level_assocs)
@@ -109,11 +109,11 @@ defmodule Kjogvi.Geo.Location.Query do
       select: {l.location_type, count(l.id)}
   end
 
-  def load_cards_count(query) do
+  def load_checklists_count(query) do
     from l in query,
-      left_join: c in assoc(l, :cards),
+      left_join: c in assoc(l, :checklists),
       group_by: l.id,
-      select_merge: %{cards_count: count(c.id)}
+      select_merge: %{checklists_count: count(c.id)}
   end
 
   # Maps a location's own level to the descendant FK column that points back to it.
@@ -217,7 +217,7 @@ defmodule Kjogvi.Geo.Location.Query do
   Query selecting the ids of a special location's members plus all their
   descendants.
 
-  A special is an amalgamation of member locations; a card counts toward it when
+  A special is an amalgamation of member locations; a checklist counts toward it when
   its location is a member or a descendant of one. Builds `child_locations/1` for
   each member (selecting ids) and unions them.
   """
@@ -262,7 +262,7 @@ defmodule Kjogvi.Geo.Location.Query do
   Attaches the level FK associations to each thing's `location` in a single
   query.
 
-  Accepts cards/observations/etc. that have a `:location` association (loaded or
+  Accepts checklists/observations/etc. that have a `:location` association (loaded or
   not — it is preloaded first if needed), then batches every level for every
   location through `put_levels/1`. Replaces the per-level preload (`country …
   site` = five queries) with one.

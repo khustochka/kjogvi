@@ -65,8 +65,8 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
       })
 
     {taxon, _} = Factory.create_species_taxon_with_page()
-    card = insert(:card, observ_date: Date.utc_today(), user: user, location: site)
-    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+    checklist = insert(:checklist, observ_date: Date.utc_today(), user: user, location: site)
+    insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
     conn = get(conn, ~p"/my/logbook")
     html = html_response(conn, 200)

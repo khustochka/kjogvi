@@ -9,8 +9,8 @@ defmodule KjogviWeb.Live.My.Settings.PreferencesTest do
 
   defp observe_in(user, location) do
     {taxon, _} = Factory.create_species_taxon_with_page()
-    card = insert(:card, user: user, location: location)
-    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+    checklist = insert(:checklist, user: user, location: location)
+    insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
     :ok
   end
 

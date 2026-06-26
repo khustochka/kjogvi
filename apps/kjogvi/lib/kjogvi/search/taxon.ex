@@ -114,7 +114,7 @@ defmodule Kjogvi.Search.Taxon do
   defp observation_counts(user) do
     Kjogvi.Repo.all(
       from(o in Kjogvi.Birding.Observation,
-        join: c in assoc(o, :card),
+        join: c in assoc(o, :checklist),
         where: c.user_id == ^user.id,
         group_by: o.taxon_key,
         select: {o.taxon_key, count(o.id)}

@@ -1,13 +1,13 @@
-defmodule KjogviWeb.Live.Components.CardSearchFilter do
+defmodule KjogviWeb.Live.Components.ChecklistSearchFilter do
   @moduledoc """
-  Search/filter panel for the cards index.
+  Search/filter panel for the checklists index.
 
   A **function** component (not a LiveComponent) by deliberate design: the
   taxon/location pickers it embeds are `Autocomplete` LiveComponents which
   deliver their selection via `send(self(), {:autocomplete_select, ...})` to
   the *host LiveView*, not to an enclosing component. The panel therefore owns
   no state of its own — the host LiveView holds the current
-  `CardSearch.Filter`, feeds it in here for display, and handles the events
+  `ChecklistSearch.Filter`, feeds it in here for display, and handles the events
   this panel emits.
 
   ## Events emitted to the host
@@ -24,12 +24,12 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
 
   use KjogviWeb, :html
 
-  alias Kjogvi.Birding.CardSearch.Filter
+  alias Kjogvi.Birding.ChecklistSearch.Filter
   alias Kjogvi.Geo
   alias KjogviWeb.Live.Components.LocationAutocomplete
   alias KjogviWeb.Live.Components.TaxonAutocomplete
 
-  attr :id, :string, default: "card-search-filter"
+  attr :id, :string, default: "checklist-search-filter"
   attr :filter, Filter, required: true
   attr :user, :map, required: true
   attr :scope, Kjogvi.Scope, required: true
@@ -38,7 +38,7 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
     default: "",
     doc: "display text for the currently selected taxon, if any"
 
-  def card_search_filter(assigns) do
+  def checklist_search_filter(assigns) do
     ~H"""
     <form
       id={@id}
@@ -123,10 +123,10 @@ defmodule KjogviWeb.Live.Components.CardSearchFilter do
           </label>
         </div>
 
-        <%!-- Card-level toggles (under the three text fields) --%>
+        <%!-- Checklist-level toggles (under the three text fields) --%>
         <div class="sm:col-span-2 lg:col-start-1 lg:col-span-3 lg:row-start-2">
           <label class="flex items-center gap-2 text-sm text-indigo-900">
-            <span class="font-semibold">Cards:</span>
+            <span class="font-semibold">Checklists:</span>
             <input type="hidden" name="filter[unresolved]" value="false" />
             <input
               type="checkbox"

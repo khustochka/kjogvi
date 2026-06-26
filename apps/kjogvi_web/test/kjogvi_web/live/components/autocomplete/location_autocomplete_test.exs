@@ -12,7 +12,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocompleteTest do
       ~H"""
       <LocationAutocomplete.location_autocomplete
         id="loc"
-        hidden_name="card[location_id]"
+        hidden_name="checklist[location_id]"
         hidden_value=""
         current_value="Currently selected location"
         label="Location"
@@ -34,6 +34,6 @@ defmodule KjogviWeb.Live.Components.LocationAutocompleteTest do
     assert html =~ "Location"
     assert html =~ "Pick a location"
     assert html =~ "Currently selected location"
-    assert html =~ ~s(name="card[location_id]")
+    assert html =~ ~s(name="checklist[location_id]")
   end
 end

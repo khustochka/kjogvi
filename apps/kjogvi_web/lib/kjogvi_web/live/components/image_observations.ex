@@ -5,7 +5,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   Lets the user attach observations to an image. It owns three things:
 
     * the list of currently selected observations, shown as removable tiles;
-    * a date field (prefilled by the parent — from EXIF/last card on add, or
+    * a date field (prefilled by the parent — from EXIF/last checklist on add, or
       the attached observations' date on edit);
     * a search box that, as the user types, resolves the text to matching taxa
       and lists *the user's observations* of those taxa directly in a dropdown.
@@ -25,19 +25,19 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   selected the picker shows a standing "attach at least one" message and the
   parent's save is rejected.
 
-  ## Same-card locking
+  ## Same-checklist locking
 
-  All linked observations of an image must belong to the same card (ultimately
+  All linked observations of an image must belong to the same checklist (ultimately
   enforced by `Kjogvi.Images.attach_observations/2`). The picker enforces this
-  up front: once the first observation is selected its card is *locked in*, and
+  up front: once the first observation is selected its checklist is *locked in*, and
   while anything is selected
 
-    * the date field is filled with that card's date and disabled — the user
+    * the date field is filled with that checklist's date and disabled — the user
       can't search a different day, so a date mismatch can't arise through the
       UI; and
-    * search is scoped to that one card, so every result is addable.
+    * search is scoped to that one checklist, so every result is addable.
 
-  Removing the last selected observation unlocks the card: the date field
+  Removing the last selected observation unlocks the checklist: the date field
   becomes editable again and search returns to the date/recent scope.
 
   ## Search via `Autocomplete`
@@ -48,7 +48,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   (rather than to the root LiveView) with `notify_to={{__MODULE__, @id}}`; the
   pick then arrives in `update/2` as `:autocomplete_select`. `clear_on_select`
   empties the field after each pick so the next one can be searched, and the
-  `search_fn` closure carries the current card-lock / date scope.
+  `search_fn` closure carries the current checklist-lock / date scope.
 
   The result rows are rendered by the `:result` slot as observation tiles.
   Already-attached observations are shown dimmed with an "Already attached"
@@ -128,7 +128,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
             class="block w-full rounded-lg border-zinc-300 text-zinc-900 focus:border-zinc-400 focus:ring-0 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:text-sm sm:leading-6"
           />
           <p :if={@selected != []} id={"#{@id}-date-locked"} class="mt-1 text-xs text-stone-400">
-            Locked to the selected observation's card.
+            Locked to the selected observation's checklist.
           </p>
         </div>
 
@@ -177,7 +177,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
   @min_query_length 2
 
   # A closure the embedded `Autocomplete` calls with the typed query. Capturing
-  # the current `selected`/`date` keeps the search scope (card lock or date) in
+  # the current `selected`/`date` keeps the search scope (checklist lock or date) in
   # sync with what's staged. `Autocomplete` already gates on its own
   # `min_length`, but we keep the guard so the scope-resolving query never runs
   # on a too-short term.
@@ -188,8 +188,8 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
       else
         Images.search_observations_for_image(user, %{
           query: query,
-          # Once a card is locked in, search only it; otherwise scope by date.
-          card_id: locked_card_id(selected),
+          # Once a checklist is locked in, search only it; otherwise scope by date.
+          checklist_id: locked_checklist_id(selected),
           date: date
         })
       end
@@ -210,18 +210,18 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
     send(self(), {:image_observations_changed, Enum.map(selected, & &1.id)})
   end
 
-  # A result can be added when it isn't already chosen. Once a card is locked,
-  # search is already restricted to it, so every result is on the right card.
+  # A result can be added when it isn't already chosen. Once a checklist is locked,
+  # search is already restricted to it, so every result is on the right checklist.
   defp addable?(obs, selected), do: not selected?(obs, selected)
 
   defp selected?(obs, selected), do: Enum.any?(selected, &(&1.id == obs.id))
 
-  # The card of the first selected observation (all picks share one card). `nil`
+  # The checklist of the first selected observation (all picks share one checklist). `nil`
   # when nothing is selected yet.
-  defp locked_card_id([%{card_id: card_id} | _]), do: card_id
-  defp locked_card_id(_), do: nil
+  defp locked_checklist_id([%{checklist_id: checklist_id} | _]), do: checklist_id
+  defp locked_checklist_id(_), do: nil
 
-  defp locked_date([%{card: %{observ_date: %Date{} = date}} | _]), do: date
+  defp locked_date([%{checklist: %{observ_date: %Date{} = date}} | _]), do: date
   defp locked_date(_), do: nil
 
   defp date_value(%Date{} = date), do: Date.to_iso8601(date)

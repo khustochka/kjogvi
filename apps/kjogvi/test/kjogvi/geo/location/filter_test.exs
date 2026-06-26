@@ -9,9 +9,10 @@ defmodule Kjogvi.Geo.Location.FilterTest do
     end
   end
 
-  describe "for_card_input/0" do
+  describe "for_checklist_input/0" do
     test "excludes specials" do
-      assert %Filter{exclude_specials: true, exclude_sections: false} = Filter.for_card_input()
+      assert %Filter{exclude_specials: true, exclude_sections: false} =
+               Filter.for_checklist_input()
     end
   end
 

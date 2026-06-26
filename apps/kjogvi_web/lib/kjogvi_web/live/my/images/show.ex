@@ -15,7 +15,7 @@ defmodule KjogviWeb.Live.My.Images.Show do
     image =
       socket.assigns.current_scope.current_user
       |> Images.get_image!(id)
-      |> Repo.preload(observations: [card: :location])
+      |> Repo.preload(observations: [checklist: :location])
 
     observations = Kjogvi.Birding.preload_taxa_and_species(image.observations)
 
@@ -121,7 +121,7 @@ defmodule KjogviWeb.Live.My.Images.Show do
           <.h2 class="text-sm! uppercase tracking-wide text-stone-500! mb-1!">Observations</.h2>
           <ul class="mt-2 space-y-2" aria-label="Linked observations">
             <li :for={obs <- @observations} id={"observation-#{obs.id}"}>
-              <.link navigate={~p"/my/cards/#{obs.card_id}"} class="block no-underline">
+              <.link navigate={~p"/my/checklists/#{obs.checklist_id}"} class="block no-underline">
                 <.observation_tile observation={obs} />
               </.link>
             </li>

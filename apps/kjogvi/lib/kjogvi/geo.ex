@@ -97,7 +97,7 @@ defmodule Kjogvi.Geo do
 
   @doc """
   Returns scoped non-special locations as a flat list ordered by name, each with
-  its `cards_count` loaded and level FK associations preloaded for display names.
+  its `checklists_count` loaded and level FK associations preloaded for display names.
 
   Restricted to the locations `scope` may see (own + common).
   """
@@ -105,7 +105,7 @@ defmodule Kjogvi.Geo do
     scoped_locations(scope)
     |> where([l], l.location_type != :special or is_nil(l.location_type))
     |> order_by([l], asc: l.name_en)
-    |> Location.Query.load_cards_count()
+    |> Location.Query.load_checklists_count()
     |> Repo.all()
     |> Location.Query.put_levels()
   end
@@ -175,7 +175,7 @@ defmodule Kjogvi.Geo do
 
     Location.Query.child_locations(parent)
     |> where([l], l.id != ^parent_id)
-    |> Location.Query.load_cards_count()
+    |> Location.Query.load_checklists_count()
     |> where([l], l.location_type != :special or is_nil(l.location_type))
     |> Repo.all()
   end
@@ -189,7 +189,7 @@ defmodule Kjogvi.Geo do
 
   def get_locations do
     Location
-    |> Location.Query.load_cards_count()
+    |> Location.Query.load_checklists_count()
     |> Repo.all()
   end
 
@@ -259,8 +259,8 @@ defmodule Kjogvi.Geo do
     Location |> Location.Query.only_public()
   end
 
-  def cards_count(location_id) do
-    from(c in Kjogvi.Birding.Card,
+  def checklists_count(location_id) do
+    from(c in Kjogvi.Birding.Checklist,
       where: c.location_id == ^location_id,
       select: count(c.id)
     )
@@ -358,11 +358,11 @@ defmodule Kjogvi.Geo do
   Deletes a location.
 
   Refuses with `{:error, :forbidden}` when the scope may not modify it, or with
-  `{:error, :has_children}` / `{:error, :has_cards}` when it is still in use.
+  `{:error, :has_children}` / `{:error, :has_checklists}` when it is still in use.
   """
   def delete_location(scope, %Location{} = location) do
     children = children_count(location.id)
-    cards = cards_count(location.id)
+    checklists = checklists_count(location.id)
 
     cond do
       not User.owns?(scope.current_user, location) ->
@@ -371,8 +371,8 @@ defmodule Kjogvi.Geo do
       children > 0 ->
         {:error, :has_children}
 
-      cards > 0 ->
-        {:error, :has_cards}
+      checklists > 0 ->
+        {:error, :has_checklists}
 
       true ->
         Repo.delete(location)

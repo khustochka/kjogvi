@@ -9,12 +9,12 @@ defmodule KjogviWeb.NavigationComponents do
   @doc """
   Renders a link styled as an action button.
 
-  Used for primary actions like "New Card", "Edit Card", and secondary actions like "Cancel".
+  Used for primary actions like "New Checklist", "Edit Checklist", and secondary actions like "Cancel".
 
   ## Examples
 
-      <.action_button navigate={~p"/my/cards/new"} icon="hero-plus">New Card</.action_button>
-      <.action_button navigate={~p"/my/cards"} variant="secondary">Cancel</.action_button>
+      <.action_button navigate={~p"/my/checklists/new"} icon="hero-plus">New Checklist</.action_button>
+      <.action_button navigate={~p"/my/checklists"} variant="secondary">Cancel</.action_button>
   """
   attr :navigate, :string, default: nil
   attr :patch, :string, default: nil
@@ -81,8 +81,8 @@ defmodule KjogviWeb.NavigationComponents do
 
   ## Examples
 
-      <.icon_link navigate={~p"/my/cards/1/edit"} icon="hero-pencil-square" label="Edit card" />
-      <.icon_link navigate={~p"/my/cards/1"} icon="hero-clipboard-document-list" label="View card" class="text-gray-400" />
+      <.icon_link navigate={~p"/my/checklists/1/edit"} icon="hero-pencil-square" label="Edit checklist" />
+      <.icon_link navigate={~p"/my/checklists/1"} icon="hero-clipboard-document-list" label="View checklist" class="text-gray-400" />
   """
   attr :navigate, :string, default: nil
   attr :patch, :string, default: nil

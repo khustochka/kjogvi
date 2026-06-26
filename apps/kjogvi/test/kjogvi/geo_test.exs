@@ -5,28 +5,28 @@ defmodule Kjogvi.GeoTest do
 
   alias Kjogvi.Geo
 
-  describe "cards_count/1" do
-    test "returns 0 when no cards exist for the location" do
+  describe "checklists_count/1" do
+    test "returns 0 when no checklists exist for the location" do
       location = insert(:location)
 
-      assert Geo.cards_count(location.id) == 0
+      assert Geo.checklists_count(location.id) == 0
     end
 
-    test "counts cards for the given location" do
+    test "counts checklists for the given location" do
       location = insert(:location)
-      insert(:card, location: location)
-      insert(:card, location: location)
+      insert(:checklist, location: location)
+      insert(:checklist, location: location)
 
-      assert Geo.cards_count(location.id) == 2
+      assert Geo.checklists_count(location.id) == 2
     end
 
-    test "does not count cards at other locations" do
+    test "does not count checklists at other locations" do
       location = insert(:location)
       other_location = insert(:location)
-      insert(:card, location: location)
-      insert(:card, location: other_location)
+      insert(:checklist, location: location)
+      insert(:checklist, location: other_location)
 
-      assert Geo.cards_count(location.id) == 1
+      assert Geo.checklists_count(location.id) == 1
     end
   end
 
@@ -679,13 +679,13 @@ defmodule Kjogvi.GeoTest do
       assert special.id in ids
     end
 
-    test "card-input filter excludes specials" do
+    test "checklist-input filter excludes specials" do
       scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
       regular = insert(:location, slug: "park-site", name_en: "Park Site")
       special = insert(:special, name_en: "Park Special")
 
       ids =
-        Geo.search_locations(scope, "Park", filter: Geo.Location.Filter.for_card_input())
+        Geo.search_locations(scope, "Park", filter: Geo.Location.Filter.for_checklist_input())
         |> Enum.map(& &1.id)
 
       assert regular.id in ids
@@ -711,35 +711,35 @@ defmodule Kjogvi.GeoTest do
   end
 
   describe "get_locations/0" do
-    test "returns all locations with card counts" do
+    test "returns all locations with checklist counts" do
       location = insert(:location)
-      insert(:card, location: location)
-      insert(:card, location: location)
+      insert(:checklist, location: location)
+      insert(:checklist, location: location)
 
       results = Geo.get_locations()
       loc = Enum.find(results, &(&1.id == location.id))
-      assert loc.cards_count == 2
+      assert loc.checklists_count == 2
     end
   end
 
   describe "list_locations/1" do
-    test "returns scoped non-special locations ordered by name with card counts" do
+    test "returns scoped non-special locations ordered by name with checklist counts" do
       scope = %Kjogvi.Scope{area: :admin}
       country = shared_country()
       insert(:location, name_en: "Zürich", location_type: "city", country: country)
 
-      with_cards =
+      with_checklists =
         insert(:location, name_en: "Aarau", location_type: "city", country: country)
 
-      insert(:card, location: with_cards)
+      insert(:checklist, location: with_checklists)
 
       result = Geo.list_locations(scope)
 
       # The two cities (the shared country they hang off is also listed),
-      # ordered by name; the one with a card carries its count.
+      # ordered by name; the one with a checklist carries its count.
       cities = Enum.reject(result, &(&1.id == country.id))
       assert Enum.map(cities, & &1.name_en) == ["Aarau", "Zürich"]
-      assert hd(cities).cards_count == 1
+      assert hd(cities).checklists_count == 1
     end
 
     test "excludes special locations" do
@@ -769,14 +769,14 @@ defmodule Kjogvi.GeoTest do
   end
 
   describe "get_child_locations/1" do
-    test "returns child locations with card counts" do
+    test "returns child locations with checklist counts" do
       parent = insert(:country)
       child = insert(:location, location_type: "subdivision1", country: parent)
-      insert(:card, location: child)
+      insert(:checklist, location: child)
 
       results = Geo.get_child_locations(parent.id)
       assert length(results) == 1
-      assert hd(results).cards_count == 1
+      assert hd(results).checklists_count == 1
     end
 
     test "excludes special locations" do

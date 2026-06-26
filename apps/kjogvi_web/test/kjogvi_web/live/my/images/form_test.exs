@@ -79,7 +79,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
     test "uploads a real image, processes it, and stores metadata", %{conn: conn, user: user} do
       # An image must have an observation; the sample's EXIF date (2021-07-15)
-      # scopes the picker, so the observation must be on a card of that day.
+      # scopes the picker, so the observation must be on a checklist of that day.
       %{user: user} = seed_observation(user, observ_date: ~D[2021-07-15])
 
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
@@ -149,15 +149,19 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
       # The sample image's EXIF capture date (2021-07-15) prefills the picker's
       # date, which scopes the search — so the matching observation must be on a
-      # card of that day to surface in the dropdown.
-      card =
-        Kjogvi.Factory.insert(:card,
+      # checklist of that day to surface in the dropdown.
+      checklist =
+        Kjogvi.Factory.insert(:checklist,
           user: user,
           location: Kjogvi.Factory.insert(:location),
           observ_date: ~D[2021-07-15]
         )
 
-      obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
+      obs =
+        Kjogvi.Factory.insert(:observation,
+          checklist: checklist,
+          taxon_key: "/ebird/v2024/gretit1"
+        )
 
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
@@ -204,12 +208,22 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       assert Images.get_image_by_slug(slug) == nil
     end
 
-    test "a tampered cross-card save leaves no orphan image behind", %{conn: conn, user: user} do
-      # Two observations on different cards — the picker can't stage this, but a
+    test "a tampered cross-checklist save leaves no orphan image behind", %{
+      conn: conn,
+      user: user
+    } do
+      # Two observations on different checklists — the picker can't stage this, but a
       # tampered client could push it to the LiveView.
       %{user: user, obs: obs1} = seed_observation(user)
-      card2 = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
-      obs2 = Kjogvi.Factory.insert(:observation, card: card2, taxon_key: "/ebird/v2024/gretit1")
+
+      checklist2 =
+        Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
+
+      obs2 =
+        Kjogvi.Factory.insert(:observation,
+          checklist: checklist2,
+          taxon_key: "/ebird/v2024/gretit1"
+        )
 
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
@@ -549,8 +563,8 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
       location = Kjogvi.Factory.insert(:location)
 
-      card =
-        Kjogvi.Factory.insert(:card,
+      checklist =
+        Kjogvi.Factory.insert(:checklist,
           user: user,
           location: location,
           effort_type: "TRAVEL",
@@ -560,9 +574,12 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
         )
 
       obs =
-        Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
+        Kjogvi.Factory.insert(:observation,
+          checklist: checklist,
+          taxon_key: "/ebird/v2024/gretit1"
+        )
 
-      %{user: user, card: card, obs: obs}
+      %{user: user, checklist: checklist, obs: obs}
     end
 
     test "uploading a replacement does not override the date when observations exist", %{
@@ -575,7 +592,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      # Seeded from the attached observation's card (factory default 2023-08-29),
+      # Seeded from the attached observation's checklist (factory default 2023-08-29),
       # which differs from the sample file's EXIF date (2021-07-15).
       assert has_element?(live, "#image-observations-date[value='2023-08-29']")
 
@@ -595,7 +612,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
     test "renders the already-attached observations as tiles", %{
       conn: conn,
       user: user,
-      card: card,
+      checklist: checklist,
       obs: obs
     } do
       image = ImagesFixtures.image_fixture(user: user)
@@ -607,9 +624,9 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       assert has_element?(tile)
 
       html = render(tile)
-      # Sci name (italic), card id, and the available effort details.
+      # Sci name (italic), checklist id, and the available effort details.
       assert html =~ "Parus major"
-      assert html =~ "##{card.id}"
+      assert html =~ "##{checklist.id}"
       assert html =~ "TRAVEL"
       assert html =~ "08:15"
       assert html =~ "90 min"
@@ -719,7 +736,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
     end
 
-    test "selecting an observation locks the date field to its card date", %{
+    test "selecting an observation locks the date field to its checklist date", %{
       conn: conn,
       user: user
     } do
@@ -732,7 +749,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       picker_search(live, "great tit")
       picker_add_first(live)
 
-      # Locked to the selected observation's card date (factory default).
+      # Locked to the selected observation's checklist date (factory default).
       assert has_element?(live, "#image-observations-date[disabled][value='2023-08-29']")
       assert has_element?(live, "#image-observations-date-locked")
     end
@@ -756,36 +773,39 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       refute has_element?(live, "#image-observations-date-locked")
     end
 
-    test "once a card is locked, search is restricted to that card", %{
+    test "once a checklist is locked, search is restricted to that checklist", %{
       conn: conn,
       user: user,
-      card: card
+      checklist: checklist
     } do
       # A second observation of the same taxon on the same day, but a different
-      # card — so the date scope alone keeps both, and only locking the card
+      # checklist — so the date scope alone keeps both, and only locking the checklist
       # narrows it down.
-      other_card =
-        Kjogvi.Factory.insert(:card, user: user, observ_date: card.observ_date)
+      other_checklist =
+        Kjogvi.Factory.insert(:checklist, user: user, observ_date: checklist.observ_date)
 
-      Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "/ebird/v2024/gretit1")
+      Kjogvi.Factory.insert(:observation,
+        checklist: other_checklist,
+        taxon_key: "/ebird/v2024/gretit1"
+      )
 
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      # Scope the picker to the shared day; both cards' observations show as two
+      # Scope the picker to the shared day; both checklists' observations show as two
       # rows (keyed by position).
       live
       |> element("#image-observations-date")
-      |> render_change(%{"date" => Date.to_iso8601(card.observ_date)})
+      |> render_change(%{"date" => Date.to_iso8601(checklist.observ_date)})
 
       picker_search(live, "great tit")
       assert has_element?(live, "#image-observations-search-result-0")
       assert has_element?(live, "#image-observations-search-result-1")
 
-      # Pick the first; its card is now locked.
+      # Pick the first; its checklist is now locked.
       picker_add_first(live)
 
-      # Search again: only the locked card's single observation remains.
+      # Search again: only the locked checklist's single observation remains.
       picker_search(live, "great tit")
       assert has_element?(live, "#image-observations-search-result-0")
       refute has_element?(live, "#image-observations-search-result-1")
@@ -825,26 +845,29 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       assert selected_count == 1
     end
 
-    # The picker UI can't stage cross-card ids (search locks to one card), but a
+    # The picker UI can't stage cross-checklist ids (search locks to one checklist), but a
     # tampered/buggy client could push them to the LiveView directly. The save
     # must reject it rather than silently claim success.
-    test "a save with staged cross-card ids is rejected, not silently dropped", %{
+    test "a save with staged cross-checklist ids is rejected, not silently dropped", %{
       conn: conn,
       user: user,
       obs: obs
     } do
-      other_card =
-        Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
+      other_checklist =
+        Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
 
       other_obs =
-        Kjogvi.Factory.insert(:observation, card: other_card, taxon_key: "/ebird/v2024/gretit1")
+        Kjogvi.Factory.insert(:observation,
+          checklist: other_checklist,
+          taxon_key: "/ebird/v2024/gretit1"
+        )
 
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, _} = Images.attach_observations(image, [obs.id])
 
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      # Simulate a tampered client staging observations from two different cards.
+      # Simulate a tampered client staging observations from two different checklists.
       send(live.pid, {:image_observations_changed, [obs.id, other_obs.id]})
 
       html =
@@ -866,14 +889,17 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
     } do
       other_user = user_fixture()
 
-      foreign_card =
-        Kjogvi.Factory.insert(:card,
+      foreign_checklist =
+        Kjogvi.Factory.insert(:checklist,
           user: other_user,
           location: Kjogvi.Factory.insert(:location)
         )
 
       foreign_obs =
-        Kjogvi.Factory.insert(:observation, card: foreign_card, taxon_key: "/ebird/v2024/gretit1")
+        Kjogvi.Factory.insert(:observation,
+          checklist: foreign_checklist,
+          taxon_key: "/ebird/v2024/gretit1"
+        )
 
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, _} = Images.attach_observations(image, [obs.id])
@@ -895,7 +921,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
   end
 
   # Sets up the default taxonomy book/taxon used by the picker and returns an
-  # observation on a card belonging to `user`. Tests that must satisfy the
+  # observation on a checklist belonging to `user`. Tests that must satisfy the
   # "image needs an observation" rule attach or select this.
   defp seed_observation(user, opts \\ []) do
     book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
@@ -910,14 +936,16 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
     {:ok, user} =
       Kjogvi.Accounts.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
 
-    card =
+    checklist =
       Kjogvi.Factory.insert(
-        :card,
+        :checklist,
         Keyword.merge([user: user, location: Kjogvi.Factory.insert(:location)], opts)
       )
 
-    obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "/ebird/v2024/gretit1")
-    %{user: user, card: card, obs: obs}
+    obs =
+      Kjogvi.Factory.insert(:observation, checklist: checklist, taxon_key: "/ebird/v2024/gretit1")
+
+    %{user: user, checklist: checklist, obs: obs}
   end
 
   # Types a query into the picker's autocomplete (the embedded

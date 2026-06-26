@@ -4,7 +4,7 @@ defmodule Kjogvi.Images do
 
   Images are standalone entities owned by a user. They may optionally be linked
   to observations (many-to-many); all observations linked to one image must
-  belong to the same card.
+  belong to the same checklist.
   """
 
   import Ecto.Query
@@ -199,9 +199,9 @@ defmodule Kjogvi.Images do
   Replaces the set of observations linked to an image.
 
   Only the image owner's own observations are linked: any id whose observation
-  belongs to a card of another user is silently dropped before validation (an
+  belongs to a checklist of another user is silently dropped before validation (an
   authorization guard on the write path, not just the picker UI). An image must
-  then have at least one observation and they must all belong to the same card
+  then have at least one observation and they must all belong to the same checklist
   (both enforced by `Image.observations_changeset/2`), so an empty list — or a
   list of only foreign ids — returns an error changeset.
   """
@@ -216,7 +216,7 @@ defmodule Kjogvi.Images do
 
   @doc """
   Loads observations by id for display in the image's observation picker,
-  hydrating each with its taxon/species and preloading the card (with location).
+  hydrating each with its taxon/species and preloading the checklist (with location).
 
   Used to render the "currently attached/selected" tiles from a list of ids the
   caller is staging. Preserves the order of `observation_ids`. Restricts to the
@@ -225,9 +225,9 @@ defmodule Kjogvi.Images do
   def get_observations_for_display(user, observation_ids) when is_list(observation_ids) do
     observations =
       Kjogvi.Birding.Observation
-      |> join(:inner, [obs], c in assoc(obs, :card))
+      |> join(:inner, [obs], c in assoc(obs, :checklist))
       |> where([obs, c], obs.id in ^observation_ids and c.user_id == ^user.id)
-      |> preload([_obs, _c], card: :location)
+      |> preload([_obs, _c], checklist: :location)
       |> Repo.all()
       |> Kjogvi.Birding.preload_taxa_and_species()
       |> Map.new(&{&1.id, &1})
@@ -245,20 +245,20 @@ defmodule Kjogvi.Images do
 
   Scoping (most specific wins):
 
-    * `card_id` — restrict to that one card. Used once an observation is
-      selected: all of an image's observations must share a card, so the picker
+    * `checklist_id` — restrict to that one checklist. Used once an observation is
+      selected: all of an image's observations must share a checklist, so the picker
       locks subsequent search to it.
-    * `date` (a `Date`) — restrict to observations on cards of that day.
-    * neither — the most recent matching observations across all cards.
+    * `date` (a `Date`) — restrict to observations on checklists of that day.
+    * neither — the most recent matching observations across all checklists.
 
-  Results are capped (`limit`, default 10) and ordered newest card first.
+  Results are capped (`limit`, default 10) and ordered newest checklist first.
 
   Returns hydrated observation structs (with `:taxon`, `:species`, and the
-  preloaded `:card`), ready to render as tiles. Returns `[]` for a blank query.
+  preloaded `:checklist`), ready to render as tiles. Returns `[]` for a blank query.
   """
   def search_observations_for_image(user, opts) do
     query = opts |> Map.get(:query, "") |> to_string() |> String.trim()
-    card_id = Map.get(opts, :card_id)
+    checklist_id = Map.get(opts, :checklist_id)
     date = Map.get(opts, :date)
     limit = Map.get(opts, :limit, 10)
 
@@ -272,35 +272,35 @@ defmodule Kjogvi.Images do
       []
     else
       Kjogvi.Birding.Observation
-      |> join(:inner, [obs], c in assoc(obs, :card))
+      |> join(:inner, [obs], c in assoc(obs, :checklist))
       |> where([obs, c], c.user_id == ^user.id and obs.taxon_key in ^taxon_keys)
-      |> maybe_scope(card_id, date)
+      |> maybe_scope(checklist_id, date)
       |> order_by([_obs, c], desc: c.observ_date, desc: c.id)
       |> limit(^limit)
-      |> preload([_obs, _c], card: :location)
+      |> preload([_obs, _c], checklist: :location)
       |> Repo.all()
       |> Kjogvi.Birding.preload_taxa_and_species()
     end
   end
 
-  defp maybe_scope(query, card_id, _date) when not is_nil(card_id) do
-    where(query, [obs, _c], obs.card_id == ^card_id)
+  defp maybe_scope(query, checklist_id, _date) when not is_nil(checklist_id) do
+    where(query, [obs, _c], obs.checklist_id == ^checklist_id)
   end
 
-  defp maybe_scope(query, _card_id, %Date{} = date) do
+  defp maybe_scope(query, _checklist_id, %Date{} = date) do
     where(query, [_obs, c], c.observ_date == ^date)
   end
 
-  defp maybe_scope(query, _card_id, _date), do: query
+  defp maybe_scope(query, _checklist_id, _date), do: query
 
   @doc """
-  Lists images linked to any observation on the given card.
+  Lists images linked to any observation on the given checklist.
   """
-  def list_images_for_card(card_id) do
+  def list_images_for_checklist(checklist_id) do
     Image
     |> join(:inner, [i], io in ImageObservation, on: io.image_id == i.id)
     |> join(:inner, [_i, io], obs in Kjogvi.Birding.Observation, on: obs.id == io.observation_id)
-    |> where([_i, _io, obs], obs.card_id == ^card_id)
+    |> where([_i, _io, obs], obs.checklist_id == ^checklist_id)
     |> distinct([i], i.id)
     |> order_by([i], asc: i.sort_order, asc: i.id)
     |> Repo.all()
@@ -414,11 +414,11 @@ defmodule Kjogvi.Images do
 
   defp load_observations(_user_id, []), do: []
 
-  # Restricts to observations on the user's own cards, so a tampered request
+  # Restricts to observations on the user's own checklists, so a tampered request
   # can't link another user's observations to an image.
   defp load_observations(user_id, observation_ids) do
     Kjogvi.Birding.Observation
-    |> join(:inner, [obs], c in assoc(obs, :card))
+    |> join(:inner, [obs], c in assoc(obs, :checklist))
     |> where([obs, c], obs.id in ^observation_ids and c.user_id == ^user_id)
     |> Repo.all()
   end

@@ -1,49 +1,49 @@
-defmodule Kjogvi.Birding.Card.Query do
+defmodule Kjogvi.Birding.Checklist.Query do
   @moduledoc """
-  Queries for Cards.
+  Queries for Checklists.
   """
 
   import Ecto.Query
 
   alias Kjogvi.Geo
 
-  def as_card(query) do
-    from c in query, as: :card
+  def as_checklist(query) do
+    from c in query, as: :checklist
   end
 
   @doc """
-  Maps the given card ids to their `{inserted_at, updated_at}` timestamps.
+  Maps the given checklist ids to their `{inserted_at, updated_at}` timestamps.
   """
-  def timestamps_by_id(card_ids) do
-    from c in Kjogvi.Birding.Card,
-      where: c.id in ^card_ids,
+  def timestamps_by_id(checklist_ids) do
+    from c in Kjogvi.Birding.Checklist,
+      where: c.id in ^checklist_ids,
       select: {c.id, {c.inserted_at, c.updated_at}}
   end
 
   def by_year(query, year) when is_integer(year) do
     query
-    |> where([..., card: c], c.cached_year == ^year)
+    |> where([..., checklist: c], c.cached_year == ^year)
   end
 
   def by_month(query, month) when is_integer(month) do
     query
-    |> where([..., card: c], c.cached_month == ^month)
+    |> where([..., checklist: c], c.cached_month == ^month)
   end
 
   def by_user(query, user) do
     query
-    |> where([..., card: c], c.user_id == ^user.id)
+    |> where([..., checklist: c], c.user_id == ^user.id)
   end
 
   def motorless(query) do
     query
-    |> where([..., card: c], c.motorless == true)
+    |> where([..., checklist: c], c.motorless == true)
   end
 
   def by_location_with_descendants(query, %{location_type: :special} = special) do
     child_ids = Geo.Location.Query.special_descendant_ids(special)
 
-    from [..., card: c] in query,
+    from [..., checklist: c] in query,
       where: c.location_id in subquery(child_ids)
   end
 
@@ -53,12 +53,12 @@ defmodule Kjogvi.Birding.Card.Query do
       from(Geo.Location.Query.child_locations(location))
       |> select([l], l.id)
 
-    from [..., card: c] in query,
+    from [..., checklist: c] in query,
       where: c.location_id in subquery(child_ids)
   end
 
   @doc """
-  Loads per-card aggregates: total number of observations, number of distinct
+  Loads per-checklist aggregates: total number of observations, number of distinct
   taxa, and number of distinct countable species.
 
   Countable species are derived from the species/taxa mapping and exclude

@@ -91,7 +91,7 @@ defmodule Kjogvi.Accounts do
 
     counts =
       from o in Kjogvi.Birding.Observation,
-        join: c in assoc(o, :card),
+        join: c in assoc(o, :checklist),
         join: stm in assoc(o, :species_taxa_mapping),
         where: o.unreported == false and o.hidden == false,
         group_by: c.user_id,

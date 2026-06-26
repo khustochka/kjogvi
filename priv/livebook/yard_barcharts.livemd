@@ -11,7 +11,7 @@ alias Kjogvi.Birding.Observation
 alias Kjogvi.Pages.Species
 
 yard = from(l in Location, where: [slug: ^System.fetch_env!("LB_YARD_LOCATION_SLUG")]) 
-  # |> preload(observations: [:card, [species_taxa_mapping: :species_page]])
+  # |> preload(observations: [:checklist, [species_taxa_mapping: :species_page]])
   |> Kjogvi.Repo.one
 
 species = 
@@ -22,16 +22,16 @@ species =
 
 observs_query =
   from(obs in Observation)
-  |> join(:inner, [obs], card in assoc(obs, :card))
+  |> join(:inner, [obs], checklist in assoc(obs, :checklist))
   |> join(:inner, [obs], sptm in assoc(obs, :species_taxa_mapping))
-  |> where([_, card, _], card.location_id == ^yard.id)  
-  |> where([_, card, _], card.observ_date > ^Date.shift(Date.utc_today, year: -4))
+  |> where([_, checklist, _], checklist.location_id == ^yard.id)  
+  |> where([_, checklist, _], checklist.observ_date > ^Date.shift(Date.utc_today, year: -4))
 
 observs = 
   observs_query
-  |> select([obs, card, sptm], %{
+  |> select([obs, checklist, sptm], %{
     "species_id" => sptm.species_page_id,
-    "date" => card.observ_date,
+    "date" => checklist.observ_date,
     "quantity" => obs.quantity
   })
   |> Kjogvi.Repo.all()

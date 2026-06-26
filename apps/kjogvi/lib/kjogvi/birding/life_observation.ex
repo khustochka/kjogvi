@@ -1,7 +1,7 @@
 defmodule Kjogvi.Birding.LifeObservation do
   @moduledoc """
   Represents a lifelist observation: mixes attributes from the observation (taxon)
-  and card (date, location)
+  and checklist (date, location)
   """
 
   use Kjogvi.Schema
@@ -15,6 +15,6 @@ defmodule Kjogvi.Birding.LifeObservation do
     belongs_to(:species_page, Kjogvi.Pages.Species)
 
     belongs_to(:location, Kjogvi.Geo.Location)
-    belongs_to(:card, Kjogvi.Birding.Card)
+    belongs_to(:checklist, Kjogvi.Birding.Checklist)
   end
 end

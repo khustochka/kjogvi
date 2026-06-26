@@ -4,7 +4,7 @@ defmodule Kjogvi.Images.Image do
 
   An image is a standalone entity belonging to a user. It may optionally be
   linked to one or more observations (many-to-many); when linked, all of an
-  image's observations must belong to the same card (enforced in the context).
+  image's observations must belong to the same checklist (enforced in the context).
 
   `extras` holds derived metadata (dimensions, EXIF capture date) and is not
   edited directly by the user.
@@ -92,7 +92,7 @@ defmodule Kjogvi.Images.Image do
   loading them) and enforces that
 
     * an image has at least one observation, and
-    * they all belong to the same card.
+    * they all belong to the same checklist.
 
   Does no database access itself.
   """
@@ -106,7 +106,7 @@ defmodule Kjogvi.Images.Image do
     # write the column.
     |> force_change(:multi_species, length(observations) > 1)
     |> validate_at_least_one(observations)
-    |> validate_same_card(observations)
+    |> validate_same_checklist(observations)
   end
 
   # Temporary product rule: every image must be linked to at least one
@@ -118,13 +118,13 @@ defmodule Kjogvi.Images.Image do
 
   defp validate_at_least_one(changeset, _observations), do: changeset
 
-  defp validate_same_card(changeset, observations) do
-    case observations |> Enum.map(& &1.card_id) |> Enum.uniq() do
-      cards when length(cards) <= 1 ->
+  defp validate_same_checklist(changeset, observations) do
+    case observations |> Enum.map(& &1.checklist_id) |> Enum.uniq() do
+      checklists when length(checklists) <= 1 ->
         changeset
 
       _ ->
-        add_error(changeset, :observations, "must all belong to the same card")
+        add_error(changeset, :observations, "must all belong to the same checklist")
     end
   end
 

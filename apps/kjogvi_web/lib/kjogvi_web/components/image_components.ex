@@ -12,7 +12,7 @@ defmodule KjogviWeb.ImageComponents do
   alias KjogviWeb.Live.Components.Autocomplete.Highlight
 
   @doc """
-  A single observation rendered as a tile: taxon name, card date, and location.
+  A single observation rendered as a tile: taxon name, checklist date, and location.
 
   Used both for the observations already attached/selected on an image and for
   the search-result rows in the observation picker. When an `on_remove` event is
@@ -61,14 +61,14 @@ defmodule KjogviWeb.ImageComponents do
           </em>
         </div>
         <div class="text-xs text-stone-500">
-          <span class="text-stone-400">#{@observation.card.id}</span>
-          · {@observation.card.observ_date}
-          <span :if={@observation.card.location} class="text-stone-400">
-            · {@observation.card.location.name_en}
+          <span class="text-stone-400">#{@observation.checklist.id}</span>
+          · {@observation.checklist.observ_date}
+          <span :if={@observation.checklist.location} class="text-stone-400">
+            · {@observation.checklist.location.name_en}
           </span>
         </div>
-        <div :if={effort_parts(@observation.card) != []} class="text-xs text-stone-500">
-          {Enum.join(effort_parts(@observation.card), " · ")}
+        <div :if={effort_parts(@observation.checklist) != []} class="text-xs text-stone-500">
+          {Enum.join(effort_parts(@observation.checklist), " · ")}
         </div>
       </div>
 
@@ -95,16 +95,16 @@ defmodule KjogviWeb.ImageComponents do
   defp sci_name(%{taxon: %{name_sci: name_sci}}) when is_binary(name_sci), do: name_sci
   defp sci_name(_), do: nil
 
-  # The effort attributes available on the card, formatted for the tile's effort
-  # line. Each is included only when present, so an INCIDENTAL card with no
+  # The effort attributes available on the checklist, formatted for the tile's effort
+  # line. Each is included only when present, so an INCIDENTAL checklist with no
   # timing shows just its effort type (or nothing).
-  defp effort_parts(card) do
+  defp effort_parts(checklist) do
     [
-      card.effort_type,
-      format_time(card.start_time),
-      format_duration(card.duration_minutes),
-      format_distance(card.distance_kms),
-      format_area(card.area_acres)
+      checklist.effort_type,
+      format_time(checklist.start_time),
+      format_duration(checklist.duration_minutes),
+      format_distance(checklist.distance_kms),
+      format_area(checklist.area_acres)
     ]
     |> Enum.reject(&is_nil/1)
   end

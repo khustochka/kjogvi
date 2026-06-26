@@ -41,7 +41,7 @@ defmodule KjogviWeb.Live.Components.MonthCalendarTest do
     end
   end
 
-  describe "calendar rendering on card form" do
+  describe "calendar rendering on checklist form" do
     setup do
       user = AccountsFixtures.user_fixture()
       conn = conn_for_user(user)
@@ -49,7 +49,7 @@ defmodule KjogviWeb.Live.Components.MonthCalendarTest do
     end
 
     test "renders month name and weekday headers", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, "/my/cards/new")
+      {:ok, _lv, html} = live(conn, "/my/checklists/new")
 
       assert html =~ "Observation Date"
       # Should have weekday headers
@@ -63,20 +63,20 @@ defmodule KjogviWeb.Live.Components.MonthCalendarTest do
     end
 
     test "renders day buttons", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Day 15 should exist as a button in any month
       assert has_element?(lv, "#day-15")
     end
 
     test "renders hidden input for form submission", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       assert has_element?(lv, "#observ_date_calendar-hidden")
     end
 
     test "clicking a day sends date to parent", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Click day 10
       lv |> element("#day-10") |> render_click()
@@ -87,7 +87,7 @@ defmodule KjogviWeb.Live.Components.MonthCalendarTest do
     end
 
     test "prev/next month navigation changes displayed month", %{conn: conn} do
-      {:ok, lv, html} = live(conn, "/my/cards/new")
+      {:ok, lv, html} = live(conn, "/my/checklists/new")
 
       # Get the current month label
       current_month_label = extract_month_label(html)

@@ -1,14 +1,14 @@
-defmodule Kjogvi.Birding.CardTest do
+defmodule Kjogvi.Birding.ChecklistTest do
   use Kjogvi.DataCase, async: true
 
-  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding.Checklist
 
   describe "changeset/2" do
     test "valid with required fields" do
       location = insert(:location)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
@@ -24,7 +24,7 @@ defmodule Kjogvi.Birding.CardTest do
       location = insert(:location)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
           "user_id" => 1
@@ -35,7 +35,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "invalid without location_id" do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "effort_type" => "STATIONARY",
           "user_id" => 1
@@ -48,7 +48,7 @@ defmodule Kjogvi.Birding.CardTest do
       location = insert(:location)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "user_id" => 1
@@ -61,7 +61,7 @@ defmodule Kjogvi.Birding.CardTest do
       location = insert(:location)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "TRAVEL",
@@ -85,7 +85,7 @@ defmodule Kjogvi.Birding.CardTest do
       location = insert(:location)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
@@ -104,7 +104,7 @@ defmodule Kjogvi.Birding.CardTest do
       location = insert(:location)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
@@ -127,7 +127,7 @@ defmodule Kjogvi.Birding.CardTest do
       location = insert(:location)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
@@ -154,7 +154,7 @@ defmodule Kjogvi.Birding.CardTest do
       location = insert(:location)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
@@ -172,7 +172,7 @@ defmodule Kjogvi.Birding.CardTest do
     end
 
     test "passes through non-map attrs unchanged" do
-      changeset = Card.changeset(%Card{}, %{})
+      changeset = Checklist.changeset(%Checklist{}, %{})
 
       refute changeset.valid?
       assert %{observ_date: ["can't be blank"]} = errors_on(changeset)
@@ -182,7 +182,7 @@ defmodule Kjogvi.Birding.CardTest do
       special = insert(:special)
 
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => special.id,
           "effort_type" => "STATIONARY",
@@ -204,7 +204,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "stationary requires start_time and duration_minutes", %{location: location} do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
@@ -218,7 +218,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "stationary valid with start_time and duration_minutes", %{location: location} do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "STATIONARY",
@@ -232,7 +232,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "travel requires start_time, duration_minutes, and distance_kms", %{location: location} do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "TRAVEL",
@@ -247,7 +247,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "travel valid with all required fields", %{location: location} do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "TRAVEL",
@@ -262,7 +262,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "area requires start_time, duration_minutes, and area_acres", %{location: location} do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "AREA",
@@ -277,7 +277,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "area valid with all required fields", %{location: location} do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "AREA",
@@ -292,7 +292,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "incidental does not require effort fields", %{location: location} do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "INCIDENTAL",
@@ -304,7 +304,7 @@ defmodule Kjogvi.Birding.CardTest do
 
     test "historical does not require effort fields", %{location: location} do
       changeset =
-        Card.changeset(%Card{}, %{
+        Checklist.changeset(%Checklist{}, %{
           "observ_date" => "2024-05-10",
           "location_id" => location.id,
           "effort_type" => "HISTORICAL",
@@ -317,7 +317,7 @@ defmodule Kjogvi.Birding.CardTest do
 
   describe "effort_types/0" do
     test "returns all effort types" do
-      types = Card.effort_types()
+      types = Checklist.effort_types()
 
       assert "STATIONARY" in types
       assert "TRAVEL" in types

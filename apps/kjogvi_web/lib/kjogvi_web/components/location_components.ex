@@ -222,7 +222,7 @@ defmodule KjogviWeb.LocationComponents do
   end
 
   # The delete button is shown for every owned location; deletability (no
-  # children, no cards) is enforced server-side by `Geo.delete_location/2`,
+  # children, no checklists) is enforced server-side by `Geo.delete_location/2`,
   # which flashes an error if the location is still in use. This keeps the list
   # free of a per-row deletability query.
   attr :location, :map, required: true

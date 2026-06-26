@@ -41,7 +41,7 @@ defmodule Kjogvi.Birding.Logbook.Cache do
   @doc """
   Evicts every known cache entry for the given user. Call this from any
   write path that could change what `Logbook.recent_entries/2` would return:
-  observation/card writes and `logbook_settings` updates.
+  observation/checklist writes and `logbook_settings` updates.
   """
   def invalidate(user_id) do
     for key <- cache_keys_for_user(user_id) do

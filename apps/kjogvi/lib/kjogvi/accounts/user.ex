@@ -32,7 +32,7 @@ defmodule Kjogvi.Accounts.User do
 
   @doc """
   Whether `user` owns `ownable` — any struct carrying a `user_id` (e.g. a
-  location or card). Unowned records (`user_id: nil`) belong to no one.
+  location or checklist). Unowned records (`user_id: nil`) belong to no one.
   """
   def owns?(%__MODULE__{id: id}, %{user_id: user_id}) when not is_nil(user_id) do
     id == user_id

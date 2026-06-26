@@ -71,8 +71,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       {:error, :has_children} ->
         {:noreply, row_delete_error(socket, location.id, "Has sub-locations — can't delete")}
 
-      {:error, :has_cards} ->
-        {:noreply, row_delete_error(socket, location.id, "Has cards — can't delete")}
+      {:error, :has_checklists} ->
+        {:noreply, row_delete_error(socket, location.id, "Has checklists — can't delete")}
 
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, "You can only delete your own locations")}
@@ -272,8 +272,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     """
   end
 
-  # The chevron-row tint matches the location card it wraps, so the toggle sits on
-  # the same background as the row (the card carries no horizontal padding here).
+  # The chevron-row tint matches the location checklist it wraps, so the toggle sits on
+  # the same background as the row (the checklist carries no horizontal padding here).
   defp tree_node_pad(%{location_type: :country}), do: "bg-sky-50"
   defp tree_node_pad(%{location_type: :subdivision1}), do: "bg-amber-50"
   defp tree_node_pad(%{user_id: nil}), do: "bg-stone-50"

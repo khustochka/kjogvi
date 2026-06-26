@@ -1,10 +1,10 @@
-defmodule Kjogvi.Birding.CardSearch.FilterTest do
+defmodule Kjogvi.Birding.ChecklistSearch.FilterTest do
   use ExUnit.Case, async: true
 
-  alias Kjogvi.Birding.CardSearch.Filter
+  alias Kjogvi.Birding.ChecklistSearch.Filter
 
   describe "defaults" do
-    test "a bare struct is blank and in card mode" do
+    test "a bare struct is blank and in checklist mode" do
       filter = %Filter{}
 
       assert filter.voice == :all
@@ -33,7 +33,7 @@ defmodule Kjogvi.Birding.CardSearch.FilterTest do
       assert Filter.observation_mode?(%Filter{hidden: true})
     end
 
-    test "false for card-level-only filters" do
+    test "false for checklist-level-only filters" do
       refute Filter.observation_mode?(%Filter{date: ~D[2024-01-01]})
       refute Filter.observation_mode?(%Filter{include_subregions: true})
       refute Filter.observation_mode?(%Filter{unresolved: true})

@@ -1182,15 +1182,15 @@ defmodule Kjogvi.Geo.LocationTest do
       site_two =
         insert(:location, name_en: "Park Two", location_type: "site", country: other_country)
 
-      card_one = insert(:card, location: site_one)
-      card_two = insert(:card, location: site_two)
+      checklist_one = insert(:checklist, location: site_one)
+      checklist_two = insert(:checklist, location: site_two)
 
-      cards = Repo.preload([card_one, card_two], :location)
+      checklists = Repo.preload([checklist_one, checklist_two], :location)
 
-      # One query to load all ancestors across both cards' locations.
-      assert count_queries(fn -> Query.put_location_levels(cards) end) == 1
+      # One query to load all ancestors across both checklists' locations.
+      assert count_queries(fn -> Query.put_location_levels(checklists) end) == 1
 
-      [loaded_one, loaded_two] = Query.put_location_levels(cards)
+      [loaded_one, loaded_two] = Query.put_location_levels(checklists)
 
       assert Location.long_name(:private, loaded_one.location) == "Park One, Canada"
       assert Location.long_name(:private, loaded_two.location) == "Park Two, Mexico"
@@ -1199,9 +1199,9 @@ defmodule Kjogvi.Geo.LocationTest do
     test "accepts a single thing" do
       country = insert(:country, name_en: "Canada")
       site = insert(:location, name_en: "Park", location_type: "site", country: country)
-      card = insert(:card, location: site)
+      checklist = insert(:checklist, location: site)
 
-      loaded = Query.put_location_levels(card)
+      loaded = Query.put_location_levels(checklist)
 
       refute is_list(loaded)
       assert Location.long_name(:private, loaded.location) == "Park, Canada"

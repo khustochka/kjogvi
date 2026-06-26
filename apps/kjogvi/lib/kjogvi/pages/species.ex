@@ -27,8 +27,8 @@ defmodule Kjogvi.Pages.Species do
     timestamps()
   end
 
-  def changeset(card, attrs) do
-    card
+  def changeset(checklist, attrs) do
+    checklist
     |> cast(attrs, [
       :name_en,
       :common_name,

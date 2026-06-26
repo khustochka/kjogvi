@@ -53,9 +53,9 @@ defmodule KjogviWeb.Live.My.Images.Form do
   @no_observations_message "Please attach at least one observation."
 
   # Shown when staged observations can't be linked at all (foreign ids, or ids
-  # spanning different cards) — normally unreachable through the picker UI, so
+  # spanning different checklists) — normally unreachable through the picker UI, so
   # this is the backstop for a tampered request.
-  @observations_invalid_message "Those observations couldn't be attached. They must be your own and from a single card."
+  @observations_invalid_message "Those observations couldn't be attached. They must be your own and from a single checklist."
 
   # Generic message for a failed file upload. The detail (missing credentials,
   # denied permission, backend unreachable) is logged server-side; the user just
@@ -98,8 +98,8 @@ defmodule KjogviWeb.Live.My.Images.Form do
     # "replacing" toggle.
     |> assign(:replacing?, true)
     # Until a file is uploaded there is no EXIF date, so seed the picker with the
-    # user's most recent card date; the EXIF date replaces it on upload.
-    |> assign(:observation_date, Kjogvi.Birding.last_card_date(user))
+    # user's most recent checklist date; the EXIF date replaces it on upload.
+    |> assign(:observation_date, Kjogvi.Birding.last_checklist_date(user))
     |> assign_form(%{"sort_order" => 100})
   end
 
@@ -436,7 +436,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
 
               {:error, %Ecto.Changeset{}} ->
                 # The observations couldn't be linked (e.g. a tampered request
-                # with foreign or cross-card ids). Don't leave an orphan image
+                # with foreign or cross-checklist ids). Don't leave an orphan image
                 # behind — it's invalid without observations — and report it.
                 Images.delete_image(image)
 
@@ -464,7 +464,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
 
             {:error, %Ecto.Changeset{}} ->
               # Metadata was saved, but the observations couldn't be linked (e.g.
-              # a tampered request with foreign or cross-card ids). The existing
+              # a tampered request with foreign or cross-checklist ids). The existing
               # links are left untouched; report it and stay on the form.
               {:noreply, put_flash(socket, :error, @observations_invalid_message)}
           end
@@ -526,15 +526,15 @@ defmodule KjogviWeb.Live.My.Images.Form do
 
   # The observation search defaults to the date of the already-attached
   # observations; failing that, the image's EXIF capture date; failing that, the
-  # user's most recent card date.
-  defp default_observation_date(_user, _image, [%{card: %{observ_date: %Date{} = date}} | _]) do
+  # user's most recent checklist date.
+  defp default_observation_date(_user, _image, [%{checklist: %{observ_date: %Date{} = date}} | _]) do
     date
   end
 
   defp default_observation_date(user, image, []) do
     case Image.exif_date(image) do
       %NaiveDateTime{} = naive -> NaiveDateTime.to_date(naive)
-      _ -> Kjogvi.Birding.last_card_date(user)
+      _ -> Kjogvi.Birding.last_checklist_date(user)
     end
   end
 

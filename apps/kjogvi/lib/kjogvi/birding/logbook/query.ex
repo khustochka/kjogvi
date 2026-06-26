@@ -9,8 +9,8 @@ defmodule Kjogvi.Birding.Logbook.Query do
   ## Query shape
 
   All scopes (World + each enabled location, total + year) are computed from a
-  single scan of `observations ⨝ cards ⨝ species_taxa_mappings`. The base scan
-  is cross-joined against an inline `unnest` of scope ids, filtered by the card
+  single scan of `observations ⨝ checklists ⨝ species_taxa_mappings`. The base scan
+  is cross-joined against an inline `unnest` of scope ids, filtered by the checklist
   location's level FK ancestors, and then collapsed with two `DISTINCT ON` queries
   (one for life firsts, one for year firsts) unioned together. This replaces
   the old shape, which scanned the base join `2 × (N + 1)` times for
@@ -26,14 +26,14 @@ defmodule Kjogvi.Birding.Logbook.Query do
   @doc false
   def firsts_in_range(scope, locations, {start_date, end_date}) do
     # Scope ids: nil represents the World scope. Each location id represents
-    # a per-location scope: a card belongs to scope L if its
-    # card.location_id == L or L is one of the card location's level FK ancestors.
+    # a per-location scope: a checklist belongs to scope L if its
+    # checklist.location_id == L or L is one of the checklist location's level FK ancestors.
     scope_ids = [nil | Enum.map(locations, & &1.id)]
 
     base_query =
-      from [observation: o, card: c] in Observation.Query.base_for_scope(scope),
+      from [observation: o, checklist: c] in Observation.Query.base_for_scope(scope),
         join: cl in assoc(c, :location),
-        as: :card_location
+        as: :checklist_location
 
     scoped_query = scoped_query(base_query, scope_ids)
 
@@ -51,7 +51,7 @@ defmodule Kjogvi.Birding.Logbook.Query do
           observ_date: r.observ_date,
           start_time: r.start_time,
           obs_id: r.obs_id,
-          card_id: r.card_id,
+          checklist_id: r.checklist_id,
           location_id: r.location_id,
           location_id_scope: r.location_id_scope,
           year_scope: r.year_scope,
@@ -83,11 +83,11 @@ defmodule Kjogvi.Birding.Logbook.Query do
   end
 
   # Cross-join the base join against the list of scope ids and keep only
-  # rows where the card belongs to that scope (World matches every card;
-  # a location scope matches when card.location_id == scope or the scope is
-  # one of the card location's level FK ancestors).
+  # rows where the checklist belongs to that scope (World matches every checklist;
+  # a location scope matches when checklist.location_id == scope or the scope is
+  # one of the checklist location's level FK ancestors).
   defp scoped_query(base_query, scope_ids) do
-    from [observation: o, card: c, stm: stm, card_location: cl] in base_query,
+    from [observation: o, checklist: c, stm: stm, checklist_location: cl] in base_query,
       inner_lateral_join:
         s in fragment("SELECT * FROM unnest(?::bigint[]) AS scope_id", ^scope_ids),
       on: true,
@@ -101,7 +101,7 @@ defmodule Kjogvi.Birding.Logbook.Query do
         observ_date: c.observ_date,
         start_time: c.start_time,
         obs_id: o.id,
-        card_id: c.id,
+        checklist_id: c.id,
         location_id: c.location_id,
         cached_year: c.cached_year,
         scope_id: s.scope_id
@@ -124,7 +124,7 @@ defmodule Kjogvi.Birding.Logbook.Query do
         observ_date: r.observ_date,
         start_time: r.start_time,
         obs_id: r.obs_id,
-        card_id: r.card_id,
+        checklist_id: r.checklist_id,
         location_id: r.location_id,
         location_id_scope: r.scope_id,
         year_scope: fragment("NULL::integer")
@@ -148,7 +148,7 @@ defmodule Kjogvi.Birding.Logbook.Query do
         observ_date: r.observ_date,
         start_time: r.start_time,
         obs_id: r.obs_id,
-        card_id: r.card_id,
+        checklist_id: r.checklist_id,
         location_id: r.location_id,
         location_id_scope: r.scope_id,
         year_scope: r.cached_year

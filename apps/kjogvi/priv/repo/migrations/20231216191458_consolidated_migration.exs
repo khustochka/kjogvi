@@ -33,7 +33,7 @@ defmodule Kjogvi.Repo.Migrations.ConsolidatedMigration do
     create index(:locations, :cached_country_id, where: "cached_country_id IS NOT NULL")
     create index(:locations, :location_type, where: "location_type IS NOT NULL")
 
-    # Cards
+    # Checklists
 
     create table(:cards) do
       add :observ_date, :date, null: false

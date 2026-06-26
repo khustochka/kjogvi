@@ -7,7 +7,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
 
   alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Birding.Lifelist.Filter
-  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding.Checklist
   alias Kjogvi.Birding.Observation
 
   @typep filter_or_keyword() :: Lifelist.filter() | keyword()
@@ -62,7 +62,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
       ],
       select: %{
         id: o.id,
-        card_id: c.id,
+        checklist_id: c.id,
         species_page_id: stm.species_page_id,
         observ_date: c.observ_date,
         start_time: c.start_time,
@@ -84,16 +84,16 @@ defmodule Kjogvi.Birding.Lifelist.Query do
     |> Enum.reduce(base, fn filter, query ->
       case filter do
         {:year, year} when not is_nil(year) ->
-          Card.Query.by_year(query, year)
+          Checklist.Query.by_year(query, year)
 
         {:month, month} when not is_nil(month) ->
-          Card.Query.by_month(query, month)
+          Checklist.Query.by_month(query, month)
 
         {:location, location} when not is_nil(location) ->
-          Card.Query.by_location_with_descendants(query, location)
+          Checklist.Query.by_location_with_descendants(query, location)
 
         {:motorless, true} ->
-          Card.Query.motorless(query)
+          Checklist.Query.motorless(query)
 
         {:exclude_heard_only, true} ->
           Observation.Query.exclude_heard_only(query)
@@ -132,17 +132,17 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   directly or among their descendants.
   """
   def location_ids_query(scope, filter) do
-    card_location_ids =
+    checklist_location_ids =
       observations_filtered(scope, filter)
       |> distinct(true)
       |> select([_o, c], c.location_id)
 
-    # Each card location's level FK ancestors (`country_id … site_id`), unioned.
+    # Each checklist location's level FK ancestors (`country_id … site_id`), unioned.
     ancestor_ids =
       Kjogvi.Geo.Location.level_fks()
       |> Enum.map(fn fk ->
         from(cl in Kjogvi.Geo.Location,
-          where: cl.id in subquery(card_location_ids) and not is_nil(field(cl, ^fk)),
+          where: cl.id in subquery(checklist_location_ids) and not is_nil(field(cl, ^fk)),
           select: field(cl, ^fk)
         )
       end)
@@ -151,7 +151,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
     from(ll in Kjogvi.Geo.Location,
       where: ll.location_type in [:country, :subdivision1],
       where:
-        ll.id in subquery(card_location_ids) or
+        ll.id in subquery(checklist_location_ids) or
           ll.id in subquery(ancestor_ids),
       select: ll.id
     )

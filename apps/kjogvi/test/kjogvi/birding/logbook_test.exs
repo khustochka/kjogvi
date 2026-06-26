@@ -53,12 +53,12 @@ defmodule Kjogvi.Birding.LogbookTest do
     })
   end
 
-  defp card(user, date, location) do
-    insert(:card, observ_date: date, user: user, location: location)
+  defp checklist(user, date, location) do
+    insert(:checklist, observ_date: date, user: user, location: location)
   end
 
-  defp obs(card, taxon_key) do
-    insert(:observation, card: card, taxon_key: taxon_key)
+  defp obs(checklist, taxon_key) do
+    insert(:observation, checklist: checklist, taxon_key: taxon_key)
   end
 
   describe "recent_entries/2" do
@@ -74,7 +74,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       site = insert_site(country)
 
       today = Date.utc_today()
-      c = card(user, today, site)
+      c = checklist(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -96,7 +96,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       site = insert_site(country, subdivision)
 
       today = Date.utc_today()
-      c = card(user, today, site)
+      c = checklist(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -126,10 +126,10 @@ defmodule Kjogvi.Birding.LogbookTest do
       yesterday = Date.add(Date.utc_today(), -1)
       today = Date.utc_today()
 
-      c1 = card(user, yesterday, site_ua)
+      c1 = checklist(user, yesterday, site_ua)
       obs(c1, Ornitho.Schema.Taxon.key(taxon))
 
-      c2 = card(user, today, site_ca)
+      c2 = checklist(user, today, site_ca)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -157,12 +157,12 @@ defmodule Kjogvi.Birding.LogbookTest do
 
       # Saw species last year
       last_year_date = ~D[2025-06-15]
-      c1 = card(user, last_year_date, site)
+      c1 = checklist(user, last_year_date, site)
       obs(c1, Ornitho.Schema.Taxon.key(taxon))
 
       # Saw again this year (new year bird, but not a lifer)
       this_year_date = Date.utc_today()
-      c2 = card(user, this_year_date, site)
+      c2 = checklist(user, this_year_date, site)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -189,7 +189,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       site = insert_site(country)
 
       today = Date.utc_today()
-      c = card(user, today, site)
+      c = checklist(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon1))
       obs(c, Ornitho.Schema.Taxon.key(taxon2))
 
@@ -211,7 +211,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       for i <- 0..2 do
         {taxon, _} = Factory.create_species_taxon_with_page()
         d = Date.add(Date.utc_today(), -i)
-        c = card(user, d, site)
+        c = checklist(user, d, site)
         obs(c, Ornitho.Schema.Taxon.key(taxon))
       end
 
@@ -230,11 +230,11 @@ defmodule Kjogvi.Birding.LogbookTest do
       today = Date.utc_today()
 
       # First species yesterday
-      c1 = card(user, yesterday, site)
+      c1 = checklist(user, yesterday, site)
       obs(c1, Ornitho.Schema.Taxon.key(taxon1))
 
       # Second species today
-      c2 = card(user, today, site)
+      c2 = checklist(user, today, site)
       obs(c2, Ornitho.Schema.Taxon.key(taxon2))
 
       entries = Logbook.recent_entries(scope(user))
@@ -261,7 +261,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       site = insert_site(country)
 
       old_date = Date.add(Date.utc_today(), -10)
-      c = card(user, old_date, site)
+      c = checklist(user, old_date, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       # Only look back 5 days — should find nothing
@@ -289,11 +289,11 @@ defmodule Kjogvi.Birding.LogbookTest do
       yesterday = Date.add(Date.utc_today(), -1)
       today = Date.utc_today()
 
-      c1 = card(user, yesterday, site_ua)
+      c1 = checklist(user, yesterday, site_ua)
       obs(c1, Ornitho.Schema.Taxon.key(taxon))
 
       # Saw in Canada today (new for Canada, not a world lifer)
-      c2 = card(user, today, site_ca)
+      c2 = checklist(user, today, site_ca)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -331,10 +331,10 @@ defmodule Kjogvi.Birding.LogbookTest do
       yesterday = Date.add(Date.utc_today(), -1)
       today = Date.utc_today()
 
-      c1 = card(user, yesterday, site_ua)
+      c1 = checklist(user, yesterday, site_ua)
       obs(c1, Ornitho.Schema.Taxon.key(taxon))
 
-      c2 = card(user, today, site_ca)
+      c2 = checklist(user, today, site_ca)
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -358,7 +358,7 @@ defmodule Kjogvi.Birding.LogbookTest do
         |> put_logbook_settings(all_enabled_settings([country, subdivision]))
 
       today = Date.utc_today()
-      c = card(user, today, site)
+      c = checklist(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -397,7 +397,7 @@ defmodule Kjogvi.Birding.LogbookTest do
         |> put_logbook_settings([%{location_id: nil, life: true, year: true}])
 
       today = Date.utc_today()
-      c = card(user, today, site)
+      c = checklist(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -421,7 +421,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       user = user_fixture() |> put_logbook_settings(settings)
 
       today = Date.utc_today()
-      c = card(user, today, site)
+      c = checklist(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -442,7 +442,7 @@ defmodule Kjogvi.Birding.LogbookTest do
         |> put_logbook_settings(all_enabled_settings([country]))
 
       today = Date.utc_today()
-      c = card(user, today, site)
+      c = checklist(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(t1))
       obs(c, Ornitho.Schema.Taxon.key(t2))
 
@@ -476,12 +476,12 @@ defmodule Kjogvi.Birding.LogbookTest do
 
       # t2 was seen long ago in Ukraine (already a world lifer)
       long_ago = Date.add(Date.utc_today(), -30)
-      c_old = card(user, long_ago, site_ua)
+      c_old = checklist(user, long_ago, site_ua)
       obs(c_old, Ornitho.Schema.Taxon.key(t2))
 
       # Today: both in Canada
       today = Date.utc_today()
-      c = card(user, today, site_ca)
+      c = checklist(user, today, site_ca)
       obs(c, Ornitho.Schema.Taxon.key(t1))
       obs(c, Ornitho.Schema.Taxon.key(t2))
 
@@ -518,13 +518,13 @@ defmodule Kjogvi.Birding.LogbookTest do
 
       # Seen in Ukraine last year — already world lifer and on the 2024 year list
       last_year = ~D[2024-06-15]
-      c_old = card(user, last_year, site_ua)
+      c_old = checklist(user, last_year, site_ua)
       obs(c_old, Ornitho.Schema.Taxon.key(taxon))
 
       # Today: seen in Canada. This is a Canada lifer, Manitoba lifer, AND a
       # new 2026 year bird (at world and all ancestor scopes).
       today = Date.utc_today()
-      c = card(user, today, site_ca)
+      c = checklist(user, today, site_ca)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
@@ -556,11 +556,11 @@ defmodule Kjogvi.Birding.LogbookTest do
       {taxon_2025, _} = Factory.create_species_taxon_with_page()
 
       # Observation far in the past (beyond any default cutoff)
-      c1 = card(user, ~D[2020-06-15], site)
+      c1 = checklist(user, ~D[2020-06-15], site)
       obs(c1, Ornitho.Schema.Taxon.key(taxon_2020))
 
       # Observation in 2025
-      c2 = card(user, ~D[2025-03-15], site)
+      c2 = checklist(user, ~D[2025-03-15], site)
       obs(c2, Ornitho.Schema.Taxon.key(taxon_2025))
 
       # cutoff_days would exclude 2020 data, but year filter finds it
@@ -587,7 +587,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       # Create observations on many different dates in 2025
       for i <- 1..5 do
         {taxon, _} = Factory.create_species_taxon_with_page()
-        c = card(user, Date.new!(2025, i, 10), site)
+        c = checklist(user, Date.new!(2025, i, 10), site)
         obs(c, Ornitho.Schema.Taxon.key(taxon))
       end
 
@@ -609,7 +609,7 @@ defmodule Kjogvi.Birding.LogbookTest do
 
       for i <- 0..4 do
         {taxon, _} = Factory.create_species_taxon_with_page()
-        c = card(user, Date.add(today, -i), site)
+        c = checklist(user, Date.add(today, -i), site)
         obs(c, Ornitho.Schema.Taxon.key(taxon))
       end
 
@@ -632,7 +632,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       user = user_fixture() |> put_logbook_settings(settings)
 
       today = Date.utc_today()
-      c = card(user, today, site)
+      c = checklist(user, today, site)
       obs(c, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))

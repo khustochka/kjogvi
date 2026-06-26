@@ -131,11 +131,11 @@ defmodule KjogviWeb.Router do
       live "/locations/:slug/edit", Live.My.Locations.Form, :edit
       live "/locations/:slug", Live.My.Locations.Show, :show
 
-      live "/cards", Live.My.Cards.Index, :index
-      live "/cards/page/:page", Live.My.Cards.Index, :index
-      live "/cards/new", Live.My.Cards.Form, :new
-      live "/cards/:id/edit", Live.My.Cards.Form, :edit
-      live "/cards/:id", Live.My.Cards.Show, :show
+      live "/checklists", Live.My.Checklists.Index, :index
+      live "/checklists/page/:page", Live.My.Checklists.Index, :index
+      live "/checklists/new", Live.My.Checklists.Form, :new
+      live "/checklists/:id/edit", Live.My.Checklists.Form, :edit
+      live "/checklists/:id", Live.My.Checklists.Show, :show
 
       live "/images", Live.My.Images.Index, :index
       live "/images/page/:page", Live.My.Images.Index, :index

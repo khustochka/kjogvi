@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.My.Cards.Index do
+defmodule KjogviWeb.Live.My.Checklists.Index do
   @moduledoc false
 
   use KjogviWeb, :live_view
@@ -6,16 +6,16 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   import Scrivener.PhoenixView
 
   alias Kjogvi.Birding
-  alias Kjogvi.Birding.CardSearch.Filter
-  alias KjogviWeb.Live.Components.CardSearchFilter
+  alias Kjogvi.Birding.ChecklistSearch.Filter
+  alias KjogviWeb.Live.Components.ChecklistSearchFilter
 
-  @cards_per_page 20
+  @checklists_per_page 20
 
   @impl true
   def mount(_params, _session, socket) do
     {
       :ok,
-      assign(socket, :page_title, "Cards")
+      assign(socket, :page_title, "Checklists")
     }
   end
 
@@ -28,7 +28,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       Map.get(params, "page", "1")
       |> String.to_integer()
 
-    {filter, taxon_label} = Birding.card_filter_from_params(params)
+    {filter, taxon_label} = Birding.checklist_filter_from_params(params)
 
     {
       :noreply,
@@ -36,27 +36,31 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       |> assign(:page, page)
       |> assign(:filter, filter)
       |> assign(:taxon_label, taxon_label)
-      |> load_cards()
+      |> load_checklists()
     }
   end
 
   @impl true
   def handle_event("delete", %{"id" => id}, %{assigns: assigns} = socket) do
-    card = Birding.fetch_card_for_edit(assigns.current_scope.current_user, id)
+    checklist = Birding.fetch_checklist_for_edit(assigns.current_scope.current_user, id)
 
-    case Birding.delete_card(card) do
-      {:ok, _card} ->
+    case Birding.delete_checklist(checklist) do
+      {:ok, _checklist} ->
         {
           :noreply,
           socket
-          |> put_flash(:info, "Card ##{card.id} deleted.")
-          |> load_cards()
+          |> put_flash(:info, "Checklist ##{checklist.id} deleted.")
+          |> load_checklists()
         }
 
       {:error, :has_observations} ->
         {
           :noreply,
-          put_flash(socket, :error, "Card ##{card.id} has observations and cannot be deleted.")
+          put_flash(
+            socket,
+            :error,
+            "Checklist ##{checklist.id} has observations and cannot be deleted."
+          )
         }
     end
   end
@@ -97,7 +101,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   # Applying a filter always returns to page 1 of the (new) result set, encoded
   # into the URL so the view is linkable. `handle_params` does the actual search.
   defp patch_to_filter(socket, %Filter{} = filter) do
-    push_patch(socket, to: ~p"/my/cards?#{Filter.to_params(filter)}")
+    push_patch(socket, to: ~p"/my/checklists?#{Filter.to_params(filter)}")
   end
 
   # Updates only the form-owned fields of `filter` from submitted params,
@@ -131,14 +135,14 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   defp checked?("true"), do: true
   defp checked?(_), do: false
 
-  defp load_cards(%{assigns: assigns} = socket) do
-    cards =
-      Birding.search_cards(assigns.current_scope.current_user, assigns.filter, %{
+  defp load_checklists(%{assigns: assigns} = socket) do
+    checklists =
+      Birding.search_checklists(assigns.current_scope.current_user, assigns.filter, %{
         page: assigns.page,
-        page_size: @cards_per_page
+        page_size: @checklists_per_page
       })
 
-    assign(socket, :cards, cards)
+    assign(socket, :checklists, checklists)
   end
 
   @impl true
@@ -146,42 +150,42 @@ defmodule KjogviWeb.Live.My.Cards.Index do
     ~H"""
     <div class="mb-4 flex items-center justify-between gap-4">
       <.h1 class="mt-0! mb-0! leading-none">
-        Cards
+        Checklists
       </.h1>
-      <.action_button navigate={~p"/my/cards/new"} icon="hero-plus">New Card</.action_button>
+      <.action_button navigate={~p"/my/checklists/new"} icon="hero-plus">New Checklist</.action_button>
     </div>
 
-    <CardSearchFilter.card_search_filter
+    <ChecklistSearchFilter.checklist_search_filter
       filter={@filter}
       user={@current_scope.current_user}
       scope={@current_scope}
       taxon_label={@taxon_label}
     />
 
-    <p :if={Enum.empty?(@cards) and Filter.blank?(@filter)} class="text-stone-500">
-      No cards yet.
+    <p :if={Enum.empty?(@checklists) and Filter.blank?(@filter)} class="text-stone-500">
+      No checklists yet.
     </p>
-    <p :if={Enum.empty?(@cards) and not Filter.blank?(@filter)} class="text-stone-500">
-      No cards match the current filter.
+    <p :if={Enum.empty?(@checklists) and not Filter.blank?(@filter)} class="text-stone-500">
+      No checklists match the current filter.
     </p>
 
-    <.card_list id="cards" cards={@cards} on_delete="delete" />
+    <.checklist_list id="checklists" checklists={@checklists} on_delete="delete" />
 
     <div class="mt-6">
-      {paginate(@socket, @cards, paginated_card_path(@filter), [:index], live: true)}
+      {paginate(@socket, @checklists, paginated_checklist_path(@filter), [:index], live: true)}
     </div>
     """
   end
 
   # Page links carry the current filter as query params so paging preserves the
   # active search (and keeps each page linkable).
-  defp paginated_card_path(%Filter{} = filter) do
+  defp paginated_checklist_path(%Filter{} = filter) do
     query = Filter.to_params(filter)
 
     fn _conn, _action, page, _params ->
       case page do
-        1 -> ~p"/my/cards?#{query}"
-        n -> ~p"/my/cards/page/#{n}?#{query}"
+        1 -> ~p"/my/checklists?#{query}"
+        n -> ~p"/my/checklists/page/#{n}?#{query}"
       end
     end
   end
