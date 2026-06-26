@@ -9,10 +9,10 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
     %{conn: login_user(conn, user), user: user}
   end
 
-  test "renders breadcrumbs with link to cards index", %{conn: conn, user: user} do
+  test "renders breadcrumbs with link to checklists index", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert has_element?(show_live, "#checklist-breadcrumbs")
     assert has_element?(show_live, "#checklist-breadcrumbs a", "Checklists")
@@ -21,24 +21,24 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   test "renders with no observations", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user)
 
-    {:ok, _show_live, html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, _show_live, html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert html =~ "Checklist ##{checklist.id}"
     assert html =~ "This checklist has no observations."
   end
 
-  test "shows an unresolved marker for unresolved cards", %{conn: conn, user: user} do
+  test "shows an unresolved marker for unresolved checklists", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, resolved: false)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert has_element?(show_live, "#checklist-unresolved")
   end
 
-  test "has no unresolved marker for resolved cards", %{conn: conn, user: user} do
+  test "has no unresolved marker for resolved checklists", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, resolved: true)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     refute has_element?(show_live, "#checklist-unresolved")
   end
@@ -46,15 +46,15 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   test "renders an edit link", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
-    assert has_element?(show_live, ~s{a[href="/my/cards/#{checklist.id}/edit"]})
+    assert has_element?(show_live, ~s{a[href="/my/checklists/#{checklist.id}/edit"]})
   end
 
   test "renders an eBird link when ebird_id is present", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, ebird_id: "S100803884")
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert has_element?(
              show_live,
@@ -65,7 +65,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   test "renders eBird details panel when ebird_id is present", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, ebird_id: "S100803884")
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert has_element?(show_live, "#checklist-ebird-details", "S100803884")
 
@@ -78,7 +78,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   test "does not render eBird details panel when ebird_id is absent", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, ebird_id: nil)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     refute has_element?(show_live, "#checklist-ebird-details")
   end
@@ -86,7 +86,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   test "eBird panel shows Complete badge when ebird_complete is true", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, ebird_id: "S1", ebird_complete: true)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert has_element?(show_live, "#checklist-ebird-details", "Complete")
     refute has_element?(show_live, "#checklist-ebird-details", "Incomplete")
@@ -98,7 +98,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   } do
     checklist = insert(:checklist, user: user, ebird_id: "S1", ebird_complete: false)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert has_element?(show_live, "#checklist-ebird-details", "Incomplete")
   end
@@ -106,7 +106,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   test "eBird panel shows no badge when ebird_complete is nil", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, ebird_id: "S1", ebird_complete: nil)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     refute has_element?(show_live, "#checklist-ebird-details", "Complete")
     refute has_element?(show_live, "#checklist-ebird-details", "Incomplete")
@@ -118,7 +118,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   } do
     checklist = insert(:checklist, user: user, ebird_id: nil, ebird_complete: false)
 
-    {:ok, show_live, html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     # No separate eBird panel section, but the badge appears in the page body.
     refute has_element?(show_live, "#checklist-ebird-details")
@@ -131,7 +131,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   } do
     checklist = insert(:checklist, user: user, ebird_id: nil, ebird_complete: nil)
 
-    {:ok, show_live, html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     refute has_element?(show_live, "#checklist-ebird-details")
     refute html =~ "Incomplete"
@@ -143,7 +143,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
     insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, show_live, html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert html =~ "Checklist ##{checklist.id}"
     assert has_element?(show_live, "#observation")
@@ -155,9 +155,9 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   } do
     checklist = insert(:checklist, user: user)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
-    assert {:error, {:live_redirect, %{to: "/my/cards"}}} =
+    assert {:error, {:live_redirect, %{to: "/my/checklists"}}} =
              show_live
              |> element("#delete-checklist")
              |> render_click()
@@ -170,7 +170,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
     insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     # Rendered as a plain <span>, not a clickable button: no phx-click wiring.
     assert has_element?(show_live, "span#delete-checklist")
@@ -180,7 +180,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   test "shows an import source note when import_source is present", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, import_source: :ebird)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert has_element?(show_live, "#checklist-import-source", "Imported from: eBird")
   end
@@ -188,7 +188,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
   test "shows no import source note when import_source is nil", %{conn: conn, user: user} do
     checklist = insert(:checklist, user: user, import_source: nil)
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     refute has_element?(show_live, "#checklist-import-source")
   end
@@ -199,7 +199,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
     insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
     assert_raise Ecto.NoResultsError, fn ->
-      live(conn, ~p"/my/cards/#{checklist.id}")
+      live(conn, ~p"/my/checklists/#{checklist.id}")
     end
   end
 
@@ -207,7 +207,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
     checklist = insert(:checklist, user: user)
     insert(:observation, checklist: checklist, taxon_key: "/ioc/v1/pasdom")
 
-    {:ok, _show_live, html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, _show_live, html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert html =~ "Checklist ##{checklist.id}"
     assert html =~ "Undefined taxon!"
@@ -219,7 +219,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
     taxon = Ornitho.Factory.insert(:taxon, category: "species")
     obs = insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     assert has_element?(show_live, "#observation-#{obs.id}-no-species-page")
   end
@@ -229,7 +229,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
     {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
     obs = insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     refute has_element?(show_live, "#observation-#{obs.id}-no-species-page")
   end
@@ -239,7 +239,7 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
     taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
     obs = insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-    {:ok, show_live, _html} = live(conn, ~p"/my/cards/#{checklist.id}")
+    {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
 
     refute has_element?(show_live, "#observation-#{obs.id}-no-species-page")
   end

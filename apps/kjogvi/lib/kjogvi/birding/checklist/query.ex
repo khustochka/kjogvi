@@ -7,16 +7,16 @@ defmodule Kjogvi.Birding.Checklist.Query do
 
   alias Kjogvi.Geo
 
-  def as_card(query) do
+  def as_checklist(query) do
     from c in query, as: :checklist
   end
 
   @doc """
   Maps the given checklist ids to their `{inserted_at, updated_at}` timestamps.
   """
-  def timestamps_by_id(card_ids) do
+  def timestamps_by_id(checklist_ids) do
     from c in Kjogvi.Birding.Checklist,
-      where: c.id in ^card_ids,
+      where: c.id in ^checklist_ids,
       select: {c.id, {c.inserted_at, c.updated_at}}
   end
 

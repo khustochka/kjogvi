@@ -12,11 +12,11 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
   end
 
   defp page(user, filter) do
-    Birding.search_cards(user, filter, %{page: 1, page_size: 50})
+    Birding.search_checklists(user, filter, %{page: 1, page_size: 50})
   end
 
-  describe "search_cards/3 — checklist mode" do
-    test "returns all cards when filter is blank, with observations left unloaded" do
+  describe "search_checklists/3 — checklist mode" do
+    test "returns all checklists when filter is blank, with observations left unloaded" do
       user = user_fixture()
       checklist = insert(:checklist, user: user)
       insert(:observation, checklist: checklist, taxon_key: species_key())
@@ -54,13 +54,13 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
       assert entry.id == match.id
     end
 
-    test "with include_subregions, matches cards in descendant locations" do
+    test "with include_subregions, matches checklists in descendant locations" do
       user = user_fixture()
       parent = insert(:country)
       child = insert(:location, location_type: "city", country: parent)
 
-      parent_card = insert(:checklist, user: user, location: parent)
-      child_card = insert(:checklist, user: user, location: child)
+      parent_checklist = insert(:checklist, user: user, location: parent)
+      child_checklist = insert(:checklist, user: user, location: child)
 
       ids =
         page(user, %Filter{location: parent, include_subregions: true})
@@ -68,12 +68,12 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
         |> Enum.map(& &1.id)
         |> Enum.sort()
 
-      assert ids == Enum.sort([parent_card.id, child_card.id])
+      assert ids == Enum.sort([parent_checklist.id, child_checklist.id])
     end
   end
 
-  describe "search_cards/3 — observation mode" do
-    test "returns only cards that have a matching observation" do
+  describe "search_checklists/3 — observation mode" do
+    test "returns only checklists that have a matching observation" do
       user = user_fixture()
       key = species_key()
 
@@ -159,11 +159,11 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
       assert obs.id == hidden.id
     end
 
-    test "does not return cards from other users" do
+    test "does not return checklists from other users" do
       user = user_fixture()
       other = user_fixture()
-      other_card = insert(:checklist, user: other)
-      insert(:observation, checklist: other_card, taxon_key: species_key(), hidden: true)
+      other_checklist = insert(:checklist, user: other)
+      insert(:observation, checklist: other_checklist, taxon_key: species_key(), hidden: true)
 
       assert page(user, %Filter{hidden: true}).entries == []
     end

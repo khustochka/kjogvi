@@ -9,8 +9,8 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         [:kjogvi, :legacy, :import, :locations, :start],
         [:kjogvi, :legacy, :import, :locations, :progress],
         [:kjogvi, :legacy, :import, :locations, :after_import, :start],
-        [:kjogvi, :legacy, :import, :cards, :start],
-        [:kjogvi, :legacy, :import, :cards, :progress],
+        [:kjogvi, :legacy, :import, :checklists, :start],
+        [:kjogvi, :legacy, :import, :checklists, :progress],
         [:kjogvi, :legacy, :import, :observations, :start],
         [:kjogvi, :legacy, :import, :observations, :progress],
         [:kjogvi, :legacy, :import, :observations, :after_import, :start],
@@ -40,7 +40,7 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         %{broadcast_key: broadcast_key} = _metadata,
         _config
       )
-      when object_type in [:locations, :cards, :observations, :images] do
+      when object_type in [:locations, :checklists, :observations, :images] do
     broadcast(
       broadcast_key,
       %{message: "Importing #{Atom.to_string(object_type)}..."}
@@ -77,7 +77,7 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
         %{broadcast_key: broadcast_key} = _metadata,
         _config
       )
-      when object_type in [:locations, :cards, :observations, :images] do
+      when object_type in [:locations, :checklists, :observations, :images] do
     broadcast(
       broadcast_key,
       %{message: "Importing #{Atom.to_string(object_type)}... #{count}"}

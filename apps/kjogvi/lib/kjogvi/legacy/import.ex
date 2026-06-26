@@ -46,7 +46,7 @@ defmodule Kjogvi.Legacy.Import do
           fn ->
             with :ok <- prepare_import(opts),
                  :ok <- perform_import(:locations, opts),
-                 :ok <- perform_import(:cards, opts),
+                 :ok <- perform_import(:checklists, opts),
                  :ok <- perform_import(:observations, opts),
                  # Images are imported last: they link back to observations
                  # (see Kjogvi.Legacy.Import.Images).
@@ -74,7 +74,7 @@ defmodule Kjogvi.Legacy.Import do
       result =
         with {:ok, _} <- Kjogvi.Legacy.Import.Images.cleanup(),
              {:ok, _} <- Kjogvi.Legacy.Import.Observations.cleanup(),
-             {:ok, _} <- Kjogvi.Legacy.Import.Cards.cleanup(),
+             {:ok, _} <- Kjogvi.Legacy.Import.Checklists.cleanup(),
              {:ok, _} <- Kjogvi.Legacy.Import.Locations.cleanup() do
           :ok
         end
@@ -144,8 +144,8 @@ defmodule Kjogvi.Legacy.Import do
     Kjogvi.Legacy.Import.Locations.import(columns, rows, opts)
   end
 
-  defp put_loaded(:cards, columns, rows, opts) do
-    Kjogvi.Legacy.Import.Cards.import(columns, rows, opts)
+  defp put_loaded(:checklists, columns, rows, opts) do
+    Kjogvi.Legacy.Import.Checklists.import(columns, rows, opts)
   end
 
   defp put_loaded(:observations, columns, rows, opts) do
@@ -160,7 +160,7 @@ defmodule Kjogvi.Legacy.Import do
     :ok
   end
 
-  defp after_import(:cards, _opts) do
+  defp after_import(:checklists, _opts) do
     :ok
   end
 

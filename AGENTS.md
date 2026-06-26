@@ -82,7 +82,7 @@ Keep query-building out of context modules. Each schema has a dedicated `<Schema
 Prefer `:telemetry` for cross-cutting concerns: emit `:telemetry` events for logging and for lifecycle / domain events, and attach handlers (or PubSub broadcasts) to react to them — rather than threading logging and side-effects directly through business logic. This keeps contexts focused on their core work and observable from the outside.
 
 ### Birding Data
-[`Kjogvi.Birding`](./apps/kjogvi/lib/kjogvi/birding.ex) is the cards-and-observations context. A `Checklist` is a checklist — one dated visit at a `Location` (effort, weather, observers, …) — that `has_many` `Observation`s, each recording a taxon seen. Checklists are user-owned.
+[`Kjogvi.Birding`](./apps/kjogvi/lib/kjogvi/birding.ex) is the checklists-and-observations context. A `Checklist` is a checklist — one dated visit at a `Location` (effort, weather, observers, …) — that `has_many` `Observation`s, each recording a taxon seen. Checklists are user-owned.
 
 ### Locations
 Locations live in [`Kjogvi.Geo`](./apps/kjogvi/lib/kjogvi/geo.ex), with the [`Location`](./apps/kjogvi/lib/kjogvi/geo/location.ex) schema and its [`Location.Query`](./apps/kjogvi/lib/kjogvi/geo/location/query.ex) module. Every location has a required `location_type` and is either **user-belonging** (a `user_id` owner, managed by and private to that user) or **common** (a `nil` owner, shared across all users — see `Query.for_user/2`). The intended split: `country` and `subdivision1` are common, everything below is user-belonging; lower-level common locations (counties, cities, hotspots) may be added over time.

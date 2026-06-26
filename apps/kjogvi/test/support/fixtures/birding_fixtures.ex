@@ -8,7 +8,7 @@ defmodule Kjogvi.BirdingFixtures do
   alias Kjogvi.Repo
   alias Kjogvi.AccountsFixtures
 
-  def valid_card_attributes(attrs \\ %{}) do
+  def valid_checklist_attributes(attrs \\ %{}) do
     user = attrs[:user] || AccountsFixtures.user_fixture()
 
     Enum.into(attrs, %{
@@ -24,10 +24,10 @@ defmodule Kjogvi.BirdingFixtures do
     })
   end
 
-  def card_fixture(attrs \\ %{}) do
+  def checklist_fixture(attrs \\ %{}) do
     {:ok, checklist} =
       attrs
-      |> valid_card_attributes()
+      |> valid_checklist_attributes()
       |> then(&Repo.insert(%Checklist{} |> Checklist.changeset(&1)))
 
     checklist

@@ -175,7 +175,7 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     refute is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, parent.id))
   end
 
-  test "deleting a location with cards fails with an error and keeps it",
+  test "deleting a location with checklists fails with an error and keeps it",
        %{conn: conn, user: user} do
     location =
       insert(:location, name_en: "With Checklists", location_type: "city", user_id: user.id)
@@ -188,7 +188,7 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     |> element("button[phx-click='delete'][phx-value-id='#{location.id}']")
     |> render_click()
 
-    assert has_element?(index_live, "#location-delete-error-#{location.id}", "cards")
+    assert has_element?(index_live, "#location-delete-error-#{location.id}", "checklists")
     refute is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, location.id))
   end
 

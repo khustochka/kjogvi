@@ -106,7 +106,7 @@ defmodule Kjogvi.Images.Image do
     # write the column.
     |> force_change(:multi_species, length(observations) > 1)
     |> validate_at_least_one(observations)
-    |> validate_same_card(observations)
+    |> validate_same_checklist(observations)
   end
 
   # Temporary product rule: every image must be linked to at least one
@@ -118,9 +118,9 @@ defmodule Kjogvi.Images.Image do
 
   defp validate_at_least_one(changeset, _observations), do: changeset
 
-  defp validate_same_card(changeset, observations) do
-    case observations |> Enum.map(& &1.card_id) |> Enum.uniq() do
-      cards when length(cards) <= 1 ->
+  defp validate_same_checklist(changeset, observations) do
+    case observations |> Enum.map(& &1.checklist_id) |> Enum.uniq() do
+      checklists when length(checklists) <= 1 ->
         changeset
 
       _ ->

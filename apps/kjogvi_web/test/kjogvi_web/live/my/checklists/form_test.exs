@@ -51,44 +51,44 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "renders new checklist form", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, "/my/cards/new")
+      {:ok, _lv, html} = live(conn, "/my/checklists/new")
       assert html =~ "New Checklist"
     end
 
     test "renders breadcrumbs on new checklist form", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       assert has_element?(lv, "#checklist-breadcrumbs")
       assert has_element?(lv, "#checklist-breadcrumbs a", "Checklists")
     end
 
     test "renders location field with type=search", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, "/my/cards/new")
+      {:ok, _lv, html} = live(conn, "/my/checklists/new")
       assert html =~ "Location"
       assert html =~ "type=\"search\""
     end
 
     test "renders location search as hidden input for ID storage", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, "/my/cards/new")
+      {:ok, _lv, html} = live(conn, "/my/checklists/new")
       assert html =~ "checklist[location_id]"
       assert html =~ "type=\"hidden\""
     end
 
     test "renders empty observation form", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       assert has_element?(lv, "label", "Taxon")
       assert has_element?(lv, "label", "Quantity")
     end
 
     test "renders observation section with add button", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, "/my/cards/new")
+      {:ok, _lv, html} = live(conn, "/my/checklists/new")
       assert html =~ "Observations"
       assert html =~ "Add Observation"
     end
 
     test "can add more observation forms", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       lv |> element("button", "Add Observation") |> render_click()
 
@@ -100,7 +100,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "can remove new observations immediately", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       assert has_element?(lv, ~s(button[aria-label="Remove observation"]))
 
@@ -112,7 +112,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "taxon input has type=search", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       lv |> element("button", "Add Observation") |> render_click()
 
@@ -122,7 +122,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "observation has hidden field for taxon_key", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       lv |> element("button", "Add Observation") |> render_click()
 
@@ -132,7 +132,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "can add multiple observations", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       lv |> element("button", "Add Observation") |> render_click()
       lv |> element("button", "Add Observation") |> render_click()
@@ -141,7 +141,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "renders Resolved checkbox checked by default on new checklist", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       assert has_element?(lv, "label", "Resolved")
       assert has_element?(lv, "input#checklist_resolved[type=checkbox][checked]")
@@ -149,7 +149,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
 
     test "location search results display with dropdown styling", %{conn: conn} do
       _location = GeoFixtures.location_fixture(name_en: "Central Park")
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       html = lv |> element("#location_search") |> render_keyup(%{"value" => "Central"})
       assert html =~ "<strong>Central</strong> Park"
@@ -157,7 +157,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
 
     test "can select location from search results", %{conn: conn} do
       _location = GeoFixtures.location_fixture(name_en: "Central Park")
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       lv |> element("#location_search") |> render_keyup(%{"value" => "Central"})
       lv |> element("#location_search-result-0") |> render_click()
@@ -184,7 +184,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
           user_id: AccountsFixtures.user_fixture().id
         )
 
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
       html = lv |> element("#location_search") |> render_keyup(%{"value" => "Park"})
 
       assert html =~ "Owned"
@@ -196,7 +196,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       _regular = GeoFixtures.location_fixture(name_en: "Regular Park", location_type: "city")
       _special = GeoFixtures.location_fixture(name_en: "Special Park", location_type: "special")
 
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
       html = lv |> element("#location_search") |> render_keyup(%{"value" => "Park"})
 
       assert html =~ "Regular"
@@ -275,7 +275,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       conn: conn,
       location: location
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Search for location
       html1 = lv |> element("#location_search") |> render_keyup(%{"value" => "Test"})
@@ -300,7 +300,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       user: user,
       location: location
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Select location via autocomplete
       search_and_select_location(lv, "Test")
@@ -319,16 +319,16 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Verify checklist was created
-      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
-      assert cards.entries != []
+      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      assert checklists.entries != []
 
       # Verify the most recent checklist has the selected location
-      checklist = List.first(cards.entries)
+      checklist = List.first(checklists.entries)
       assert checklist.location_id == location.id
     end
 
     test "saves checklist as resolved by default", %{conn: conn, user: user, location: location} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       search_and_select_location(lv, "Test")
 
@@ -344,7 +344,10 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       checklist =
-        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+        user
+        |> Birding.get_checklists(%{page: 1, page_size: 50})
+        |> Map.get(:entries)
+        |> List.first()
 
       assert checklist.resolved == true
     end
@@ -354,7 +357,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       user: user,
       location: location
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       search_and_select_location(lv, "Test")
 
@@ -370,7 +373,10 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       checklist =
-        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+        user
+        |> Birding.get_checklists(%{page: 1, page_size: 50})
+        |> Map.get(:entries)
+        |> List.first()
 
       assert checklist.resolved == false
     end
@@ -380,7 +386,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       user: user,
       location: location
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       refute has_element?(lv, ~s(input[name="checklist[ebird_complete]"][value="true"][checked]))
       refute has_element?(lv, ~s(input[name="checklist[ebird_complete]"][value="false"][checked]))
@@ -398,7 +404,10 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       checklist =
-        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+        user
+        |> Birding.get_checklists(%{page: 1, page_size: 50})
+        |> Map.get(:entries)
+        |> List.first()
 
       assert checklist.ebird_complete == nil
     end
@@ -408,7 +417,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       user: user,
       location: location
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       search_and_select_location(lv, "Test")
 
@@ -424,7 +433,10 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       checklist =
-        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+        user
+        |> Birding.get_checklists(%{page: 1, page_size: 50})
+        |> Map.get(:entries)
+        |> List.first()
 
       assert checklist.ebird_complete == true
     end
@@ -434,7 +446,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       user: user,
       location: location
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       search_and_select_location(lv, "Test")
 
@@ -450,7 +462,10 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       checklist =
-        user |> Birding.get_cards(%{page: 1, page_size: 50}) |> Map.get(:entries) |> List.first()
+        user
+        |> Birding.get_checklists(%{page: 1, page_size: 50})
+        |> Map.get(:entries)
+        |> List.first()
 
       assert checklist.ebird_complete == false
     end
@@ -494,7 +509,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "can save checklist with observations", %{conn: conn, user: user, location: location} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Select location
       search_and_select_location(lv, "Test")
@@ -523,18 +538,18 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Verify checklist and observation were created
-      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
-      assert cards.entries != []
+      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      assert checklists.entries != []
 
-      checklist = List.first(cards.entries)
+      checklist = List.first(checklists.entries)
       assert checklist.location_id == location.id
 
-      loaded_card = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
-      loaded_card = Kjogvi.Repo.preload(loaded_card, :observations)
+      loaded_checklist = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
+      loaded_checklist = Kjogvi.Repo.preload(loaded_checklist, :observations)
 
-      assert length(loaded_card.observations) == 1
+      assert length(loaded_checklist.observations) == 1
 
-      observation = List.first(loaded_card.observations)
+      observation = List.first(loaded_checklist.observations)
       assert observation.taxon_key == "/ebird/v2024/comred"
       assert observation.quantity == "1"
     end
@@ -544,7 +559,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       user: user,
       location: location
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Select location
       search_and_select_location(lv, "Test")
@@ -580,15 +595,15 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Verify both observations were created
-      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
-      checklist = List.first(cards.entries)
+      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      checklist = List.first(checklists.entries)
 
-      loaded_card = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
-      loaded_card = Kjogvi.Repo.preload(loaded_card, :observations)
+      loaded_checklist = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
+      loaded_checklist = Kjogvi.Repo.preload(loaded_checklist, :observations)
 
-      assert length(loaded_card.observations) == 2
+      assert length(loaded_checklist.observations) == 2
 
-      observations = loaded_card.observations
+      observations = loaded_checklist.observations
       assert Enum.any?(observations, &(&1.taxon_key == "/ebird/v2024/comred"))
       assert Enum.any?(observations, &(&1.taxon_key == "/ebird/v2024/eurwie"))
 
@@ -597,7 +612,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "select_taxon event updates form and shows display name", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Add observation
       lv |> element("button", "Add Observation") |> render_click()
@@ -616,7 +631,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "multiple observations can have different taxa selected via UI", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Add two observations
       lv |> element("button", "Add Observation") |> render_click()
@@ -638,7 +653,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "removing new observation preserves remaining taxa", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Add three observations
       lv |> element("button", "Add Observation") |> render_click()
@@ -678,7 +693,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       location2 = GeoFixtures.location_fixture(name_en: "New Park")
 
       checklist =
-        Kjogvi.BirdingFixtures.card_fixture(%{
+        Kjogvi.BirdingFixtures.checklist_fixture(%{
           user: user,
           location_id: location1.id,
           observ_date: ~D[2026-01-15],
@@ -693,7 +708,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       conn: conn,
       checklist: checklist
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/#{checklist.id}/edit")
+      {:ok, lv, _html} = live(conn, "/my/checklists/#{checklist.id}/edit")
 
       assert has_element?(lv, "#checklist-breadcrumbs")
       assert has_element?(lv, "#checklist-breadcrumbs a", "Checklists")
@@ -706,7 +721,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       location1: location1,
       location2: location2
     } do
-      {:ok, lv, html} = live(conn, "/my/cards/#{checklist.id}/edit")
+      {:ok, lv, html} = live(conn, "/my/checklists/#{checklist.id}/edit")
 
       # Verify we're on the edit page with original location
       assert html =~ "Edit Checklist"
@@ -727,9 +742,9 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Verify checklist was updated
-      updated_card = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
-      assert updated_card.location_id == location2.id
-      refute updated_card.location_id == location1.id
+      updated_checklist = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
+      assert updated_checklist.location_id == location2.id
+      refute updated_checklist.location_id == location1.id
     end
 
     test "can edit checklist and add new observations", %{
@@ -737,7 +752,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       checklist: checklist,
       location1: location1
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/#{checklist.id}/edit")
+      {:ok, lv, _html} = live(conn, "/my/checklists/#{checklist.id}/edit")
 
       # Add two observations
       lv |> element("button", "Add Observation") |> render_click()
@@ -765,12 +780,12 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Verify observations were saved
-      updated_card = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
-      updated_card = Kjogvi.Repo.preload(updated_card, :observations)
+      updated_checklist = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
+      updated_checklist = Kjogvi.Repo.preload(updated_checklist, :observations)
 
-      assert length(updated_card.observations) == 2
-      assert Enum.any?(updated_card.observations, &(&1.taxon_key == "/ebird/v2024/houspa"))
-      assert Enum.any?(updated_card.observations, &(&1.taxon_key == "/ebird/v2024/comred"))
+      assert length(updated_checklist.observations) == 2
+      assert Enum.any?(updated_checklist.observations, &(&1.taxon_key == "/ebird/v2024/houspa"))
+      assert Enum.any?(updated_checklist.observations, &(&1.taxon_key == "/ebird/v2024/comred"))
     end
 
     test "toggling a checkbox does not crash when start time has seconds", %{
@@ -778,14 +793,14 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       checklist: checklist,
       location1: location1
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/#{checklist.id}/edit")
+      {:ok, lv, _html} = live(conn, "/my/checklists/#{checklist.id}/edit")
 
       # An existing checklist's start_time renders with seconds in some browsers
       # ("08:00:00"). A phx-change (e.g. a checkbox toggle) must not crash while
       # parsing it back into a Time.
       html =
         lv
-        |> render_change("sync_card", %{
+        |> render_change("sync_checklist", %{
           "checklist" => %{
             "observ_date" => "2026-01-15",
             "effort_type" => "STATIONARY",
@@ -803,7 +818,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       conn: conn,
       checklist: checklist
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/#{checklist.id}/edit")
+      {:ok, lv, _html} = live(conn, "/my/checklists/#{checklist.id}/edit")
 
       assert has_element?(lv, ~s(input#checklist_start_time[type="time"][value="08:00"]))
     end
@@ -816,12 +831,12 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       # Add an observation to the existing checklist
       {:ok, obs} =
         Kjogvi.Repo.insert(%Kjogvi.Birding.Observation{
-          card_id: checklist.id,
+          checklist_id: checklist.id,
           taxon_key: "/ebird/v2024/houspa",
           quantity: "1"
         })
 
-      {:ok, lv, _html} = live(conn, "/my/cards/#{checklist.id}/edit")
+      {:ok, lv, _html} = live(conn, "/my/checklists/#{checklist.id}/edit")
 
       # Submit with updated observation (including the ID)
       form_data = %{
@@ -853,12 +868,12 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       # Add an observation to the existing checklist
       {:ok, _obs} =
         Kjogvi.Repo.insert(%Kjogvi.Birding.Observation{
-          card_id: checklist.id,
+          checklist_id: checklist.id,
           taxon_key: "/ebird/v2024/houspa",
           quantity: "1"
         })
 
-      {:ok, lv, _html} = live(conn, "/my/cards/#{checklist.id}/edit")
+      {:ok, lv, _html} = live(conn, "/my/checklists/#{checklist.id}/edit")
 
       # Existing observation should have Remove button
       assert has_element?(lv, ~s(button[aria-label="Remove observation"]))
@@ -889,7 +904,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "submit button has phx-disable-with attribute", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       assert has_element?(lv, ~s(button[type="submit"][phx-disable-with]))
     end
@@ -899,7 +914,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       user: user,
       location: location
     } do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       search_and_select_location(lv, "Test")
 
@@ -916,11 +931,11 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       # First submit navigates away from the form
       lv |> render_submit("save", form_data)
       {path, _flash} = assert_redirect(lv)
-      assert path =~ ~r"/my/cards/\d+"
+      assert path =~ ~r"/my/checklists/\d+"
 
       # Only one checklist was created
-      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
-      assert length(cards.entries) == 1
+      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      assert length(checklists.entries) == 1
     end
   end
 
@@ -947,7 +962,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "shows error message when location is missing", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Submit form without location
       form_data = %{
@@ -964,7 +979,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "can add observations after validation failure", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Add first observation and select taxon
       lv |> element("button", "Add Observation") |> render_click()
@@ -1006,7 +1021,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     end
 
     test "preserves observations after validation failure", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Add two observations
       lv |> element("button", "Add Observation") |> render_click()
@@ -1043,7 +1058,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
 
     test "empty observation rows are ignored on save", %{conn: conn, user: user} do
       location = GeoFixtures.location_fixture(name_en: "Test Park")
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Select location
       search_and_select_location(lv, "Test")
@@ -1071,19 +1086,19 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Checklist saved with only the filled observation
-      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
-      checklist = List.first(cards.entries)
+      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      checklist = List.first(checklists.entries)
 
-      loaded_card =
+      loaded_checklist =
         Kjogvi.Repo.preload(Kjogvi.Repo.get!(Birding.Checklist, checklist.id), :observations)
 
-      assert length(loaded_card.observations) == 1
-      assert List.first(loaded_card.observations).taxon_key == "/ebird/v2024/houspa"
+      assert length(loaded_checklist.observations) == 1
+      assert List.first(loaded_checklist.observations).taxon_key == "/ebird/v2024/houspa"
     end
 
     test "partially filled observation shows taxon_key error", %{conn: conn} do
       location = GeoFixtures.location_fixture(name_en: "Test Park")
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       # Select location
       search_and_select_location(lv, "Test")
@@ -1112,7 +1127,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
 
     test "rejects a special location on save", %{conn: conn, user: user} do
       special = GeoFixtures.location_fixture(name_en: "Special Park", location_type: "special")
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       form_data = %{
         "checklist" => %{
@@ -1125,12 +1140,12 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       html = lv |> render_submit("save", form_data)
 
       assert html =~ "is not available"
-      assert Birding.get_cards(user, %{page: 1, page_size: 50}).entries == []
+      assert Birding.get_checklists(user, %{page: 1, page_size: 50}).entries == []
     end
 
     test "checklist with no observations saves successfully", %{conn: conn, user: user} do
       location = GeoFixtures.location_fixture(name_en: "Test Park")
-      {:ok, lv, _html} = live(conn, "/my/cards/new")
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
 
       search_and_select_location(lv, "Test")
 
@@ -1146,8 +1161,8 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
 
       lv |> render_submit("save", form_data)
 
-      cards = Birding.get_cards(user, %{page: 1, page_size: 50})
-      assert cards.entries != []
+      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      assert checklists.entries != []
     end
   end
 end

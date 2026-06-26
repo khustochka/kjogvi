@@ -189,7 +189,7 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
         Images.search_observations_for_image(user, %{
           query: query,
           # Once a checklist is locked in, search only it; otherwise scope by date.
-          card_id: locked_card_id(selected),
+          checklist_id: locked_checklist_id(selected),
           date: date
         })
       end
@@ -218,8 +218,8 @@ defmodule KjogviWeb.Live.Components.ImageObservations do
 
   # The checklist of the first selected observation (all picks share one checklist). `nil`
   # when nothing is selected yet.
-  defp locked_card_id([%{card_id: card_id} | _]), do: card_id
-  defp locked_card_id(_), do: nil
+  defp locked_checklist_id([%{checklist_id: checklist_id} | _]), do: checklist_id
+  defp locked_checklist_id(_), do: nil
 
   defp locked_date([%{checklist: %{observ_date: %Date{} = date}} | _]), do: date
   defp locked_date(_), do: nil

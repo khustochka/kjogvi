@@ -48,7 +48,7 @@ defmodule KjogviWeb.Live.My.Images.ShowTest do
     {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}")
 
     assert has_element?(live, "#observation-#{obs.id}")
-    assert has_element?(live, "a[href='/my/cards/#{checklist.id}']")
+    assert has_element?(live, "a[href='/my/checklists/#{checklist.id}']")
   end
 
   test "deleting navigates back to the gallery", %{conn: conn, user: user} do

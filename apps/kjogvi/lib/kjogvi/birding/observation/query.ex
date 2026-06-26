@@ -44,8 +44,8 @@ defmodule Kjogvi.Birding.Observation.Query do
   defp maybe_exclude_hidden(query, :private), do: query
   defp maybe_exclude_hidden(query, :public), do: exclude_hidden(query)
 
-  def by_card(query, %{id: card_id}) do
-    where(query, [o], o.card_id == ^card_id)
+  def by_checklist(query, %{id: checklist_id}) do
+    where(query, [o], o.checklist_id == ^checklist_id)
   end
 
   def exclude_heard_only(query) do

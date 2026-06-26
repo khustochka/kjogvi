@@ -74,14 +74,14 @@ defmodule Kjogvi.Search.TaxonTest do
 
       # Create observations: Great Bustard observed 5 times, Great Tit observed 1 time
       for _ <- 1..5 do
-        BirdingFixtures.card_fixture(%{
+        BirdingFixtures.checklist_fixture(%{
           user: user,
           location_id: location.id,
           observations: [%{taxon_key: "/ebird/v2024/grebut1"}]
         })
       end
 
-      BirdingFixtures.card_fixture(%{
+      BirdingFixtures.checklist_fixture(%{
         user: user,
         location_id: location.id,
         observations: [%{taxon_key: "/ebird/v2024/gretit1"}]
@@ -267,7 +267,7 @@ defmodule Kjogvi.Search.TaxonTest do
 
       location = GeoFixtures.location_fixture()
 
-      BirdingFixtures.card_fixture(%{
+      BirdingFixtures.checklist_fixture(%{
         user: user,
         location_id: location.id,
         observations: [%{taxon_key: "/ebird/v2024/eurwre1"}]

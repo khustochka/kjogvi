@@ -53,7 +53,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
   @no_observations_message "Please attach at least one observation."
 
   # Shown when staged observations can't be linked at all (foreign ids, or ids
-  # spanning different cards) — normally unreachable through the picker UI, so
+  # spanning different checklists) — normally unreachable through the picker UI, so
   # this is the backstop for a tampered request.
   @observations_invalid_message "Those observations couldn't be attached. They must be your own and from a single checklist."
 
@@ -99,7 +99,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
     |> assign(:replacing?, true)
     # Until a file is uploaded there is no EXIF date, so seed the picker with the
     # user's most recent checklist date; the EXIF date replaces it on upload.
-    |> assign(:observation_date, Kjogvi.Birding.last_card_date(user))
+    |> assign(:observation_date, Kjogvi.Birding.last_checklist_date(user))
     |> assign_form(%{"sort_order" => 100})
   end
 
@@ -534,7 +534,7 @@ defmodule KjogviWeb.Live.My.Images.Form do
   defp default_observation_date(user, image, []) do
     case Image.exif_date(image) do
       %NaiveDateTime{} = naive -> NaiveDateTime.to_date(naive)
-      _ -> Kjogvi.Birding.last_card_date(user)
+      _ -> Kjogvi.Birding.last_checklist_date(user)
     end
   end
 

@@ -71,8 +71,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
       {:error, :has_children} ->
         {:noreply, row_delete_error(socket, location.id, "Has sub-locations — can't delete")}
 
-      {:error, :has_cards} ->
-        {:noreply, row_delete_error(socket, location.id, "Has cards — can't delete")}
+      {:error, :has_checklists} ->
+        {:noreply, row_delete_error(socket, location.id, "Has checklists — can't delete")}
 
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, "You can only delete your own locations")}

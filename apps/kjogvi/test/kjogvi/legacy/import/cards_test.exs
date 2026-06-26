@@ -1,14 +1,14 @@
-defmodule Kjogvi.Legacy.Import.CardsTest do
-  # Not async: `Cards.import/3` calls `setval('cards_id_seq', ...)`, which is a
+defmodule Kjogvi.Legacy.Import.ChecklistsTest do
+  # Not async: `Checklists.import/3` calls `setval('checklists_id_seq', ...)`, which is a
   # non-transactional, database-global side effect that the SQL sandbox cannot
   # roll back or isolate. Running concurrently with other tests that draw from
-  # the same sequence caused intermittent `cards_pkey` violations.
+  # the same sequence caused intermittent `checklists_pkey` violations.
   use Kjogvi.DataCase, async: false
 
   import Kjogvi.Factory
 
   alias Kjogvi.Birding.Checklist
-  alias Kjogvi.Legacy.Import.Cards
+  alias Kjogvi.Legacy.Import.Checklists
   alias Kjogvi.Repo
 
   @columns [
@@ -43,21 +43,21 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
   end
 
   describe "import/3" do
-    test "marks imported cards with the :legacy import source" do
+    test "marks imported checklists with the :legacy import source" do
       user = Kjogvi.AccountsFixtures.user_fixture()
       location = insert(:location)
 
-      Cards.import(@columns, [row(%{"id" => 1, "locus_id" => location.id})], user: user)
+      Checklists.import(@columns, [row(%{"id" => 1, "locus_id" => location.id})], user: user)
 
       [checklist] = Repo.all(Checklist)
       assert checklist.import_source == :legacy
     end
 
-    test "keeps the original id of imported cards" do
+    test "keeps the original id of imported checklists" do
       user = Kjogvi.AccountsFixtures.user_fixture()
       location = insert(:location)
 
-      Cards.import(@columns, [row(%{"id" => 42, "locus_id" => location.id})], user: user)
+      Checklists.import(@columns, [row(%{"id" => 42, "locus_id" => location.id})], user: user)
 
       [checklist] = Repo.all(Checklist)
       assert checklist.id == 42
@@ -67,21 +67,21 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
       user = Kjogvi.AccountsFixtures.user_fixture()
       location = insert(:location)
 
-      Cards.import(@columns, [row(%{"id" => 1, "locus_id" => location.id})], user: user)
+      Checklists.import(@columns, [row(%{"id" => 1, "locus_id" => location.id})], user: user)
 
       [checklist] = Repo.all(Checklist)
       assert checklist.notes == "kept"
       assert checklist.weather == nil
     end
 
-    test "advances the id sequence past @min_start_seq for new cards" do
+    test "advances the id sequence past @min_start_seq for new checklists" do
       user = Kjogvi.AccountsFixtures.user_fixture()
       location = insert(:location)
 
-      Cards.import(@columns, [row(%{"id" => 42, "locus_id" => location.id})], user: user)
+      Checklists.import(@columns, [row(%{"id" => 42, "locus_id" => location.id})], user: user)
 
-      next_card = insert(:checklist, user: user)
-      assert next_card.id >= 20_000
+      next_checklist = insert(:checklist, user: user)
+      assert next_checklist.id >= 20_000
     end
   end
 end

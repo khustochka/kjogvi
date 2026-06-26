@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 3ni14A5uMDOJKnyIAYlg3dT6hTFPd8yqD4Z7atwgOHfb4ISIlokdRaVf0hvw6qT
+\restrict 44TdHz6g5tAffNQVLhsFzJAXUyh5Nc98b9fxt9cahHhrOcjPkfLxPcrzHuPuePa
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -52,10 +52,10 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: cards; Type: TABLE; Schema: public; Owner: -
+-- Name: checklists; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.cards (
+CREATE TABLE public.checklists (
     id bigint NOT NULL,
     observ_date date NOT NULL,
     location_id bigint NOT NULL,
@@ -84,10 +84,10 @@ CREATE TABLE public.cards (
 
 
 --
--- Name: cards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: checklists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.cards_id_seq
+CREATE SEQUENCE public.checklists_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -96,10 +96,10 @@ CREATE SEQUENCE public.cards_id_seq
 
 
 --
--- Name: cards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: checklists_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.cards_id_seq OWNED BY public.cards.id;
+ALTER SEQUENCE public.checklists_id_seq OWNED BY public.checklists.id;
 
 
 --
@@ -228,7 +228,7 @@ ALTER SEQUENCE public.locations_id_seq OWNED BY public.locations.id;
 
 CREATE TABLE public.observations (
     id bigint NOT NULL,
-    card_id bigint NOT NULL,
+    checklist_id bigint NOT NULL,
     taxon_key character varying(255) NOT NULL,
     quantity character varying(255),
     voice boolean DEFAULT false NOT NULL,
@@ -444,10 +444,10 @@ ALTER SEQUENCE public.users_tokens_id_seq OWNED BY public.users_tokens.id;
 
 
 --
--- Name: cards id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: checklists id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cards ALTER COLUMN id SET DEFAULT nextval('public.cards_id_seq'::regclass);
+ALTER TABLE ONLY public.checklists ALTER COLUMN id SET DEFAULT nextval('public.checklists_id_seq'::regclass);
 
 
 --
@@ -514,11 +514,11 @@ ALTER TABLE ONLY public.users_tokens ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- Name: cards cards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: checklists checklists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cards
-    ADD CONSTRAINT cards_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.checklists
+    ADD CONSTRAINT checklists_pkey PRIMARY KEY (id);
 
 
 --
@@ -602,45 +602,45 @@ ALTER TABLE ONLY public.users_tokens
 
 
 --
--- Name: cards_cached_month_index; Type: INDEX; Schema: public; Owner: -
+-- Name: checklists_cached_month_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cards_cached_month_index ON public.cards USING btree (cached_month);
-
-
---
--- Name: cards_cached_year_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX cards_cached_year_index ON public.cards USING btree (cached_year);
+CREATE INDEX checklists_cached_month_index ON public.checklists USING btree (cached_month);
 
 
 --
--- Name: cards_ebird_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: checklists_cached_year_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX cards_ebird_id_index ON public.cards USING btree (ebird_id) WHERE (ebird_id IS NOT NULL);
-
-
---
--- Name: cards_location_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX cards_location_id_index ON public.cards USING btree (location_id);
+CREATE INDEX checklists_cached_year_index ON public.checklists USING btree (cached_year);
 
 
 --
--- Name: cards_observ_date_location_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: checklists_ebird_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cards_observ_date_location_id_index ON public.cards USING btree (observ_date, location_id);
+CREATE UNIQUE INDEX checklists_ebird_id_index ON public.checklists USING btree (ebird_id) WHERE (ebird_id IS NOT NULL);
 
 
 --
--- Name: cards_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: checklists_location_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cards_user_id_index ON public.cards USING btree (user_id);
+CREATE INDEX checklists_location_id_index ON public.checklists USING btree (location_id);
+
+
+--
+-- Name: checklists_observ_date_location_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX checklists_observ_date_location_id_index ON public.checklists USING btree (observ_date, location_id);
+
+
+--
+-- Name: checklists_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX checklists_user_id_index ON public.checklists USING btree (user_id);
 
 
 --
@@ -742,10 +742,10 @@ CREATE UNIQUE INDEX locations_user_id_slug_index ON public.locations USING btree
 
 
 --
--- Name: observations_card_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: observations_checklist_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX observations_card_id_index ON public.observations USING btree (card_id);
+CREATE INDEX observations_checklist_id_index ON public.observations USING btree (checklist_id);
 
 
 --
@@ -833,19 +833,19 @@ CREATE INDEX users_tokens_user_id_index ON public.users_tokens USING btree (user
 
 
 --
--- Name: cards cards_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: checklists checklists_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cards
-    ADD CONSTRAINT cards_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+ALTER TABLE ONLY public.checklists
+    ADD CONSTRAINT checklists_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
 
 
 --
--- Name: cards cards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: checklists checklists_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cards
-    ADD CONSTRAINT cards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+ALTER TABLE ONLY public.checklists
+    ADD CONSTRAINT checklists_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
 
 
 --
@@ -921,11 +921,11 @@ ALTER TABLE ONLY public.locations
 
 
 --
--- Name: observations observations_card_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: observations observations_checklist_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.observations
-    ADD CONSTRAINT observations_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cards(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT observations_checklist_id_fkey FOREIGN KEY (checklist_id) REFERENCES public.checklists(id) ON DELETE RESTRICT;
 
 
 --
@@ -964,7 +964,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 3ni14A5uMDOJKnyIAYlg3dT6hTFPd8yqD4Z7atwgOHfb4ISIlokdRaVf0hvw6qT
+\unrestrict 44TdHz6g5tAffNQVLhsFzJAXUyh5Nc98b9fxt9cahHhrOcjPkfLxPcrzHuPuePa
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -998,3 +998,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260623120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260623130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260625120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260625130000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260626171732);

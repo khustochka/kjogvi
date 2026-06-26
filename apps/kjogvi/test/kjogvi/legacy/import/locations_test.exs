@@ -1,7 +1,7 @@
 defmodule Kjogvi.Legacy.Import.LocationsTest do
   # Not async: `Locations.import/3` calls `setval('locations_id_seq', ...)`, a
   # non-transactional, database-global side effect the SQL sandbox cannot
-  # roll back or isolate. See Kjogvi.Legacy.Import.CardsTest for details.
+  # roll back or isolate. See Kjogvi.Legacy.Import.ChecklistsTest for details.
   use Kjogvi.DataCase, async: false
 
   alias Kjogvi.Geo.Location

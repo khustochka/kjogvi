@@ -12,7 +12,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
 
       html =
         rendered_to_string(~H"""
-        <NavigationComponents.action_button navigate="/cards/new">
+        <NavigationComponents.action_button navigate="/checklists/new">
           New Checklist
         </NavigationComponents.action_button>
         """)
@@ -20,7 +20,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
       assert html =~ "New Checklist"
       assert html =~ "bg-blue-600"
       assert html =~ "text-white"
-      assert html =~ ~s(href="/cards/new")
+      assert html =~ ~s(href="/checklists/new")
     end
 
     test "renders a secondary action button" do
@@ -28,7 +28,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
 
       html =
         rendered_to_string(~H"""
-        <NavigationComponents.action_button navigate="/cards" variant="secondary">
+        <NavigationComponents.action_button navigate="/checklists" variant="secondary">
           Cancel
         </NavigationComponents.action_button>
         """)
@@ -43,7 +43,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
 
       html =
         rendered_to_string(~H"""
-        <NavigationComponents.action_button navigate="/cards/new" icon="hero-plus">
+        <NavigationComponents.action_button navigate="/checklists/new" icon="hero-plus">
           New Checklist
         </NavigationComponents.action_button>
         """)
@@ -57,7 +57,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
 
       html =
         rendered_to_string(~H"""
-        <NavigationComponents.action_button navigate="/cards">
+        <NavigationComponents.action_button navigate="/checklists">
           Cancel
         </NavigationComponents.action_button>
         """)
@@ -71,12 +71,12 @@ defmodule KjogviWeb.NavigationComponentsTest do
 
       html =
         rendered_to_string(~H"""
-        <NavigationComponents.action_button patch="/cards/new">
+        <NavigationComponents.action_button patch="/checklists/new">
           New Checklist
         </NavigationComponents.action_button>
         """)
 
-      assert html =~ ~s(href="/cards/new")
+      assert html =~ ~s(href="/checklists/new")
       assert html =~ "data-phx-link=\"patch\""
     end
   end
@@ -120,7 +120,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
       html =
         rendered_to_string(~H"""
         <NavigationComponents.icon_link
-          navigate="/cards/1/edit"
+          navigate="/checklists/1/edit"
           icon="hero-pencil-square"
           label="Edit checklist"
         />
@@ -128,7 +128,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
 
       assert html =~ "hero-pencil-square"
       assert html =~ ~s(aria-label="Edit checklist")
-      assert html =~ ~s(href="/cards/1/edit")
+      assert html =~ ~s(href="/checklists/1/edit")
     end
 
     test "supports custom class" do
@@ -137,7 +137,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
       html =
         rendered_to_string(~H"""
         <NavigationComponents.icon_link
-          navigate="/cards/1"
+          navigate="/checklists/1"
           icon="hero-clipboard-document-list"
           label="View checklist"
           class="text-gray-400"

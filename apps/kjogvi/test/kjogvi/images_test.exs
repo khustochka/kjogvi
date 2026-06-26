@@ -349,18 +349,18 @@ defmodule Kjogvi.ImagesTest do
       assert Kjogvi.Repo.reload(image).multi_species == false
     end
 
-    test "returns an error changeset when observations span different cards" do
+    test "returns an error changeset when observations span different checklists" do
       user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
 
-      card1 =
+      checklist1 =
         Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
 
-      card2 =
+      checklist2 =
         Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
 
-      obs1 = Kjogvi.Factory.insert(:observation, checklist: card1, taxon_key: "mallar1")
-      obs2 = Kjogvi.Factory.insert(:observation, checklist: card2, taxon_key: "canwoo1")
+      obs1 = Kjogvi.Factory.insert(:observation, checklist: checklist1, taxon_key: "mallar1")
+      obs2 = Kjogvi.Factory.insert(:observation, checklist: checklist2, taxon_key: "canwoo1")
 
       assert {:error, changeset} = Images.attach_observations(image, [obs1.id, obs2.id])
       assert "must all belong to the same checklist" in errors_on(changeset).observations
@@ -385,7 +385,7 @@ defmodule Kjogvi.ImagesTest do
       assert Enum.map(reloaded.observations, & &1.id) == [obs.id]
     end
 
-    test "ignores observation ids belonging to another user's cards" do
+    test "ignores observation ids belonging to another user's checklists" do
       user = AccountsFixtures.user_fixture()
       other_user = AccountsFixtures.user_fixture()
       image = ImagesFixtures.image_fixture(user: user)
@@ -427,7 +427,7 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
-  describe "list_images_for_card/1" do
+  describe "list_images_for_checklist/1" do
     test "returns images linked to the checklist's observations" do
       user = AccountsFixtures.user_fixture()
 
@@ -438,23 +438,23 @@ defmodule Kjogvi.ImagesTest do
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, _} = Images.attach_observations(image, [obs.id])
 
-      assert Images.list_images_for_card(checklist.id) |> Enum.map(& &1.id) == [image.id]
+      assert Images.list_images_for_checklist(checklist.id) |> Enum.map(& &1.id) == [image.id]
     end
 
-    test "excludes images from other cards" do
+    test "excludes images from other checklists" do
       user = AccountsFixtures.user_fixture()
 
-      card1 =
+      checklist1 =
         Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
 
-      card2 =
+      checklist2 =
         Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
 
-      obs2 = Kjogvi.Factory.insert(:observation, checklist: card2, taxon_key: "mallar1")
+      obs2 = Kjogvi.Factory.insert(:observation, checklist: checklist2, taxon_key: "mallar1")
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, _} = Images.attach_observations(image, [obs2.id])
 
-      assert Images.list_images_for_card(card1.id) == []
+      assert Images.list_images_for_checklist(checklist1.id) == []
     end
   end
 
@@ -476,8 +476,12 @@ defmodule Kjogvi.ImagesTest do
 
     test "excludes observations belonging to another user" do
       user = AccountsFixtures.user_fixture()
-      other_card = Kjogvi.Factory.insert(:checklist, location: Kjogvi.Factory.insert(:location))
-      other_obs = Kjogvi.Factory.insert(:observation, checklist: other_card, taxon_key: "mallar1")
+
+      other_checklist =
+        Kjogvi.Factory.insert(:checklist, location: Kjogvi.Factory.insert(:location))
+
+      other_obs =
+        Kjogvi.Factory.insert(:observation, checklist: other_checklist, taxon_key: "mallar1")
 
       assert Images.get_observations_for_display(user, [other_obs.id]) == []
     end
@@ -558,33 +562,33 @@ defmodule Kjogvi.ImagesTest do
       assert Enum.map(results, & &1.id) == [on_obs.id]
     end
 
-    test "with a card_id set, restricts results to that one checklist", %{user: user} do
+    test "with a checklist_id set, restricts results to that one checklist", %{user: user} do
       location = Kjogvi.Factory.insert(:location)
-      this_card = Kjogvi.Factory.insert(:checklist, user: user, location: location)
-      other_card = Kjogvi.Factory.insert(:checklist, user: user, location: location)
+      this_checklist = Kjogvi.Factory.insert(:checklist, user: user, location: location)
+      other_checklist = Kjogvi.Factory.insert(:checklist, user: user, location: location)
 
-      on_card =
+      on_checklist =
         Kjogvi.Factory.insert(:observation,
-          checklist: this_card,
+          checklist: this_checklist,
           taxon_key: "/ebird/v2024/gretit1"
         )
 
-      _off_card =
+      _off_checklist =
         Kjogvi.Factory.insert(:observation,
-          checklist: other_card,
+          checklist: other_checklist,
           taxon_key: "/ebird/v2024/gretit1"
         )
 
       results =
         Images.search_observations_for_image(user, %{
           query: "great tit",
-          card_id: this_card.id
+          checklist_id: this_checklist.id
         })
 
-      assert Enum.map(results, & &1.id) == [on_card.id]
+      assert Enum.map(results, & &1.id) == [on_checklist.id]
     end
 
-    test "card_id takes precedence over date", %{user: user} do
+    test "checklist_id takes precedence over date", %{user: user} do
       location = Kjogvi.Factory.insert(:location)
 
       checklist =
@@ -604,7 +608,7 @@ defmodule Kjogvi.ImagesTest do
       results =
         Images.search_observations_for_image(user, %{
           query: "great tit",
-          card_id: checklist.id,
+          checklist_id: checklist.id,
           date: ~D[2024-01-01]
         })
 

@@ -1,4 +1,4 @@
-defmodule Kjogvi.Legacy.Import.Cards do
+defmodule Kjogvi.Legacy.Import.Checklists do
   @moduledoc false
 
   alias Kjogvi.Legacy.Import.Utils
@@ -11,24 +11,24 @@ defmodule Kjogvi.Legacy.Import.Cards do
     columns = columns_str |> Enum.map(&String.to_atom/1)
     user_id = opts[:user].id
 
-    cards =
+    checklists =
       for row <- rows do
         Enum.zip([:user_id | columns], [user_id | row])
         |> Map.new()
         |> transform_keys
       end
 
-    with {_, _} <- Kjogvi.Repo.insert_all(Kjogvi.Birding.Checklist, cards),
+    with {_, _} <- Kjogvi.Repo.insert_all(Kjogvi.Birding.Checklist, checklists),
          {:ok, _} <-
            Kjogvi.Repo.query(
-             "SELECT setval('cards_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM cards)));"
+             "SELECT setval('checklists_id_seq', GREATEST(#{@min_start_seq}, (SELECT COALESCE(MAX(id), 0) FROM checklists)));"
            ) do
       :ok
     end
   end
 
   def cleanup do
-    Kjogvi.Repo.query("DELETE FROM cards WHERE import_source='legacy';")
+    Kjogvi.Repo.query("DELETE FROM checklists WHERE import_source='legacy';")
   end
 
   defp transform_keys(

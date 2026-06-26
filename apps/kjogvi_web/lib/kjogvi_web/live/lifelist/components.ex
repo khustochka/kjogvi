@@ -134,7 +134,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         </time>
         <.icon_link
           :if={@show_private_details}
-          navigate={~p"/my/cards/#{@lifer.card_id}"}
+          navigate={~p"/my/checklists/#{@lifer.checklist_id}"}
           icon="hero-clipboard-document-list"
           label="View checklist"
           class="text-gray-400"

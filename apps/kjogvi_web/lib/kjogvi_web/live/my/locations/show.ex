@@ -25,17 +25,17 @@ defmodule KjogviWeb.Live.My.Locations.Show do
 
     if location do
       ancestors = Geo.ancestor_locations(location)
-      cards_count = Geo.cards_count(location.id)
+      checklists_count = Geo.checklists_count(location.id)
       children = Geo.direct_children(location)
       member_locations = Geo.special_member_locations(location)
-      can_delete = children == [] and cards_count == 0
+      can_delete = children == [] and checklists_count == 0
 
       {:ok,
        socket
        |> assign(:page_title, location.name_en)
        |> assign(:location, location)
        |> assign(:ancestors, ancestors)
-       |> assign(:cards_count, cards_count)
+       |> assign(:checklists_count, checklists_count)
        |> assign(:children, children)
        |> assign(:member_locations, member_locations)
        |> assign(:can_modify, User.owns?(socket.assigns.current_scope.current_user, location))
@@ -65,8 +65,8 @@ defmodule KjogviWeb.Live.My.Locations.Show do
       {:error, :has_children} ->
         {:noreply, put_flash(socket, :error, "Cannot delete: location has sub-locations")}
 
-      {:error, :has_cards} ->
-        {:noreply, put_flash(socket, :error, "Cannot delete: location has cards")}
+      {:error, :has_checklists} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has checklists")}
 
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, "You can only delete your own locations")}
@@ -138,7 +138,7 @@ defmodule KjogviWeb.Live.My.Locations.Show do
               title={
                 if @can_delete,
                   do: "Delete this location",
-                  else: "Cannot delete: location has sub-locations or cards"
+                  else: "Cannot delete: location has sub-locations or checklists"
               }
               class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
             >
@@ -157,9 +157,9 @@ defmodule KjogviWeb.Live.My.Locations.Show do
         <div id="location-stats" class="flex flex-wrap gap-2 mb-1">
           <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
             <span class="text-lg font-header font-bold tracking-tight">
-              {@cards_count}
+              {@checklists_count}
             </span>
-            <span class="text-forest-100 text-sm font-medium">cards</span>
+            <span class="text-forest-100 text-sm font-medium">checklists</span>
           </div>
           <div
             :if={@children != []}

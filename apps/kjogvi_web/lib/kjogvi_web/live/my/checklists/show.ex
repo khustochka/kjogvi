@@ -19,7 +19,7 @@ defmodule KjogviWeb.Live.My.Checklists.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _url, %{assigns: assigns} = socket) do
-    checklist = Birding.fetch_card_with_observations(assigns.current_scope.current_user, id)
+    checklist = Birding.fetch_checklist_with_observations(assigns.current_scope.current_user, id)
 
     {
       :noreply,
@@ -32,13 +32,13 @@ defmodule KjogviWeb.Live.My.Checklists.Show do
 
   @impl true
   def handle_event("delete", _params, %{assigns: %{checklist: checklist}} = socket) do
-    case Birding.delete_card(checklist) do
-      {:ok, _card} ->
+    case Birding.delete_checklist(checklist) do
+      {:ok, _checklist} ->
         {
           :noreply,
           socket
           |> put_flash(:info, "Checklist ##{checklist.id} deleted.")
-          |> push_navigate(to: ~p"/my/cards")
+          |> push_navigate(to: ~p"/my/checklists")
         }
 
       {:error, :has_observations} ->
@@ -57,7 +57,7 @@ defmodule KjogviWeb.Live.My.Checklists.Show do
   def render(assigns) do
     ~H"""
     <nav id="checklist-breadcrumbs" class="text-sm text-stone-500 mb-4">
-      <.breadcrumb_link href={~p"/my/cards"}>Checklists</.breadcrumb_link>
+      <.breadcrumb_link href={~p"/my/checklists"}>Checklists</.breadcrumb_link>
       <span class="mx-1 text-stone-400">/</span>
       <span class="text-stone-700">Checklist #{@checklist.id}</span>
     </nav>
@@ -99,11 +99,11 @@ defmodule KjogviWeb.Live.My.Checklists.Show do
       </div>
 
       <div class="flex shrink-0 items-center gap-4 sm:mt-6">
-        <.action_button navigate={~p"/my/cards/#{@checklist.id}/edit"} icon="hero-pencil-square">
+        <.action_button navigate={~p"/my/checklists/#{@checklist.id}/edit"} icon="hero-pencil-square">
           Edit
         </.action_button>
         <button
-          :if={Birding.card_deletable?(@checklist)}
+          :if={Birding.checklist_deletable?(@checklist)}
           type="button"
           id="delete-checklist"
           phx-click="delete"
@@ -114,7 +114,7 @@ defmodule KjogviWeb.Live.My.Checklists.Show do
           <.icon name="hero-trash" class="h-4 w-4" /> Delete
         </button>
         <span
-          :if={not Birding.card_deletable?(@checklist)}
+          :if={not Birding.checklist_deletable?(@checklist)}
           id="delete-checklist"
           title="Checklists with observations cannot be deleted"
           class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-stone-400 ring-1 ring-inset ring-stone-200"

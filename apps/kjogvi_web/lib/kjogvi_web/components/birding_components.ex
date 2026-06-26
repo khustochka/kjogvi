@@ -33,22 +33,22 @@ defmodule KjogviWeb.BirdingComponents do
   }
 
   @doc """
-  Renders a list of cards as full-width panels.
+  Renders a list of checklists as full-width panels.
 
-  Each checklist is rendered with `card_panel/1` inside a semantic `<ul>`/`<li>`
-  structure. Use this anywhere cards need to be listed.
+  Each checklist is rendered with `checklist_panel/1` inside a semantic `<ul>`/`<li>`
+  structure. Use this anywhere checklists need to be listed.
   """
   attr :id, :string, required: true
-  attr :cards, :list, required: true
+  attr :checklists, :list, required: true
 
   attr :on_delete, :string,
     default: nil,
     doc: "phx event name to trigger checklist deletion; passed through to each panel"
 
-  def card_list(assigns) do
+  def checklist_list(assigns) do
     ~H"""
     <ul id={@id} role="list" class="flex flex-col gap-3">
-      <.card_panel :for={checklist <- @cards} checklist={checklist} on_delete={@on_delete} />
+      <.checklist_panel :for={checklist <- @checklists} checklist={checklist} on_delete={@on_delete} />
     </ul>
     """
   end
@@ -66,7 +66,7 @@ defmodule KjogviWeb.BirdingComponents do
     default: nil,
     doc: "phx event name to trigger checklist deletion; when set, a delete control is rendered"
 
-  def card_panel(assigns) do
+  def checklist_panel(assigns) do
     ~H"""
     <li
       id={"checklist-#{@checklist.id}"}
@@ -75,13 +75,13 @@ defmodule KjogviWeb.BirdingComponents do
       <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[1.05rem]">
         <%!-- Date + location --%>
         <.link
-          navigate={~p"/my/cards/#{@checklist.id}"}
+          navigate={~p"/my/checklists/#{@checklist.id}"}
           class="font-semibold text-stone-900 underline decoration-forest-500 decoration-2 underline-offset-2 hover:decoration-forest-700"
         >
           {format_date(@checklist.observ_date)}
         </.link>
         <.link
-          navigate={~p"/my/cards/#{@checklist.id}"}
+          navigate={~p"/my/checklists/#{@checklist.id}"}
           class="min-w-0 flex-1 truncate text-stone-600 no-underline hover:text-stone-900"
         >
           {Geo.Location.long_name(:private, @checklist.location)}
@@ -124,7 +124,7 @@ defmodule KjogviWeb.BirdingComponents do
         <ul class="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
           <li>
             <.link
-              navigate={~p"/my/cards/#{@checklist.id}"}
+              navigate={~p"/my/checklists/#{@checklist.id}"}
               class="font-mono text-sm text-stone-400 no-underline hover:text-stone-600"
               title="Checklist ID"
             >
@@ -182,17 +182,20 @@ defmodule KjogviWeb.BirdingComponents do
             ebird_complete={@checklist.ebird_complete}
           />
           <.link
-            navigate={~p"/my/cards/#{@checklist.id}/edit"}
+            navigate={~p"/my/checklists/#{@checklist.id}/edit"}
             class="inline-flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-0.5 text-sm font-medium text-stone-700 no-underline hover:border-forest-400 hover:text-forest-700"
           >
             <.icon name="hero-pencil-square" class="h-3.5 w-3.5" />
             Edit<span class="sr-only"> checklist #{@checklist.id}</span>
           </.link>
-          <.delete_card_button :if={@on_delete} checklist={@checklist} on_delete={@on_delete} />
+          <.delete_checklist_button :if={@on_delete} checklist={@checklist} on_delete={@on_delete} />
         </div>
       </div>
 
-      <.card_observations :if={card_has_loaded_observations?(@checklist)} checklist={@checklist} />
+      <.checklist_observations
+        :if={checklist_has_loaded_observations?(@checklist)}
+        checklist={@checklist}
+      />
     </li>
     """
   end
@@ -206,7 +209,7 @@ defmodule KjogviWeb.BirdingComponents do
   """
   attr :checklist, :map, required: true
 
-  def card_observations(assigns) do
+  def checklist_observations(assigns) do
     ~H"""
     <div class="mt-3 -mx-2.5 -mb-2.5 rounded-b-lg border-t-2 border-stone-200 bg-stone-50 px-3 py-2.5">
       <p :if={@checklist.observations == []} class="text-sm text-stone-400">
@@ -274,8 +277,8 @@ defmodule KjogviWeb.BirdingComponents do
 
   # Observations are an Ecto association: unloaded it is a %NotLoaded{}, loaded
   # it is a list. Only render the section when an actual list is present.
-  defp card_has_loaded_observations?(%{observations: obs}) when is_list(obs), do: true
-  defp card_has_loaded_observations?(_card), do: false
+  defp checklist_has_loaded_observations?(%{observations: obs}) when is_list(obs), do: true
+  defp checklist_has_loaded_observations?(_checklist), do: false
 
   @doc """
   Renders the checklist delete control.
@@ -288,8 +291,8 @@ defmodule KjogviWeb.BirdingComponents do
   attr :checklist, :map, required: true
   attr :on_delete, :string, required: true
 
-  def delete_card_button(%{checklist: checklist} = assigns) do
-    assigns = assign(assigns, :deletable, card_deletable?(checklist))
+  def delete_checklist_button(%{checklist: checklist} = assigns) do
+    assigns = assign(assigns, :deletable, checklist_deletable?(checklist))
 
     ~H"""
     <button
@@ -449,7 +452,7 @@ defmodule KjogviWeb.BirdingComponents do
     @ebird_checklist_base <> ebird_id
   end
 
-  defp card_deletable?(checklist), do: Kjogvi.Birding.card_deletable?(checklist)
+  defp checklist_deletable?(checklist), do: Kjogvi.Birding.checklist_deletable?(checklist)
 
   @doc "Human-readable label for a checklist's effort type."
   def effort_label(type) do

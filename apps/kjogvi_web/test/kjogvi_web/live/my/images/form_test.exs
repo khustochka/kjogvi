@@ -212,15 +212,18 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       conn: conn,
       user: user
     } do
-      # Two observations on different cards — the picker can't stage this, but a
+      # Two observations on different checklists — the picker can't stage this, but a
       # tampered client could push it to the LiveView.
       %{user: user, obs: obs1} = seed_observation(user)
 
-      card2 =
+      checklist2 =
         Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
 
       obs2 =
-        Kjogvi.Factory.insert(:observation, checklist: card2, taxon_key: "/ebird/v2024/gretit1")
+        Kjogvi.Factory.insert(:observation,
+          checklist: checklist2,
+          taxon_key: "/ebird/v2024/gretit1"
+        )
 
       {:ok, live, _html} = live(conn, ~p"/my/images/new")
 
@@ -778,18 +781,18 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       # A second observation of the same taxon on the same day, but a different
       # checklist — so the date scope alone keeps both, and only locking the checklist
       # narrows it down.
-      other_card =
+      other_checklist =
         Kjogvi.Factory.insert(:checklist, user: user, observ_date: checklist.observ_date)
 
       Kjogvi.Factory.insert(:observation,
-        checklist: other_card,
+        checklist: other_checklist,
         taxon_key: "/ebird/v2024/gretit1"
       )
 
       image = ImagesFixtures.image_fixture(user: user)
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      # Scope the picker to the shared day; both cards' observations show as two
+      # Scope the picker to the shared day; both checklists' observations show as two
       # rows (keyed by position).
       live
       |> element("#image-observations-date")
@@ -850,12 +853,12 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       user: user,
       obs: obs
     } do
-      other_card =
+      other_checklist =
         Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
 
       other_obs =
         Kjogvi.Factory.insert(:observation,
-          checklist: other_card,
+          checklist: other_checklist,
           taxon_key: "/ebird/v2024/gretit1"
         )
 
@@ -864,7 +867,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
       {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}/edit")
 
-      # Simulate a tampered client staging observations from two different cards.
+      # Simulate a tampered client staging observations from two different checklists.
       send(live.pid, {:image_observations_changed, [obs.id, other_obs.id]})
 
       html =
@@ -886,7 +889,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
     } do
       other_user = user_fixture()
 
-      foreign_card =
+      foreign_checklist =
         Kjogvi.Factory.insert(:checklist,
           user: other_user,
           location: Kjogvi.Factory.insert(:location)
@@ -894,7 +897,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
 
       foreign_obs =
         Kjogvi.Factory.insert(:observation,
-          checklist: foreign_card,
+          checklist: foreign_checklist,
           taxon_key: "/ebird/v2024/gretit1"
         )
 

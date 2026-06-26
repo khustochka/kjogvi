@@ -65,8 +65,8 @@ defmodule Kjogvi.Geo.Location do
 
     belongs_to(:user, Kjogvi.Accounts.User)
 
-    has_many(:cards, Kjogvi.Birding.Checklist)
-    has_many(:observations, through: [:cards, :observations])
+    has_many(:checklists, Kjogvi.Birding.Checklist)
+    has_many(:observations, through: [:checklists, :observations])
 
     many_to_many :special_child_locations, Location,
       join_through: "special_locations",
@@ -78,7 +78,7 @@ defmodule Kjogvi.Geo.Location do
 
     timestamps()
 
-    field :cards_count, :integer, virtual: true
+    field :checklists_count, :integer, virtual: true
 
     field :parent_id, :integer, virtual: true
   end

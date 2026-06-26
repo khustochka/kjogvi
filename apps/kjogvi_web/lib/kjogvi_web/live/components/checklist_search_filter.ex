@@ -1,6 +1,6 @@
 defmodule KjogviWeb.Live.Components.ChecklistSearchFilter do
   @moduledoc """
-  Search/filter panel for the cards index.
+  Search/filter panel for the checklists index.
 
   A **function** component (not a LiveComponent) by deliberate design: the
   taxon/location pickers it embeds are `Autocomplete` LiveComponents which
@@ -38,7 +38,7 @@ defmodule KjogviWeb.Live.Components.ChecklistSearchFilter do
     default: "",
     doc: "display text for the currently selected taxon, if any"
 
-  def card_search_filter(assigns) do
+  def checklist_search_filter(assigns) do
     ~H"""
     <form
       id={@id}

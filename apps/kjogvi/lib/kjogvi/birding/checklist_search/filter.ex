@@ -1,18 +1,18 @@
 defmodule Kjogvi.Birding.ChecklistSearch.Filter do
   @moduledoc """
-  Search/filter parameters for the cards index.
+  Search/filter parameters for the checklists index.
 
   Filters split into two kinds:
 
-    * **checklist-level** — narrow which cards match without looking inside their
+    * **checklist-level** — narrow which checklists match without looking inside their
       observations: `date`, `location`, `include_subregions`, `unresolved`.
     * **observation-level** — narrow which individual observations match:
       `taxon_key`, `exclude_subspecies`, `voice` (all/seen/heard-only) and
       `hidden`.
 
   When any observation-level filter is active, a search runs in
-  *observation mode*: results are cards carrying only their matching
-  observations. Otherwise it runs in *checklist mode*: whole cards, observations
+  *observation mode*: results are checklists carrying only their matching
+  observations. Otherwise it runs in *checklist mode*: whole checklists, observations
   untouched. `observation_mode?/1` reports which applies.
   """
 
@@ -66,8 +66,8 @@ defmodule Kjogvi.Birding.ChecklistSearch.Filter do
 
   @doc """
   True when at least one observation-level filter is active, meaning the search
-  should return matching observations (grouped under their cards) rather than
-  whole cards.
+  should return matching observations (grouped under their checklists) rather than
+  whole checklists.
   """
   @spec observation_mode?(t()) :: boolean()
   def observation_mode?(%__MODULE__{} = filter) do
@@ -90,7 +90,7 @@ defmodule Kjogvi.Birding.ChecklistSearch.Filter do
   Encodes a filter as a string-keyed map suitable for a URL query string.
 
   Only non-default fields are emitted, so a blank filter yields `%{}` (a clean
-  `/my/cards` URL). The location is encoded as `location_id`; resolving that id
+  `/my/checklists` URL). The location is encoded as `location_id`; resolving that id
   back into a `Geo.Location` is the caller's job (see `from_params/1`), since it
   requires a database lookup.
   """

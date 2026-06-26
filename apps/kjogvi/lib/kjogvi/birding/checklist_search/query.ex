@@ -1,12 +1,12 @@
 defmodule Kjogvi.Birding.ChecklistSearch.Query do
   @moduledoc """
-  Queries backing the cards index search.
+  Queries backing the checklists index search.
 
   Two concerns are kept separate:
 
-    * `matching_cards/2` builds the (named-binding `:checklist`) query of cards that
+    * `matching_checklists/2` builds the (named-binding `:checklist`) query of checklists that
       match the filter. Checklist-level filters apply directly; observation-level
-      filters constrain it to cards that have at least one matching observation.
+      filters constrain it to checklists that have at least one matching observation.
     * `observation_filter/2` builds an `Ecto.Query` over `Observation` that,
       given a list of checklist ids, returns just the observations matching the
       observation-level filters — used to populate each checklist in observation
@@ -22,18 +22,18 @@ defmodule Kjogvi.Birding.ChecklistSearch.Query do
   @doc """
   Checklists matching `filter` for `user`, newest first, with per-checklist counts loaded.
   """
-  def matching_cards(user, %Filter{} = filter) do
+  def matching_checklists(user, %Filter{} = filter) do
     Checklist
-    |> Checklist.Query.as_card()
+    |> Checklist.Query.as_checklist()
     |> Checklist.Query.by_user(user)
-    |> apply_card_filters(filter)
+    |> apply_checklist_filters(filter)
     |> maybe_restrict_to_matching_observations(filter)
     |> order_by([checklist: c], desc: c.observ_date, desc: c.id)
     |> Checklist.Query.load_observation_count()
   end
 
   # Checklist-level filters: date, location (+ optional subregions), unresolved.
-  defp apply_card_filters(query, %Filter{} = filter) do
+  defp apply_checklist_filters(query, %Filter{} = filter) do
     query
     |> filter_by_date(filter.date)
     |> filter_by_location(filter.location, filter.include_subregions)
@@ -62,13 +62,13 @@ defmodule Kjogvi.Birding.ChecklistSearch.Query do
     where(query, [checklist: c], c.resolved == false)
   end
 
-  # When observation-level filters are active, keep only cards that have at
+  # When observation-level filters are active, keep only checklists that have at
   # least one observation passing them.
   defp maybe_restrict_to_matching_observations(query, %Filter{} = filter) do
     if Filter.observation_mode?(filter) do
       matching =
         from(o in Observation,
-          where: o.card_id == parent_as(:checklist).id,
+          where: o.checklist_id == parent_as(:checklist).id,
           select: 1
         )
         |> apply_observation_filters(filter)
@@ -80,13 +80,13 @@ defmodule Kjogvi.Birding.ChecklistSearch.Query do
   end
 
   @doc """
-  Query over observations belonging to `card_ids` that match the
+  Query over observations belonging to `checklist_ids` that match the
   observation-level filters, ordered for stable display.
   """
-  def observation_filter(card_ids, %Filter{} = filter) do
+  def observation_filter(checklist_ids, %Filter{} = filter) do
     from(o in Observation,
-      where: o.card_id in ^card_ids,
-      order_by: [asc: o.card_id, asc: o.id]
+      where: o.checklist_id in ^checklist_ids,
+      order_by: [asc: o.checklist_id, asc: o.id]
     )
     |> apply_observation_filters(filter)
   end
@@ -130,7 +130,7 @@ defmodule Kjogvi.Birding.ChecklistSearch.Query do
 
   # `hidden` selects ONLY hidden observations when checked; when unchecked it
   # leaves the default behaviour (hidden ones are included for the owner here,
-  # as the cards index is an owner-only view).
+  # as the checklists index is an owner-only view).
   defp filter_by_hidden(query, false), do: query
   defp filter_by_hidden(query, true), do: where(query, [o], o.hidden == true)
 end

@@ -28,10 +28,10 @@ defmodule Kjogvi.Legacy.Adapters.Local do
     )
   end
 
-  def fetch_page(:cards, pid, page) do
+  def fetch_page(:checklists, pid, page) do
     Postgrex.query!(
       pid,
-      "SELECT * FROM cards ORDER BY id LIMIT #{@per_page} OFFSET #{@per_page * (page - 1)}",
+      "SELECT * FROM checklists ORDER BY id LIMIT #{@per_page} OFFSET #{@per_page * (page - 1)}",
       []
     )
   end

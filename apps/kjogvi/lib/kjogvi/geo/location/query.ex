@@ -109,11 +109,11 @@ defmodule Kjogvi.Geo.Location.Query do
       select: {l.location_type, count(l.id)}
   end
 
-  def load_cards_count(query) do
+  def load_checklists_count(query) do
     from l in query,
-      left_join: c in assoc(l, :cards),
+      left_join: c in assoc(l, :checklists),
       group_by: l.id,
-      select_merge: %{cards_count: count(c.id)}
+      select_merge: %{checklists_count: count(c.id)}
   end
 
   # Maps a location's own level to the descendant FK column that points back to it.
@@ -262,7 +262,7 @@ defmodule Kjogvi.Geo.Location.Query do
   Attaches the level FK associations to each thing's `location` in a single
   query.
 
-  Accepts cards/observations/etc. that have a `:location` association (loaded or
+  Accepts checklists/observations/etc. that have a `:location` association (loaded or
   not — it is preloaded first if needed), then batches every level for every
   location through `put_levels/1`. Replaces the per-level preload (`country …
   site` = five queries) with one.

@@ -16,7 +16,7 @@ defmodule Kjogvi.Birding.Checklist do
 
   def effort_types, do: @effort_types
 
-  schema "cards" do
+  schema "checklists" do
     field :observ_date, :date
     belongs_to(:location, Kjogvi.Geo.Location)
 
@@ -44,10 +44,7 @@ defmodule Kjogvi.Birding.Checklist do
 
     field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
 
-    has_many(:observations, Kjogvi.Birding.Observation,
-      foreign_key: :card_id,
-      on_replace: :delete
-    )
+    has_many(:observations, Kjogvi.Birding.Observation, on_replace: :delete)
 
     belongs_to(:user, Kjogvi.Accounts.User)
 

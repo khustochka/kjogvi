@@ -95,10 +95,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     {species1, _} = Factory.create_species_taxon_with_page()
     {species2, _} = Factory.create_species_taxon_with_page()
 
-    card1 = insert(:checklist, user: user, observ_date: ~D[2023-06-07])
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(species1))
-    card2 = insert(:checklist, user: user, observ_date: ~D[2022-04-03])
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(species2))
+    checklist1 = insert(:checklist, user: user, observ_date: ~D[2023-06-07])
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(species1))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D[2022-04-03])
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(species2))
 
     {:ok, _index_live, html} = live(conn, ~p"/users/#{user.nickname}/lifelist/2022")
 
@@ -162,11 +162,11 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
       )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
-    card1 = insert(:checklist, user: user, location: brovary)
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    checklist1 = insert(:checklist, user: user, location: brovary)
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     {taxon2, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:checklist, user: user, location: usa)
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    checklist2 = insert(:checklist, user: user, location: usa)
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     conn = get(conn, "/users/#{user.nickname}/lifelist/ukraine")
     resp = html_response(conn, 200)
@@ -202,22 +202,22 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     refute row_name =~ "Ukraine"
   end
 
-  test "toggling Motorless only in-session narrows the list to motorless cards",
+  test "toggling Motorless only in-session narrows the list to motorless checklists",
        %{conn: conn, user: user} do
     {motorless_taxon, _} = Factory.create_species_taxon_with_page()
     {motorized_taxon, _} = Factory.create_species_taxon_with_page()
 
-    motorless_card = insert(:checklist, user: user, motorless: true)
+    motorless_checklist = insert(:checklist, user: user, motorless: true)
 
     insert(:observation,
-      checklist: motorless_card,
+      checklist: motorless_checklist,
       taxon_key: Ornitho.Schema.Taxon.key(motorless_taxon)
     )
 
-    motorized_card = insert(:checklist, user: user, motorless: false)
+    motorized_checklist = insert(:checklist, user: user, motorless: false)
 
     insert(:observation,
-      checklist: motorized_card,
+      checklist: motorized_checklist,
       taxon_key: Ornitho.Schema.Taxon.key(motorized_taxon)
     )
 
@@ -234,7 +234,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     refute html =~ motorized_taxon.name_en
   end
 
-  test "toggling Motorless only in-session empties the list when no motorless cards exist",
+  test "toggling Motorless only in-session empties the list when no motorless checklists exist",
        %{conn: conn, user: user} do
     {taxon, _} = Factory.create_species_taxon_with_page()
 
@@ -275,14 +275,14 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
       )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
-    card1 = insert(:checklist, user: user, observ_date: ~D"2022-11-18", location: brovary)
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    checklist1 = insert(:checklist, user: user, observ_date: ~D"2022-11-18", location: brovary)
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     {taxon2, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:checklist, user: user, observ_date: ~D"2023-07-16", location: brovary)
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D"2023-07-16", location: brovary)
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
     {taxon3, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:checklist, user: user, observ_date: ~D"2022-07-16", location: usa)
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D"2022-07-16", location: usa)
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
     conn = get(conn, "/users/#{user.nickname}/lifelist/2022/ukraine")
     resp = html_response(conn, 200)
@@ -394,11 +394,11 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
     # Ukraine has a 2022 observation; USA only has a 2023 one.
     {taxon1, _} = Factory.create_species_taxon_with_page()
-    card1 = insert(:checklist, user: user, observ_date: ~D"2022-05-01", location: brovary)
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    checklist1 = insert(:checklist, user: user, observ_date: ~D"2022-05-01", location: brovary)
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     {taxon2, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:checklist, user: user, observ_date: ~D"2023-05-01", location: usa)
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D"2023-05-01", location: usa)
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     # Filtering by 2022: USA still renders (has observations overall) but is
     # inactive, so it shows as a non-link span rather than a clickable link.
@@ -419,10 +419,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     {taxon1, _} = Factory.create_species_taxon_with_page()
     {taxon2, _} = Factory.create_species_taxon_with_page()
 
-    card1 = insert(:checklist, user: user, observ_date: ~D"2023-01-01")
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    card2 = insert(:checklist, user: user, observ_date: ~D"2023-06-01")
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    checklist1 = insert(:checklist, user: user, observ_date: ~D"2023-01-01")
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D"2023-06-01")
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
 
@@ -436,10 +436,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     {taxon2, _} = Factory.create_species_taxon_with_page()
 
     # taxon1 created first ⇒ lower sort_order; observed earlier
-    card1 = insert(:checklist, user: user, observ_date: ~D"2020-01-01")
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    card2 = insert(:checklist, user: user, observ_date: ~D"2024-01-01")
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    checklist1 = insert(:checklist, user: user, observ_date: ~D"2020-01-01")
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D"2024-01-01")
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     pos = fn html, taxon ->
       :binary.match(html, taxon.name_en) |> elem(0)
@@ -461,12 +461,12 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     {taxon2, _} = Factory.create_species_taxon_with_page()
     {taxon3, _} = Factory.create_species_taxon_with_page()
 
-    card1 = insert(:checklist, user: user, observ_date: ~D"2021-05-01")
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    card2 = insert(:checklist, user: user, observ_date: ~D"2023-04-01")
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
-    card3 = insert(:checklist, user: user, observ_date: ~D"2023-09-01")
-    insert(:observation, checklist: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+    checklist1 = insert(:checklist, user: user, observ_date: ~D"2021-05-01")
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D"2023-04-01")
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    checklist3 = insert(:checklist, user: user, observ_date: ~D"2023-09-01")
+    insert(:observation, checklist: checklist3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
     {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
 
@@ -490,10 +490,10 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     {taxon1, _} = Factory.create_species_taxon_with_page()
     {taxon2, _} = Factory.create_species_taxon_with_page()
 
-    card1 = insert(:checklist, user: user, observ_date: ~D"2021-05-01")
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-    card2 = insert(:checklist, user: user, observ_date: ~D"2023-04-01")
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    checklist1 = insert(:checklist, user: user, observ_date: ~D"2021-05-01")
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D"2023-04-01")
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist?sort=taxonomy")
 
@@ -529,11 +529,11 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
       )
 
     {taxon1, _} = Factory.create_species_taxon_with_page()
-    card1 = insert(:checklist, user: user, observ_date: ~D"2022-11-18", location: brovary)
-    insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+    checklist1 = insert(:checklist, user: user, observ_date: ~D"2022-11-18", location: brovary)
+    insert(:observation, checklist: checklist1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
     {taxon2, _} = Factory.create_species_taxon_with_page()
-    card2 = insert(:checklist, user: user, observ_date: ~D"2023-07-16", location: brovary)
-    insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+    checklist2 = insert(:checklist, user: user, observ_date: ~D"2023-07-16", location: brovary)
+    insert(:observation, checklist: checklist2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
     conn = get(conn, "/users/#{user.nickname}/lifelist")
     resp = html_response(conn, 200)

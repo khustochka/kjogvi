@@ -15,9 +15,9 @@ defmodule Kjogvi.Legacy.Import.Observations do
     book_signature = book_signature!(opts)
 
     raw = for row <- rows, do: Map.new(Enum.zip(columns, row))
-    card_times = card_times(raw)
+    checklist_times = checklist_times(raw)
 
-    obs = for attrs <- raw, do: transform_keys(attrs, book_signature, card_times)
+    obs = for attrs <- raw, do: transform_keys(attrs, book_signature, checklist_times)
 
     with {_, _} <- Repo.insert_all(Observation, obs),
          {:ok, _} <-
@@ -29,7 +29,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
   end
 
   def after_import(opts) do
-    # Legacy imports bypass `Kjogvi.Birding.create_card/2`, so the per-write
+    # Legacy imports bypass `Kjogvi.Birding.create_checklist/2`, so the per-write
     # logbook cache invalidation doesn't run. Evict the user's logbook cache.
     Kjogvi.Birding.Logbook.Cache.invalidate(opts[:user].id)
 
@@ -43,35 +43,36 @@ defmodule Kjogvi.Legacy.Import.Observations do
     Kjogvi.Repo.query("DELETE FROM observations WHERE import_source='legacy';")
   end
 
-  # Checklist timestamps keyed by checklist id, for the cards referenced in this batch.
+  # Checklist timestamps keyed by checklist id, for the checklists referenced in this batch.
   # Checklists are imported before observations and always have non-null timestamps,
   # so they're the fallback for legacy observations missing created_at/updated_at.
-  defp card_times(raw) do
-    card_ids = raw |> Enum.map(& &1.card_id) |> Enum.uniq()
+  defp checklist_times(raw) do
+    checklist_ids = raw |> Enum.map(& &1.checklist_id) |> Enum.uniq()
 
-    Checklist.Query.timestamps_by_id(card_ids)
+    Checklist.Query.timestamps_by_id(checklist_ids)
     |> Repo.all()
     |> Map.new()
   end
 
-  defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs, book_signature, card_times) do
+  defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs, book_signature, checklist_times) do
     %{obs | ebird_code: "bird1"}
     |> Map.put(:unreported, true)
-    |> transform_keys(book_signature, card_times)
+    |> transform_keys(book_signature, checklist_times)
   end
 
   defp transform_keys(
          %{created_at: created_at, updated_at: updated_at, ebird_code: ebird_code} = obs,
          book_signature,
-         card_times
+         checklist_times
        ) do
-    {card_inserted_at, card_updated_at} = Map.get(card_times, obs.card_id, {nil, nil})
+    {checklist_inserted_at, checklist_updated_at} =
+      Map.get(checklist_times, obs.checklist_id, {nil, nil})
 
     obs
     |> Map.take([
       :id,
       :hidden,
-      :card_id,
+      :checklist_id,
       :quantity,
       :voice,
       :notes,
@@ -80,8 +81,8 @@ defmodule Kjogvi.Legacy.Import.Observations do
     ])
     |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
     # Many legacy observations have no created_at/updated_at; fall back to the checklist's.
-    |> Map.put(:inserted_at, Utils.convert_timestamp(created_at) || card_inserted_at)
-    |> Map.put(:updated_at, Utils.convert_timestamp(updated_at) || card_updated_at)
+    |> Map.put(:inserted_at, Utils.convert_timestamp(created_at) || checklist_inserted_at)
+    |> Map.put(:updated_at, Utils.convert_timestamp(updated_at) || checklist_updated_at)
     |> Map.put(:import_source, :legacy)
     |> normalize_text_columns()
   end

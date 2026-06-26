@@ -1,7 +1,7 @@
 defmodule Kjogvi.Legacy.Import.ObservationsTest do
   # Not async: `Observations.import/3` calls `setval('observations_id_seq', ...)`,
   # a non-transactional, database-global side effect the SQL sandbox cannot
-  # roll back or isolate. See Kjogvi.Legacy.Import.CardsTest for details.
+  # roll back or isolate. See Kjogvi.Legacy.Import.ChecklistsTest for details.
   use Kjogvi.DataCase, async: false
 
   import Kjogvi.Factory
@@ -22,7 +22,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
-        ["card_id", "ebird_code", "created_at", "updated_at"],
+        ["checklist_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", now, now]],
         user: user
       )
@@ -42,7 +42,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
-        ["card_id", "ebird_code", "created_at", "updated_at"],
+        ["checklist_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", now, now]],
         user: user
       )
@@ -62,7 +62,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
-        ["card_id", "ebird_code", "created_at", "updated_at", "quantity", "notes"],
+        ["checklist_id", "ebird_code", "created_at", "updated_at", "quantity", "notes"],
         [[checklist.id, "amerob", now, now, "  ", "  kept  "]],
         user: user
       )
@@ -77,7 +77,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
 
       assert_raise ArgumentError, ~r/default_book_signature/, fn ->
         Observations.import(
-          ["card_id", "ebird_code", "created_at", "updated_at"],
+          ["checklist_id", "ebird_code", "created_at", "updated_at"],
           [[1, "amerob", "2026-01-02T03:04:05Z", "2026-01-02T03:04:05Z"]],
           user: user
         )
@@ -87,7 +87,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
     test "raises when no :user option is provided" do
       assert_raise ArgumentError, ~r/requires a :user option/, fn ->
         Observations.import(
-          ["card_id", "ebird_code", "created_at", "updated_at"],
+          ["checklist_id", "ebird_code", "created_at", "updated_at"],
           [[1, "amerob", "2026-01-02T03:04:05Z", "2026-01-02T03:04:05Z"]],
           []
         )
@@ -100,22 +100,22 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
         |> Repo.update!()
 
-      card_time = ~U[2020-05-06 07:08:09.000000Z]
+      checklist_time = ~U[2020-05-06 07:08:09.000000Z]
 
       checklist =
         insert(:checklist, user: user)
-        |> Ecto.Changeset.change(inserted_at: card_time, updated_at: card_time)
+        |> Ecto.Changeset.change(inserted_at: checklist_time, updated_at: checklist_time)
         |> Repo.update!()
 
       Observations.import(
-        ["card_id", "ebird_code", "created_at", "updated_at"],
+        ["checklist_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", nil, nil]],
         user: user
       )
 
       [obs] = Repo.all(Observation)
-      assert obs.inserted_at == card_time
-      assert obs.updated_at == card_time
+      assert obs.inserted_at == checklist_time
+      assert obs.updated_at == checklist_time
     end
 
     test "keeps the observation's own timestamps when present" do
@@ -124,17 +124,17 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
         |> Repo.update!()
 
-      card_time = ~U[2020-05-06 07:08:09.000000Z]
+      checklist_time = ~U[2020-05-06 07:08:09.000000Z]
 
       checklist =
         insert(:checklist, user: user)
-        |> Ecto.Changeset.change(inserted_at: card_time, updated_at: card_time)
+        |> Ecto.Changeset.change(inserted_at: checklist_time, updated_at: checklist_time)
         |> Repo.update!()
 
       obs_time = "2026-01-02T03:04:05Z"
 
       Observations.import(
-        ["card_id", "ebird_code", "created_at", "updated_at"],
+        ["checklist_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", obs_time, obs_time]],
         user: user
       )

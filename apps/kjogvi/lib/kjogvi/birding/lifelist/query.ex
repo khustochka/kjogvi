@@ -62,7 +62,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
       ],
       select: %{
         id: o.id,
-        card_id: c.id,
+        checklist_id: c.id,
         species_page_id: stm.species_page_id,
         observ_date: c.observ_date,
         start_time: c.start_time,
@@ -132,7 +132,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   directly or among their descendants.
   """
   def location_ids_query(scope, filter) do
-    card_location_ids =
+    checklist_location_ids =
       observations_filtered(scope, filter)
       |> distinct(true)
       |> select([_o, c], c.location_id)
@@ -142,7 +142,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
       Kjogvi.Geo.Location.level_fks()
       |> Enum.map(fn fk ->
         from(cl in Kjogvi.Geo.Location,
-          where: cl.id in subquery(card_location_ids) and not is_nil(field(cl, ^fk)),
+          where: cl.id in subquery(checklist_location_ids) and not is_nil(field(cl, ^fk)),
           select: field(cl, ^fk)
         )
       end)
@@ -151,7 +151,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
     from(ll in Kjogvi.Geo.Location,
       where: ll.location_type in [:country, :subdivision1],
       where:
-        ll.id in subquery(card_location_ids) or
+        ll.id in subquery(checklist_location_ids) or
           ll.id in subquery(ancestor_ids),
       select: ll.id
     )

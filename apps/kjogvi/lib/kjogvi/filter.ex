@@ -1,7 +1,7 @@
 defmodule Kjogvi.Filter do
   @moduledoc """
   Shared scaffolding for `NimbleOptions`-backed filter structs (e.g. the
-  cards-index and lifelist filters).
+  checklists-index and lifelist filters).
 
   `use Kjogvi.Filter, schema: schema` defines, for the calling module:
 

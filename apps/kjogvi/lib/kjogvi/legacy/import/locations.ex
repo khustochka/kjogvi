@@ -1,7 +1,7 @@
 defmodule Kjogvi.Legacy.Import.Locations do
   @moduledoc """
   Imports legacy `loci` rows into `Kjogvi.Geo.Location`, preserving every legacy
-  id so cards (which reference locations by their legacy id) keep resolving.
+  id so checklists (which reference locations by their legacy id) keep resolving.
 
   The whole set arrives in one call (see `Kjogvi.Legacy.Import.perform_import/2`),
   which is required: a location's place in the hierarchy comes from its legacy
@@ -158,7 +158,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
   end
 
   # Renumber each ISO reference row to its legacy id (and copy legacy
-  # slug/lat/lon), so descendants' level FKs and cards point at the legacy ids.
+  # slug/lat/lon), so descendants' level FKs and checklists point at the legacy ids.
   # The ISO row's own `country_id` is re-derived from ancestry too: a subdivision
   # renumbered to a legacy id would otherwise still point at the now-renumbered
   # ISO country's old id.

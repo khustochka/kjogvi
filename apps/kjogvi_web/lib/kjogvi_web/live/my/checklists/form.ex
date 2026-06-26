@@ -1,13 +1,13 @@
 defmodule KjogviWeb.Live.My.Checklists.Form do
   @moduledoc """
-  LiveView for creating and editing cards.
+  LiveView for creating and editing checklists.
 
   Uses the checklist struct as single source of truth. The checklist holds:
   - All field values
   - Nested observations with taxon structs (for display names)
   - Location struct (for display name)
 
-  The form is derived from the checklist via `to_form(Birding.change_card(checklist))`.
+  The form is derived from the checklist via `to_form(Birding.change_checklist(checklist))`.
   """
 
   use KjogviWeb, :live_view
@@ -33,7 +33,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
 
   @impl true
   def handle_params(%{"id" => id}, _url, %{assigns: assigns} = socket) do
-    checklist = Birding.fetch_card_for_edit(assigns.current_scope.current_user, id)
+    checklist = Birding.fetch_checklist_for_edit(assigns.current_scope.current_user, id)
     # Preload taxa on observations for display
     observations_with_taxa = Birding.preload_taxa_and_species(checklist.observations)
     checklist = %{checklist | observations: observations_with_taxa}
@@ -43,12 +43,12 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
       socket
       |> assign(:page_title, "Edit Checklist ##{checklist.id}")
       |> assign(:action, :edit)
-      |> assign_card(checklist)
+      |> assign_checklist(checklist)
     }
   end
 
   def handle_params(_params, _url, %{assigns: assigns} = socket) do
-    checklist = Birding.new_card(assigns.current_scope.current_user)
+    checklist = Birding.new_checklist(assigns.current_scope.current_user)
     checklist = %{checklist | observations: [Birding.new_observation()]}
 
     {
@@ -56,15 +56,15 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
       socket
       |> assign(:page_title, "New Checklist")
       |> assign(:action, :create)
-      |> assign_card(checklist)
+      |> assign_checklist(checklist)
     }
   end
 
   # Helper to update checklist and derive form
-  defp assign_card(socket, checklist) do
+  defp assign_checklist(socket, checklist) do
     socket
     |> assign(:checklist, checklist)
-    |> assign(:form, to_form(Birding.change_card(checklist)))
+    |> assign(:form, to_form(Birding.change_checklist(checklist)))
   end
 
   @impl true
@@ -73,7 +73,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
 
     new_observation = %Kjogvi.Birding.Observation{
       id: nil,
-      card_id: nil,
+      checklist_id: nil,
       taxon_key: nil,
       taxon: nil,
       quantity: nil,
@@ -84,9 +84,9 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
       unreported: false
     }
 
-    updated_card = %{checklist | observations: checklist.observations ++ [new_observation]}
+    updated_checklist = %{checklist | observations: checklist.observations ++ [new_observation]}
 
-    {:noreply, assign_card(socket, updated_card)}
+    {:noreply, assign_checklist(socket, updated_checklist)}
   end
 
   def handle_event("remove_observation", %{"index" => index_str}, socket) do
@@ -106,20 +106,20 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
     }
   end
 
-  def handle_event("sync_card", %{"checklist" => card_params}, socket) do
+  def handle_event("sync_checklist", %{"checklist" => checklist_params}, socket) do
     # Sync form field values to checklist struct
     checklist = socket.assigns.checklist
-    updated_card = merge_params_into_card(checklist, card_params)
-    changeset = Birding.change_card(updated_card)
+    updated_checklist = merge_params_into_checklist(checklist, checklist_params)
+    changeset = Birding.change_checklist(updated_checklist)
 
-    {:noreply, assign(socket, :checklist, updated_card) |> assign(:form, to_form(changeset))}
+    {:noreply, assign(socket, :checklist, updated_checklist) |> assign(:form, to_form(changeset))}
   end
 
-  def handle_event("save", %{"checklist" => card_params}, %{assigns: assigns} = socket) do
-    case do_save_card(
+  def handle_event("save", %{"checklist" => checklist_params}, %{assigns: assigns} = socket) do
+    case do_save_checklist(
            assigns.action,
            assigns.checklist,
-           card_params,
+           checklist_params,
            assigns.current_scope.current_user
          ) do
       {:ok, checklist} ->
@@ -127,7 +127,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
           :noreply,
           socket
           |> put_flash(:info, "Checklist saved successfully")
-          |> push_navigate(to: ~p"/my/cards/#{checklist.id}")
+          |> push_navigate(to: ~p"/my/checklists/#{checklist.id}")
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -143,11 +143,11 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
   def render(assigns) do
     ~H"""
     <nav id="checklist-breadcrumbs" class="text-sm text-stone-500 mb-4">
-      <.breadcrumb_link href={~p"/my/cards"}>Checklists</.breadcrumb_link>
+      <.breadcrumb_link href={~p"/my/checklists"}>Checklists</.breadcrumb_link>
       <span :if={@action == :edit} class="mx-1 text-stone-400">/</span>
       <.breadcrumb_link
         :if={@action == :edit}
-        href={~p"/my/cards/#{@checklist.id}"}
+        href={~p"/my/checklists/#{@checklist.id}"}
         phx-no-format
       >Checklist #{@checklist.id}</.breadcrumb_link>
       <span class="mx-1 text-stone-400">/</span>
@@ -160,7 +160,13 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
       {if @action == :create, do: "New Checklist", else: "Edit Checklist ##{@checklist.id}"}
     </.h1>
 
-    <.form for={@form} id="checklist-form" phx-submit="save" phx-change="sync_card" class="space-y-4">
+    <.form
+      for={@form}
+      id="checklist-form"
+      phx-submit="save"
+      phx-change="sync_checklist"
+      class="space-y-4"
+    >
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="shrink-0">
           <.live_component
@@ -187,7 +193,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
                 hidden_value={@form[:location_id].value || ""}
                 on_select_event="location_selected"
                 scope={@current_scope}
-                filter={Location.Filter.for_card_input()}
+                filter={Location.Filter.for_checklist_input()}
                 errors={
                   if show_field_error?(@form, :location_id),
                     do: Enum.map(@form[:location_id].errors, &BaseComponents.translate_error/1),
@@ -315,7 +321,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
         <CoreComponents.input type="checkbox" field={@form[:resolved]} label="Resolved" />
         <p class="text-sm text-stone-500">
           Leave this unchecked to mark the checklist as unresolved when you intend to revisit and
-          amend it later. You can filter your cards to find unresolved ones at any time.
+          amend it later. You can filter your checklists to find unresolved ones at any time.
         </p>
       </div>
 
@@ -328,7 +334,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
           Save Checklist
         </button>
 
-        <.action_button navigate={~p"/my/cards"} variant="secondary">Cancel</.action_button>
+        <.action_button navigate={~p"/my/checklists"} variant="secondary">Cancel</.action_button>
       </div>
     </.form>
     """
@@ -346,23 +352,23 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
   @impl true
   def handle_info({:calendar_select, "date_selected", %{"date" => date}}, socket) do
     checklist = socket.assigns.checklist
-    updated_card = %{checklist | observ_date: date}
+    updated_checklist = %{checklist | observ_date: date}
 
-    {:noreply, assign_card(socket, updated_card)}
+    {:noreply, assign_checklist(socket, updated_checklist)}
   end
 
   def handle_info({:autocomplete_select, "location_selected", %{"result" => result}}, socket) do
     checklist = socket.assigns.checklist
-    updated_card = %{checklist | location_id: result.id, location: result}
+    updated_checklist = %{checklist | location_id: result.id, location: result}
 
-    {:noreply, assign_card(socket, updated_card)}
+    {:noreply, assign_checklist(socket, updated_checklist)}
   end
 
   def handle_info({:autocomplete_clear, "location_selected", _params}, socket) do
     checklist = socket.assigns.checklist
-    updated_card = %{checklist | location_id: nil, location: nil}
+    updated_checklist = %{checklist | location_id: nil, location: nil}
 
-    {:noreply, assign_card(socket, updated_card)}
+    {:noreply, assign_checklist(socket, updated_checklist)}
   end
 
   def handle_info({:autocomplete_select, "taxon_selected", params}, socket) do
@@ -381,9 +387,9 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
         end
       end)
 
-    updated_card = %{checklist | observations: updated_observations}
+    updated_checklist = %{checklist | observations: updated_observations}
 
-    {:noreply, assign_card(socket, updated_card)}
+    {:noreply, assign_checklist(socket, updated_checklist)}
   end
 
   def handle_info({:autocomplete_clear, "taxon_selected", %{"index" => index}}, socket) do
@@ -400,20 +406,20 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
         end
       end)
 
-    updated_card = %{checklist | observations: updated_observations}
+    updated_checklist = %{checklist | observations: updated_observations}
 
-    {:noreply, assign_card(socket, updated_card)}
+    {:noreply, assign_checklist(socket, updated_checklist)}
   end
 
-  defp do_save_card(:create, _card, card_params, user) do
-    Birding.create_card(user, card_params)
+  defp do_save_checklist(:create, _checklist, checklist_params, user) do
+    Birding.create_checklist(user, checklist_params)
   end
 
-  defp do_save_card(:edit, checklist, card_params, user) do
+  defp do_save_checklist(:edit, checklist, checklist_params, user) do
     # Re-fetch the checklist from database to get the persisted state
     # This ensures Ecto can detect actual changes from form params
-    db_card = Birding.fetch_card_for_edit(user, checklist.id)
-    Birding.update_card(db_card, card_params)
+    db_checklist = Birding.fetch_checklist_for_edit(user, checklist.id)
+    Birding.update_checklist(db_checklist, checklist_params)
   end
 
   defp show_field_error?(form, field_name) do
@@ -440,7 +446,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
       |> Enum.reject(fn {_obs, idx} -> idx == index end)
       |> Enum.map(fn {obs, _idx} -> obs end)
 
-    updated_card = %{checklist | observations: new_observations}
+    updated_checklist = %{checklist | observations: new_observations}
 
     # Re-index marked_for_deletion after removing an observation
     new_marked_for_deletion =
@@ -455,12 +461,12 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
       :noreply,
       socket
       |> assign(:marked_for_deletion, new_marked_for_deletion)
-      |> assign_card(updated_card)
+      |> assign_checklist(updated_checklist)
     }
   end
 
   # Merge form params into checklist struct, preserving nested structs (taxon, location)
-  defp merge_params_into_card(checklist, params) do
+  defp merge_params_into_checklist(checklist, params) do
     observations = merge_observation_params(checklist.observations, params["observations"])
 
     # Preserve location_id from checklist if not in params (select_location sets it directly)

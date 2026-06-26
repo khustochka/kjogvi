@@ -25,12 +25,12 @@ defmodule Kjogvi.Geo.Import do
   updated rather than skipped or duplicated, so it can be re-run against a newer
   iso-codes release. The conflict update refreshes only the ISO-sourced columns
   (`name_en`, `extras`, `updated_at`, and a subdivision's `country_id`) and
-  leaves each row's `id` intact (cards reference locations by id). Columns a user
+  leaves each row's `id` intact (checklists reference locations by id). Columns a user
   may have edited locally — `slug`, `is_private`, `lat`, `lon` — are *not*
   overwritten on conflict.
 
   TODO: it still does not reconcile *removals* — a subdivision that disappears
-  from a newer ISO release stays in the table (it may carry cards). Pruning such
+  from a newer ISO release stays in the table (it may carry checklists). Pruning such
   orphans is left to a future pass.
   """
 
