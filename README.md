@@ -16,7 +16,13 @@
    mix deps.get
    ```
 
-3. Start the server:
+3. If running for the first time, setup the database:
+
+   ```bash
+   mix ecto.setup
+   ```
+
+4. Start the server:
 
    ```bash
    iex -S mix phx.server
@@ -24,9 +30,9 @@
 
    Application will be available on http://localhost:4000.
 
-4. When run for the first time, you will be prompted to run the migrations.
+5. If there are pending migrations, you will be prompted to run them.
 
-5. To setup admin user, find the setup code in the logs.
+6. To setup admin user, find the setup code in the logs.
 
 ### To run the tests:
 
@@ -44,7 +50,11 @@
 
 ## Credits
 
-The bicycle icon is from [Font Awesome Free](https://fontawesome.com/) 6.x
+* The bicycle icon is from [Font Awesome Free](https://fontawesome.com/) 6.x
 (`solid/bicycle`), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+* Country and subdivision geo data is derived from the
+[iso-codes](https://salsa.debian.org/iso-codes-team/iso-codes) project
+(ISO 3166 codes and names), licensed under LGPL-2.1-or-later.
 
 [^1]: Pronounced [ˈtʃɛkvɪ].
