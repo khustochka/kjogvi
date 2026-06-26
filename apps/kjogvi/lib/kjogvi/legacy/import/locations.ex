@@ -8,13 +8,6 @@ defmodule Kjogvi.Legacy.Import.Locations do
   `ancestry` (a top-to-bottom list of ancestor ids), and resolving it needs every
   ancestor's type in hand at once.
 
-  ## Type
-
-  The location's type is taken from the legacy `new_type` column (`loc_type` is
-  ignored). Each ancestor's own `new_type` decides which level FK slot it fills on
-  a descendant, so a level can be skipped (a `city` may hang directly off a
-  `country`).
-
   ## Countries and subdivisions are upserted onto the ISO rows
 
   `country` and `subdivision1` are reference data already present from the ISO
@@ -140,15 +133,15 @@ defmodule Kjogvi.Legacy.Import.Locations do
   # The two flag/slug-based specials (see the `5mr` / `arabat_spit` linkers).
   @amalgamation_special_slugs ~w(5mr arabat_spit)
 
-  # `location_type` is required (NOT NULL) and comes from the curated `new_type`
+  # `location_type` is required (NOT NULL) and comes from the curated `loc_type`
   # column, so a blank one is a data error to fail on, not a nil to insert. The
   # `5mr`/`arabat_spit` amalgamations are forced `special` by slug, as in the
   # original importer.
   defp to_type(%{slug: slug}) when slug in @amalgamation_special_slugs, do: :special
 
-  defp to_type(%{new_type: value, slug: slug}) do
+  defp to_type(%{loc_type: value, slug: slug}) do
     case Utils.blank_to_nil(value) do
-      nil -> raise "Legacy location #{inspect(slug)} has no new_type."
+      nil -> raise "Legacy location #{inspect(slug)} has no loc_type."
       str -> String.to_existing_atom(str)
     end
   end

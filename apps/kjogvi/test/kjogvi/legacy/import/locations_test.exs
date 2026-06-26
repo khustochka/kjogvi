@@ -15,7 +15,6 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
     "slug",
     "name_en",
     "loc_type",
-    "new_type",
     "ancestry",
     "iso_code",
     "private_loc",
@@ -31,7 +30,6 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
       "slug" => "",
       "name_en" => "",
       "loc_type" => "",
-      "new_type" => "",
       "ancestry" => nil,
       "iso_code" => nil,
       "private_loc" => false,
@@ -62,7 +60,7 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
             "id" => 42,
             "slug" => "usa",
             "name_en" => "Legacy USA",
-            "new_type" => "country",
+            "loc_type" => "country",
             "iso_code" => "US",
             "lat" => "39.0",
             "lon" => "-98.0"
@@ -89,11 +87,11 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
 
       run(
         [
-          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
+          row(%{"id" => 1, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"}),
           row(%{
             "id" => 2,
             "slug" => "texas",
-            "new_type" => "subdivision1",
+            "loc_type" => "subdivision1",
             "iso_code" => "TX",
             "ancestry" => "1"
           })
@@ -116,7 +114,7 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
 
       run(
         [
-          row(%{"id" => 42, "slug" => "usa", "new_type" => "country", "iso_code" => "US"})
+          row(%{"id" => 42, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"})
         ],
         opts
       )
@@ -134,18 +132,18 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
 
       run(
         [
-          row(%{"id" => 140, "slug" => "north_america", "new_type" => "special"}),
+          row(%{"id" => 140, "slug" => "north_america", "loc_type" => "special"}),
           row(%{
             "id" => 42,
             "slug" => "usa",
-            "new_type" => "country",
+            "loc_type" => "country",
             "iso_code" => "US",
             "ancestry" => "140"
           }),
           row(%{
             "id" => 54,
             "slug" => "virginia",
-            "new_type" => "subdivision1",
+            "loc_type" => "subdivision1",
             "iso_code" => "VA",
             "ancestry" => "140/42"
           })
@@ -160,13 +158,13 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
 
     test "fails when a country has no matching ISO row", %{opts: opts} do
       assert_raise RuntimeError, ~r/no matching ISO row/, fn ->
-        run([row(%{"id" => 1, "new_type" => "country", "iso_code" => "ZZ"})], opts)
+        run([row(%{"id" => 1, "loc_type" => "country", "iso_code" => "ZZ"})], opts)
       end
     end
 
     test "fails when a country has no iso_code", %{opts: opts} do
       assert_raise RuntimeError, ~r/no iso_code/, fn ->
-        run([row(%{"id" => 1, "slug" => "blank", "new_type" => "country"})], opts)
+        run([row(%{"id" => 1, "slug" => "blank", "loc_type" => "country"})], opts)
       end
     end
   end
@@ -182,17 +180,17 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
 
       run(
         [
-          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
+          row(%{"id" => 1, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"}),
           row(%{
             "id" => 5,
             "slug" => "dallas",
-            "new_type" => "city",
+            "loc_type" => "city",
             "ancestry" => "1"
           }),
           row(%{
             "id" => 6,
             "slug" => "park",
-            "new_type" => "site",
+            "loc_type" => "site",
             "ancestry" => "1/5"
           })
         ],
@@ -213,8 +211,8 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
     test "preserves legacy ids and marks the import source", %{opts: opts} do
       run(
         [
-          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
-          row(%{"id" => 777, "slug" => "spot", "new_type" => "site", "ancestry" => "1"})
+          row(%{"id" => 1, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"}),
+          row(%{"id" => 777, "slug" => "spot", "loc_type" => "site", "ancestry" => "1"})
         ],
         opts
       )
@@ -232,10 +230,10 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
 
       run(
         [
-          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
-          row(%{"id" => 2, "slug" => "region", "new_type" => "special", "ancestry" => "1"}),
-          row(%{"id" => 3, "slug" => "city", "new_type" => "city", "ancestry" => "1/2"}),
-          row(%{"id" => 4, "slug" => "site", "new_type" => "site", "ancestry" => "1/2/3"})
+          row(%{"id" => 1, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"}),
+          row(%{"id" => 2, "slug" => "region", "loc_type" => "special", "ancestry" => "1"}),
+          row(%{"id" => 3, "slug" => "city", "loc_type" => "city", "ancestry" => "1/2"}),
+          row(%{"id" => 4, "slug" => "site", "loc_type" => "site", "ancestry" => "1/2/3"})
         ],
         opts
       )
@@ -271,24 +269,24 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
          %{opts: opts} do
       run(
         [
-          row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"}),
-          # Forced special despite a non-special new_type.
-          row(%{"id" => 10, "slug" => "5mr", "name_en" => "5MR", "new_type" => "site"}),
+          row(%{"id" => 1, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"}),
+          # Forced special despite a non-special loc_type.
+          row(%{"id" => 10, "slug" => "5mr", "name_en" => "5MR", "loc_type" => "site"}),
           row(%{
             "id" => 20,
             "slug" => "home_patch",
-            "new_type" => "site",
+            "loc_type" => "site",
             "ancestry" => "1",
             "five_mile_radius" => true
           }),
           row(%{
             "id" => 21,
             "slug" => "nearby_park",
-            "new_type" => "site",
+            "loc_type" => "site",
             "ancestry" => "1",
             "five_mile_radius" => true
           }),
-          row(%{"id" => 22, "slug" => "far_away", "new_type" => "site", "ancestry" => "1"})
+          row(%{"id" => 22, "slug" => "far_away", "loc_type" => "site", "ancestry" => "1"})
         ],
         opts
       )
@@ -305,7 +303,7 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
     test "advances the sequence past @min_start_seq", %{opts: opts} do
       insert(:country, iso_code: "US", slug: "us")
 
-      run([row(%{"id" => 1, "slug" => "usa", "new_type" => "country", "iso_code" => "US"})], opts)
+      run([row(%{"id" => 1, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"})], opts)
 
       next = Repo.insert!(%Location{slug: "fresh", name_en: "Fresh", location_type: :section})
       assert next.id >= 10_000
