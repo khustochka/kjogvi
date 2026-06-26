@@ -11,6 +11,15 @@ defmodule Kjogvi.Birding.Card.Query do
     from c in query, as: :card
   end
 
+  @doc """
+  Maps the given card ids to their `{inserted_at, updated_at}` timestamps.
+  """
+  def timestamps_by_id(card_ids) do
+    from c in Kjogvi.Birding.Card,
+      where: c.id in ^card_ids,
+      select: {c.id, {c.inserted_at, c.updated_at}}
+  end
+
   def by_year(query, year) when is_integer(year) do
     query
     |> where([..., card: c], c.cached_year == ^year)

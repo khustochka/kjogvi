@@ -94,28 +94,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       end
     end
 
-    test "leaves null timestamps so after_import can backfill them" do
-      user =
-        Kjogvi.AccountsFixtures.user_fixture()
-        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
-        |> Repo.update!()
-
-      card = insert(:card, user: user)
-
-      Observations.import(
-        ["card_id", "ebird_code", "created_at", "updated_at"],
-        [[card.id, "amerob", nil, nil]],
-        user: user
-      )
-
-      [obs] = Repo.all(Observation)
-      assert obs.inserted_at == nil
-      assert obs.updated_at == nil
-    end
-  end
-
-  describe "after_import/1" do
-    test "backfills null observation timestamps from the card" do
+    test "falls back to the card's timestamps when created_at/updated_at are nil" do
       user =
         Kjogvi.AccountsFixtures.user_fixture()
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
@@ -134,14 +113,12 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         user: user
       )
 
-      assert :ok = Observations.after_import(user: user)
-
       [obs] = Repo.all(Observation)
       assert obs.inserted_at == card_time
       assert obs.updated_at == card_time
     end
 
-    test "leaves existing observation timestamps untouched" do
+    test "keeps the observation's own timestamps when present" do
       user =
         Kjogvi.AccountsFixtures.user_fixture()
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
@@ -161,8 +138,6 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         [[card.id, "amerob", obs_time, obs_time]],
         user: user
       )
-
-      assert :ok = Observations.after_import(user: user)
 
       [obs] = Repo.all(Observation)
       assert obs.inserted_at == ~U[2026-01-02 03:04:05.000000Z]
