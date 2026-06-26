@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict tq58DgqxaQcuTConDj01ARfPOS8G7vdhhdDJy6XoG4dBhvSOU9nlr53SeKlpgze
+\restrict 3ni14A5uMDOJKnyIAYlg3dT6hTFPd8yqD4Z7atwgOHfb4ISIlokdRaVf0hvw6qT
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -237,8 +237,8 @@ CREATE TABLE public.observations (
     unreported boolean DEFAULT false NOT NULL,
     hidden boolean DEFAULT false NOT NULL,
     ebird_obs_id character varying(255),
-    inserted_at timestamp without time zone,
-    updated_at timestamp without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
     import_source character varying(255)
 );
 
@@ -964,7 +964,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict tq58DgqxaQcuTConDj01ARfPOS8G7vdhhdDJy6XoG4dBhvSOU9nlr53SeKlpgze
+\unrestrict 3ni14A5uMDOJKnyIAYlg3dT6hTFPd8yqD4Z7atwgOHfb4ISIlokdRaVf0hvw6qT
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -997,3 +997,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260623000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260623120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260623130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260625120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260625130000);
