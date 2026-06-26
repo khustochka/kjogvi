@@ -120,7 +120,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     <%!-- Page title + stats --%>
     <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
       <div>
-        <.h1 class={["mb-0!", header_style(assigns)]}>
+        <.h1 class="mb-0!">
           {@page_header}
         </.h1>
         <ul
@@ -376,14 +376,6 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   defp derive_robots(%{assigns: assigns} = socket) do
     socket
     |> assign(:robots, Presenter.robots(assigns.filter))
-  end
-
-  defp header_style(%{filter: %{year: nil, location: nil}}) do
-    ""
-  end
-
-  defp header_style(_assigns) do
-    "!font-medium"
   end
 
   defp filter_summary(assigns) do
