@@ -30,6 +30,10 @@ defmodule Kjogvi.Legacy.Import.Observations do
   end
 
   def after_import(opts) do
+    # Many legacy observations have no created_at/updated_at; backfill those
+    # null timestamps from their card.
+    backfill_timestamps_from_cards(opts[:user].id)
+
     # Legacy imports bypass `Kjogvi.Birding.create_card/2`, so the per-write
     # logbook cache invalidation doesn't run. Evict the user's logbook cache.
     Kjogvi.Birding.Logbook.Cache.invalidate(opts[:user].id)
@@ -42,6 +46,21 @@ defmodule Kjogvi.Legacy.Import.Observations do
 
   def cleanup do
     Kjogvi.Repo.query("DELETE FROM observations WHERE import_source='legacy';")
+  end
+
+  defp backfill_timestamps_from_cards(user_id) do
+    Repo.query!(
+      """
+      UPDATE observations o
+      SET inserted_at = COALESCE(o.inserted_at, c.inserted_at),
+          updated_at = COALESCE(o.updated_at, c.updated_at)
+      FROM cards c
+      WHERE o.card_id = c.id
+        AND c.user_id = $1
+        AND (o.inserted_at IS NULL OR o.updated_at IS NULL);
+      """,
+      [user_id]
+    )
   end
 
   defp transform_keys(%{ebird_code: "unrepbirdsp"} = obs, book_signature) do
@@ -66,9 +85,8 @@ defmodule Kjogvi.Legacy.Import.Observations do
       :private_notes
     ])
     |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
-    # FIXME: many legacy observations have no created_at/updated_at, so these can
-    # be nil and the observations table allows null timestamps. In the future,
-    # select a default timestamp here (from card?) and make the columns NOT NULL.
+    # Many legacy observations have no created_at/updated_at, so these can be
+    # nil here; `after_import/1` backfills the nulls from the observation's card.
     |> Map.put(:inserted_at, Utils.convert_timestamp(created_at))
     |> Map.put(:updated_at, Utils.convert_timestamp(updated_at))
     |> Map.put(:import_source, :legacy)

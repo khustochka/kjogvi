@@ -93,5 +93,80 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         )
       end
     end
+
+    test "leaves null timestamps so after_import can backfill them" do
+      user =
+        Kjogvi.AccountsFixtures.user_fixture()
+        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
+        |> Repo.update!()
+
+      card = insert(:card, user: user)
+
+      Observations.import(
+        ["card_id", "ebird_code", "created_at", "updated_at"],
+        [[card.id, "amerob", nil, nil]],
+        user: user
+      )
+
+      [obs] = Repo.all(Observation)
+      assert obs.inserted_at == nil
+      assert obs.updated_at == nil
+    end
+  end
+
+  describe "after_import/1" do
+    test "backfills null observation timestamps from the card" do
+      user =
+        Kjogvi.AccountsFixtures.user_fixture()
+        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
+        |> Repo.update!()
+
+      card_time = ~U[2020-05-06 07:08:09.000000Z]
+
+      card =
+        insert(:card, user: user)
+        |> Ecto.Changeset.change(inserted_at: card_time, updated_at: card_time)
+        |> Repo.update!()
+
+      Observations.import(
+        ["card_id", "ebird_code", "created_at", "updated_at"],
+        [[card.id, "amerob", nil, nil]],
+        user: user
+      )
+
+      assert :ok = Observations.after_import(user: user)
+
+      [obs] = Repo.all(Observation)
+      assert obs.inserted_at == card_time
+      assert obs.updated_at == card_time
+    end
+
+    test "leaves existing observation timestamps untouched" do
+      user =
+        Kjogvi.AccountsFixtures.user_fixture()
+        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
+        |> Repo.update!()
+
+      card_time = ~U[2020-05-06 07:08:09.000000Z]
+
+      card =
+        insert(:card, user: user)
+        |> Ecto.Changeset.change(inserted_at: card_time, updated_at: card_time)
+        |> Repo.update!()
+
+      obs_time = "2026-01-02T03:04:05Z"
+
+      Observations.import(
+        ["card_id", "ebird_code", "created_at", "updated_at"],
+        [[card.id, "amerob", obs_time, obs_time]],
+        user: user
+      )
+
+      assert :ok = Observations.after_import(user: user)
+
+      [obs] = Repo.all(Observation)
+      assert obs.inserted_at == ~U[2026-01-02 03:04:05.000000Z]
+      assert obs.updated_at == ~U[2026-01-02 03:04:05.000000Z]
+    end
   end
 end
