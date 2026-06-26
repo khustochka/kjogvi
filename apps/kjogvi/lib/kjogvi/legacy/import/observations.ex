@@ -47,7 +47,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
   # Checklists are imported before observations and always have non-null timestamps,
   # so they're the fallback for legacy observations missing created_at/updated_at.
   defp checklist_times(raw) do
-    checklist_ids = raw |> Enum.map(& &1.checklist_id) |> Enum.uniq()
+    checklist_ids = raw |> Enum.map(& &1.card_id) |> Enum.uniq()
 
     Checklist.Query.timestamps_by_id(checklist_ids)
     |> Repo.all()
@@ -66,19 +66,19 @@ defmodule Kjogvi.Legacy.Import.Observations do
          checklist_times
        ) do
     {checklist_inserted_at, checklist_updated_at} =
-      Map.get(checklist_times, obs.checklist_id, {nil, nil})
+      Map.get(checklist_times, obs.card_id, {nil, nil})
 
     obs
     |> Map.take([
       :id,
       :hidden,
-      :checklist_id,
       :quantity,
       :voice,
       :notes,
       :ebird_obs_id,
       :private_notes
     ])
+    |> Map.put(:checklist_id, obs.card_id)
     |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
     # Many legacy observations have no created_at/updated_at; fall back to the checklist's.
     |> Map.put(:inserted_at, Utils.convert_timestamp(created_at) || checklist_inserted_at)

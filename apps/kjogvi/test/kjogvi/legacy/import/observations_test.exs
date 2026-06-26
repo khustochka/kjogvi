@@ -22,7 +22,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
-        ["checklist_id", "ebird_code", "created_at", "updated_at"],
+        ["card_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", now, now]],
         user: user
       )
@@ -42,7 +42,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
-        ["checklist_id", "ebird_code", "created_at", "updated_at"],
+        ["card_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", now, now]],
         user: user
       )
@@ -62,7 +62,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
-        ["checklist_id", "ebird_code", "created_at", "updated_at", "quantity", "notes"],
+        ["card_id", "ebird_code", "created_at", "updated_at", "quantity", "notes"],
         [[checklist.id, "amerob", now, now, "  ", "  kept  "]],
         user: user
       )
@@ -77,7 +77,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
 
       assert_raise ArgumentError, ~r/default_book_signature/, fn ->
         Observations.import(
-          ["checklist_id", "ebird_code", "created_at", "updated_at"],
+          ["card_id", "ebird_code", "created_at", "updated_at"],
           [[1, "amerob", "2026-01-02T03:04:05Z", "2026-01-02T03:04:05Z"]],
           user: user
         )
@@ -87,7 +87,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
     test "raises when no :user option is provided" do
       assert_raise ArgumentError, ~r/requires a :user option/, fn ->
         Observations.import(
-          ["checklist_id", "ebird_code", "created_at", "updated_at"],
+          ["card_id", "ebird_code", "created_at", "updated_at"],
           [[1, "amerob", "2026-01-02T03:04:05Z", "2026-01-02T03:04:05Z"]],
           []
         )
@@ -108,7 +108,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         |> Repo.update!()
 
       Observations.import(
-        ["checklist_id", "ebird_code", "created_at", "updated_at"],
+        ["card_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", nil, nil]],
         user: user
       )
@@ -134,7 +134,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       obs_time = "2026-01-02T03:04:05Z"
 
       Observations.import(
-        ["checklist_id", "ebird_code", "created_at", "updated_at"],
+        ["card_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", obs_time, obs_time]],
         user: user
       )

@@ -42,7 +42,7 @@ defmodule Kjogvi.Legacy.Adapters.Download do
 
   def fetch_page(:checklists, req, page) do
     req
-    |> Req.get!(url: "checklists?page=#{page}&per_page=#{@per_page}")
+    |> Req.get!(url: "cards?page=#{page}&per_page=#{@per_page}")
     |> convert_body
   end
 
