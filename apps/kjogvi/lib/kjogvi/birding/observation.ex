@@ -10,7 +10,7 @@ defmodule Kjogvi.Birding.Observation do
   alias Kjogvi.Pages.SpeciesTaxaMapping
 
   schema "observations" do
-    belongs_to(:card, Kjogvi.Birding.Card)
+    belongs_to(:checklist, Kjogvi.Birding.Checklist, foreign_key: :card_id)
     field :taxon_key, :string
     field :quantity, :string
     field :voice, :boolean, default: false

@@ -10,10 +10,10 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
-      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card1 = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card2 = insert(:checklist, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
       assert Kjogvi.Birding.Lifelist.years(scope) == [2022, 2023]
     end
 
@@ -21,10 +21,10 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
-      card2 = insert(:card, observ_date: ~D"2022-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card1 = insert(:checklist, observ_date: ~D"2023-11-18", user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card2 = insert(:checklist, observ_date: ~D"2022-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
       assert Kjogvi.Birding.Lifelist.years(scope) == [2022, 2023]
     end
 
@@ -32,16 +32,16 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+      card1 = insert(:checklist, observ_date: ~D"2023-11-18", user: user)
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon),
         unreported: true
       )
 
-      card2 = insert(:card, observ_date: ~D"2022-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card2 = insert(:checklist, observ_date: ~D"2022-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
       assert Kjogvi.Birding.Lifelist.years(scope) == [2022]
     end
   end
@@ -51,10 +51,10 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
-      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card1 = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card2 = insert(:checklist, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
       assert Kjogvi.Birding.Lifelist.months(scope) == [7, 11]
     end
 
@@ -62,10 +62,10 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
-      card2 = insert(:card, observ_date: ~D"2022-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card1 = insert(:checklist, observ_date: ~D"2023-11-18", user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      card2 = insert(:checklist, observ_date: ~D"2022-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
       assert Kjogvi.Birding.Lifelist.months(scope) == [7, 11]
     end
 
@@ -73,17 +73,17 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+      card1 = insert(:checklist, observ_date: ~D"2023-11-18", user: user)
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon),
         unreported: true
       )
 
-      card2 = insert(:card, observ_date: ~D"2022-07-16", user: user)
+      card2 = insert(:checklist, observ_date: ~D"2022-07-16", user: user)
 
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon))
       assert Kjogvi.Birding.Lifelist.months(scope) == [7]
     end
   end
@@ -102,7 +102,7 @@ defmodule Kjogvi.Birding.LifelistTest do
     test "includes species observation" do
       {taxon, _} = Factory.create_species_taxon_with_page()
       obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
-      scope = %Kjogvi.Scope{subject_user: obs.card.user, area: :user}
+      scope = %Kjogvi.Scope{subject_user: obs.checklist.user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
@@ -115,7 +115,7 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       obs = insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-      scope = %Kjogvi.Scope{subject_user: obs.card.user, area: :user}
+      scope = %Kjogvi.Scope{subject_user: obs.checklist.user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
@@ -128,15 +128,15 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {%{parent_species: species} = subspecies, _} = Factory.create_subspecies_taxon_with_page()
 
-      card1 = insert(:card, observ_date: ~D[2022-06-11], user: user)
+      card1 = insert(:checklist, observ_date: ~D[2022-06-11], user: user)
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(subspecies)
       )
 
-      card2 = insert(:card, observ_date: ~D[2023-08-19], user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(species))
+      card2 = insert(:checklist, observ_date: ~D[2023-08-19], user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(species))
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
       assert length(result.list)
@@ -149,7 +149,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       obs =
         insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-      scope = %Kjogvi.Scope{subject_user: obs.card.user, area: :user}
+      scope = %Kjogvi.Scope{subject_user: obs.checklist.user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
       assert result.list == []
@@ -159,7 +159,7 @@ defmodule Kjogvi.Birding.LifelistTest do
       obs =
         insert(:observation, taxon_key: "/abc/v1/taxon")
 
-      scope = %Kjogvi.Scope{subject_user: obs.card.user, area: :user}
+      scope = %Kjogvi.Scope{subject_user: obs.checklist.user, area: :user}
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
       assert result.list == []
@@ -169,11 +169,11 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, year: 2022)
       assert length(result.list) == 1
@@ -183,11 +183,11 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, year: 2005)
       assert result.list == []
@@ -208,11 +208,11 @@ defmodule Kjogvi.Birding.LifelistTest do
         )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, location: brovary, user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, location: brovary, user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, location: usa, user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, location: usa, user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, location: ukraine)
       assert length(result.list) == 1
@@ -233,11 +233,11 @@ defmodule Kjogvi.Birding.LifelistTest do
         )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, location: brovary, user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, location: brovary, user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, location: usa, user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, location: usa, user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, location: brovary)
       assert length(result.list) == 1
@@ -258,14 +258,14 @@ defmodule Kjogvi.Birding.LifelistTest do
         )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-11-18", location: brovary, user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, observ_date: ~D"2022-11-18", location: brovary, user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2023-07-16", location: brovary, user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D"2023-07-16", location: brovary, user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
       {taxon3, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2022-07-16", location: usa, user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+      card2 = insert(:checklist, observ_date: ~D"2022-07-16", location: usa, user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, location: ukraine, year: 2022)
       assert length(result.list) == 1
@@ -275,11 +275,11 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, month: 7)
       assert length(result.list) == 1
@@ -289,11 +289,11 @@ defmodule Kjogvi.Birding.LifelistTest do
       user = user_fixture()
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-11-18", user: user, motorless: true)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, observ_date: ~D"2022-11-18", user: user, motorless: true)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2023-07-16", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D"2023-07-16", user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, motorless: true)
       assert length(result.list) == 1
@@ -332,17 +332,17 @@ defmodule Kjogvi.Birding.LifelistTest do
         )
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-11-18", location: locus1, user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, observ_date: ~D"2022-11-18", location: locus1, user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
 
       # Locus 3 is a child of locus 2, so it should be included
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2023-07-16", location: locus3, user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D"2023-07-16", location: locus3, user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       {taxon3, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2022-07-16", location: locus4, user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+      card2 = insert(:checklist, observ_date: ~D"2022-07-16", location: locus4, user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, location: locus_5mr)
       assert length(result.list) == 2
@@ -354,19 +354,29 @@ defmodule Kjogvi.Birding.LifelistTest do
       locus = insert(:location)
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card0 = insert(:card, observ_date: ~D"2022-11-18", location: locus, user: user)
-      insert(:observation, card: card0, voice: true, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card0 = insert(:checklist, observ_date: ~D"2022-11-18", location: locus, user: user)
 
-      card1 = insert(:card, observ_date: ~D"2023-12-19", location: locus, user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      insert(:observation,
+        checklist: card0,
+        voice: true,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon1)
+      )
+
+      card1 = insert(:checklist, observ_date: ~D"2023-12-19", location: locus, user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
 
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2024-12-31", location: locus, user: user)
-      insert(:observation, card: card2, voice: true, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D"2024-12-31", location: locus, user: user)
+
+      insert(:observation,
+        checklist: card2,
+        voice: true,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon2)
+      )
 
       {taxon3, _} = Factory.create_species_taxon_with_page()
-      card3 = insert(:card, observ_date: ~D"2024-12-31", location: locus, user: user)
-      insert(:observation, card: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+      card3 = insert(:checklist, observ_date: ~D"2024-12-31", location: locus, user: user)
+      insert(:observation, checklist: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true)
       assert length(result.list) == 2
@@ -385,16 +395,16 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+      card1 = insert(:checklist, observ_date: ~D"2023-11-18", user: user)
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon1),
         unreported: true
       )
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon2)
       )
 
@@ -411,16 +421,16 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+      card1 = insert(:checklist, observ_date: ~D"2023-11-18", user: user)
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon1),
         hidden: true
       )
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon2)
       )
 
@@ -439,16 +449,16 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+      card1 = insert(:checklist, observ_date: ~D"2023-11-18", user: user)
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon1),
         hidden: true
       )
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon2)
       )
 
@@ -467,10 +477,10 @@ defmodule Kjogvi.Birding.LifelistTest do
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
 
-      card1 = insert(:card, user: user1)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
-      card2 = insert(:card, user: user2)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card1 = insert(:checklist, user: user1)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card2 = insert(:checklist, user: user2)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
@@ -486,15 +496,15 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
       insert(:observation,
-        card: card,
+        checklist: checklist,
         taxon_key: Ornitho.Schema.Taxon.key(taxon1),
         hidden: true
       )
 
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Kjogvi.Birding.Lifelist.generate(scope)
 
@@ -515,10 +525,10 @@ defmodule Kjogvi.Birding.LifelistTest do
         )
 
       user = user_fixture()
-      card = insert(:card, user: user, location: private_loc)
+      checklist = insert(:checklist, user: user, location: private_loc)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
@@ -536,16 +546,16 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2023-11-18", user: user)
+      card1 = insert(:checklist, observ_date: ~D"2023-11-18", user: user)
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon1),
         voice: true
       )
 
       insert(:observation,
-        card: card1,
+        checklist: card1,
         taxon_key: Ornitho.Schema.Taxon.key(taxon2)
       )
 
@@ -561,8 +571,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, observ_date: ~D"2023-06-01", user: user)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, observ_date: ~D"2023-06-01", user: user)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true)
 
@@ -576,12 +586,22 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-05-10", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1), voice: true)
+      card1 = insert(:checklist, observ_date: ~D"2022-05-10", user: user)
+
+      insert(:observation,
+        checklist: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon1),
+        voice: true
+      )
 
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D"2023-08-15", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2), voice: true)
+      card2 = insert(:checklist, observ_date: ~D"2023-08-15", user: user)
+
+      insert(:observation,
+        checklist: card2,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon2),
+        voice: true
+      )
 
       result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true, year: 2022)
 
@@ -595,11 +615,21 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D"2022-03-01", user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon), voice: true)
+      card1 = insert(:checklist, observ_date: ~D"2022-03-01", user: user)
 
-      card2 = insert(:card, observ_date: ~D"2023-09-15", user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon), voice: true)
+      insert(:observation,
+        checklist: card1,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon),
+        voice: true
+      )
+
+      card2 = insert(:checklist, observ_date: ~D"2023-09-15", user: user)
+
+      insert(:observation,
+        checklist: card2,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon),
+        voice: true
+      )
 
       result = Kjogvi.Birding.Lifelist.generate(scope, exclude_heard_only: true)
 
@@ -616,19 +646,19 @@ defmodule Kjogvi.Birding.LifelistTest do
 
       # Earlier date but later sort_order
       {taxon_late_taxonomy, _} = Factory.create_species_taxon_with_page()
-      card_old = insert(:card, observ_date: ~D[2020-01-01], user: user)
+      card_old = insert(:checklist, observ_date: ~D[2020-01-01], user: user)
 
       insert(:observation,
-        card: card_old,
+        checklist: card_old,
         taxon_key: Ornitho.Schema.Taxon.key(taxon_late_taxonomy)
       )
 
       # Later date but earlier sort_order — created first ⇒ smaller sort_order
       {taxon_early_taxonomy, _} = Factory.create_species_taxon_with_page()
-      card_recent = insert(:card, observ_date: ~D[2024-06-01], user: user)
+      card_recent = insert(:checklist, observ_date: ~D[2024-06-01], user: user)
 
       insert(:observation,
-        card: card_recent,
+        checklist: card_recent,
         taxon_key: Ornitho.Schema.Taxon.key(taxon_early_taxonomy)
       )
 
@@ -652,16 +682,16 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D[2022-03-10], user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, observ_date: ~D[2022-03-10], user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
 
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D[2023-06-15], user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D[2023-06-15], user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       {taxon3, _} = Factory.create_species_taxon_with_page()
-      card3 = insert(:card, observ_date: ~D[2024-01-20], user: user)
-      insert(:observation, card: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
+      card3 = insert(:checklist, observ_date: ~D[2024-01-20], user: user)
+      insert(:observation, checklist: card3, taxon_key: Ornitho.Schema.Taxon.key(taxon3))
 
       result = Lifelist.top(scope, 2)
       assert result.total == 3
@@ -675,8 +705,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, observ_date: ~D[2023-06-15], user: user)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, observ_date: ~D[2023-06-15], user: user)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       result = Lifelist.top(scope, 10)
       assert result.total == 1
@@ -688,12 +718,12 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon1, _} = Factory.create_species_taxon_with_page()
-      card1 = insert(:card, observ_date: ~D[2022-03-10], user: user)
-      insert(:observation, card: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
+      card1 = insert(:checklist, observ_date: ~D[2022-03-10], user: user)
+      insert(:observation, checklist: card1, taxon_key: Ornitho.Schema.Taxon.key(taxon1))
 
       {taxon2, _} = Factory.create_species_taxon_with_page()
-      card2 = insert(:card, observ_date: ~D[2023-06-15], user: user)
-      insert(:observation, card: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
+      card2 = insert(:checklist, observ_date: ~D[2023-06-15], user: user)
+      insert(:observation, checklist: card2, taxon_key: Ornitho.Schema.Taxon.key(taxon2))
 
       result = Lifelist.top(scope, 5, year: 2022)
       assert result.total == 1
@@ -710,8 +740,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       winnipeg = insert(:location, location_type: "city", country: canada)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user, location: winnipeg)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, user: user, location: winnipeg)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       ids = Lifelist.location_ids(scope)
       assert canada.id in ids
@@ -731,8 +761,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       canada = insert(:country, name_en: "Canada")
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user, location: canada)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, user: user, location: canada)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       ids = Lifelist.location_ids(scope)
       assert canada.id in ids
@@ -755,8 +785,8 @@ defmodule Kjogvi.Birding.LifelistTest do
         )
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user, location: winnipeg)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, user: user, location: winnipeg)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       ids = Lifelist.location_ids(scope)
       assert canada.id in ids
@@ -771,8 +801,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       winnipeg = insert(:location, location_type: "city", country: canada)
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user, location: winnipeg)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, user: user, location: winnipeg)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       ids = Lifelist.location_ids(scope)
       assert winnipeg.id not in ids
@@ -786,8 +816,8 @@ defmodule Kjogvi.Birding.LifelistTest do
       scope = %Kjogvi.Scope{subject_user: user, area: :user}
 
       {taxon, _} = Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
       result = Lifelist.generate(scope)
       assert %Lifelist.Result{} = result

@@ -13,11 +13,11 @@ defmodule KjogviWeb.NavigationComponentsTest do
       html =
         rendered_to_string(~H"""
         <NavigationComponents.action_button navigate="/cards/new">
-          New Card
+          New Checklist
         </NavigationComponents.action_button>
         """)
 
-      assert html =~ "New Card"
+      assert html =~ "New Checklist"
       assert html =~ "bg-blue-600"
       assert html =~ "text-white"
       assert html =~ ~s(href="/cards/new")
@@ -44,12 +44,12 @@ defmodule KjogviWeb.NavigationComponentsTest do
       html =
         rendered_to_string(~H"""
         <NavigationComponents.action_button navigate="/cards/new" icon="hero-plus">
-          New Card
+          New Checklist
         </NavigationComponents.action_button>
         """)
 
       assert html =~ "hero-plus"
-      assert html =~ "New Card"
+      assert html =~ "New Checklist"
     end
 
     test "renders without an icon" do
@@ -72,7 +72,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
       html =
         rendered_to_string(~H"""
         <NavigationComponents.action_button patch="/cards/new">
-          New Card
+          New Checklist
         </NavigationComponents.action_button>
         """)
 
@@ -122,12 +122,12 @@ defmodule KjogviWeb.NavigationComponentsTest do
         <NavigationComponents.icon_link
           navigate="/cards/1/edit"
           icon="hero-pencil-square"
-          label="Edit card"
+          label="Edit checklist"
         />
         """)
 
       assert html =~ "hero-pencil-square"
-      assert html =~ ~s(aria-label="Edit card")
+      assert html =~ ~s(aria-label="Edit checklist")
       assert html =~ ~s(href="/cards/1/edit")
     end
 
@@ -139,7 +139,7 @@ defmodule KjogviWeb.NavigationComponentsTest do
         <NavigationComponents.icon_link
           navigate="/cards/1"
           icon="hero-clipboard-document-list"
-          label="View card"
+          label="View checklist"
           class="text-gray-400"
         />
         """)

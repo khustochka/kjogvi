@@ -4,7 +4,7 @@ defmodule Kjogvi.BirdingFixtures do
   entities via the `Kjogvi.Birding` context.
   """
 
-  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding.Checklist
   alias Kjogvi.Repo
   alias Kjogvi.AccountsFixtures
 
@@ -25,11 +25,11 @@ defmodule Kjogvi.BirdingFixtures do
   end
 
   def card_fixture(attrs \\ %{}) do
-    {:ok, card} =
+    {:ok, checklist} =
       attrs
       |> valid_card_attributes()
-      |> then(&Repo.insert(%Card{} |> Card.changeset(&1)))
+      |> then(&Repo.insert(%Checklist{} |> Checklist.changeset(&1)))
 
-    card
+    checklist
   end
 end

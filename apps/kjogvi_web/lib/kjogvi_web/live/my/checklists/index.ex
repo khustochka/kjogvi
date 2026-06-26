@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.My.Cards.Index do
+defmodule KjogviWeb.Live.My.Checklists.Index do
   @moduledoc false
 
   use KjogviWeb, :live_view
@@ -6,8 +6,8 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   import Scrivener.PhoenixView
 
   alias Kjogvi.Birding
-  alias Kjogvi.Birding.CardSearch.Filter
-  alias KjogviWeb.Live.Components.CardSearchFilter
+  alias Kjogvi.Birding.ChecklistSearch.Filter
+  alias KjogviWeb.Live.Components.ChecklistSearchFilter
 
   @cards_per_page 20
 
@@ -15,7 +15,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
   def mount(_params, _session, socket) do
     {
       :ok,
-      assign(socket, :page_title, "Cards")
+      assign(socket, :page_title, "Checklists")
     }
   end
 
@@ -42,21 +42,25 @@ defmodule KjogviWeb.Live.My.Cards.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, %{assigns: assigns} = socket) do
-    card = Birding.fetch_card_for_edit(assigns.current_scope.current_user, id)
+    checklist = Birding.fetch_card_for_edit(assigns.current_scope.current_user, id)
 
-    case Birding.delete_card(card) do
+    case Birding.delete_card(checklist) do
       {:ok, _card} ->
         {
           :noreply,
           socket
-          |> put_flash(:info, "Card ##{card.id} deleted.")
+          |> put_flash(:info, "Checklist ##{checklist.id} deleted.")
           |> load_cards()
         }
 
       {:error, :has_observations} ->
         {
           :noreply,
-          put_flash(socket, :error, "Card ##{card.id} has observations and cannot be deleted.")
+          put_flash(
+            socket,
+            :error,
+            "Checklist ##{checklist.id} has observations and cannot be deleted."
+          )
         }
     end
   end
@@ -146,12 +150,12 @@ defmodule KjogviWeb.Live.My.Cards.Index do
     ~H"""
     <div class="mb-4 flex items-center justify-between gap-4">
       <.h1 class="mt-0! mb-0! leading-none">
-        Cards
+        Checklists
       </.h1>
-      <.action_button navigate={~p"/my/cards/new"} icon="hero-plus">New Card</.action_button>
+      <.action_button navigate={~p"/my/cards/new"} icon="hero-plus">New Checklist</.action_button>
     </div>
 
-    <CardSearchFilter.card_search_filter
+    <ChecklistSearchFilter.card_search_filter
       filter={@filter}
       user={@current_scope.current_user}
       scope={@current_scope}
@@ -165,7 +169,7 @@ defmodule KjogviWeb.Live.My.Cards.Index do
       No cards match the current filter.
     </p>
 
-    <.card_list id="cards" cards={@cards} on_delete="delete" />
+    <.card_list id="checklists" cards={@cards} on_delete="delete" />
 
     <div class="mt-6">
       {paginate(@socket, @cards, paginated_card_path(@filter), [:index], live: true)}

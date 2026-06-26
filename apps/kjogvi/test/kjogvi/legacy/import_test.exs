@@ -14,11 +14,11 @@ defmodule Kjogvi.Legacy.ImportTest do
 
     test "does not truncate data when validation fails" do
       user = Kjogvi.AccountsFixtures.user_fixture()
-      card = insert(:card)
+      checklist = insert(:checklist)
 
       {:error, _} = Import.run(user)
 
-      assert Repo.get(Kjogvi.Birding.Card, card.id)
+      assert Repo.get(Kjogvi.Birding.Checklist, checklist.id)
     end
   end
 end

@@ -1,38 +1,38 @@
-defmodule Kjogvi.Birding.CardSearch.Query do
+defmodule Kjogvi.Birding.ChecklistSearch.Query do
   @moduledoc """
   Queries backing the cards index search.
 
   Two concerns are kept separate:
 
-    * `matching_cards/2` builds the (named-binding `:card`) query of cards that
-      match the filter. Card-level filters apply directly; observation-level
+    * `matching_cards/2` builds the (named-binding `:checklist`) query of cards that
+      match the filter. Checklist-level filters apply directly; observation-level
       filters constrain it to cards that have at least one matching observation.
     * `observation_filter/2` builds an `Ecto.Query` over `Observation` that,
-      given a list of card ids, returns just the observations matching the
-      observation-level filters — used to populate each card in observation
+      given a list of checklist ids, returns just the observations matching the
+      observation-level filters — used to populate each checklist in observation
       mode.
   """
 
   import Ecto.Query
 
-  alias Kjogvi.Birding.Card
-  alias Kjogvi.Birding.CardSearch.Filter
+  alias Kjogvi.Birding.Checklist
+  alias Kjogvi.Birding.ChecklistSearch.Filter
   alias Kjogvi.Birding.Observation
 
   @doc """
-  Cards matching `filter` for `user`, newest first, with per-card counts loaded.
+  Checklists matching `filter` for `user`, newest first, with per-checklist counts loaded.
   """
   def matching_cards(user, %Filter{} = filter) do
-    Card
-    |> Card.Query.as_card()
-    |> Card.Query.by_user(user)
+    Checklist
+    |> Checklist.Query.as_card()
+    |> Checklist.Query.by_user(user)
     |> apply_card_filters(filter)
     |> maybe_restrict_to_matching_observations(filter)
-    |> order_by([card: c], desc: c.observ_date, desc: c.id)
-    |> Card.Query.load_observation_count()
+    |> order_by([checklist: c], desc: c.observ_date, desc: c.id)
+    |> Checklist.Query.load_observation_count()
   end
 
-  # Card-level filters: date, location (+ optional subregions), unresolved.
+  # Checklist-level filters: date, location (+ optional subregions), unresolved.
   defp apply_card_filters(query, %Filter{} = filter) do
     query
     |> filter_by_date(filter.date)
@@ -43,23 +43,23 @@ defmodule Kjogvi.Birding.CardSearch.Query do
   defp filter_by_date(query, nil), do: query
 
   defp filter_by_date(query, %Date{} = date) do
-    where(query, [card: c], c.observ_date == ^date)
+    where(query, [checklist: c], c.observ_date == ^date)
   end
 
   defp filter_by_location(query, nil, _include_subregions), do: query
 
   defp filter_by_location(query, location, true) do
-    Card.Query.by_location_with_descendants(query, location)
+    Checklist.Query.by_location_with_descendants(query, location)
   end
 
   defp filter_by_location(query, location, false) do
-    where(query, [card: c], c.location_id == ^location.id)
+    where(query, [checklist: c], c.location_id == ^location.id)
   end
 
   defp filter_by_unresolved(query, false), do: query
 
   defp filter_by_unresolved(query, true) do
-    where(query, [card: c], c.resolved == false)
+    where(query, [checklist: c], c.resolved == false)
   end
 
   # When observation-level filters are active, keep only cards that have at
@@ -68,12 +68,12 @@ defmodule Kjogvi.Birding.CardSearch.Query do
     if Filter.observation_mode?(filter) do
       matching =
         from(o in Observation,
-          where: o.card_id == parent_as(:card).id,
+          where: o.card_id == parent_as(:checklist).id,
           select: 1
         )
         |> apply_observation_filters(filter)
 
-      where(query, [card: c], exists(matching))
+      where(query, [checklist: c], exists(matching))
     else
       query
     end

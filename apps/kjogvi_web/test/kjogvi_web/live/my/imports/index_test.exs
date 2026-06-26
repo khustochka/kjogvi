@@ -24,7 +24,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       assert html =~ "eBird preload"
     end
 
-    test "a non-admin user sees only the eBird import card", %{conn: conn} do
+    test "a non-admin user sees only the eBird import checklist", %{conn: conn} do
       {:ok, _lv, html} =
         conn
         |> login_user(Kjogvi.AccountsFixtures.user_fixture())

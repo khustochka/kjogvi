@@ -111,9 +111,9 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
 
     test "rebuilds image<->observation join rows from observation_ids" do
       user = Kjogvi.AccountsFixtures.user_fixture()
-      card = insert(:card, user: user)
-      obs1 = insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
-      obs2 = insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
+      checklist = insert(:checklist, user: user)
+      obs1 = insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
+      obs2 = insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/bkcchi1")
 
       Images.import(@columns, [row(%{"observation_ids" => [obs1.id, obs2.id]})], user: user)
 
@@ -147,8 +147,8 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
   describe "cleanup/0" do
     test "deletes legacy-imported images and their join rows" do
       user = Kjogvi.AccountsFixtures.user_fixture()
-      card = insert(:card, user: user)
-      obs = insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
+      checklist = insert(:checklist, user: user)
+      obs = insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
 
       Images.import(@columns, [row(%{"observation_ids" => [obs.id]})], user: user)
       assert Repo.aggregate(Image, :count) == 1

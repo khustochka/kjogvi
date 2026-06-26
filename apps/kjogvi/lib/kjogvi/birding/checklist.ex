@@ -1,6 +1,6 @@
-defmodule Kjogvi.Birding.Card do
+defmodule Kjogvi.Birding.Checklist do
   @moduledoc """
-  Card schema (equivalent to eBird checklist).
+  Checklist schema (equivalent to eBird checklist).
   """
 
   use Kjogvi.Schema
@@ -44,7 +44,11 @@ defmodule Kjogvi.Birding.Card do
 
     field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
 
-    has_many(:observations, Kjogvi.Birding.Observation, on_replace: :delete)
+    has_many(:observations, Kjogvi.Birding.Observation,
+      foreign_key: :card_id,
+      on_replace: :delete
+    )
+
     belongs_to(:user, Kjogvi.Accounts.User)
 
     # Generated
@@ -59,8 +63,8 @@ defmodule Kjogvi.Birding.Card do
   end
 
   @doc false
-  def changeset(card, attrs) do
-    card
+  def changeset(checklist, attrs) do
+    checklist
     |> cast(attrs |> filter_blank_observations(), [
       :observ_date,
       :location_id,
@@ -100,7 +104,7 @@ defmodule Kjogvi.Birding.Card do
     changeset
   end
 
-  # A card's location must be a concrete hierarchy location owned by the user (or
+  # A checklist's location must be a concrete hierarchy location owned by the user (or
   # common). A `special` is an amalgamation of members, not a place to bird at, so
   # it can't be referenced directly.
   defp validate_location(changeset) do

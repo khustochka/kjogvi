@@ -41,7 +41,7 @@ defmodule KjogviWeb.Live.Components.MonthCalendarTest do
     end
   end
 
-  describe "calendar rendering on card form" do
+  describe "calendar rendering on checklist form" do
     setup do
       user = AccountsFixtures.user_fixture()
       conn = conn_for_user(user)

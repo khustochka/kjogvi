@@ -1,10 +1,10 @@
-defmodule Kjogvi.Birding.CardSearch.Filter do
+defmodule Kjogvi.Birding.ChecklistSearch.Filter do
   @moduledoc """
   Search/filter parameters for the cards index.
 
   Filters split into two kinds:
 
-    * **card-level** — narrow which cards match without looking inside their
+    * **checklist-level** — narrow which cards match without looking inside their
       observations: `date`, `location`, `include_subregions`, `unresolved`.
     * **observation-level** — narrow which individual observations match:
       `taxon_key`, `exclude_subspecies`, `voice` (all/seen/heard-only) and
@@ -12,7 +12,7 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
 
   When any observation-level filter is active, a search runs in
   *observation mode*: results are cards carrying only their matching
-  observations. Otherwise it runs in *card mode*: whole cards, observations
+  observations. Otherwise it runs in *checklist mode*: whole cards, observations
   untouched. `observation_mode?/1` reports which applies.
   """
 
@@ -24,7 +24,7 @@ defmodule Kjogvi.Birding.CardSearch.Filter do
   @type t() :: %__MODULE__{}
 
   @schema [
-    # Card-level
+    # Checklist-level
     date: [
       type: {:or, [{:struct, Date}, nil]},
       default: nil

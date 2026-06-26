@@ -36,16 +36,19 @@ defmodule KjogviWeb.Live.My.Images.ShowTest do
     assert has_element?(live, "a", "Original")
   end
 
-  test "links to an attached observation's card", %{conn: conn, user: user} do
+  test "links to an attached observation's checklist", %{conn: conn, user: user} do
     image = ImagesFixtures.image_fixture(user: user)
-    card = Kjogvi.Factory.insert(:card, user: user, location: Kjogvi.Factory.insert(:location))
-    obs = Kjogvi.Factory.insert(:observation, card: card, taxon_key: "sancra")
+
+    checklist =
+      Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
+
+    obs = Kjogvi.Factory.insert(:observation, checklist: checklist, taxon_key: "sancra")
     {:ok, _} = Images.attach_observations(image, [obs.id])
 
     {:ok, live, _html} = live(conn, ~p"/my/images/#{image.id}")
 
     assert has_element?(live, "#observation-#{obs.id}")
-    assert has_element?(live, "a[href='/my/cards/#{card.id}']")
+    assert has_element?(live, "a[href='/my/cards/#{checklist.id}']")
   end
 
   test "deleting navigates back to the gallery", %{conn: conn, user: user} do

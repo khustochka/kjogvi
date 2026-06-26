@@ -12,7 +12,7 @@ defmodule KjogviWeb.Live.Components.TaxonAutocompleteTest do
       ~H"""
       <TaxonAutocomplete.taxon_autocomplete
         id="tax"
-        hidden_name="card[observations][0][taxon_key]"
+        hidden_name="checklist[observations][0][taxon_key]"
         hidden_value=""
         current_value="House Sparrow"
         user={@user}
@@ -38,6 +38,6 @@ defmodule KjogviWeb.Live.Components.TaxonAutocompleteTest do
     assert html =~ "Taxon"
     assert html =~ "Search and select taxon..."
     assert html =~ "House Sparrow"
-    assert html =~ ~s(name="card[observations][0][taxon_key]")
+    assert html =~ ~s(name="checklist[observations][0][taxon_key]")
   end
 end

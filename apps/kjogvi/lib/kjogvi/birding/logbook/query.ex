@@ -10,7 +10,7 @@ defmodule Kjogvi.Birding.Logbook.Query do
 
   All scopes (World + each enabled location, total + year) are computed from a
   single scan of `observations ⨝ cards ⨝ species_taxa_mappings`. The base scan
-  is cross-joined against an inline `unnest` of scope ids, filtered by the card
+  is cross-joined against an inline `unnest` of scope ids, filtered by the checklist
   location's level FK ancestors, and then collapsed with two `DISTINCT ON` queries
   (one for life firsts, one for year firsts) unioned together. This replaces
   the old shape, which scanned the base join `2 × (N + 1)` times for
@@ -26,12 +26,12 @@ defmodule Kjogvi.Birding.Logbook.Query do
   @doc false
   def firsts_in_range(scope, locations, {start_date, end_date}) do
     # Scope ids: nil represents the World scope. Each location id represents
-    # a per-location scope: a card belongs to scope L if its
-    # card.location_id == L or L is one of the card location's level FK ancestors.
+    # a per-location scope: a checklist belongs to scope L if its
+    # checklist.location_id == L or L is one of the checklist location's level FK ancestors.
     scope_ids = [nil | Enum.map(locations, & &1.id)]
 
     base_query =
-      from [observation: o, card: c] in Observation.Query.base_for_scope(scope),
+      from [observation: o, checklist: c] in Observation.Query.base_for_scope(scope),
         join: cl in assoc(c, :location),
         as: :card_location
 
@@ -83,11 +83,11 @@ defmodule Kjogvi.Birding.Logbook.Query do
   end
 
   # Cross-join the base join against the list of scope ids and keep only
-  # rows where the card belongs to that scope (World matches every card;
-  # a location scope matches when card.location_id == scope or the scope is
-  # one of the card location's level FK ancestors).
+  # rows where the checklist belongs to that scope (World matches every checklist;
+  # a location scope matches when checklist.location_id == scope or the scope is
+  # one of the checklist location's level FK ancestors).
   defp scoped_query(base_query, scope_ids) do
-    from [observation: o, card: c, stm: stm, card_location: cl] in base_query,
+    from [observation: o, checklist: c, stm: stm, card_location: cl] in base_query,
       inner_lateral_join:
         s in fragment("SELECT * FROM unnest(?::bigint[]) AS scope_id", ^scope_ids),
       on: true,

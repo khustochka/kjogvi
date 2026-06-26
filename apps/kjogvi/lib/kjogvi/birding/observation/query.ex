@@ -8,10 +8,10 @@ defmodule Kjogvi.Birding.Observation.Query do
   alias Kjogvi.Birding.Observation
 
   @doc """
-  Base query of a scope's reportable observations, joined to their card and
+  Base query of a scope's reportable observations, joined to their checklist and
   species/taxa mapping.
 
-  Named bindings `:observation`, `:card`, and `:stm` are set so callers can
+  Named bindings `:observation`, `:checklist`, and `:stm` are set so callers can
   extend the query without relying on positional order. Always excludes
   unreported observations and restricts to the scope's subject user (unless the
   scope has no subject user, in which case observations are aggregated across
@@ -27,13 +27,15 @@ defmodule Kjogvi.Birding.Observation.Query do
   end
 
   defp maybe_for_user(query, nil), do: query
-  defp maybe_for_user(query, %{id: user_id}), do: where(query, [card: c], c.user_id == ^user_id)
+
+  defp maybe_for_user(query, %{id: user_id}),
+    do: where(query, [checklist: c], c.user_id == ^user_id)
 
   defp base_query do
     from o in Observation,
       as: :observation,
-      join: c in assoc(o, :card),
-      as: :card,
+      join: c in assoc(o, :checklist),
+      as: :checklist,
       join: stm in assoc(o, :species_taxa_mapping),
       as: :stm,
       where: o.unreported == false

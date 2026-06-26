@@ -62,8 +62,8 @@ defmodule Kjogvi.Factory do
     end
   end
 
-  def card_factory do
-    %Kjogvi.Birding.Card{
+  def checklist_factory do
+    %Kjogvi.Birding.Checklist{
       user: Kjogvi.AccountsFixtures.user_fixture(),
       observ_date: "2023-08-29",
       effort_type: "INCIDENTAL",
@@ -73,7 +73,7 @@ defmodule Kjogvi.Factory do
 
   def observation_factory do
     %Kjogvi.Birding.Observation{
-      card: build(:card)
+      checklist: build(:checklist)
     }
   end
 

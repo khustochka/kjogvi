@@ -1,6 +1,6 @@
-defmodule KjogviWeb.Live.My.Cards.ObservationForm do
+defmodule KjogviWeb.Live.My.Checklists.ObservationForm do
   @moduledoc """
-  Function components for rendering observation rows within the card form.
+  Function components for rendering observation rows within the checklist form.
   """
 
   use KjogviWeb, :html
@@ -25,13 +25,13 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
       )
     ]}>
       <%!-- Hidden input to track observation order --%>
-      <input type="hidden" name="card[observations_order][]" value={@obs_form.index} />
+      <input type="hidden" name="checklist[observations_order][]" value={@obs_form.index} />
 
       <%!-- Hidden input to mark for deletion --%>
       <input
         :if={@is_marked_for_deletion}
         type="hidden"
-        name="card[observations_drop][]"
+        name="checklist[observations_drop][]"
         value={@obs_form.index}
       />
 
@@ -64,7 +64,7 @@ defmodule KjogviWeb.Live.My.Cards.ObservationForm do
               id={"taxon_search_#{@obs_form.index}"}
               label={(@obs_form[:id].value && "Observation ##{@obs_form[:id].value}") || "Taxon"}
               current_value={taxon_display(@obs)}
-              hidden_name={"card[observations][#{@obs_form.index}][taxon_key]"}
+              hidden_name={"checklist[observations][#{@obs_form.index}][taxon_key]"}
               hidden_value={@obs_form[:taxon_key].value || ""}
               user={@current_user}
               on_select_event="taxon_selected"

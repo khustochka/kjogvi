@@ -1,19 +1,19 @@
-defmodule Kjogvi.Birding.CardSearch do
+defmodule Kjogvi.Birding.ChecklistSearch do
   @moduledoc """
-  Cards index search: turns a `CardSearch.Filter` into a paginated page of
+  Checklists index search: turns a `ChecklistSearch.Filter` into a paginated page of
   cards.
 
-  In **card mode** (only card-level filters, or none) this returns whole cards
+  In **checklist mode** (only checklist-level filters, or none) this returns whole cards
   with their observations preloaded, just like `Kjogvi.Birding.get_cards/2`.
 
   In **observation mode** (any observation-level filter active) each returned
-  card carries *only* the observations that matched the filter, so the index
+  checklist carries *only* the observations that matched the filter, so the index
   can present matching observations grouped under their cards.
   """
 
   alias Kjogvi.Birding
-  alias Kjogvi.Birding.CardSearch.Filter
-  alias Kjogvi.Birding.CardSearch.Query
+  alias Kjogvi.Birding.ChecklistSearch.Filter
+  alias Kjogvi.Birding.ChecklistSearch.Query
   alias Kjogvi.Geo
   alias Kjogvi.Repo
 
@@ -36,15 +36,15 @@ defmodule Kjogvi.Birding.CardSearch do
     search(user, Filter.discombo!(filter), pagination)
   end
 
-  # Batches the level FK associations onto every card's location in one query
+  # Batches the level FK associations onto every checklist's location in one query
   # (see `Geo.Location.Query.put_location_levels/1`).
   defp put_location_levels(%Scrivener.Page{entries: cards} = page) do
     %{page | entries: Geo.Location.Query.put_location_levels(cards)}
   end
 
-  # Only observation mode attaches observations to the cards; in card mode the
+  # Only observation mode attaches observations to the cards; in checklist mode the
   # cards are returned with observations left unloaded, so the index renders
-  # them as plain panels (no per-card observation list).
+  # them as plain panels (no per-checklist observation list).
   defp attach_observations(%Scrivener.Page{} = page, %Filter{} = filter) do
     if Filter.observation_mode?(filter) do
       attach_matching_observations(page, filter)

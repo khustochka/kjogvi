@@ -15,7 +15,7 @@ defmodule KjogviWeb.Live.My.Images.Show do
     image =
       socket.assigns.current_scope.current_user
       |> Images.get_image!(id)
-      |> Repo.preload(observations: [card: :location])
+      |> Repo.preload(observations: [checklist: :location])
 
     observations = Kjogvi.Birding.preload_taxa_and_species(image.observations)
 

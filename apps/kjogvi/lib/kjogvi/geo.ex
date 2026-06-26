@@ -260,7 +260,7 @@ defmodule Kjogvi.Geo do
   end
 
   def cards_count(location_id) do
-    from(c in Kjogvi.Birding.Card,
+    from(c in Kjogvi.Birding.Checklist,
       where: c.location_id == ^location_id,
       select: count(c.id)
     )

@@ -39,7 +39,7 @@ defmodule Kjogvi.Geo.Location.Query do
   def level_assocs, do: @level_assocs
 
   @doc """
-  Preloads the level FK associations onto each card/observation's `location`.
+  Preloads the level FK associations onto each checklist/observation's `location`.
   """
   def preload_levels(query) do
     preload(query, location: ^@level_assocs)
@@ -217,7 +217,7 @@ defmodule Kjogvi.Geo.Location.Query do
   Query selecting the ids of a special location's members plus all their
   descendants.
 
-  A special is an amalgamation of member locations; a card counts toward it when
+  A special is an amalgamation of member locations; a checklist counts toward it when
   its location is a member or a descendant of one. Builds `child_locations/1` for
   each member (selecting ids) and unions them.
   """

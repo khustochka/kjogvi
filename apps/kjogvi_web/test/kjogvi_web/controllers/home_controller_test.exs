@@ -4,8 +4,8 @@ defmodule KjogviWeb.HomeControllerTest do
   import Kjogvi.AccountsFixtures
 
   defp observe_species(user, taxon) do
-    card = insert(:card, user: user)
-    insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+    checklist = insert(:checklist, user: user)
+    insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
   end
 
   test "GET /", %{conn: conn} do

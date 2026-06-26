@@ -272,8 +272,8 @@ defmodule KjogviWeb.Live.My.Locations.Index do
     """
   end
 
-  # The chevron-row tint matches the location card it wraps, so the toggle sits on
-  # the same background as the row (the card carries no horizontal padding here).
+  # The chevron-row tint matches the location checklist it wraps, so the toggle sits on
+  # the same background as the row (the checklist carries no horizontal padding here).
   defp tree_node_pad(%{location_type: :country}), do: "bg-sky-50"
   defp tree_node_pad(%{location_type: :subdivision1}), do: "bg-amber-50"
   defp tree_node_pad(%{user_id: nil}), do: "bg-stone-50"

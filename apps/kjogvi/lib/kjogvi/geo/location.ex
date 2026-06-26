@@ -65,7 +65,7 @@ defmodule Kjogvi.Geo.Location do
 
     belongs_to(:user, Kjogvi.Accounts.User)
 
-    has_many(:cards, Kjogvi.Birding.Card)
+    has_many(:cards, Kjogvi.Birding.Checklist)
     has_many(:observations, through: [:cards, :observations])
 
     many_to_many :special_child_locations, Location,

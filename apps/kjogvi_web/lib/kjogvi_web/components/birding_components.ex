@@ -35,7 +35,7 @@ defmodule KjogviWeb.BirdingComponents do
   @doc """
   Renders a list of cards as full-width panels.
 
-  Each card is rendered with `card_panel/1` inside a semantic `<ul>`/`<li>`
+  Each checklist is rendered with `card_panel/1` inside a semantic `<ul>`/`<li>`
   structure. Use this anywhere cards need to be listed.
   """
   attr :id, :string, required: true
@@ -43,55 +43,55 @@ defmodule KjogviWeb.BirdingComponents do
 
   attr :on_delete, :string,
     default: nil,
-    doc: "phx event name to trigger card deletion; passed through to each panel"
+    doc: "phx event name to trigger checklist deletion; passed through to each panel"
 
   def card_list(assigns) do
     ~H"""
     <ul id={@id} role="list" class="flex flex-col gap-3">
-      <.card_panel :for={card <- @cards} card={card} on_delete={@on_delete} />
+      <.card_panel :for={checklist <- @cards} checklist={checklist} on_delete={@on_delete} />
     </ul>
     """
   end
 
   @doc """
-  Renders a single card as a panel (`<li>`).
+  Renders a single checklist as a panel (`<li>`).
 
-  Shows the card date and location prominently, an inline list of effort-related
+  Shows the checklist date and location prominently, an inline list of effort-related
   metadata, and highlighted counts of countable species, taxa and observations.
   Provides links to view, edit and (when present) the eBird checklist.
   """
-  attr :card, :map, required: true
+  attr :checklist, :map, required: true
 
   attr :on_delete, :string,
     default: nil,
-    doc: "phx event name to trigger card deletion; when set, a delete control is rendered"
+    doc: "phx event name to trigger checklist deletion; when set, a delete control is rendered"
 
   def card_panel(assigns) do
     ~H"""
     <li
-      id={"card-#{@card.id}"}
+      id={"checklist-#{@checklist.id}"}
       class="group rounded-lg border border-stone-200 bg-white px-2.5 py-2.5 shadow-sm transition hover:shadow"
     >
       <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[1.05rem]">
         <%!-- Date + location --%>
         <.link
-          navigate={~p"/my/cards/#{@card.id}"}
+          navigate={~p"/my/cards/#{@checklist.id}"}
           class="font-semibold text-stone-900 underline decoration-forest-500 decoration-2 underline-offset-2 hover:decoration-forest-700"
         >
-          {format_date(@card.observ_date)}
+          {format_date(@checklist.observ_date)}
         </.link>
         <.link
-          navigate={~p"/my/cards/#{@card.id}"}
+          navigate={~p"/my/cards/#{@checklist.id}"}
           class="min-w-0 flex-1 truncate text-stone-600 no-underline hover:text-stone-900"
         >
-          {Geo.Location.long_name(:private, @card.location)}
+          {Geo.Location.long_name(:private, @checklist.location)}
         </.link>
 
         <%!-- Unresolved marker --%>
         <span
-          :if={not @card.resolved}
-          id={"card-#{@card.id}-unresolved"}
-          title="This card is marked unresolved and may still need amending"
+          :if={not @checklist.resolved}
+          id={"checklist-#{@checklist.id}-unresolved"}
+          title="This checklist is marked unresolved and may still need amending"
           class="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-50 px-1.5 py-0.5 text-sm font-medium text-red-700 ring-1 ring-red-200 ring-inset"
         >
           <.icon name="hero-exclamation-triangle" class="h-4 w-4" /> Unresolved
@@ -99,21 +99,21 @@ defmodule KjogviWeb.BirdingComponents do
 
         <%!-- Counts --%>
         <ul class="flex shrink-0 items-baseline gap-2.5 tabular-nums">
-          <li :if={not is_nil(@card.species_count)} title="Countable species">
-            <span class="text-lg font-bold text-forest-700">{@card.species_count}</span>
+          <li :if={not is_nil(@checklist.species_count)} title="Countable species">
+            <span class="text-lg font-bold text-forest-700">{@checklist.species_count}</span>
             <span class="text-xs text-stone-500">sp.</span>
             <span class="sr-only">countable species</span>
           </li>
-          <li :if={not is_nil(@card.taxa_count)} title="Distinct taxa" class="text-stone-600">
-            <span class="font-semibold">{@card.taxa_count}</span>
+          <li :if={not is_nil(@checklist.taxa_count)} title="Distinct taxa" class="text-stone-600">
+            <span class="font-semibold">{@checklist.taxa_count}</span>
             <span class="text-xs text-stone-500">taxa</span>
           </li>
           <li
-            :if={not is_nil(@card.observation_count)}
+            :if={not is_nil(@checklist.observation_count)}
             title="Observations"
             class="text-stone-600"
           >
-            <span class="font-semibold">{@card.observation_count}</span>
+            <span class="font-semibold">{@checklist.observation_count}</span>
             <span class="text-xs text-stone-500">obs</span>
           </li>
         </ul>
@@ -124,47 +124,47 @@ defmodule KjogviWeb.BirdingComponents do
         <ul class="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
           <li>
             <.link
-              navigate={~p"/my/cards/#{@card.id}"}
+              navigate={~p"/my/cards/#{@checklist.id}"}
               class="font-mono text-sm text-stone-400 no-underline hover:text-stone-600"
-              title="Card ID"
+              title="Checklist ID"
             >
-              #{@card.id}
+              #{@checklist.id}
             </.link>
           </li>
           <li title="Effort type">
-            <.effort_badge effort_type={@card.effort_type} class="text-sm" />
+            <.effort_badge effort_type={@checklist.effort_type} class="text-sm" />
           </li>
-          <li :if={@card.start_time} title="Start time" class="tabular-nums">
+          <li :if={@checklist.start_time} title="Start time" class="tabular-nums">
             <span class="sr-only">Start time:</span>
-            {format_time(@card.start_time)}
+            {format_time(@checklist.start_time)}
           </li>
-          <li :if={@card.duration_minutes} title="Duration" class="tabular-nums">
+          <li :if={@checklist.duration_minutes} title="Duration" class="tabular-nums">
             <.icon name="hero-clock" class="h-3.5 w-3.5 -mt-0.5 inline-block text-stone-400" />
             <span class="sr-only">Duration:</span>
-            {format_duration(@card.duration_minutes)}
+            {format_duration(@checklist.duration_minutes)}
           </li>
-          <li :if={@card.distance_kms} title="Distance" class="tabular-nums">
+          <li :if={@checklist.distance_kms} title="Distance" class="tabular-nums">
             <.icon
               name="hero-arrows-right-left"
               class="h-3.5 w-3.5 -mt-0.5 inline-block text-stone-400"
             />
             <span class="sr-only">Distance:</span>
-            {format_number(@card.distance_kms)} km
+            {format_number(@checklist.distance_kms)} km
           </li>
-          <li :if={@card.area_acres} title="Area" class="tabular-nums">
+          <li :if={@checklist.area_acres} title="Area" class="tabular-nums">
             <.icon
               name="hero-arrows-pointing-out"
               class="h-3.5 w-3.5 -mt-0.5 inline-block text-stone-400"
             />
             <span class="sr-only">Area:</span>
-            {format_number(@card.area_acres)} acres
+            {format_number(@checklist.area_acres)} acres
           </li>
-          <li :if={present?(@card.observers)} title="Observers">
+          <li :if={present?(@checklist.observers)} title="Observers">
             <.icon name="hero-users" class="h-3.5 w-3.5 -mt-0.5 inline-block text-stone-400" />
             <span class="sr-only">Observers:</span>
-            {@card.observers}
+            {@checklist.observers}
           </li>
-          <li :if={@card.motorless} title="Motorless">
+          <li :if={@checklist.motorless} title="Motorless">
             <span class="inline-flex items-center gap-1 rounded-md bg-forest-50 px-1.5 py-0.5 text-sm font-medium text-forest-600">
               <.icon name="bicycle" class="h-4 w-4" /> Motorless
             </span>
@@ -173,53 +173,53 @@ defmodule KjogviWeb.BirdingComponents do
 
         <%!-- Actions --%>
         <div class="flex shrink-0 items-center gap-4">
-          <span :if={@card.ebird_id} class="inline-flex items-center gap-1">
-            <.ebird_link ebird_id={@card.ebird_id} class="text-base" />
-            <.ebird_completeness_badge ebird_complete={@card.ebird_complete} short />
+          <span :if={@checklist.ebird_id} class="inline-flex items-center gap-1">
+            <.ebird_link ebird_id={@checklist.ebird_id} class="text-base" />
+            <.ebird_completeness_badge ebird_complete={@checklist.ebird_complete} short />
           </span>
           <.ebird_completeness_badge
-            :if={!@card.ebird_id && not is_nil(@card.ebird_complete)}
-            ebird_complete={@card.ebird_complete}
+            :if={!@checklist.ebird_id && not is_nil(@checklist.ebird_complete)}
+            ebird_complete={@checklist.ebird_complete}
           />
           <.link
-            navigate={~p"/my/cards/#{@card.id}/edit"}
+            navigate={~p"/my/cards/#{@checklist.id}/edit"}
             class="inline-flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-0.5 text-sm font-medium text-stone-700 no-underline hover:border-forest-400 hover:text-forest-700"
           >
             <.icon name="hero-pencil-square" class="h-3.5 w-3.5" />
-            Edit<span class="sr-only"> card #{@card.id}</span>
+            Edit<span class="sr-only"> checklist #{@checklist.id}</span>
           </.link>
-          <.delete_card_button :if={@on_delete} card={@card} on_delete={@on_delete} />
+          <.delete_card_button :if={@on_delete} checklist={@checklist} on_delete={@on_delete} />
         </div>
       </div>
 
-      <.card_observations :if={card_has_loaded_observations?(@card)} card={@card} />
+      <.card_observations :if={card_has_loaded_observations?(@checklist)} checklist={@checklist} />
     </li>
     """
   end
 
   @doc """
-  Renders a card's observations as a compact bottom section of its panel.
+  Renders a checklist's observations as a compact bottom section of its panel.
 
-  Expects `@card.observations` to be a loaded list, each observation carrying a
+  Expects `@checklist.observations` to be a loaded list, each observation carrying a
   preloaded `:taxon` (and optionally `:species`). When the list is empty, a
   muted "No observations" line is shown instead.
   """
-  attr :card, :map, required: true
+  attr :checklist, :map, required: true
 
   def card_observations(assigns) do
     ~H"""
     <div class="mt-3 -mx-2.5 -mb-2.5 rounded-b-lg border-t-2 border-stone-200 bg-stone-50 px-3 py-2.5">
-      <p :if={@card.observations == []} class="text-sm text-stone-400">
+      <p :if={@checklist.observations == []} class="text-sm text-stone-400">
         No observations.
       </p>
       <ul
-        :if={@card.observations != []}
+        :if={@checklist.observations != []}
         role="list"
         class="flex flex-col divide-y divide-stone-200/70 text-[0.95rem]"
       >
         <li
-          :for={obs <- @card.observations}
-          id={"card-#{@card.id}-obs-#{obs.id}"}
+          :for={obs <- @checklist.observations}
+          id={"checklist-#{@checklist.id}-obs-#{obs.id}"}
           class="flex items-baseline gap-x-2 py-1 first:pt-0 last:pb-0"
         >
           <span :if={present?(obs.quantity)} class="shrink-0 tabular-nums text-stone-500">
@@ -278,37 +278,37 @@ defmodule KjogviWeb.BirdingComponents do
   defp card_has_loaded_observations?(_card), do: false
 
   @doc """
-  Renders the card delete control.
+  Renders the checklist delete control.
 
-  When the card can be deleted, renders a clearly red-outlined trash button that
+  When the checklist can be deleted, renders a clearly red-outlined trash button that
   triggers the `on_delete` event (with a confirmation). When it cannot (it still
   has observations), renders an inert, plainly-disabled placeholder carrying none
   of the action wiring (`phx-click`, `data-confirm`, …).
   """
-  attr :card, :map, required: true
+  attr :checklist, :map, required: true
   attr :on_delete, :string, required: true
 
-  def delete_card_button(%{card: card} = assigns) do
-    assigns = assign(assigns, :deletable, card_deletable?(card))
+  def delete_card_button(%{checklist: checklist} = assigns) do
+    assigns = assign(assigns, :deletable, card_deletable?(checklist))
 
     ~H"""
     <button
       :if={@deletable}
       type="button"
-      id={"delete-card-#{@card.id}"}
+      id={"delete-checklist-#{@checklist.id}"}
       phx-click={@on_delete}
-      phx-value-id={@card.id}
-      data-confirm={"Delete card ##{@card.id}? This cannot be undone."}
-      title="Delete card"
-      aria-label={"Delete card ##{@card.id}"}
+      phx-value-id={@checklist.id}
+      data-confirm={"Delete checklist ##{@checklist.id}? This cannot be undone."}
+      title="Delete checklist"
+      aria-label={"Delete checklist ##{@checklist.id}"}
       class="inline-flex cursor-pointer items-center rounded-md border border-red-400 bg-white p-1 text-red-600 hover:border-red-500 hover:bg-red-50 hover:text-red-700"
     >
       <.icon name="hero-trash" class="h-3.5 w-3.5" />
     </button>
     <span
       :if={!@deletable}
-      id={"delete-card-#{@card.id}"}
-      title="Cards with observations cannot be deleted"
+      id={"delete-checklist-#{@checklist.id}"}
+      title="Checklists with observations cannot be deleted"
       class="inline-flex cursor-not-allowed items-center rounded-md border border-stone-200 bg-white p-1 text-stone-300"
     >
       <.icon name="hero-trash" class="h-3.5 w-3.5" />
@@ -317,7 +317,7 @@ defmodule KjogviWeb.BirdingComponents do
   end
 
   @doc """
-  Renders the effort type of a card as a coloured badge.
+  Renders the effort type of a checklist as a coloured badge.
   """
   attr :effort_type, :string, required: true
   attr :class, :string, default: nil
@@ -335,7 +335,7 @@ defmodule KjogviWeb.BirdingComponents do
   end
 
   @doc """
-  Renders a link to a card's eBird checklist (opens in a new tab).
+  Renders a link to a checklist's eBird checklist (opens in a new tab).
   """
   attr :ebird_id, :string, required: true
   attr :class, :string, default: nil
@@ -358,7 +358,7 @@ defmodule KjogviWeb.BirdingComponents do
   end
 
   @doc """
-  Renders a panel linking to a card's eBird checklist.
+  Renders a panel linking to a checklist's eBird checklist.
 
   The whole panel is the link and shows the eBird wordmark, the checklist id and,
   when `ebird_complete` is set, a badge indicating whether the checklist is
@@ -449,9 +449,9 @@ defmodule KjogviWeb.BirdingComponents do
     @ebird_checklist_base <> ebird_id
   end
 
-  defp card_deletable?(card), do: Kjogvi.Birding.card_deletable?(card)
+  defp card_deletable?(checklist), do: Kjogvi.Birding.card_deletable?(checklist)
 
-  @doc "Human-readable label for a card's effort type."
+  @doc "Human-readable label for a checklist's effort type."
   def effort_label(type) do
     Map.get(@effort_labels, type, type)
   end

@@ -136,7 +136,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
           :if={@show_private_details}
           navigate={~p"/my/cards/#{@lifer.card_id}"}
           icon="hero-clipboard-document-list"
-          label="View card"
+          label="View checklist"
           class="text-gray-400"
         />
       </div>

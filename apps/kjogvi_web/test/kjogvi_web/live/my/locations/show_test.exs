@@ -166,8 +166,8 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
   end
 
   test "delete button disabled when location has cards", %{conn: conn, user: user} do
-    location = insert(:location, name_en: "With Cards", user_id: user.id)
-    insert(:card, location: location)
+    location = insert(:location, name_en: "With Checklists", user_id: user.id)
+    insert(:checklist, location: location)
 
     {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
 

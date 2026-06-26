@@ -7,7 +7,7 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
 
   import Kjogvi.Factory
 
-  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding.Checklist
   alias Kjogvi.Legacy.Import.Cards
   alias Kjogvi.Repo
 
@@ -49,8 +49,8 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
 
       Cards.import(@columns, [row(%{"id" => 1, "locus_id" => location.id})], user: user)
 
-      [card] = Repo.all(Card)
-      assert card.import_source == :legacy
+      [checklist] = Repo.all(Checklist)
+      assert checklist.import_source == :legacy
     end
 
     test "keeps the original id of imported cards" do
@@ -59,8 +59,8 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
 
       Cards.import(@columns, [row(%{"id" => 42, "locus_id" => location.id})], user: user)
 
-      [card] = Repo.all(Card)
-      assert card.id == 42
+      [checklist] = Repo.all(Checklist)
+      assert checklist.id == 42
     end
 
     test "normalizes blank text columns to nil" do
@@ -69,9 +69,9 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
 
       Cards.import(@columns, [row(%{"id" => 1, "locus_id" => location.id})], user: user)
 
-      [card] = Repo.all(Card)
-      assert card.notes == "kept"
-      assert card.weather == nil
+      [checklist] = Repo.all(Checklist)
+      assert checklist.notes == "kept"
+      assert checklist.weather == nil
     end
 
     test "advances the id sequence past @min_start_seq for new cards" do
@@ -80,7 +80,7 @@ defmodule Kjogvi.Legacy.Import.CardsTest do
 
       Cards.import(@columns, [row(%{"id" => 42, "locus_id" => location.id})], user: user)
 
-      next_card = insert(:card, user: user)
+      next_card = insert(:checklist, user: user)
       assert next_card.id >= 20_000
     end
   end

@@ -4,13 +4,13 @@ defmodule Kjogvi.BirdingTest do
   import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Birding
-  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding.Checklist
 
   describe "find_new_checklists/2" do
     test "returns unreported checklists" do
       user = user_fixture()
-      insert(:card, user: user, ebird_id: "S100803884")
-      insert(:card, user: user, ebird_id: "S100803921")
+      insert(:checklist, user: user, ebird_id: "S100803884")
+      insert(:checklist, user: user, ebird_id: "S100803921")
 
       new_checklists = [%{ebird_id: "S100878702"}, %{ebird_id: "S100803921"}]
 
@@ -20,7 +20,7 @@ defmodule Kjogvi.BirdingTest do
   end
 
   describe "create_card/2" do
-    test "creates a card with valid attributes" do
+    test "creates a checklist with valid attributes" do
       user = user_fixture()
       location = insert(:location)
 
@@ -32,11 +32,11 @@ defmodule Kjogvi.BirdingTest do
         "duration_minutes" => 30
       }
 
-      assert {:ok, card} = Birding.create_card(user, attrs)
-      assert card.user_id == user.id
-      assert card.observ_date == ~D[2024-05-10]
-      assert card.effort_type == "STATIONARY"
-      assert card.location_id == location.id
+      assert {:ok, checklist} = Birding.create_card(user, attrs)
+      assert checklist.user_id == user.id
+      assert checklist.observ_date == ~D[2024-05-10]
+      assert checklist.effort_type == "STATIONARY"
+      assert checklist.location_id == location.id
     end
 
     test "returns error changeset with invalid attributes" do
@@ -47,7 +47,7 @@ defmodule Kjogvi.BirdingTest do
     end
 
     test "requires observ_date, location_id, effort_type, and user_id" do
-      changeset = Card.changeset(%Card{}, %{})
+      changeset = Checklist.changeset(%Checklist{}, %{})
 
       refute changeset.valid?
 
@@ -59,7 +59,7 @@ defmodule Kjogvi.BirdingTest do
              } = errors_on(changeset)
     end
 
-    test "creates a card with observations" do
+    test "creates a checklist with observations" do
       user = user_fixture()
       location = insert(:location)
 
@@ -74,11 +74,11 @@ defmodule Kjogvi.BirdingTest do
         }
       }
 
-      assert {:ok, card} = Birding.create_card(user, attrs)
-      card = Repo.preload(card, :observations)
-      assert length(card.observations) == 1
-      assert hd(card.observations).taxon_key == "ebird/eBird_2023/bkcchi1"
-      assert hd(card.observations).quantity == "3"
+      assert {:ok, checklist} = Birding.create_card(user, attrs)
+      checklist = Repo.preload(checklist, :observations)
+      assert length(checklist.observations) == 1
+      assert hd(checklist.observations).taxon_key == "ebird/eBird_2023/bkcchi1"
+      assert hd(checklist.observations).quantity == "3"
     end
 
     test "promotes observed taxa that lack a species page" do
@@ -101,7 +101,7 @@ defmodule Kjogvi.BirdingTest do
     end
   end
 
-  describe "card location ownership" do
+  describe "checklist location ownership" do
     test "create_card accepts a common location" do
       user = user_fixture()
       location = insert(:location, location_type: "city")
@@ -129,10 +129,10 @@ defmodule Kjogvi.BirdingTest do
       own = insert(:location, location_type: "city", user_id: user.id)
       other = insert(:location, location_type: "city", user_id: user_fixture().id)
 
-      {:ok, card} = Birding.create_card(user, valid_card_attrs(own))
+      {:ok, checklist} = Birding.create_card(user, valid_card_attrs(own))
 
       assert {:error, changeset} =
-               Birding.update_card(card, %{"location_id" => other.id})
+               Birding.update_card(checklist, %{"location_id" => other.id})
 
       assert "is not available" in errors_on(changeset).location_id
     end
@@ -147,12 +147,12 @@ defmodule Kjogvi.BirdingTest do
   end
 
   describe "update_card/2" do
-    test "updates a card with valid attributes" do
+    test "updates a checklist with valid attributes" do
       user = user_fixture()
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
       assert {:ok, updated} =
-               Birding.update_card(card, %{
+               Birding.update_card(checklist, %{
                  "effort_type" => "TRAVEL",
                  "start_time" => "09:00:00",
                  "duration_minutes" => 60,
@@ -164,81 +164,81 @@ defmodule Kjogvi.BirdingTest do
 
     test "returns error changeset with invalid attributes" do
       user = user_fixture()
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
-      assert {:error, changeset} = Birding.update_card(card, %{"observ_date" => nil})
+      assert {:error, changeset} = Birding.update_card(checklist, %{"observ_date" => nil})
       refute changeset.valid?
     end
 
-    test "promotes taxa added to the card" do
+    test "promotes taxa added to the checklist" do
       user = user_fixture()
-      card = insert(:card, user: user) |> Repo.preload(:observations)
+      checklist = insert(:checklist, user: user) |> Repo.preload(:observations)
       taxon = Ornitho.Factory.insert(:taxon, category: "species")
       key = Ornitho.Schema.Taxon.key(taxon)
 
       refute Kjogvi.Pages.Species.from_taxon_key(key)
 
       assert {:ok, _updated} =
-               Birding.update_card(card, %{"observations" => %{"0" => %{"taxon_key" => key}}})
+               Birding.update_card(checklist, %{"observations" => %{"0" => %{"taxon_key" => key}}})
 
       assert Kjogvi.Pages.Species.from_taxon_key(key)
     end
   end
 
   describe "change_card/1" do
-    test "returns a changeset for a card" do
+    test "returns a changeset for a checklist" do
       user = user_fixture()
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
-      changeset = Birding.change_card(card)
+      changeset = Birding.change_card(checklist)
       assert %Ecto.Changeset{} = changeset
     end
 
     test "applies given attrs to the changeset" do
       user = user_fixture()
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
-      changeset = Birding.change_card(card, %{"notes" => "Updated note"})
+      changeset = Birding.change_card(checklist, %{"notes" => "Updated note"})
       assert Ecto.Changeset.get_change(changeset, :notes) == "Updated note"
     end
   end
 
   describe "new_card/1" do
-    test "returns a new card struct for the user" do
+    test "returns a new checklist struct for the user" do
       user = user_fixture()
 
-      card = Birding.new_card(user)
-      assert %Card{} = card
-      assert card.user_id == user.id
-      assert card.motorless == false
-      assert card.legacy_autogenerated == false
-      assert card.resolved == true
-      assert card.observations == []
+      checklist = Birding.new_card(user)
+      assert %Checklist{} = checklist
+      assert checklist.user_id == user.id
+      assert checklist.motorless == false
+      assert checklist.legacy_autogenerated == false
+      assert checklist.resolved == true
+      assert checklist.observations == []
     end
 
-    test "prefills observ_date with the day after the latest card" do
+    test "prefills observ_date with the day after the latest checklist" do
       user = user_fixture()
-      insert(:card, user: user, observ_date: ~D[2024-01-15])
-      insert(:card, user: user, observ_date: ~D[2024-01-10])
+      insert(:checklist, user: user, observ_date: ~D[2024-01-15])
+      insert(:checklist, user: user, observ_date: ~D[2024-01-10])
 
-      card = Birding.new_card(user)
-      assert card.observ_date == ~D[2024-01-16]
+      checklist = Birding.new_card(user)
+      assert checklist.observ_date == ~D[2024-01-16]
     end
 
-    test "prefills today when the latest card is today" do
+    test "prefills today when the latest checklist is today" do
       user = user_fixture()
-      insert(:card, user: user, observ_date: Date.utc_today())
+      insert(:checklist, user: user, observ_date: Date.utc_today())
 
-      card = Birding.new_card(user)
-      assert card.observ_date == Date.utc_today()
+      checklist = Birding.new_card(user)
+      assert checklist.observ_date == Date.utc_today()
     end
 
-    test "prefills today when the latest card is yesterday" do
+    test "prefills today when the latest checklist is yesterday" do
       user = user_fixture()
-      insert(:card, user: user, observ_date: Date.add(Date.utc_today(), -1))
+      insert(:checklist, user: user, observ_date: Date.add(Date.utc_today(), -1))
 
-      card = Birding.new_card(user)
-      assert card.observ_date == Date.utc_today()
+      checklist = Birding.new_card(user)
+      assert checklist.observ_date == Date.utc_today()
     end
   end
 
@@ -248,16 +248,16 @@ defmodule Kjogvi.BirdingTest do
       assert Birding.next_empty_date(user) == Date.utc_today()
     end
 
-    test "returns latest card date + 1 when in the past" do
+    test "returns latest checklist date + 1 when in the past" do
       user = user_fixture()
-      insert(:card, user: user, observ_date: ~D[2024-03-10])
+      insert(:checklist, user: user, observ_date: ~D[2024-03-10])
 
       assert Birding.next_empty_date(user) == ~D[2024-03-11]
     end
 
-    test "returns today when the latest card is today" do
+    test "returns today when the latest checklist is today" do
       user = user_fixture()
-      insert(:card, user: user, observ_date: Date.utc_today())
+      insert(:checklist, user: user, observ_date: Date.utc_today())
 
       assert Birding.next_empty_date(user) == Date.utc_today()
     end
@@ -265,7 +265,7 @@ defmodule Kjogvi.BirdingTest do
     test "ignores cards from other users" do
       user = user_fixture()
       other_user = user_fixture()
-      insert(:card, user: other_user, observ_date: ~D[2024-06-01])
+      insert(:checklist, user: other_user, observ_date: ~D[2024-06-01])
 
       assert Birding.next_empty_date(user) == Date.utc_today()
     end
@@ -284,8 +284,8 @@ defmodule Kjogvi.BirdingTest do
   describe "get_cards/2" do
     test "returns paginated cards for a user" do
       user = user_fixture()
-      insert(:card, user: user, observ_date: ~D[2024-01-15])
-      insert(:card, user: user, observ_date: ~D[2024-02-20])
+      insert(:checklist, user: user, observ_date: ~D[2024-01-15])
+      insert(:checklist, user: user, observ_date: ~D[2024-02-20])
 
       page = Birding.get_cards(user, %{page: 1, page_size: 10})
       assert length(page.entries) == 2
@@ -294,8 +294,8 @@ defmodule Kjogvi.BirdingTest do
     test "does not return cards from other users" do
       user = user_fixture()
       other_user = user_fixture()
-      insert(:card, user: user)
-      insert(:card, user: other_user)
+      insert(:checklist, user: user)
+      insert(:checklist, user: other_user)
 
       page = Birding.get_cards(user, %{page: 1, page_size: 10})
       assert length(page.entries) == 1
@@ -303,9 +303,9 @@ defmodule Kjogvi.BirdingTest do
 
     test "orders cards by date descending" do
       user = user_fixture()
-      insert(:card, user: user, observ_date: ~D[2024-01-15])
-      insert(:card, user: user, observ_date: ~D[2024-03-20])
-      insert(:card, user: user, observ_date: ~D[2024-02-10])
+      insert(:checklist, user: user, observ_date: ~D[2024-01-15])
+      insert(:checklist, user: user, observ_date: ~D[2024-03-20])
+      insert(:checklist, user: user, observ_date: ~D[2024-02-10])
 
       page = Birding.get_cards(user, %{page: 1, page_size: 10})
       dates = Enum.map(page.entries, & &1.observ_date)
@@ -314,9 +314,9 @@ defmodule Kjogvi.BirdingTest do
 
     test "includes observation count" do
       user = user_fixture()
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/bkcchi1")
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
 
       page = Birding.get_cards(user, %{page: 1, page_size: 10})
       assert hd(page.entries).observation_count == 2
@@ -324,10 +324,10 @@ defmodule Kjogvi.BirdingTest do
 
     test "includes distinct taxa count" do
       user = user_fixture()
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/bkcchi1")
 
       page = Birding.get_cards(user, %{page: 1, page_size: 10})
       entry = hd(page.entries)
@@ -340,12 +340,12 @@ defmodule Kjogvi.BirdingTest do
       {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
       key = Ornitho.Schema.Taxon.key(taxon)
 
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: key)
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: key)
       # Same taxon again — counts once as a species.
-      insert(:observation, card: card, taxon_key: key)
+      insert(:observation, checklist: checklist, taxon_key: key)
       # A taxon with no species page is not countable.
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/unmapped")
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/unmapped")
 
       page = Birding.get_cards(user, %{page: 1, page_size: 10})
       entry = hd(page.entries)
@@ -358,8 +358,8 @@ defmodule Kjogvi.BirdingTest do
       {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
       key = Ornitho.Schema.Taxon.key(taxon)
 
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: key, unreported: true)
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: key, unreported: true)
 
       page = Birding.get_cards(user, %{page: 1, page_size: 10})
       entry = hd(page.entries)
@@ -367,9 +367,9 @@ defmodule Kjogvi.BirdingTest do
       assert entry.observation_count == 1
     end
 
-    test "returns zero counts for a card with no observations" do
+    test "returns zero counts for a checklist with no observations" do
       user = user_fixture()
-      insert(:card, user: user)
+      insert(:checklist, user: user)
 
       page = Birding.get_cards(user, %{page: 1, page_size: 10})
       entry = hd(page.entries)
@@ -382,7 +382,7 @@ defmodule Kjogvi.BirdingTest do
       user = user_fixture()
 
       for i <- 1..5 do
-        insert(:card, user: user, observ_date: Date.add(~D[2024-01-01], i))
+        insert(:checklist, user: user, observ_date: Date.add(~D[2024-01-01], i))
       end
 
       page = Birding.get_cards(user, %{page: 1, page_size: 2})
@@ -392,28 +392,28 @@ defmodule Kjogvi.BirdingTest do
   end
 
   describe "fetch_card_with_observations/2" do
-    test "returns a card with preloaded observations for the user" do
+    test "returns a checklist with preloaded observations for the user" do
       user = user_fixture()
       {taxon, _} = Kjogvi.Factory.create_species_taxon_with_page()
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
 
-      fetched = Birding.fetch_card_with_observations(user, card.id)
-      assert fetched.id == card.id
+      fetched = Birding.fetch_card_with_observations(user, checklist.id)
+      assert fetched.id == checklist.id
       assert length(fetched.observations) == 1
     end
 
-    test "raises when card belongs to another user" do
+    test "raises when checklist belongs to another user" do
       user = user_fixture()
       other_user = user_fixture()
-      card = insert(:card, user: other_user)
+      checklist = insert(:checklist, user: other_user)
 
       assert_raise Ecto.NoResultsError, fn ->
-        Birding.fetch_card_with_observations(user, card.id)
+        Birding.fetch_card_with_observations(user, checklist.id)
       end
     end
 
-    test "raises when card does not exist" do
+    test "raises when checklist does not exist" do
       user = user_fixture()
 
       assert_raise Ecto.NoResultsError, fn ->
@@ -423,71 +423,71 @@ defmodule Kjogvi.BirdingTest do
   end
 
   describe "fetch_card_for_edit/2" do
-    test "returns a card with preloaded observations" do
+    test "returns a checklist with preloaded observations" do
       user = user_fixture()
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/bkcchi1")
 
-      fetched = Birding.fetch_card_for_edit(user, card.id)
-      assert fetched.id == card.id
+      fetched = Birding.fetch_card_for_edit(user, checklist.id)
+      assert fetched.id == checklist.id
       assert length(fetched.observations) == 1
     end
 
-    test "raises when card belongs to another user" do
+    test "raises when checklist belongs to another user" do
       user = user_fixture()
       other_user = user_fixture()
-      card = insert(:card, user: other_user)
+      checklist = insert(:checklist, user: other_user)
 
       assert_raise Ecto.NoResultsError, fn ->
-        Birding.fetch_card_for_edit(user, card.id)
+        Birding.fetch_card_for_edit(user, checklist.id)
       end
     end
   end
 
   describe "card_deletable?/1" do
     test "true when observation_count virtual field is zero" do
-      assert Birding.card_deletable?(%Card{observation_count: 0})
+      assert Birding.card_deletable?(%Checklist{observation_count: 0})
     end
 
     test "false when observation_count virtual field is positive" do
-      refute Birding.card_deletable?(%Card{observation_count: 2})
+      refute Birding.card_deletable?(%Checklist{observation_count: 2})
     end
 
     test "true when preloaded observations are empty" do
-      assert Birding.card_deletable?(%Card{observations: []})
+      assert Birding.card_deletable?(%Checklist{observations: []})
     end
 
     test "false when preloaded observations are present" do
-      refute Birding.card_deletable?(%Card{observations: [%Birding.Observation{}]})
+      refute Birding.card_deletable?(%Checklist{observations: [%Birding.Observation{}]})
     end
 
     test "queries the database when neither is loaded" do
       user = user_fixture()
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
-      assert Birding.card_deletable?(%Card{id: card.id})
+      assert Birding.card_deletable?(%Checklist{id: checklist.id})
 
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
-      refute Birding.card_deletable?(%Card{id: card.id})
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/bkcchi1")
+      refute Birding.card_deletable?(%Checklist{id: checklist.id})
     end
   end
 
   describe "delete_card/1" do
-    test "deletes a card that has no observations" do
+    test "deletes a checklist that has no observations" do
       user = user_fixture()
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
-      assert {:ok, _card} = Birding.delete_card(card)
-      refute Kjogvi.Repo.get(Card, card.id)
+      assert {:ok, _card} = Birding.delete_card(checklist)
+      refute Kjogvi.Repo.get(Checklist, checklist.id)
     end
 
-    test "refuses to delete a card with observations" do
+    test "refuses to delete a checklist with observations" do
       user = user_fixture()
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/bkcchi1")
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/bkcchi1")
 
-      assert {:error, :has_observations} = Birding.delete_card(card)
-      assert Kjogvi.Repo.get(Card, card.id)
+      assert {:error, :has_observations} = Birding.delete_card(checklist)
+      assert Kjogvi.Repo.get(Checklist, checklist.id)
     end
   end
 end

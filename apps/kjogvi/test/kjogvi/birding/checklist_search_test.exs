@@ -1,10 +1,10 @@
-defmodule Kjogvi.Birding.CardSearchTest do
+defmodule Kjogvi.Birding.ChecklistSearchTest do
   use Kjogvi.DataCase, async: true
 
   import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Birding
-  alias Kjogvi.Birding.CardSearch.Filter
+  alias Kjogvi.Birding.ChecklistSearch.Filter
 
   defp species_key do
     {taxon, _page} = Kjogvi.Factory.create_species_taxon_with_page()
@@ -15,25 +15,25 @@ defmodule Kjogvi.Birding.CardSearchTest do
     Birding.search_cards(user, filter, %{page: 1, page_size: 50})
   end
 
-  describe "search_cards/3 — card mode" do
+  describe "search_cards/3 — checklist mode" do
     test "returns all cards when filter is blank, with observations left unloaded" do
       user = user_fixture()
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: species_key())
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: species_key())
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
 
       result = page(user, %Filter{})
 
       assert [entry] = result.entries
-      assert entry.id == card.id
-      # Card mode does not attach observations to the panels.
+      assert entry.id == checklist.id
+      # Checklist mode does not attach observations to the panels.
       assert %Ecto.Association.NotLoaded{} = entry.observations
     end
 
     test "filters by exact date" do
       user = user_fixture()
-      match = insert(:card, user: user, observ_date: ~D[2024-05-01])
-      insert(:card, user: user, observ_date: ~D[2024-05-02])
+      match = insert(:checklist, user: user, observ_date: ~D[2024-05-01])
+      insert(:checklist, user: user, observ_date: ~D[2024-05-02])
 
       result = page(user, %Filter{date: ~D[2024-05-01]})
 
@@ -45,8 +45,8 @@ defmodule Kjogvi.Birding.CardSearchTest do
       user = user_fixture()
       loc = insert(:location)
       other = insert(:location)
-      match = insert(:card, user: user, location: loc)
-      insert(:card, user: user, location: other)
+      match = insert(:checklist, user: user, location: loc)
+      insert(:checklist, user: user, location: other)
 
       result = page(user, %Filter{location: loc})
 
@@ -59,8 +59,8 @@ defmodule Kjogvi.Birding.CardSearchTest do
       parent = insert(:country)
       child = insert(:location, location_type: "city", country: parent)
 
-      parent_card = insert(:card, user: user, location: parent)
-      child_card = insert(:card, user: user, location: child)
+      parent_card = insert(:checklist, user: user, location: parent)
+      child_card = insert(:checklist, user: user, location: child)
 
       ids =
         page(user, %Filter{location: parent, include_subregions: true})
@@ -77,11 +77,11 @@ defmodule Kjogvi.Birding.CardSearchTest do
       user = user_fixture()
       key = species_key()
 
-      with_match = insert(:card, user: user)
-      insert(:observation, card: with_match, taxon_key: key)
+      with_match = insert(:checklist, user: user)
+      insert(:observation, checklist: with_match, taxon_key: key)
 
-      without_match = insert(:card, user: user)
-      insert(:observation, card: without_match, taxon_key: "ebird/eBird_2023/amecro")
+      without_match = insert(:checklist, user: user)
+      insert(:observation, checklist: without_match, taxon_key: "ebird/eBird_2023/amecro")
 
       result = page(user, %Filter{taxon_key: key, exclude_subspecies: true})
 
@@ -89,13 +89,13 @@ defmodule Kjogvi.Birding.CardSearchTest do
       assert entry.id == with_match.id
     end
 
-    test "attaches only the matching observations to each card" do
+    test "attaches only the matching observations to each checklist" do
       user = user_fixture()
       key = species_key()
 
-      card = insert(:card, user: user)
-      match = insert(:observation, card: card, taxon_key: key)
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro")
+      checklist = insert(:checklist, user: user)
+      match = insert(:observation, checklist: checklist, taxon_key: key)
+      insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
 
       result = page(user, %Filter{taxon_key: key, exclude_subspecies: true})
 
@@ -106,9 +106,14 @@ defmodule Kjogvi.Birding.CardSearchTest do
 
     test "voice :heard_only keeps only heard observations" do
       user = user_fixture()
-      card = insert(:card, user: user)
-      heard = insert(:observation, card: card, taxon_key: species_key(), voice: true)
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro", voice: false)
+      checklist = insert(:checklist, user: user)
+      heard = insert(:observation, checklist: checklist, taxon_key: species_key(), voice: true)
+
+      insert(:observation,
+        checklist: checklist,
+        taxon_key: "ebird/eBird_2023/amecro",
+        voice: false
+      )
 
       result = page(user, %Filter{voice: :heard_only})
 
@@ -119,9 +124,15 @@ defmodule Kjogvi.Birding.CardSearchTest do
 
     test "voice :seen keeps only non-heard observations" do
       user = user_fixture()
-      card = insert(:card, user: user)
-      insert(:observation, card: card, taxon_key: species_key(), voice: true)
-      seen = insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro", voice: false)
+      checklist = insert(:checklist, user: user)
+      insert(:observation, checklist: checklist, taxon_key: species_key(), voice: true)
+
+      seen =
+        insert(:observation,
+          checklist: checklist,
+          taxon_key: "ebird/eBird_2023/amecro",
+          voice: false
+        )
 
       result = page(user, %Filter{voice: :seen})
 
@@ -132,9 +143,14 @@ defmodule Kjogvi.Birding.CardSearchTest do
 
     test "hidden keeps only hidden observations" do
       user = user_fixture()
-      card = insert(:card, user: user)
-      hidden = insert(:observation, card: card, taxon_key: species_key(), hidden: true)
-      insert(:observation, card: card, taxon_key: "ebird/eBird_2023/amecro", hidden: false)
+      checklist = insert(:checklist, user: user)
+      hidden = insert(:observation, checklist: checklist, taxon_key: species_key(), hidden: true)
+
+      insert(:observation,
+        checklist: checklist,
+        taxon_key: "ebird/eBird_2023/amecro",
+        hidden: false
+      )
 
       result = page(user, %Filter{hidden: true})
 
@@ -146,8 +162,8 @@ defmodule Kjogvi.Birding.CardSearchTest do
     test "does not return cards from other users" do
       user = user_fixture()
       other = user_fixture()
-      other_card = insert(:card, user: other)
-      insert(:observation, card: other_card, taxon_key: species_key(), hidden: true)
+      other_card = insert(:checklist, user: other)
+      insert(:observation, checklist: other_card, taxon_key: species_key(), hidden: true)
 
       assert page(user, %Filter{hidden: true}).entries == []
     end

@@ -17,13 +17,13 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
         |> Repo.update!()
 
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at"],
-        [[card.id, "amerob", now, now]],
+        [[checklist.id, "amerob", now, now]],
         user: user
       )
 
@@ -37,13 +37,13 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
         |> Repo.update!()
 
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at"],
-        [[card.id, "amerob", now, now]],
+        [[checklist.id, "amerob", now, now]],
         user: user
       )
 
@@ -57,13 +57,13 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
         |> Repo.update!()
 
-      card = insert(:card, user: user)
+      checklist = insert(:checklist, user: user)
 
       now = "2026-01-02T03:04:05Z"
 
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at", "quantity", "notes"],
-        [[card.id, "amerob", now, now, "  ", "  kept  "]],
+        [[checklist.id, "amerob", now, now, "  ", "  kept  "]],
         user: user
       )
 
@@ -94,7 +94,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       end
     end
 
-    test "falls back to the card's timestamps when created_at/updated_at are nil" do
+    test "falls back to the checklist's timestamps when created_at/updated_at are nil" do
       user =
         Kjogvi.AccountsFixtures.user_fixture()
         |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
@@ -102,14 +102,14 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
 
       card_time = ~U[2020-05-06 07:08:09.000000Z]
 
-      card =
-        insert(:card, user: user)
+      checklist =
+        insert(:checklist, user: user)
         |> Ecto.Changeset.change(inserted_at: card_time, updated_at: card_time)
         |> Repo.update!()
 
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at"],
-        [[card.id, "amerob", nil, nil]],
+        [[checklist.id, "amerob", nil, nil]],
         user: user
       )
 
@@ -126,8 +126,8 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
 
       card_time = ~U[2020-05-06 07:08:09.000000Z]
 
-      card =
-        insert(:card, user: user)
+      checklist =
+        insert(:checklist, user: user)
         |> Ecto.Changeset.change(inserted_at: card_time, updated_at: card_time)
         |> Repo.update!()
 
@@ -135,7 +135,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
 
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at"],
-        [[card.id, "amerob", obs_time, obs_time]],
+        [[checklist.id, "amerob", obs_time, obs_time]],
         user: user
       )
 

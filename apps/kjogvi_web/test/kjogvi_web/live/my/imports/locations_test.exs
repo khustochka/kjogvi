@@ -33,13 +33,13 @@ defmodule KjogviWeb.Live.My.Imports.LocationsTest do
   end
 
   describe "visibility" do
-    test "an admin sees the Locations Import card", %{conn: conn} do
+    test "an admin sees the Locations Import checklist", %{conn: conn} do
       {:ok, _lv, html} = conn |> login_admin() |> live(~p"/my/imports")
 
       assert html =~ "Locations Import"
     end
 
-    test "a non-admin does not see the Locations Import card", %{conn: conn} do
+    test "a non-admin does not see the Locations Import checklist", %{conn: conn} do
       {:ok, _lv, html} =
         conn
         |> login_user(Kjogvi.AccountsFixtures.user_fixture())

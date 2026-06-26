@@ -177,8 +177,10 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
 
   test "deleting a location with cards fails with an error and keeps it",
        %{conn: conn, user: user} do
-    location = insert(:location, name_en: "With Cards", location_type: "city", user_id: user.id)
-    insert(:card, location: location)
+    location =
+      insert(:location, name_en: "With Checklists", location_type: "city", user_id: user.id)
+
+    insert(:checklist, location: location)
 
     {:ok, index_live, _html} = live(conn, ~p"/my/locations")
 

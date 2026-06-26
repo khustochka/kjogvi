@@ -3,7 +3,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
 
   alias Kjogvi.Legacy.Import.Utils
   alias Kjogvi.Repo
-  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding.Checklist
   alias Kjogvi.Birding.Observation
 
   @blank_to_nil_columns [:quantity, :notes, :private_notes, :ebird_obs_id]
@@ -43,13 +43,13 @@ defmodule Kjogvi.Legacy.Import.Observations do
     Kjogvi.Repo.query("DELETE FROM observations WHERE import_source='legacy';")
   end
 
-  # Card timestamps keyed by card id, for the cards referenced in this batch.
-  # Cards are imported before observations and always have non-null timestamps,
+  # Checklist timestamps keyed by checklist id, for the cards referenced in this batch.
+  # Checklists are imported before observations and always have non-null timestamps,
   # so they're the fallback for legacy observations missing created_at/updated_at.
   defp card_times(raw) do
     card_ids = raw |> Enum.map(& &1.card_id) |> Enum.uniq()
 
-    Card.Query.timestamps_by_id(card_ids)
+    Checklist.Query.timestamps_by_id(card_ids)
     |> Repo.all()
     |> Map.new()
   end
@@ -79,7 +79,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
       :private_notes
     ])
     |> Map.put(:taxon_key, "/#{book_signature}/#{ebird_code}")
-    # Many legacy observations have no created_at/updated_at; fall back to the card's.
+    # Many legacy observations have no created_at/updated_at; fall back to the checklist's.
     |> Map.put(:inserted_at, Utils.convert_timestamp(created_at) || card_inserted_at)
     |> Map.put(:updated_at, Utils.convert_timestamp(updated_at) || card_updated_at)
     |> Map.put(:import_source, :legacy)

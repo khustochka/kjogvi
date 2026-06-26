@@ -7,7 +7,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
 
   alias Kjogvi.Birding.Lifelist
   alias Kjogvi.Birding.Lifelist.Filter
-  alias Kjogvi.Birding.Card
+  alias Kjogvi.Birding.Checklist
   alias Kjogvi.Birding.Observation
 
   @typep filter_or_keyword() :: Lifelist.filter() | keyword()
@@ -84,16 +84,16 @@ defmodule Kjogvi.Birding.Lifelist.Query do
     |> Enum.reduce(base, fn filter, query ->
       case filter do
         {:year, year} when not is_nil(year) ->
-          Card.Query.by_year(query, year)
+          Checklist.Query.by_year(query, year)
 
         {:month, month} when not is_nil(month) ->
-          Card.Query.by_month(query, month)
+          Checklist.Query.by_month(query, month)
 
         {:location, location} when not is_nil(location) ->
-          Card.Query.by_location_with_descendants(query, location)
+          Checklist.Query.by_location_with_descendants(query, location)
 
         {:motorless, true} ->
-          Card.Query.motorless(query)
+          Checklist.Query.motorless(query)
 
         {:exclude_heard_only, true} ->
           Observation.Query.exclude_heard_only(query)
@@ -137,7 +137,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
       |> distinct(true)
       |> select([_o, c], c.location_id)
 
-    # Each card location's level FK ancestors (`country_id … site_id`), unioned.
+    # Each checklist location's level FK ancestors (`country_id … site_id`), unioned.
     ancestor_ids =
       Kjogvi.Geo.Location.level_fks()
       |> Enum.map(fn fk ->

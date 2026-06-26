@@ -4,7 +4,7 @@ defmodule Kjogvi.Images.Image do
 
   An image is a standalone entity belonging to a user. It may optionally be
   linked to one or more observations (many-to-many); when linked, all of an
-  image's observations must belong to the same card (enforced in the context).
+  image's observations must belong to the same checklist (enforced in the context).
 
   `extras` holds derived metadata (dimensions, EXIF capture date) and is not
   edited directly by the user.
@@ -92,7 +92,7 @@ defmodule Kjogvi.Images.Image do
   loading them) and enforces that
 
     * an image has at least one observation, and
-    * they all belong to the same card.
+    * they all belong to the same checklist.
 
   Does no database access itself.
   """
@@ -124,7 +124,7 @@ defmodule Kjogvi.Images.Image do
         changeset
 
       _ ->
-        add_error(changeset, :observations, "must all belong to the same card")
+        add_error(changeset, :observations, "must all belong to the same checklist")
     end
   end
 

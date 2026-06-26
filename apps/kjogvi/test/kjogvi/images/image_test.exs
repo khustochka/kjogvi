@@ -37,7 +37,7 @@ defmodule Kjogvi.Images.ImageTest do
   end
 
   describe "observations_changeset/2" do
-    test "accepts observations that share a card" do
+    test "accepts observations that share a checklist" do
       image = %Image{observations: []}
       observations = [%Observation{id: 1, card_id: 7}, %Observation{id: 2, card_id: 7}]
 
@@ -77,7 +77,7 @@ defmodule Kjogvi.Images.ImageTest do
 
       changeset = Image.observations_changeset(image, observations)
       refute changeset.valid?
-      assert "must all belong to the same card" in errors_on(changeset).observations
+      assert "must all belong to the same checklist" in errors_on(changeset).observations
     end
   end
 end
