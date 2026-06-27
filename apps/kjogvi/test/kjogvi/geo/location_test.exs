@@ -789,6 +789,69 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "name_segments/3" do
+    setup do
+      country = insert(:country, name_en: "Canada")
+
+      subdivision1 =
+        insert(:location,
+          name_en: "Manitoba",
+          location_type: "subdivision1",
+          country: country
+        )
+
+      city =
+        insert(:location,
+          name_en: "Winnipeg",
+          location_type: "city",
+          country: country,
+          subdivision1_id: subdivision1.id
+        )
+
+      site =
+        insert(:location,
+          name_en: "Assiniboine Park",
+          location_type: "site",
+          country: country,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      %{country: country, subdivision1: subdivision1, city: city, site: site}
+    end
+
+    test "returns the segment locations behind long_name, own name first", %{site: site} do
+      assert Location.name_segments(:private, preload_levels(site))
+             |> Enum.map(& &1.name_en) ==
+               ["Assiniboine Park", "Winnipeg", "Manitoba", "Canada"]
+    end
+
+    test ":public drops private segments", %{
+      country: country,
+      subdivision1: subdivision1,
+      city: city
+    } do
+      private_site =
+        insert(:location,
+          name_en: "Secret Patch",
+          location_type: "site",
+          is_private: true,
+          country: country,
+          subdivision1_id: subdivision1.id,
+          city_id: city.id
+        )
+
+      assert Location.name_segments(:public, preload_levels(private_site))
+             |> Enum.map(& &1.name_en) ==
+               ["Winnipeg", "Manitoba", "Canada"]
+    end
+
+    test "falls back to the bare location when :relative_to truncates everything", %{site: site} do
+      assert Location.name_segments(:private, preload_levels(site), relative_to: site)
+             |> Enum.map(& &1.name_en) == ["Assiniboine Park"]
+    end
+  end
+
   describe "long_name/3 with :relative_to" do
     setup do
       country = insert(:country, name_en: "Canada")

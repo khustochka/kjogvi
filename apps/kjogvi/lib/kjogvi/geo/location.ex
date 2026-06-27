@@ -442,13 +442,26 @@ defmodule Kjogvi.Geo.Location do
   `Query.put_location_levels/1`).
   """
   def long_name(visibility, location, opts \\ []) do
+    Enum.map_join(name_segments(visibility, location, opts), ", ", & &1.name_en)
+  end
+
+  @doc """
+  The visible name segment locations behind `long_name/3` — the location's own
+  name followed by its level FK ancestors (most specific first), with the same
+  visibility and `:relative_to` filtering applied.
+
+  Returns the list of `%Location{}` segments rather than the joined string, so
+  callers can render each segment individually (e.g. as a link). See
+  `long_name/3` for the argument and option semantics.
+  """
+  def name_segments(visibility, location, opts \\ []) do
     visible = visible_segments([location | level_ancestors(location)], visibility)
 
     case drop_relative_to(visible, opts[:relative_to]) do
       # Only `:relative_to` truncating away every visible segment falls back to
-      # the bare name; visibility filtering alone keeps the empty-string result.
-      [] when visible != [] -> location.name_en
-      segments -> Enum.map_join(segments, ", ", & &1.name_en)
+      # the bare name; visibility filtering alone keeps the empty result.
+      [] when visible != [] -> [location]
+      segments -> segments
     end
   end
 

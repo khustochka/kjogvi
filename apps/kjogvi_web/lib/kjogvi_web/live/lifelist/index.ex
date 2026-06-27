@@ -100,7 +100,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         months: months,
         location_ancestors: location_context.ancestors,
         location_siblings: location_siblings,
-        location_children: location_children
+        location_children: location_children,
+        location_ancestor_segments: location_ancestor_segments(scope, filter.location)
       )
       |> derive_page_header()
       |> derive_page_title()
@@ -123,6 +124,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         <.h1 class="mb-0!">
           {@page_header}
         </.h1>
+        <p
+          :if={@location_ancestor_segments != []}
+          id="lifelist-location-subheader"
+          class="mt-1 text-stone-500"
+          phx-no-format
+        ><%= for {segment, index} <- Enum.with_index(@location_ancestor_segments) do %><span :if={index > 0}>, </span><.link href={lifelist_path(@current_scope, %{@filter | location: segment})} class="decoration-stone-300 hover:text-stone-700 hover:decoration-stone-500">{segment.name_en}</.link><% end %></p>
         <ul
           :if={@filter.motorless or @filter.exclude_heard_only}
           class="mt-2 flex flex-wrap items-center gap-2 list-none"
@@ -353,6 +360,19 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   defp derive_page_header(socket) do
     socket
     |> assign(:page_header, Presenter.title(socket.assigns.filter))
+  end
+
+  # Ancestor segments shown as links under the title. The location's own name is
+  # dropped (it's already in the title), leaving the remaining ancestry: empty
+  # for World (no filter) or a country / location with no visible ancestors, in
+  # which case no subheader renders.
+  defp location_ancestor_segments(_scope, nil), do: []
+
+  defp location_ancestor_segments(scope, location) do
+    location = Kjogvi.Geo.Location.Query.put_levels(location)
+
+    Kjogvi.Geo.Location.name_segments(Kjogvi.Scope.visibility(scope), location)
+    |> Enum.drop(1)
   end
 
   defp derive_page_title(%{assigns: assigns} = socket) do

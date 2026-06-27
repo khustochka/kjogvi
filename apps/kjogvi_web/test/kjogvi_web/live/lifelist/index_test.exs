@@ -202,6 +202,113 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     refute row_name =~ "Ukraine"
   end
 
+  test "shows linked ancestor segments as a subheader when filtered below country",
+       %{conn: conn, user: user} do
+    ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
+
+    kyiv_obl =
+      insert(:location,
+        slug: "kyiv-oblast",
+        name_en: "Kyiv Oblast",
+        location_type: "subdivision1",
+        country: ukraine
+      )
+
+    brovary =
+      insert(:location,
+        slug: "brovary",
+        name_en: "Brovary",
+        location_type: "city",
+        country: ukraine,
+        subdivision1_id: kyiv_obl.id
+      )
+
+    {taxon, _} = Factory.create_species_taxon_with_page()
+    checklist = insert(:checklist, user: user, location: brovary)
+    insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, view, _html} = live(conn, "/users/#{user.nickname}/lifelist/brovary")
+
+    subheader = view |> element("#lifelist-location-subheader") |> render()
+    # The location's own name is in the title, not repeated in the subheader.
+    refute subheader =~ "Brovary"
+    # Ancestor segments are comma-separated.
+    assert subheader =~ "Kyiv Oblast"
+    assert subheader =~ ","
+
+    # Each ancestor segment links to its own lifelist.
+    assert view
+           |> element(
+             "#lifelist-location-subheader a[href='/users/#{user.nickname}/lifelist/ukraine']",
+             "Ukraine"
+           )
+           |> has_element?()
+
+    assert view
+           |> element(
+             "#lifelist-location-subheader a[href='/users/#{user.nickname}/lifelist/kyiv-oblast']",
+             "Kyiv Oblast"
+           )
+           |> has_element?()
+  end
+
+  test "omits the subheader for the unfiltered (World) list", %{conn: conn, user: user} do
+    {taxon, _} = Factory.create_species_taxon_with_page()
+
+    insert(:observation,
+      checklist: insert(:checklist, user: user),
+      taxon_key: Ornitho.Schema.Taxon.key(taxon)
+    )
+
+    {:ok, view, _html} = live(conn, ~p"/users/#{user.nickname}/lifelist")
+
+    refute has_element?(view, "#lifelist-location-subheader")
+  end
+
+  test "omits the subheader for a country list", %{conn: conn, user: user} do
+    ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
+
+    {taxon, _} = Factory.create_species_taxon_with_page()
+    checklist = insert(:checklist, user: user, location: ukraine)
+    insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, view, _html} = live(conn, "/users/#{user.nickname}/lifelist/ukraine")
+
+    refute has_element?(view, "#lifelist-location-subheader")
+  end
+
+  test "subheader drops a private ancestor on a public list", %{conn: conn, user: user} do
+    country = insert(:country, name_en: "Canada")
+
+    secret =
+      insert(:location,
+        name_en: "SecretRegion",
+        location_type: "subdivision1",
+        is_private: true,
+        country: country
+      )
+
+    city =
+      insert(:location,
+        slug: "winnipeg",
+        name_en: "Winnipeg",
+        location_type: "city",
+        country: country,
+        subdivision1_id: secret.id
+      )
+
+    {taxon, _} = Factory.create_species_taxon_with_page()
+    checklist = insert(:checklist, user: user, location: city)
+    insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+    {:ok, view, _html} = live(conn, "/users/#{user.nickname}/lifelist/winnipeg")
+
+    subheader = view |> element("#lifelist-location-subheader") |> render()
+    assert subheader =~ "Canada"
+    refute subheader =~ "Winnipeg"
+    refute subheader =~ "SecretRegion"
+  end
+
   test "toggling Motorless only in-session narrows the list to motorless checklists",
        %{conn: conn, user: user} do
     {motorless_taxon, _} = Factory.create_species_taxon_with_page()
