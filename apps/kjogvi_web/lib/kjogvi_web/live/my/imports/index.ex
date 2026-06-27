@@ -25,12 +25,12 @@ defmodule KjogviWeb.Live.My.Imports.Index do
     ~H"""
     <.h1>Import Tasks</.h1>
 
-    <div class="lg:flex lg:flex-wrap lg:gap-8 lg:items-start">
+    <div class="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
       <div
         :for={{module, header, id, _} <- @imports}
-        class="border border-slate-300 rounded-lg p-6 mb-8 lg:mb-0 lg:basis-15/31 lg:grow-0"
+        class="border border-slate-300 rounded-lg p-6 mb-8 lg:mb-0"
       >
-        <.h2>{header}</.h2>
+        <.h2 class="mb-4!">{header}</.h2>
         <.live_component module={module} user={@current_scope.current_user} id={id} />
       </div>
     </div>
@@ -40,9 +40,9 @@ defmodule KjogviWeb.Live.My.Imports.Index do
   defp imports do
     [
       {Imports.Legacy, "Legacy Import", "legacy-import", fn user -> Accounts.admin?(user) end},
+      {Imports.Ebird, "eBird preload", "ebird-import", fn _ -> true end},
       {Imports.Locations, "Locations Import", "locations-import",
-       fn user -> Accounts.admin?(user) end},
-      {Imports.Ebird, "eBird preload", "ebird-import", fn _ -> true end}
+       fn user -> Accounts.admin?(user) end}
     ]
   end
 end
