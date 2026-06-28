@@ -1,5 +1,7 @@
 # Kjógvi Codebase Instructions for AI Agents
 
+This file is the source of truth. [`PHOENIX.md`](./PHOENIX.md) holds the stock, auto-generated Phoenix/Elixir usage rules; where they conflict, this file wins.
+
 ## Project Overview
 
 **Kjógvi** is a Phoenix v1.8 umbrella project for bird observation tracking with ornithological taxonomy management. It combines birding/observation records with a comprehensive taxonomy system via the [Ornithologue](./apps/ornithologue/) library.
