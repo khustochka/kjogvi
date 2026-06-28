@@ -71,6 +71,11 @@ defmodule Ornitho.Query.Taxon do
       ilike(t.name_sci, ^like_term) or
         ilike(t.name_en, ^like_term) or
         ilike(t.code, ^start_term) or
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS c WHERE c ILIKE ?)",
+          t.codes,
+          ^start_term
+        ) or
         t.taxon_concept_id == ^sanitized_term
     )
   end
