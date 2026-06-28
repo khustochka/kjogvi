@@ -32,6 +32,24 @@ defmodule Ornitho.Util do
   end
 
   @doc """
+  Splits a space-separated cell into a list of codes, uppercased and deduplicated.
+  Returns `[]` for a blank or missing value.
+  """
+  @spec cast_codes(String.t() | nil) :: [String.t()]
+  def cast_codes(value) do
+    case normalize(value) do
+      nil ->
+        []
+
+      str ->
+        str
+        |> String.split(~r/\s+/, trim: true)
+        |> Enum.map(&String.upcase/1)
+        |> Enum.uniq()
+    end
+  end
+
+  @doc """
   Parses `"true"`/`"false"` into a boolean, or returns `nil` for a blank or missing
   value.
 

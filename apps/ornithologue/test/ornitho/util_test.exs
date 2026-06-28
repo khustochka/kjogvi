@@ -33,6 +33,20 @@ defmodule Ornitho.UtilTest do
     end
   end
 
+  describe "cast_codes/1" do
+    test "splits, uppercases, and deduplicates codes" do
+      assert Util.cast_codes("coos stca") == ["COOS", "STCA"]
+      assert Util.cast_codes("  coos   stca  ") == ["COOS", "STCA"]
+      assert Util.cast_codes("coos coos stca") == ["COOS", "STCA"]
+    end
+
+    test "returns an empty list for blank or missing values" do
+      assert Util.cast_codes("") == []
+      assert Util.cast_codes("   ") == []
+      assert Util.cast_codes(nil) == []
+    end
+  end
+
   describe "cast_boolean/1" do
     test "parses true and false" do
       assert Util.cast_boolean("true") == true

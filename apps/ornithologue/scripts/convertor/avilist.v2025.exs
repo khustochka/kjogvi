@@ -4,10 +4,10 @@ defmodule Convertor.AviList.V2025 do
 
   This one is for AviList v2025.
 
-  Run:
+  Run from the umbrella root:
 
   ```bash
-  mix run scripts/convertor/avilist.v2025.exs
+  mix run apps/ornithologue/scripts/convertor/avilist.v2025.exs
   ```
   """
 
@@ -19,8 +19,10 @@ defmodule Convertor.AviList.V2025 do
     "Species_code_Cornell_Lab" => {:string, :ebird_code}
   }
 
-  @taxonomy_file "priv/convert/avilist/v2025/AviList-v2025-11Jun-extended.csv"
-  @output_file "priv/convert/avilist/v2025/ornithologue_avilist_v2025.csv"
+  @convert_dir Path.join(:code.priv_dir(:ornithologue), "convert/avilist/v2025")
+
+  @taxonomy_file Path.join(@convert_dir, "AviList-v2025-11Jun-extended.csv")
+  @output_file Path.join(@convert_dir, "ornithologue_avilist_v2025.csv")
 
   def convert do
     extract_taxa_from_csv(@taxonomy_file)

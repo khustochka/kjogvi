@@ -13,9 +13,14 @@ defmodule Convertor.Ebird.V2023 do
     "extinct year" => {:string, :extinct_year}
   }
 
-  @ebird_taxonomy_file "priv/convert/ebird/v2023/ebird_taxonomy_v2023.csv"
-  @clements_checklist_file "priv/convert/ebird/v2023/eBird-Clements-v2023-integrated-checklist-October-2023.csv"
-  @output_file "priv/convert/ebird/v2023/ornithologue_ebird_v2023.csv"
+  @convert_dir Path.join(:code.priv_dir(:ornithologue), "convert/ebird/v2023")
+
+  @ebird_taxonomy_file Path.join(@convert_dir, "ebird_taxonomy_v2023.csv")
+  @clements_checklist_file Path.join(
+                             @convert_dir,
+                             "eBird-Clements-v2023-integrated-checklist-October-2023.csv"
+                           )
+  @output_file Path.join(@convert_dir, "ornithologue_ebird_v2023.csv")
 
   def convert do
     extract_taxa_from_csv(@ebird_taxonomy_file)
@@ -151,4 +156,4 @@ defmodule Convertor.Ebird.V2023 do
   end
 end
 
-Convertor.Ebird.V2024.convert()
+Convertor.Ebird.V2023.convert()
