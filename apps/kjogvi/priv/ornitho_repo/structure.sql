@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict jlWwSknP8qBMbF5HZeUeXDbwukIifB7HcDsOVDIBmX4Cd4mUDDsKbFrN7m5N1OE
+\restrict VbRd27cagSuoZGdY96J02J6HKrMO8AZeQTOLDZPrrliKGYFsENMu0r21TpHhHEq
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -111,6 +111,7 @@ CREATE TABLE public.taxa (
     name_sci character varying(256) NOT NULL,
     name_en character varying(255),
     code character varying(256) NOT NULL,
+    codes character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
     taxon_concept_id character varying(256),
     category character varying(32),
     authority character varying(255),
@@ -241,6 +242,13 @@ CREATE UNIQUE INDEX taxa_book_id_taxon_concept_id_index ON public.taxa USING btr
 
 
 --
+-- Name: taxa_codes_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX taxa_codes_index ON public.taxa USING gin (codes);
+
+
+--
 -- Name: taxa_parent_species_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -267,6 +275,6 @@ ALTER TABLE ONLY public.taxa
 -- PostgreSQL database dump complete
 --
 
-\unrestrict jlWwSknP8qBMbF5HZeUeXDbwukIifB7HcDsOVDIBmX4Cd4mUDDsKbFrN7m5N1OE
+\unrestrict VbRd27cagSuoZGdY96J02J6HKrMO8AZeQTOLDZPrrliKGYFsENMu0r21TpHhHEq
 
 INSERT INTO public."schema_migrations" (version) VALUES (20240116020356);
