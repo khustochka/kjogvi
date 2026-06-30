@@ -148,7 +148,7 @@ defmodule KjogviWeb.Live.My.Checklists.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mb-4 flex items-center justify-between gap-4">
+    <div class="mb-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
       <.h1 class="mt-0! mb-0! leading-none">
         Checklists
       </.h1>

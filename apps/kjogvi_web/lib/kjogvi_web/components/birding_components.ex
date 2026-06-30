@@ -72,33 +72,35 @@ defmodule KjogviWeb.BirdingComponents do
       id={"checklist-#{@checklist.id}"}
       class="group rounded-lg border border-stone-200 bg-white px-2.5 py-2.5 shadow-sm transition hover:shadow"
     >
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[1.05rem]">
+      <%!-- On desktop: date, location (truncated) and counts share one flex row.
+      On mobile: it stacks — date + location flow as inline text (the location
+      wrapping onto a second line if needed) and the counts drop to their own
+      line below. --%>
+      <div class="sm:flex sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1.5 text-[1.05rem]">
         <%!-- Date + location --%>
-        <.link
-          navigate={~p"/my/checklists/#{@checklist.id}"}
-          class="font-semibold text-stone-900 underline decoration-forest-500 decoration-2 underline-offset-2 hover:decoration-forest-700"
-        >
-          {format_date(@checklist.observ_date)}
-        </.link>
-        <.link
-          navigate={~p"/my/checklists/#{@checklist.id}"}
-          class="min-w-0 flex-1 truncate text-stone-600 no-underline hover:text-stone-900"
-        >
-          {Geo.Location.long_name(:private, @checklist.location)}
-        </.link>
+        <p class="leading-snug sm:flex sm:min-w-0 sm:flex-1 sm:items-center sm:gap-x-3 sm:leading-normal">
+          <.link
+            navigate={~p"/my/checklists/#{@checklist.id}"}
+            class="font-semibold text-stone-900 underline decoration-forest-500 decoration-2 underline-offset-2 hover:decoration-forest-700 sm:shrink-0"
+          >{format_date(@checklist.observ_date)}</.link>
+          <.link
+            navigate={~p"/my/checklists/#{@checklist.id}"}
+            class="text-stone-600 no-underline hover:text-stone-900 sm:min-w-0 sm:flex-1 sm:truncate"
+          >{Geo.Location.long_name(:private, @checklist.location)}</.link>
+        </p>
 
         <%!-- Unresolved marker --%>
         <span
           :if={not @checklist.resolved}
           id={"checklist-#{@checklist.id}-unresolved"}
           title="This checklist is marked unresolved and may still need amending"
-          class="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-50 px-1.5 py-0.5 text-sm font-medium text-red-700 ring-1 ring-red-200 ring-inset"
+          class="mt-1.5 inline-flex shrink-0 items-center gap-1 rounded-md bg-red-50 px-1.5 py-0.5 text-sm font-medium text-red-700 ring-1 ring-red-200 ring-inset sm:mt-0"
         >
           <.icon name="hero-exclamation-triangle" class="h-4 w-4" /> Unresolved
         </span>
 
-        <%!-- Counts --%>
-        <ul class="flex shrink-0 items-baseline gap-2.5 tabular-nums">
+        <%!-- Counts: own line on mobile, inline on desktop --%>
+        <ul class="mt-1.5 flex shrink-0 flex-wrap items-baseline gap-x-2.5 gap-y-1 tabular-nums sm:mt-0">
           <li :if={not is_nil(@checklist.species_count)} title="Countable species">
             <span class="text-lg font-bold text-forest-700">{@checklist.species_count}</span>
             <span class="text-xs text-stone-500">sp.</span>
@@ -119,7 +121,7 @@ defmodule KjogviWeb.BirdingComponents do
         </ul>
       </div>
 
-      <div class="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.95rem] text-stone-600">
+      <div class="mt-2.5 flex flex-col gap-x-3 gap-y-2 text-[0.95rem] text-stone-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1">
         <%!-- Effort metadata --%>
         <ul class="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
           <li>
@@ -228,7 +230,7 @@ defmodule KjogviWeb.BirdingComponents do
           <span :if={present?(obs.quantity)} class="shrink-0 tabular-nums text-stone-500">
             {obs.quantity}
           </span>
-          <span class="min-w-0 wrap-break-words sm:truncate">
+          <span class="min-w-0 wrap-break-words">
             <.observation_taxon_name obs={obs} />
           </span>
           <span
