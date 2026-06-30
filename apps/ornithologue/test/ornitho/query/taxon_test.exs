@@ -140,5 +140,33 @@ defmodule Ornitho.Query.TaxonTest do
       assert length(result) == 1
       assert hd(result).id == taxon.id
     end
+
+    test "matches by a code in the codes array" do
+      book = insert(:book)
+      taxon = insert(:taxon, book: book, codes: ["BAEA", "BALEAG"])
+      _other = insert(:taxon, book: book, codes: ["AMCR"])
+
+      result =
+        Query.Taxon.by_book(book)
+        |> Query.Taxon.search("BALEAG")
+        |> OrnithoRepo.all()
+
+      assert length(result) == 1
+      assert hd(result).id == taxon.id
+    end
+
+    test "matches a code in the codes array by prefix, case-insensitively" do
+      book = insert(:book)
+      taxon = insert(:taxon, book: book, codes: ["BAEA", "BALEAG"])
+      _other = insert(:taxon, book: book, codes: ["AMCR"])
+
+      result =
+        Query.Taxon.by_book(book)
+        |> Query.Taxon.search("bae")
+        |> OrnithoRepo.all()
+
+      assert length(result) == 1
+      assert hd(result).id == taxon.id
+    end
   end
 end

@@ -238,6 +238,72 @@ defmodule Kjogvi.Search.TaxonTest do
       refute "grrwar1" in codes
     end
 
+    test "matches a taxon by its primary code prefix", %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "houspa",
+        name_en: "House Sparrow",
+        name_sci: "Passer domesticus"
+      )
+
+      user = AccountsFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Accounts.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      # "hous" is a prefix of the code "houspa".
+      results = Taxon.search_taxa("hous", user)
+      assert "houspa" in Enum.map(results, & &1.code)
+    end
+
+    test "matches a taxon by an entry in its codes array", %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "gretit1",
+        codes: ["GRETI", "PARMAJ"],
+        name_en: "Great Tit",
+        name_sci: "Parus major"
+      )
+
+      user = AccountsFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Accounts.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      results = Taxon.search_taxa("parmaj", user)
+      assert "gretit1" in Enum.map(results, & &1.code)
+    end
+
+    test "does not match a code as a mid-string substring", %{user: _user} do
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "houspa",
+        name_en: "House Sparrow",
+        name_sci: "Passer domesticus"
+      )
+
+      user = AccountsFixtures.user_fixture()
+
+      {:ok, user} =
+        Kjogvi.Accounts.update_user_settings(user, %{
+          "default_book_signature" => "ebird/v2024"
+        })
+
+      # "ouspa" is inside the code but not a prefix of it — no match.
+      results = Taxon.search_taxa("ouspa", user)
+      refute "houspa" in Enum.map(results, & &1.code)
+    end
+
     test "an observed taxon outranks an unobserved one whose name starts with the query",
          %{user: _user} do
       book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")

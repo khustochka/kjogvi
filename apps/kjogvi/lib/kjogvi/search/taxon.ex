@@ -25,13 +25,19 @@ defmodule Kjogvi.Search.Taxon do
   similar punctuation). Matching is anchored to word starts, so "great cr" finds
   Great Crested Grebe but not Great Reed Warbler / Acrocephalus.
 
+  A taxon also matches when the whole query is a prefix of its primary `code` or
+  of any code in its `codes` array, so "houspa" finds House Sparrow by its eBird
+  code.
+
   Within the observed group, the most frequently observed come first. Within
   the unobserved group, results are ranked by text match quality:
   - Scientific name exact match (highest priority)
   - English name exact match
+  - Code exact match
   - Scientific name starts with query
   - English name starts with query
   - A word in either name starts with the query
+  - Code starts with query
 
   Names break any remaining ties alphabetically.
 
@@ -105,10 +111,19 @@ defmodule Kjogvi.Search.Taxon do
     # across query words). Word-prefix — not substring-anywhere — keeps results
     # precise: "great cr" finds Great Crested (cr- starts "crested") but not
     # Great Reed Warbler / Acrocephalus, where nothing begins with "cr".
-    Enum.all?(query_words, fn word ->
-      WordMatch.word_prefix_match?(name_en_lower, word) ||
-        WordMatch.word_prefix_match?(name_sci_lower, word)
-    end)
+    name_match =
+      Enum.all?(query_words, fn word ->
+        WordMatch.word_prefix_match?(name_en_lower, word) ||
+          WordMatch.word_prefix_match?(name_sci_lower, word)
+      end)
+
+    name_match || code_prefix_match?(taxon, query_text)
+  end
+
+  # A code is a single token with no spaces, so the whole trimmed query (not its
+  # individual words) must be a prefix of `code` or of some entry in `codes`.
+  defp code_prefix_match?(taxon, query_text) do
+    has_code?(taxon, &String.starts_with?(&1, query_text))
   end
 
   defp observation_counts(user) do
@@ -139,9 +154,11 @@ defmodule Kjogvi.Search.Taxon do
 
     {tier, name} =
       match_exact(name_sci, name_en, query_text) ||
+        match_code_exact(taxon, query_text, name_en) ||
         match_starts_with(name_sci, name_en, query_text) ||
         match_word_start(name_sci, name_en, query_text) ||
-        {6, name_en}
+        match_code_prefix(taxon, query_text, name_en) ||
+        {8, name_en}
 
     {seen_bucket, weight, tier, name}
   end
@@ -159,20 +176,33 @@ defmodule Kjogvi.Search.Taxon do
     end
   end
 
+  defp match_code_exact(taxon, query, name_en) do
+    if has_code?(taxon, &(&1 == query)), do: {2, name_en}
+  end
+
   defp match_starts_with(name_sci, name_en, query) do
     cond do
-      String.starts_with?(name_sci, query) -> {2, name_sci}
-      String.starts_with?(name_en, query) -> {3, name_en}
+      String.starts_with?(name_sci, query) -> {3, name_sci}
+      String.starts_with?(name_en, query) -> {4, name_en}
       true -> nil
     end
   end
 
   defp match_word_start(name_sci, name_en, query) do
     cond do
-      WordMatch.word_prefix_match?(name_sci, query) -> {4, name_sci}
-      WordMatch.word_prefix_match?(name_en, query) -> {5, name_en}
+      WordMatch.word_prefix_match?(name_sci, query) -> {5, name_sci}
+      WordMatch.word_prefix_match?(name_en, query) -> {6, name_en}
       true -> nil
     end
+  end
+
+  defp match_code_prefix(taxon, query, name_en) do
+    if has_code?(taxon, &String.starts_with?(&1, query)), do: {7, name_en}
+  end
+
+  defp has_code?(taxon, fun) do
+    [taxon.code | taxon.codes || []]
+    |> Enum.any?(fn code -> code && fun.(String.downcase(code)) end)
   end
 
   defp add_taxon_key(taxon, book) do

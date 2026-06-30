@@ -24,11 +24,23 @@ defmodule Ornitho.Importer.Ebird.V2025 do
   def to_taxon_attrs(book, row, time) do
     {:ok, extras} = Jason.decode(row["extras"])
 
+    com_name_codes = cast_codes(row["com_name_codes"])
+    sci_name_codes = cast_codes(row["sci_name_codes"])
+    banding_codes = cast_codes(row["banding_codes"])
+
+    extras =
+      Map.merge(extras, %{
+        "com_name_codes" => com_name_codes,
+        "sci_name_codes" => sci_name_codes,
+        "banding_codes" => banding_codes
+      })
+
     %{
       book_id: book.id,
       name_sci: cast_string(row["name_sci"]),
       name_en: cast_string(row["name_en"]),
       code: cast_string(row["code"]),
+      codes: Enum.uniq(com_name_codes ++ sci_name_codes ++ banding_codes),
       taxon_concept_id: cast_string(row["taxon_concept_id"]),
       category: cast_string(row["category"]),
       authority: cast_string(row["authority"]),

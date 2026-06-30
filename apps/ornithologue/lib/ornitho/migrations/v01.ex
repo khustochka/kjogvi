@@ -32,6 +32,7 @@ defmodule Ornitho.Migrations.V01 do
       add :name_sci, :string, size: 256, null: false
       add :name_en, :string
       add :code, :string, size: 256, null: false
+      add :codes, {:array, :string}, null: false, default: []
       add :taxon_concept_id, :string, size: 256
       add :category, :string, size: 32
       add :authority, :string
@@ -53,6 +54,9 @@ defmodule Ornitho.Migrations.V01 do
     create index(:taxa, [:book_id, :code], unique: true)
     create index(:taxa, [:book_id, :sort_order], unique: true)
     create index(:taxa, [:book_id, :taxon_concept_id], unique: true)
+
+    # GIN index so `codes @> ARRAY[...]` / `codes && ARRAY[...]` lookups are index-backed.
+    create index(:taxa, [:codes], using: "GIN")
 
     create index(:taxa, [:parent_species_id],
              unique: false,

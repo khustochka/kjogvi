@@ -4,12 +4,14 @@ defmodule Convertor.Ebird.V2025 do
 
   This one is for Clements/eBird v2025.
 
-  Run:
+  Run from the umbrella root:
 
   ```bash
-  mix run scripts/convertor/ebird.v2025.exs
+  mix run apps/ornithologue/scripts/convertor/ebird.v2025.exs
   ```
   """
+
+  @convert_dir Path.join(:code.priv_dir(:ornithologue), "convert/ebird/v2025")
 
   @extras_conversion %{
     "TAXON_ORDER" => {:integer, :ebird_order},
@@ -21,13 +23,40 @@ defmodule Convertor.Ebird.V2025 do
     "extinct year" => {:string, :extinct_year}
   }
 
-  @ebird_taxonomy_file "priv/convert/ebird/v2025/eBird_taxonomy_v2025.csv"
-  @clements_checklist_file "priv/convert/ebird/v2025/eBird-Clements_v2025-integrated-checklist-October-2025.csv"
-  @output_file "priv/convert/ebird/v2025/ornithologue_ebird_v2025.csv"
+  @ebird_taxonomy_file Path.join(@convert_dir, "eBird_taxonomy_v2025.csv")
+  @clements_checklist_file Path.join(
+                             @convert_dir,
+                             "eBird-Clements_v2025-integrated-checklist-October-2025.csv"
+                           )
+  # Download from https://api.ebird.org/v2/ref/taxonomy/ebird?version=2025 (no auth needed)
+  @api_taxonomy_file Path.join(@convert_dir, "API_eBird_taxonomy_v2025.csv")
+  @output_file Path.join(@convert_dir, "ornithologue_ebird_v2025.csv")
+
+  # Explicit output column order. The attrs keyword lists are reshuffled by the amend
+  # steps (`Keyword.put` prepends new keys), so the header is fixed here rather than
+  # derived from the data. `extras` goes last.
+  @output_headers [
+    :name_sci,
+    :name_en,
+    :code,
+    :category,
+    :authority,
+    :authority_brackets,
+    :order,
+    :family,
+    :taxon_concept_id,
+    :sort_order,
+    :parent_species_code,
+    :com_name_codes,
+    :sci_name_codes,
+    :banding_codes,
+    :extras
+  ]
 
   def convert do
     extract_taxa_from_csv(@ebird_taxonomy_file)
     |> amend_taxa_from_csv(@clements_checklist_file)
+    |> amend_codes_from_csv(@api_taxonomy_file)
     |> save_csv(@output_file)
   end
 
@@ -53,6 +82,9 @@ defmodule Convertor.Ebird.V2025 do
           category: row["CATEGORY"],
           order: row["ORDER"],
           family: family,
+          com_name_codes: "",
+          sci_name_codes: "",
+          banding_codes: "",
           extras: encoded_extras,
           sort_order: sort_order,
           parent_species_code: row["REPORT_AS"],
@@ -101,6 +133,56 @@ defmodule Convertor.Ebird.V2025 do
     end)
   end
 
+  # The API taxonomy file is keyed by SPECIES_CODE, while the cache is keyed by SCI_NAME,
+  # so index the cache by code first, then amend each matched taxon with its codes and
+  # family_code (the latter stashed in extras).
+  def amend_codes_from_csv(taxa, csv_file) do
+    sci_name_by_code =
+      Map.new(taxa, fn {sci_name, attrs} -> {attrs[:code], sci_name} end)
+
+    csv_file
+    |> File.stream!([:trim_bom])
+    |> CSV.decode(headers: true)
+    |> Enum.reduce(taxa, fn {:ok, row}, taxa_cache ->
+      sci_name = sci_name_by_code[row["SPECIES_CODE"]]
+      taxon = sci_name && taxa_cache[sci_name]
+
+      if is_nil(taxon) do
+        taxa_cache
+      else
+        {:ok, old_extras} = taxon[:extras] |> Jason.decode()
+        new_extras = put_family_code(old_extras, row["FAMILY_CODE"])
+        {:ok, encoded_extras} = new_extras |> Jason.encode()
+
+        taxon_updated =
+          taxon
+          |> Keyword.put(:com_name_codes, normalize_codes(row["COM_NAME_CODES"]))
+          |> Keyword.put(:sci_name_codes, normalize_codes(row["SCI_NAME_CODES"]))
+          |> Keyword.put(:banding_codes, normalize_codes(row["BANDING_CODES"]))
+          |> Keyword.put(:extras, encoded_extras)
+
+        Map.put(taxa_cache, sci_name, taxon_updated)
+      end
+    end)
+  end
+
+  # Uppercases and deduplicates a space-separated codes cell.
+  defp normalize_codes(value) do
+    value
+    |> to_string()
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.map(&String.upcase/1)
+    |> Enum.uniq()
+    |> Enum.join(" ")
+  end
+
+  defp put_family_code(extras, value) do
+    case value do
+      str when is_binary(str) and str != "" -> Map.put(extras, "family_code", str)
+      _ -> extras
+    end
+  end
+
   def save_csv(taxa, csv_file) do
     file = File.open!(csv_file, [:write, :utf8])
 
@@ -109,11 +191,9 @@ defmodule Convertor.Ebird.V2025 do
       |> Map.values()
       |> Enum.sort_by(&Keyword.get(&1, :sort_order))
 
-    headers = values |> List.first() |> Keyword.keys()
-
     values
     |> Enum.map(&Map.new/1)
-    |> CSV.encode(headers: headers)
+    |> CSV.encode(headers: @output_headers)
     |> Enum.each(&IO.write(file, &1))
   end
 

@@ -72,6 +72,15 @@ defmodule OrnithoWeb.Live.Taxa.Show do
           {@taxon.order} / {@taxon.family}
         </:item>
         <:item title="Code"><span class="font-mono">{@taxon.code}</span></:item>
+        <:item
+          :for={{key, title} <- code_types()}
+          :if={code_list(@taxon, key) != []}
+          title={title}
+        >
+          <ul id={"taxon-#{key}"} class="flex flex-wrap gap-2">
+            <li :for={code <- code_list(@taxon, key)} class="font-mono">{code}</li>
+          </ul>
+        </:item>
         <:item :if={@taxon.taxon_concept_id} title="Taxon Concept ID">
           <.link
             navigate={OrnithoWeb.LinkHelper.path(@socket, "/concepts/#{@taxon.taxon_concept_id}")}
@@ -90,7 +99,7 @@ defmodule OrnithoWeb.Live.Taxa.Show do
             <.sci_name taxon={@taxon.parent_species} />
           </.taxon_link>
         </:item>
-        <:item :for={{key, value} <- @taxon.extras || %{}} title={key}>
+        <:item :for={{key, value} <- displayable_extras(@taxon.extras)} title={key}>
           {value}
         </:item>
       </.list>
@@ -114,5 +123,24 @@ defmodule OrnithoWeb.Live.Taxa.Show do
       />
     </div>
     """
+  end
+
+  # Code-list keys held in `extras`, paired with their display titles. Rendered as
+  # dedicated rows and excluded from the generic extras list.
+  defp code_types do
+    [
+      {"com_name_codes", "Common-name codes"},
+      {"sci_name_codes", "Scientific-name codes"},
+      {"banding_codes", "Banding codes"}
+    ]
+  end
+
+  defp code_list(taxon, key) do
+    Map.get(taxon.extras || %{}, key, [])
+  end
+
+  defp displayable_extras(extras) do
+    code_keys = Enum.map(code_types(), &elem(&1, 0))
+    Map.drop(extras || %{}, code_keys)
   end
 end
