@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 44TdHz6g5tAffNQVLhsFzJAXUyh5Nc98b9fxt9cahHhrOcjPkfLxPcrzHuPuePa
+\restrict 7K6pb9DZl9gcjGqPgWMD1gzWuDFOC8DegVXvMSsHYrTJ6Jiaxi5gUaOPsNJGpuP
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -100,6 +100,47 @@ CREATE SEQUENCE public.checklists_id_seq
 --
 
 ALTER SEQUENCE public.checklists_id_seq OWNED BY public.checklists.id;
+
+
+--
+-- Name: ebird_locations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ebird_locations (
+    id bigint NOT NULL,
+    code character varying(255) NOT NULL,
+    location_type character varying(255) NOT NULL,
+    country_code character varying(255),
+    subnational1_code character varying(255),
+    subnational2_code character varying(255),
+    local_abbrev character varying(255),
+    name character varying(255),
+    name_long character varying(255),
+    name_short character varying(255),
+    nice_name character varying(255),
+    location_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: ebird_locations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ebird_locations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ebird_locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ebird_locations_id_seq OWNED BY public.ebird_locations.id;
 
 
 --
@@ -451,6 +492,13 @@ ALTER TABLE ONLY public.checklists ALTER COLUMN id SET DEFAULT nextval('public.c
 
 
 --
+-- Name: ebird_locations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ebird_locations ALTER COLUMN id SET DEFAULT nextval('public.ebird_locations_id_seq'::regclass);
+
+
+--
 -- Name: image_observations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -519,6 +567,14 @@ ALTER TABLE ONLY public.users_tokens ALTER COLUMN id SET DEFAULT nextval('public
 
 ALTER TABLE ONLY public.checklists
     ADD CONSTRAINT checklists_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ebird_locations ebird_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ebird_locations
+    ADD CONSTRAINT ebird_locations_pkey PRIMARY KEY (id);
 
 
 --
@@ -641,6 +697,34 @@ CREATE INDEX checklists_observ_date_location_id_index ON public.checklists USING
 --
 
 CREATE INDEX checklists_user_id_index ON public.checklists USING btree (user_id);
+
+
+--
+-- Name: ebird_locations_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ebird_locations_code_index ON public.ebird_locations USING btree (code);
+
+
+--
+-- Name: ebird_locations_country_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ebird_locations_country_code_index ON public.ebird_locations USING btree (country_code);
+
+
+--
+-- Name: ebird_locations_location_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ebird_locations_location_id_index ON public.ebird_locations USING btree (location_id);
+
+
+--
+-- Name: ebird_locations_subnational1_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ebird_locations_subnational1_code_index ON public.ebird_locations USING btree (subnational1_code);
 
 
 --
@@ -849,6 +933,14 @@ ALTER TABLE ONLY public.checklists
 
 
 --
+-- Name: ebird_locations ebird_locations_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ebird_locations
+    ADD CONSTRAINT ebird_locations_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(id) ON DELETE SET NULL;
+
+
+--
 -- Name: image_observations image_observations_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -964,7 +1056,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 44TdHz6g5tAffNQVLhsFzJAXUyh5Nc98b9fxt9cahHhrOcjPkfLxPcrzHuPuePa
+\unrestrict 7K6pb9DZl9gcjGqPgWMD1gzWuDFOC8DegVXvMSsHYrTJ6Jiaxi5gUaOPsNJGpuP
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -999,3 +1091,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260623130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260625120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260625130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260626171732);
+INSERT INTO public."schema_migrations" (version) VALUES (20260629230000);
