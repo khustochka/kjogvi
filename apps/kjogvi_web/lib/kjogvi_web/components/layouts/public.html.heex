@@ -7,8 +7,10 @@
       </:guest_access>
     </.access_control>
 
-    <.admin_menu current_user={@current_scope.current_user} />
+    <.private_menu current_user={@current_scope.current_user} />
   </div>
+
+  <.admin_menu current_user={@current_scope.current_user} />
 
   <header class="bg-bg-beige border-b border-menu-border px-4 sm:px-6 lg:px-8 py-5">
     <nav aria-label="Main" class="mx-auto max-w-5xl">

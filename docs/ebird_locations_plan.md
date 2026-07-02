@@ -414,3 +414,9 @@ stages, especially if this requires writing code (app or test) just for the sake
   as `/my/locations` (SearchInput, 2-char minimum, tree hidden while searching),
   backed by `Geo.search_common_locations/1` (common only, specials excluded);
   results render admin-variant cards.
+- **Stage 1b** (2026-07-01) — Menu split: the old "admin menu" bar is renamed to
+  what it was — the private/personal menu (`private_menu` partial, `#private-menu`) —
+  and admin links move to a separate admin-only bar (`admin_menu` partial,
+  `#admin-menu`: Common Locations, Taxonomy, Exclusive Tasks, Live Dashboard,
+  Dev Mailbox) rendered below it in both layouts. `AdminMenuComponents.admin_menu_item`
+  → `MenuBarComponents.menu_bar_item`.
