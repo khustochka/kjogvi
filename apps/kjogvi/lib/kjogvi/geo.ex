@@ -30,6 +30,18 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
+  Like `location_counts_by_type/0`, restricted to common locations — the rows
+  the dataset dump/restore operates on.
+  """
+  def common_location_counts_by_type do
+    Location
+    |> Location.Query.only_common()
+    |> Location.Query.count_by_type()
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  @doc """
   Returns hierarchical context for the lifelist location filter, as a strict
   drill-down: World lists the countries, selecting a country reveals its
   subdivisions, and so on one level at a time.

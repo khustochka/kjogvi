@@ -289,8 +289,7 @@ All four go through the configured storage adapter (§7.3) — S3 in prod, local
 files in dev — so the page works identically everywhere.
 - **ISO 3166 import** — the existing `Imports.Locations` component, moved here
   from `/my/imports` (it was admin-gated there anyway). Kept as the bootstrap /
-  "newer ISO release" tool; its card is dropped once dump-restore is proven
-  (Phase 7).
+  "newer ISO release" tool.
 
 `/my/imports` keeps Legacy and eBird-preload (user-data imports) only.
 
@@ -378,8 +377,9 @@ locations track comes first; all eBird work is deferred until it's done.
 7. **Common locations admin UI, full** — eBird status badges and filters on
    the index, CRUD (+ the Geo authorization change).
 8. **sub2 import** — `Sub2Import` + per-country action in the UI.
-9. **Cleanup** — drop the ISO card (and possibly the HTTP-URL import path +
-   `LOCATIONS_IMPORT_URL`) once S3 restore is the proven seed path; set the
+9. **Cleanup** — the ISO card stays (it reads its source from the datasets
+   storage and remains the "newer ISO release" tool; the HTTP-URL import path +
+   `LOCATIONS_IMPORT_URL` were already dropped in stage 3); set the
    `KJOGVI_DATASETS_*` env vars in prod; README/AGENTS notes.
 
 Phases 6 and 7 are swappable; 5 must precede both (badges need statuses).
@@ -433,3 +433,19 @@ stages, especially if this requires writing code (app or test) just for the sake
   stamps `import_source: :iso`; `bump_id_sequence/0` moved to `Location.Query`.
   Telemetry spans `[:kjogvi, :geo, :dump]`/`[:kjogvi, :geo, :restore]` + logger
   handlers. `{:csv, "~> 3.0"}` added to `apps/kjogvi`.
+- **Stage 3** (2026-07-02) — Admin imports page: `/admin/imports/locations`
+  (`Live.Admin.Imports.Locations.Index`) with Restore / Dump cards for the
+  common locations dataset, run through `ExclusiveTaskProcessor` (keys
+  `{:geo_restore, :common}` / `{:geo_dump, :common}`; page subscribes to both
+  key topics and follows lifecycle events). Restore card shows common counts by
+  type (`Geo.common_location_counts_by_type/0`, new) and is disabled without a
+  snapshot; dump card shows the snapshot's last-modified
+  (`Datasets.last_modified/1`, new adapter callback — local file mtime, S3
+  HEAD + Last-Modified). ISO card moved from `/my/imports` (component renamed
+  `My.Imports.Locations` → `Admin.Imports.Locations.Iso`; `/my/imports` keeps
+  Legacy + eBird preload). Admin menu link "Imports". The ISO source JSONL also
+  moved into the datasets storage under `geo/sources/iso_3166.jsonl`
+  (`Import.source_key/0`): `Geo.Import` now reads it via `Datasets.read/1`
+  (read-only — uploaded out-of-band), the HTTP-URL path and
+  `LOCATIONS_IMPORT_URL` are gone, and `build_iso_3166.exs` defaults its output
+  to `priv/datasets/geo/sources/`.

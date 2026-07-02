@@ -21,6 +21,14 @@ defmodule Kjogvi.Datasets do
     adapter().read(config(), key)
   end
 
+  @doc """
+  When the snapshot under `key` was last written (UTC). `{:error, :enoent}`
+  when no snapshot exists yet.
+  """
+  def last_modified(key) do
+    adapter().last_modified(config(), key)
+  end
+
   defp adapter do
     Keyword.fetch!(config(), :adapter)
   end

@@ -5,6 +5,23 @@ defmodule Kjogvi.GeoTest do
 
   alias Kjogvi.Geo
 
+  describe "common_location_counts_by_type/0" do
+    test "counts only common locations, grouped by type" do
+      country = insert(:country)
+      insert(:subdivision1, country_id: country.id)
+      insert(:subdivision1, country_id: country.id)
+      insert(:location, user: user_fixture(), country: country)
+
+      assert Geo.common_location_counts_by_type() == %{country: 1, subdivision1: 2}
+    end
+
+    test "returns an empty map when only user-owned locations exist" do
+      insert(:location, user: user_fixture(), country: nil)
+
+      assert Geo.common_location_counts_by_type() == %{}
+    end
+  end
+
   describe "checklists_count/1" do
     test "returns 0 when no checklists exist for the location" do
       location = insert(:location)

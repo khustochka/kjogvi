@@ -22,6 +22,8 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       assert html =~ "Import Tasks"
       assert html =~ "Legacy Import"
       assert html =~ "eBird preload"
+      # The ISO locations import lives on /admin/imports/locations now.
+      refute html =~ "Locations Import"
     end
 
     test "a non-admin user sees only the eBird import checklist", %{conn: conn} do

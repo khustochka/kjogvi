@@ -21,6 +21,13 @@ defmodule Kjogvi.Datasets.LocalAdapter do
     File.read(full_path(config, key))
   end
 
+  @impl true
+  def last_modified(config, key) do
+    with {:ok, %File.Stat{mtime: mtime}} <- File.stat(full_path(config, key), time: :universal) do
+      {:ok, mtime |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
+    end
+  end
+
   defp full_path(config, key) do
     Path.join(Keyword.fetch!(config, :path), key)
   end

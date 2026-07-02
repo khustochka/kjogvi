@@ -11,4 +11,7 @@ defmodule Kjogvi.Datasets.Adapter do
 
   @callback read(config :: keyword(), key :: String.t()) ::
               {:ok, binary()} | {:error, term()}
+
+  @callback last_modified(config :: keyword(), key :: String.t()) ::
+              {:ok, DateTime.t()} | {:error, term()}
 end

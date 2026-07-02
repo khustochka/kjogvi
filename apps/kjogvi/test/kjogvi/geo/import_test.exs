@@ -21,15 +21,9 @@ defmodule Kjogvi.Geo.ImportTest do
     path
   end
 
-  # Renders rows (maps) as a JSONL string body, as a fetched URL would return.
+  # Renders rows (maps) as a JSONL string body.
   defp jsonl(rows) do
     Enum.map_join(rows, "\n", &Jason.encode!/1) <> "\n"
-  end
-
-  # A `Req` plug option that serves `body` for any request, so the URL form of
-  # `import/2` can be exercised without hitting the network.
-  defp serving(body) do
-    [plug: fn conn -> Plug.Conn.send_resp(conn, 200, body) end]
   end
 
   defp country_row(iso, name, attrs \\ %{}) do
@@ -59,7 +53,7 @@ defmodule Kjogvi.Geo.ImportTest do
     Repo.get_by!(Location, iso_code: iso)
   end
 
-  describe "import/2 from a local path" do
+  describe "import/1 from a local path" do
     test "imports a country as a top-level common location" do
       path = write_jsonl([country_row("UA", "Ukraine", %{"numeric" => "804"})])
 
@@ -202,22 +196,35 @@ defmodule Kjogvi.Geo.ImportTest do
     end
   end
 
-  describe "import/2 from a URL" do
-    test "imports the JSONL fetched from an http(s) URL" do
-      body = jsonl([country_row("UA", "Ukraine"), subdivision_row("UA-30", "Kyiv City", "UA")])
+  describe "import/0 from the datasets storage" do
+    setup do
+      dir = Path.join(System.tmp_dir!(), "datasets_#{System.unique_integer([:positive])}")
+      original = Application.get_env(:kjogvi, Kjogvi.Datasets)
 
-      assert {:ok, _} =
-               Import.import("https://example.test/iso.jsonl", req_options: serving(body))
+      Application.put_env(:kjogvi, Kjogvi.Datasets,
+        adapter: Kjogvi.Datasets.LocalAdapter,
+        path: dir
+      )
+
+      on_exit(fn ->
+        Application.put_env(:kjogvi, Kjogvi.Datasets, original)
+        File.rm_rf(dir)
+      end)
+
+      :ok
+    end
+
+    test "imports the JSONL read from the source key" do
+      body = jsonl([country_row("UA", "Ukraine"), subdivision_row("UA-30", "Kyiv City", "UA")])
+      assert :ok = Kjogvi.Datasets.write(Import.source_key(), body)
+
+      assert {:ok, _} = Import.import()
 
       assert by_iso("UA-30").country_id == by_iso("UA").id
     end
 
-    test "raises when no source is given and no URL is configured" do
-      assert is_nil(Import.default_url())
-
-      assert_raise RuntimeError, ~r/URL is not configured/, fn ->
-        Import.import()
-      end
+    test "returns enoent when no source file has been uploaded" do
+      assert {:error, :enoent} = Import.import()
     end
   end
 
