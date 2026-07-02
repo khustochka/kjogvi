@@ -27,4 +27,7 @@ erl_crash.dump
 # User files
 .envrc
 .vscode/
+
+# Datasets
 /priv/import/
+/priv/datasets

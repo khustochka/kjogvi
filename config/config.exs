@@ -145,6 +145,12 @@ config :ornithologue, Ornitho.StreamImporter, adapter: Ornitho.StreamImporter.Lo
 
 config :kjogvi, :cache, enabled: false
 
+# Dataset snapshot storage (Kjogvi.Datasets): local files by default, so dev
+# and test cannot touch the prod snapshots; prod switches to S3 in runtime.exs.
+config :kjogvi, Kjogvi.Datasets,
+  adapter: Kjogvi.Datasets.LocalAdapter,
+  path: "priv/datasets"
+
 config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@kjogvi.local"}
 
 config :kjogvi, Kjogvi.Legacy.Import,

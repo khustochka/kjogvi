@@ -274,7 +274,9 @@ untouched (it's for the user's own locations). Common locations and eBird
 locations get separate indexes (`/admin/locations`, `/admin/ebird`), not tabs
 of one page. New nav links in the private layout's admin section.
 
-### 8.1 `/admin/imports` — dataset operations page
+### 8.1 `/admin/imports/locations` — dataset operations page
+
+(Other imports will get their own pages under `/admin/imports/…`.)
 
 Card layout like `Live.My.Imports.Index`, one card per operation:
 
@@ -420,3 +422,14 @@ stages, especially if this requires writing code (app or test) just for the sake
   `#admin-menu`: Common Locations, Taxonomy, Exclusive Tasks, Live Dashboard,
   Dev Mailbox) rendered below it in both layouts. `AdminMenuComponents.admin_menu_item`
   → `MenuBarComponents.menu_bar_item`.
+- **Stage 2** (2026-07-01) — Dump/restore core for the common locations dataset:
+  `Kjogvi.Geo.Dump` / `Kjogvi.Geo.Restore` (CSV, upsert on `id`, user-owned id
+  collisions abort the restore, sequence bump afterwards) with `run/1` through
+  the configured storage and `to_file/2`/`from_file/2` for explicit paths.
+  `Kjogvi.Datasets` storage layer (`Adapter` behaviour, `LocalAdapter` default
+  via config.exs `priv/datasets`, `S3Adapter` wired prod-only in runtime.exs via
+  `KJOGVI_DATASETS_*`; commented opt-in block in dev.exs). Rode along per §3:
+  `:iso`/`:ebird_regions` in `Kjogvi.Types.ImportSource`, the ISO import now
+  stamps `import_source: :iso`; `bump_id_sequence/0` moved to `Location.Query`.
+  Telemetry spans `[:kjogvi, :geo, :dump]`/`[:kjogvi, :geo, :restore]` + logger
+  handlers. `{:csv, "~> 3.0"}` added to `apps/kjogvi`.

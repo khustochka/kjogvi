@@ -189,6 +189,18 @@ if config_env() == :prod do
     access_key_id: System.get_env("ORNITHO_IMPORTER_S3_ACCESS_KEY_ID"),
     secret_access_key: System.get_env("ORNITHO_IMPORTER_S3_SECRET_ACCESS_KEY")
 
+  # KJOGVI DATASETS
+
+  # Curated dataset snapshots (common locations etc.) live on S3 in prod.
+  # Credentials are optional: when unset, ex_aws falls back to the global
+  # chain / instance role.
+  config :kjogvi, Kjogvi.Datasets,
+    adapter: Kjogvi.Datasets.S3Adapter,
+    bucket: System.get_env("KJOGVI_DATASETS_BUCKET"),
+    region: System.get_env("KJOGVI_DATASETS_REGION"),
+    access_key_id: System.get_env("KJOGVI_DATASETS_ACCESS_KEY_ID"),
+    secret_access_key: System.get_env("KJOGVI_DATASETS_SECRET_ACCESS_KEY")
+
   # KJOGVI Legacy Import
 
   config :kjogvi, Kjogvi.Legacy.Import,

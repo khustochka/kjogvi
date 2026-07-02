@@ -61,6 +61,7 @@ defmodule Kjogvi.MixProject do
       {:ecto_psql_extras, "~> 0.8"},
       {:postgrex, "~> 0.22"},
       {:cachex, "~> 4.0"},
+      {:csv, "~> 3.0"},
       # Fork of waffle that makes hackney optional.
       {:waffle, github: "khustochka/waffle", branch: "hackney-optional", override: true},
       {:waffle_ecto, "~> 0.0.12"},

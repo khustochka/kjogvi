@@ -70,6 +70,7 @@ defmodule Kjogvi.Geo.ImportTest do
       assert country.name_en == "Ukraine"
       assert country.slug == "ua"
       assert country.is_private == false
+      assert country.import_source == :iso
       # Common location: not owned by any user.
       assert is_nil(country.user_id)
       # A country has no level FKs.

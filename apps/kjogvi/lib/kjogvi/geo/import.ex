@@ -24,7 +24,8 @@ defmodule Kjogvi.Geo.Import do
   The import upserts on `iso_code`: a row already present (same `iso_code`) is
   updated rather than skipped or duplicated, so it can be re-run against a newer
   iso-codes release. The conflict update refreshes only the ISO-sourced columns
-  (`name_en`, `extras`, `updated_at`, and a subdivision's `country_id`) and
+  (`name_en`, `extras`, `import_source`, `updated_at`, and a subdivision's
+  `country_id`) and
   leaves each row's `id` intact (checklists reference locations by id). Columns a user
   may have edited locally — `slug`, `is_private`, `lat`, `lon` — are *not*
   overwritten on conflict.
@@ -37,11 +38,6 @@ defmodule Kjogvi.Geo.Import do
   alias Kjogvi.Geo.Location
   alias Kjogvi.Geo.Location.Query
   alias Kjogvi.Repo
-
-  # Imported locations start at this id, reserving the lower range for
-  # hand-managed rows. The sequence is bumped to at least this value (or past the
-  # current max id) before the import inserts anything.
-  @min_start_seq 10_000
 
   @doc """
   Imports the ISO 3166 JSONL from `source`.
@@ -117,21 +113,13 @@ defmodule Kjogvi.Geo.Import do
 
     Repo.transaction(
       fn ->
-        bump_id_sequence()
+        # Bump before inserting so imported rows take ids in the reserved upper
+        # range without colliding with any existing row.
+        Query.bump_id_sequence()
         ids_by_iso = insert_countries(countries, imported_at)
         insert_subdivisions(subdivisions, ids_by_iso, imported_at)
       end,
       timeout: :infinity
-    )
-  end
-
-  # Move `locations_id_seq` to at least `@min_start_seq`, but never below the
-  # current max id, so imported rows take ids in the reserved upper range without
-  # colliding with any existing row.
-  defp bump_id_sequence do
-    Repo.query!(
-      "SELECT setval('locations_id_seq', GREATEST($1, (SELECT COALESCE(MAX(id), 0) FROM locations)))",
-      [@min_start_seq]
     )
   end
 
@@ -174,7 +162,7 @@ defmodule Kjogvi.Geo.Import do
   # Refresh only ISO-sourced columns; leave user-editable ones (`slug`,
   # `is_private`, `lat`, `lon`) and `id`/`inserted_at` untouched.
   defp on_conflict do
-    {:replace, [:name_en, :country_id, :extras, :updated_at]}
+    {:replace, [:name_en, :country_id, :extras, :import_source, :updated_at]}
   end
 
   # The `iso_code` unique index is partial, so the conflict target must repeat
@@ -200,6 +188,7 @@ defmodule Kjogvi.Geo.Import do
       location_type: String.to_existing_atom(row["type"]),
       iso_code: row["iso_code"],
       is_private: false,
+      import_source: :iso,
       extras: extras(row, imported_at),
       inserted_at: imported_at,
       updated_at: imported_at
