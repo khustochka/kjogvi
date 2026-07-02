@@ -37,7 +37,7 @@ jobs:
           POSTGRES_DB: kjogvi_test
           POSTGRES_PASSWORD: "kjogvi"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup test environment
         uses: ./.github/actions/setup
         with:
