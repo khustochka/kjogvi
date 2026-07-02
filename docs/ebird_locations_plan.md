@@ -410,3 +410,7 @@ stages, especially if this requires writing code (app or test) just for the sake
   lifelist link). New: `Location.Query.only_common/1`,
   `Geo.common_location_tree/0`, `Geo.common_location_by_slug/1`,
   `Geo.common_direct_children/1`. Admin nav link "Common Locations".
+- **Stage 1a** (2026-07-01) — Text search on `/admin/locations`: same search UX
+  as `/my/locations` (SearchInput, 2-char minimum, tree hidden while searching),
+  backed by `Geo.search_common_locations/1` (common only, specials excluded);
+  results render admin-variant cards.

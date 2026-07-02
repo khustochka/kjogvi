@@ -263,6 +263,17 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
+  Searches the common (unowned) locations dataset, specials excluded — the
+  admin common-locations index search.
+  """
+  def search_common_locations(term) do
+    Location
+    |> Location.Query.only_common()
+    |> Location.Query.exclude_specials()
+    |> Kjogvi.Search.Location.search_locations(term)
+  end
+
+  @doc """
   Autocomplete entrypoint: `search_locations/3` with the `filter` ahead of `term`,
   so the `{module, fun, args}` form used by `LocationAutocomplete` (which appends
   `term` last) can carry a `Location.Filter`.

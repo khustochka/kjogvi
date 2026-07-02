@@ -1,14 +1,15 @@
 defmodule KjogviWeb.Live.Admin.Locations.Index do
   @moduledoc """
   Admin index of the common locations dataset: the entire shared scaffold as a
-  collapsible tree, read-only. Unlike `Live.My.Locations.Index` it shows every
-  common location — including countries nothing hangs under yet — and no
-  personal locations.
+  collapsible tree, read-only, with text search. Unlike `Live.My.Locations.Index`
+  it shows every common location — including countries nothing hangs under yet —
+  and no personal locations.
   """
 
   use KjogviWeb, :live_view
 
   alias Kjogvi.Geo
+  alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
   @impl true
   def mount(_params, _session, socket) do
@@ -18,7 +19,33 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
      socket
      |> assign(:page_title, "Common Locations")
      |> assign(:location_tree, tree)
-     |> assign(:locations_count, count_nodes(tree))}
+     |> assign(:locations_count, count_nodes(tree))
+     |> assign(:search_term, "")
+     |> assign(:search_results, [])}
+  end
+
+  @impl true
+  def handle_event("filter_locations", %{"value" => search_term}, socket) do
+    search_term = String.trim(search_term)
+
+    search_results =
+      if String.length(search_term) >= 2 do
+        Geo.search_common_locations(search_term)
+      else
+        []
+      end
+
+    {:noreply,
+     socket
+     |> assign(:search_term, search_term)
+     |> assign(:search_results, search_results)}
+  end
+
+  def handle_event("clear_location_filter", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_term, "")
+     |> assign(:search_results, [])}
   end
 
   defp count_nodes(nodes) do
@@ -41,7 +68,49 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
         </div>
       </div>
 
-      <div>
+      <%!-- Search --%>
+      <div class="w-full">
+        <SearchInput.search_input
+          id="location-search"
+          value={@search_term}
+          placeholder="Search common locations by name, slug, or country code..."
+          on_search="filter_locations"
+          on_clear="clear_location_filter"
+        />
+        <div :if={@search_term != ""} class="mt-2 text-sm text-stone-600">
+          <%= cond do %>
+            <% String.length(@search_term) < 2 -> %>
+              Type at least 2 characters to search...
+            <% length(@search_results) == 20 -> %>
+              Showing first 20 matches — narrow your search to find a specific one
+            <% true -> %>
+              {length(@search_results)} location(s) found
+          <% end %>
+        </div>
+      </div>
+
+      <%!-- Search results --%>
+      <div :if={@search_term != "" and String.length(@search_term) >= 2}>
+        <.h2>Search Results</.h2>
+
+        <ul :if={length(@search_results) > 0} class="space-y-2">
+          <li
+            :for={location <- @search_results}
+            class="border border-stone-200 rounded-lg overflow-hidden"
+          >
+            <.location_card location={location} variant={:flat} admin={true} />
+          </li>
+        </ul>
+
+        <div :if={length(@search_results) == 0} class="text-center py-8 text-stone-500">
+          <.icon name="hero-magnifying-glass" class="w-12 h-12 mx-auto mb-4 text-stone-300" />
+          <p class="text-lg font-medium">No locations found</p>
+          <p class="text-sm">Try a different search term or check your spelling.</p>
+        </div>
+      </div>
+
+      <%!-- Location tree (hidden when searching) --%>
+      <div :if={@search_term == ""}>
         <ul :if={length(@location_tree) > 0} class="space-y-4">
           <li
             :for={node <- @location_tree}

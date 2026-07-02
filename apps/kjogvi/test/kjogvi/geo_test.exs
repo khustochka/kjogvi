@@ -613,6 +613,22 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "search_common_locations/1" do
+    test "finds common locations by name" do
+      location = insert(:country, name_en: "Canada")
+
+      assert [%{id: id}] = Geo.search_common_locations("Cana")
+      assert id == location.id
+    end
+
+    test "excludes personal locations and specials" do
+      insert(:location, name_en: "Canadian Patch", user_id: user_fixture().id)
+      insert(:special, name_en: "Canada Special")
+
+      assert Geo.search_common_locations("Canad") == []
+    end
+  end
+
   describe "common_direct_children/1" do
     test "returns common children ordered by name, excluding personal ones" do
       country = insert(:country, name_en: "Canada")

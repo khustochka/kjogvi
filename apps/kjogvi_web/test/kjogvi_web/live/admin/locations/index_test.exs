@@ -75,4 +75,78 @@ defmodule KjogviWeb.Live.Admin.Locations.IndexTest do
 
     assert has_element?(index_live, "p", "No common locations yet")
   end
+
+  describe "search" do
+    test "shows common locations matching the query", %{conn: conn} do
+      insert(:country, name_en: "Canada")
+      insert(:country, name_en: "Mongolia")
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+      html =
+        index_live
+        |> element("#location-search")
+        |> render_keyup(%{"value" => "Canada"})
+
+      assert has_element?(index_live, "h2", "Search Results")
+      assert html =~ "Canada"
+      # The tree is hidden while searching, so a non-matching country is absent.
+      refute has_element?(index_live, "a", "Mongolia")
+    end
+
+    test "does not find personal locations", %{conn: conn} do
+      insert(:location, name_en: "Canadian Patch", user_id: user_fixture().id)
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+      index_live
+      |> element("#location-search")
+      |> render_keyup(%{"value" => "Canadian"})
+
+      assert has_element?(index_live, "p", "No locations found")
+    end
+
+    test "a result links to the admin show page without a lifelist link", %{conn: conn} do
+      country = insert(:country, name_en: "Canada", slug: "canada")
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+      index_live
+      |> element("#location-search")
+      |> render_keyup(%{"value" => "Canada"})
+
+      assert has_element?(index_live, "a[href='/admin/locations/#{country.slug}']", "Canada")
+      refute has_element?(index_live, "a[href='/my/lifelist/#{country.slug}']")
+    end
+
+    test "hides the tree while searching and restores it on clear", %{conn: conn} do
+      country = insert(:country, name_en: "Mongolia")
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+      index_live
+      |> element("#location-search")
+      |> render_keyup(%{"value" => "Canada"})
+
+      refute has_element?(index_live, "#tree-body-#{country.id}")
+
+      index_live
+      |> element("#location-search + button[aria-label='Clear']")
+      |> render_click()
+
+      refute has_element?(index_live, "h2", "Search Results")
+      assert has_element?(index_live, "a", "Mongolia")
+    end
+
+    test "asks for at least 2 characters", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+      index_live
+      |> element("#location-search")
+      |> render_keyup(%{"value" => "C"})
+
+      assert has_element?(index_live, "*", "Type at least 2 characters")
+      refute has_element?(index_live, "h2", "Search Results")
+    end
+  end
 end
