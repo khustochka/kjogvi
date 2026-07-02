@@ -399,3 +399,14 @@ The work is supposed to be performed in stages, with commit after every stage. D
 on a new stage unless specifically instructed. Ideally after each stage the tests should pass,
 but it is acceptable not to fix tests related to features that will be changed in the next 
 stages, especially if this requires writing code (app or test) just for the sake of fixing the tests, and that will be removed in the future stages.
+
+## 11. Implementation log
+
+- **Stage 1** (2026-07-01) — Read-only common locations admin UI: `/admin/locations`
+  index (full common scaffold as a collapsible tree, countries collapsed) and
+  show page (details, ancestors, common children only; no actions). Tree
+  machinery (`tree_node`, `tree_toggle`) extracted from `My.Locations.Index`
+  into `LocationComponents` with an `admin` option (admin link targets, no
+  lifelist link). New: `Location.Query.only_common/1`,
+  `Geo.common_location_tree/0`, `Geo.common_location_by_slug/1`,
+  `Geo.common_direct_children/1`. Admin nav link "Common Locations".

@@ -129,10 +129,26 @@ defmodule Kjogvi.Geo do
   has an empty `children` list.
   """
   def location_tree(scope) do
-    locations =
-      list_locations(scope)
-      |> reject_orphan_common()
+    list_locations(scope)
+    |> reject_orphan_common()
+    |> build_tree()
+  end
 
+  @doc """
+  Builds the tree of the entire common (unowned) scaffold, specials excluded —
+  every country and subdivision regardless of whether anything hangs under it.
+
+  Same node shape as `location_tree/1`; used by the admin common-locations index.
+  """
+  def common_location_tree do
+    Location
+    |> Location.Query.only_common()
+    |> Location.Query.exclude_specials()
+    |> Repo.all()
+    |> build_tree()
+  end
+
+  defp build_tree(locations) do
     by_parent = Enum.group_by(locations, &Location.parent_id_from_levels/1)
     present_ids = MapSet.new(locations, & &1.id)
 
@@ -223,6 +239,13 @@ defmodule Kjogvi.Geo do
     |> Repo.one()
   end
 
+  def common_location_by_slug(slug) do
+    Location
+    |> Location.Query.only_common()
+    |> Location.Query.by_slug(slug)
+    |> Repo.one()
+  end
+
   @doc """
   Searches locations visible to `scope`, restricting the base query to what the
   scope may see before delegating to `Kjogvi.Search.Location`.
@@ -274,7 +297,19 @@ defmodule Kjogvi.Geo do
   def direct_children(%Location{} = location) do
     location
     |> Location.Query.direct_children()
-    |> order_by([l], asc: l.name_en)
+    |> Location.Query.order_by_name()
+    |> Repo.all()
+  end
+
+  @doc """
+  Like `direct_children/1`, but restricted to common (unowned) children — the
+  admin dataset view, where users' personal locations don't belong.
+  """
+  def common_direct_children(%Location{} = location) do
+    location
+    |> Location.Query.direct_children()
+    |> Location.Query.only_common()
+    |> Location.Query.order_by_name()
     |> Repo.all()
   end
 

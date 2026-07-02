@@ -17,8 +17,11 @@ defmodule KjogviWeb.LocationComponents do
 
   @doc """
   Renders a location row with name link, privacy icon, ISO code, slug, and type badge.
+
+  `admin` switches the name link to the admin locations pages.
   """
   attr :location, :map, required: true
+  attr :admin, :boolean, default: false
 
   def location_row(assigns) do
     ~H"""
@@ -27,7 +30,7 @@ defmodule KjogviWeb.LocationComponents do
         <div class="flex items-center space-x-2 min-w-0">
           <span class="text-sm font-medium text-stone-800">
             <.link
-              href={~p"/my/locations/#{@location.slug}"}
+              href={location_path(@admin, @location)}
               class="text-stone-800 hover:underline no-underline"
             >
               {@location.name_en}
@@ -61,25 +64,27 @@ defmodule KjogviWeb.LocationComponents do
   Common locations are the shared "big tent" the user's own locations hang under,
   so they read larger and muted, with a flag for countries. They carry no
   edit/delete actions (commons aren't user-owned), only a link to their page and
-  a lifelist link.
+  a lifelist link. `admin` links to the admin locations pages instead and drops
+  the lifelist link.
   """
   attr :location, :map, required: true
+  attr :admin, :boolean, default: false
 
   def common_node(assigns) do
     ~H"""
     <div class="flex items-center justify-between gap-2">
       <div class="min-w-0">
         <.link
-          href={~p"/my/locations/#{@location.slug}"}
+          href={location_path(@admin, @location)}
           class={[
-            "min-w-0 flex items-center gap-2 font-header tracking-tight text-stone-700 no-underline hover:underline",
+            "group min-w-0 flex flex-wrap items-center gap-2 font-header tracking-tight text-stone-700 no-underline",
             common_node_text_size(@location.location_type)
           ]}
         >
           <span :if={country_flag(@location) != ""} aria-hidden="true">
             {country_flag(@location)}
           </span>
-          <span class="truncate">{@location.name_en}</span>
+          <span class="group-hover:underline">{@location.name_en}</span>
           <span
             :if={@location.iso_code && @location.iso_code != ""}
             class="text-stone-400 font-mono text-sm font-normal shrink-0"
@@ -93,14 +98,17 @@ defmodule KjogviWeb.LocationComponents do
           />
         </.link>
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
-          <span class="text-xs text-stone-400 truncate">{@location.slug}</span>
+          <span class="text-xs text-stone-400">{@location.slug}</span>
           <.type_badge :if={@location.location_type} type={@location.location_type} />
         </div>
       </div>
-      <.lifelist_link slug={@location.slug} />
+      <.lifelist_link :if={!@admin} slug={@location.slug} />
     </div>
     """
   end
+
+  defp location_path(true, location), do: ~p"/admin/locations/#{location.slug}"
+  defp location_path(false, location), do: ~p"/my/locations/#{location.slug}"
 
   @doc """
   Renders a single location, picking the body by kind — common (the tinted
@@ -115,18 +123,20 @@ defmodule KjogviWeb.LocationComponents do
       carries its own padding.
 
   `current_user` and `delete_error` are only consulted for personal locations.
+  `admin` renders the admin variant of common nodes (admin links, no lifelist link).
   """
   attr :location, :map, required: true
   attr :variant, :atom, default: :flat, values: [:tree, :flat]
   attr :current_user, :any, default: nil
   attr :delete_error, :any, default: nil
+  attr :admin, :boolean, default: false
 
   def location_card(assigns) do
     assigns = assign(assigns, :kind, location_kind(assigns.location))
 
     ~H"""
     <div class={location_card_class(@kind, @location.location_type, @variant)}>
-      <.common_node :if={@kind == :common} location={@location} />
+      <.common_node :if={@kind == :common} location={@location} admin={@admin} />
       <.personal_body
         :if={@kind == :personal}
         location={@location}
@@ -258,6 +268,119 @@ defmodule KjogviWeb.LocationComponents do
   # for a different row.
   defp delete_error_for({id, message}, id), do: message
   defp delete_error_for(_, _), do: nil
+
+  @doc """
+  Renders one node of a locations tree, recursively.
+
+  `node` is a `%{location: location, children: [node]}` map as built by
+  `Kjogvi.Geo.location_tree/1` / `common_location_tree/0`. The location body is
+  delegated to `location_card` (the `:tree` variant adds the type-keyed tint
+  without its own horizontal padding, which the branch wrapper here supplies). A
+  node with children gets a chevron that toggles them.
+
+  Only countries start expanded, so the common scaffold — countries and their
+  subdivisions — is what shows initially; everything below a subdivision stays
+  collapsed until expanded. In the `admin` variant every branch starts collapsed
+  instead: the full scaffold's ~250 countries are the index, their subdivisions
+  open on demand.
+  """
+  attr :node, :map, required: true
+  attr :current_user, :any, default: nil
+  attr :delete_error, :any, default: nil
+  attr :admin, :boolean, default: false
+
+  def tree_node(assigns) do
+    location = assigns.node.location
+    body_id = "tree-body-#{location.id}"
+    has_children = assigns.node.children != []
+    expanded = !assigns.admin and location.location_type == :country
+
+    assigns =
+      assign(assigns,
+        body_id: body_id,
+        has_children: has_children,
+        expanded: expanded
+      )
+
+    ~H"""
+    <div class={["flex items-center gap-1.5 px-3", tree_node_pad(@node.location)]}>
+      <.tree_toggle
+        :if={@has_children}
+        target={@body_id}
+        label={"Toggle #{@node.location.name_en}"}
+        expanded={@expanded}
+      />
+      <span :if={!@has_children} class="w-5 shrink-0" aria-hidden="true"></span>
+      <div class="flex-1 min-w-0">
+        <.location_card
+          location={@node.location}
+          variant={:tree}
+          current_user={@current_user}
+          delete_error={@delete_error}
+          admin={@admin}
+        />
+      </div>
+    </div>
+
+    <ul
+      :if={@has_children}
+      id={@body_id}
+      class={["border-l border-stone-200 ml-3", !@expanded && "hidden"]}
+    >
+      <li :for={child <- @node.children} class="border-t border-stone-200">
+        <.tree_node
+          node={child}
+          current_user={@current_user}
+          delete_error={@delete_error}
+          admin={@admin}
+        />
+      </li>
+    </ul>
+    """
+  end
+
+  # The chevron-row tint matches the location card it wraps, so the toggle sits on
+  # the same background as the row (the card carries no horizontal padding here).
+  defp tree_node_pad(%{location_type: :country}), do: "bg-sky-50"
+  defp tree_node_pad(%{location_type: :subdivision1}), do: "bg-amber-50"
+  defp tree_node_pad(%{user_id: nil}), do: "bg-stone-50"
+  defp tree_node_pad(_personal), do: "bg-white"
+
+  @doc """
+  Chevron toggle for a tree branch. `target` is the id (no `#`) of the body to
+  show/hide. `expanded` sets the initial state (chevron down + body shown).
+  """
+  attr :target, :string, required: true
+  attr :label, :string, required: true
+  attr :expanded, :boolean, default: false
+
+  def tree_toggle(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click={toggle_branch(@target)}
+      aria-expanded={to_string(@expanded)}
+      aria-controls={@target}
+      aria-label={@label}
+      class="shrink-0 p-0.5 text-stone-400 hover:text-stone-700 rounded"
+    >
+      <span
+        id={"#{@target}-chevron"}
+        class={["inline-flex transition-transform", @expanded && "rotate-90"]}
+      >
+        <.icon name="hero-chevron-right" class="w-4 h-4" />
+      </span>
+    </button>
+    """
+  end
+
+  # Toggles a branch body (`#target`) and rotates its chevron (`#target-chevron`),
+  # keeping the two in sync client-side without tracking expanded state on the
+  # server.
+  defp toggle_branch(target) do
+    Phoenix.LiveView.JS.toggle(to: "##{target}")
+    |> Phoenix.LiveView.JS.toggle_class("rotate-90", to: "##{target}-chevron")
+  end
 
   # Countries read largest, subdivisions a step down; deeper commons stay modest.
   defp common_node_text_size(:country), do: "text-xl font-bold"

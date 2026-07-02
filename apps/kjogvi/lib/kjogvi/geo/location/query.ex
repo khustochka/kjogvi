@@ -65,6 +65,17 @@ defmodule Kjogvi.Geo.Location.Query do
     from l in query, where: l.user_id == ^user.id or is_nil(l.user_id)
   end
 
+  @doc """
+  Restricts to common locations — the shared, unowned scaffold.
+  """
+  def only_common(query) do
+    from l in query, where: is_nil(l.user_id)
+  end
+
+  def order_by_name(query) do
+    from l in query, order_by: [asc: l.name_en]
+  end
+
   def countries(query) do
     from [..., l] in query,
       where: l.location_type == @country_location_type

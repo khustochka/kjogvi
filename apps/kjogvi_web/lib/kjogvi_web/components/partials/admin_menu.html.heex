@@ -32,6 +32,11 @@
     </.admin_menu_item>
     <%= if Kjogvi.Accounts.admin?(@current_user) do %>
       <.admin_menu_item>
+        <.link href={~p"/admin/locations"} class="no-underline hover:underline">
+          Common Locations
+        </.link>
+      </.admin_menu_item>
+      <.admin_menu_item>
         <.link href={~p"/admin/taxonomy"} class="no-underline hover:underline">
           Taxonomy
         </.link>
