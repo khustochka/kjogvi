@@ -170,6 +170,11 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :ensure_admin},
         {KjogviWeb.UserAuth, :mount_area_admin}
       ] do
+      live "/locations", Live.Admin.Locations.Index, :index
+      live "/locations/:slug", Live.Admin.Locations.Show, :show
+
+      live "/imports/locations", Live.Admin.Imports.Locations.Index, :index
+
       live "/exclusive-tasks", Live.Admin.ExclusiveTasks.Index, :index
     end
 

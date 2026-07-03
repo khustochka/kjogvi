@@ -5,7 +5,7 @@ defmodule KjogviWeb.Partials do
 
   use KjogviWeb, :html
 
-  import KjogviWeb.AdminMenuComponents
+  import KjogviWeb.MenuBarComponents
 
   alias Kjogvi.Accounts.User
 

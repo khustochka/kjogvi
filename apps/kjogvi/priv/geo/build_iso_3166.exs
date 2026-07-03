@@ -1,4 +1,7 @@
-# Generates priv/geo/iso_3166.jsonl from Debian's iso-codes JSON files.
+# Generates the ISO 3166 JSONL source for `Kjogvi.Geo.Import` from Debian's
+# iso-codes JSON files. The default output is the local datasets storage
+# (`priv/datasets/geo/sources/iso_3166.jsonl`); for prod, upload the file to
+# the datasets S3 bucket under the same key (the app only reads it).
 #
 # Source data: the iso-codes project
 # (https://salsa.debian.org/iso-codes-team/iso-codes), licensed
@@ -23,7 +26,7 @@
 #
 # Usage:
 #   elixir apps/kjogvi/priv/geo/build_iso_3166.exs \
-#     [<iso-codes/json dir>] [apps/kjogvi/priv/geo/iso_3166.jsonl]
+#     [<iso-codes/json dir>] [priv/datasets/geo/sources/iso_3166.jsonl]
 
 Mix.install([{:jason, "~> 1.4"}])
 
@@ -35,7 +38,9 @@ defmodule BuildIso3166 do
     "/opt/homebrew/opt/iso-codes/share/iso-codes/json"
   ]
 
-  @default_out Path.join(__DIR__, "iso_3166.jsonl")
+  # The umbrella-root local datasets storage (see `config :kjogvi,
+  # Kjogvi.Datasets`), under the key `Kjogvi.Geo.Import.source_key/0`.
+  @default_out Path.expand("../../../../priv/datasets/geo/sources/iso_3166.jsonl", __DIR__)
 
   def default_out, do: @default_out
 

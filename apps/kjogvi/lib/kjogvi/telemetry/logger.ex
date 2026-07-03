@@ -13,7 +13,9 @@ defmodule Kjogvi.Telemetry.Logger do
       [:kjogvi, :legacy, :import, :start] => &__MODULE__.legacy_import_start/4,
       [:kjogvi, :legacy, :import, :stop] => &__MODULE__.legacy_import_stop/4,
       [:kjogvi, :geo, :import, :start] => &__MODULE__.geo_import_start/4,
-      [:kjogvi, :geo, :import, :stop] => &__MODULE__.geo_import_stop/4
+      [:kjogvi, :geo, :import, :stop] => &__MODULE__.geo_import_stop/4,
+      [:kjogvi, :geo, :dump, :stop] => &__MODULE__.geo_dataset_stop/4,
+      [:kjogvi, :geo, :restore, :stop] => &__MODULE__.geo_dataset_stop/4
     }
 
     for {key, fun} <- handlers do
@@ -57,6 +59,34 @@ defmodule Kjogvi.Telemetry.Logger do
       metadata
     )
   end
+
+  @doc false
+  def geo_dataset_stop(
+        [:kjogvi, :geo, op, :stop],
+        %{duration: duration},
+        %{result: :error, reason: reason} = metadata,
+        _
+      ) do
+    Logger.error(
+      "[#{dataset_op(op)}] #{metadata[:dataset]} failed after #{duration_ms(duration)}ms: #{inspect(reason)}",
+      metadata
+    )
+  end
+
+  def geo_dataset_stop(
+        [:kjogvi, :geo, op, :stop],
+        %{duration: duration},
+        %{count: count} = metadata,
+        _
+      ) do
+    Logger.info(
+      "[#{dataset_op(op)}] #{metadata[:dataset]}: #{count} rows in #{duration_ms(duration)}ms",
+      metadata
+    )
+  end
+
+  defp dataset_op(:dump), do: "Kjogvi.Geo.Dump"
+  defp dataset_op(:restore), do: "Kjogvi.Geo.Restore"
 
   defp duration_ms(duration), do: System.convert_time_unit(duration, :native, :millisecond)
 

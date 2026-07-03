@@ -30,8 +30,10 @@
   </nav>
 
   <div class="bg-private-bar text-private-bar-text text-sm md:text-[0.8125rem] font-semibold py-1 px-1 md:px-2 text-center">
-    <.admin_menu current_user={@current_scope.current_user} />
+    <.private_menu current_user={@current_scope.current_user} />
   </div>
+
+  <.admin_menu current_user={@current_scope.current_user} />
 
   <main class="bg-private-bg flex flex-1 flex-col px-2 sm:px-3">
     <div class={[

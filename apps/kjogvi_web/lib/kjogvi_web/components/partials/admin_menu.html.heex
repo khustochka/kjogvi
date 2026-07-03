@@ -1,73 +1,44 @@
-<div :if={@current_user} class="md:flex justify-between items-center leading-7 md:leading-6">
-  <ul>
-    <.admin_menu_item>
-      <.link href={~p"/my/locations"} class="no-underline hover:underline">
-        Locations
+<nav
+  :if={@current_user && Kjogvi.Accounts.admin?(@current_user)}
+  id="admin-menu"
+  aria-label="Admin"
+  class="bg-zinc-800 border-t border-zinc-600 text-sm md:text-[0.8125rem] font-semibold py-1 px-1 md:px-2 text-center"
+>
+  <ul class="leading-7 md:leading-6">
+    <li class="inline-block mx-2 text-[0.95rem] md:text-[0.85rem] text-zinc-500 uppercase tracking-wider">
+      Admin
+    </li>
+    <.menu_bar_item>
+      <.link href={~p"/admin/locations"} class="no-underline hover:underline">
+        Common Locations
       </.link>
-    </.admin_menu_item>
-    <.admin_menu_item>
-      <.link href={~p"/my/checklists"} class="no-underline hover:underline">
-        Checklists
-      </.link>
-    </.admin_menu_item>
-    <.admin_menu_item>
-      <.link href={~p"/my/lifelist"} class="no-underline hover:underline">
-        Lifelist
-      </.link>
-    </.admin_menu_item>
-    <.admin_menu_item>
-      <.link href={~p"/my/logbook"} class="no-underline hover:underline">
-        Logbook
-      </.link>
-    </.admin_menu_item>
-    <.admin_menu_item>
-      <.link href={~p"/my/images"} class="no-underline hover:underline">
-        Images
-      </.link>
-    </.admin_menu_item>
-    <.admin_menu_item>
-      <.link href={~p"/my/imports"} class="no-underline hover:underline">
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/admin/imports/locations"} class="no-underline hover:underline">
         Imports
       </.link>
-    </.admin_menu_item>
-    <%= if Kjogvi.Accounts.admin?(@current_user) do %>
-      <.admin_menu_item>
-        <.link href={~p"/admin/taxonomy"} class="no-underline hover:underline">
-          Taxonomy
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/admin/taxonomy"} class="no-underline hover:underline">
+        Taxonomy
+      </.link>
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/admin/exclusive-tasks"} class="no-underline hover:underline">
+        Exclusive Tasks
+      </.link>
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/admin/dashboard"} class="no-underline hover:underline">
+        Live Dashboard
+      </.link>
+    </.menu_bar_item>
+    <%= Kjogvi.Config.with_dev_routes do %>
+      <.menu_bar_item>
+        <.link href={~p"/dev/mailbox"} class="no-underline hover:underline">
+          Dev Mailbox
         </.link>
-      </.admin_menu_item>
-      <.admin_menu_item>
-        <.link href={~p"/admin/dashboard"} class="no-underline hover:underline">
-          Live Dashboard
-        </.link>
-      </.admin_menu_item>
-      <%= Kjogvi.Config.with_dev_routes do %>
-        <.admin_menu_item>
-          <.link href={~p"/dev/mailbox"} class="no-underline hover:underline">
-            Dev Mailbox
-          </.link>
-        </.admin_menu_item>
-      <% end %>
+      </.menu_bar_item>
     <% end %>
   </ul>
-  <ul>
-    <.admin_menu_item>
-      <.link
-        href={~p"/my/settings/profile"}
-        class="text-zinc-200 text-[0.95rem] no-underline border-b-slate-300 border-b p-px"
-      >
-        {@current_user.email}
-      </.link>
-    </.admin_menu_item>
-    <.admin_menu_item>
-      <.form_as_link
-        id="logout-form"
-        action={~p"/account/logout"}
-        method="delete"
-        class="no-underline font-normal text-[0.9rem] text-zinc-900 bg-slate-50 py-0.5 px-2 rounded"
-      >
-        Log out
-      </.form_as_link>
-    </.admin_menu_item>
-  </ul>
-</div>
+</nav>

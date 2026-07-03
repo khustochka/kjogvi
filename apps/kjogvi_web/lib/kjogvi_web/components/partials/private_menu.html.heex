@@ -1,0 +1,59 @@
+<nav
+  :if={@current_user}
+  id="private-menu"
+  aria-label="Personal"
+  class="md:flex justify-between items-center leading-7 md:leading-6"
+>
+  <ul>
+    <.menu_bar_item>
+      <.link href={~p"/my/locations"} class="no-underline hover:underline">
+        Locations
+      </.link>
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/my/checklists"} class="no-underline hover:underline">
+        Checklists
+      </.link>
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/my/lifelist"} class="no-underline hover:underline">
+        Lifelist
+      </.link>
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/my/logbook"} class="no-underline hover:underline">
+        Logbook
+      </.link>
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/my/images"} class="no-underline hover:underline">
+        Images
+      </.link>
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.link href={~p"/my/imports"} class="no-underline hover:underline">
+        Imports
+      </.link>
+    </.menu_bar_item>
+  </ul>
+  <ul>
+    <.menu_bar_item>
+      <.link
+        href={~p"/my/settings/profile"}
+        class="text-zinc-200 text-[0.95rem] no-underline border-b-slate-300 border-b p-px"
+      >
+        {@current_user.email}
+      </.link>
+    </.menu_bar_item>
+    <.menu_bar_item>
+      <.form_as_link
+        id="logout-form"
+        action={~p"/account/logout"}
+        method="delete"
+        class="no-underline font-normal text-[0.9rem] text-zinc-900 bg-slate-50 py-0.5 px-2 rounded"
+      >
+        Log out
+      </.form_as_link>
+    </.menu_bar_item>
+  </ul>
+</nav>

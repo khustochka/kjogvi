@@ -145,6 +145,15 @@ config :ex_aws,
 
 # KJOGVI
 
+# Dataset snapshots on S3 — deliberate opt-in for seeding a dev DB from the
+# real snapshots. The default is local files under priv/datasets (config.exs).
+# config :kjogvi, Kjogvi.Datasets,
+#   adapter: Kjogvi.Datasets.S3Adapter,
+#   bucket: System.get_env("KJOGVI_DATASETS_BUCKET"),
+#   region: System.get_env("KJOGVI_DATASETS_REGION"),
+#   access_key_id: System.get_env("KJOGVI_DATASETS_ACCESS_KEY_ID"),
+#   secret_access_key: System.get_env("KJOGVI_DATASETS_SECRET_ACCESS_KEY")
+
 # Only relevant for Local import adapter
 config :kjogvi, Kjogvi.Legacy.Import,
   image_storage_buckets: %{

@@ -65,6 +65,8 @@ defmodule Kjogvi.Geo.Location do
 
     belongs_to(:user, Kjogvi.Accounts.User)
 
+    has_one(:ebird_location, Kjogvi.Geo.EbirdLocation)
+
     has_many(:checklists, Kjogvi.Birding.Checklist)
     has_many(:observations, through: [:checklists, :observations])
 

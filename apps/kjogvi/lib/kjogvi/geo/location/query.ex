@@ -65,6 +65,32 @@ defmodule Kjogvi.Geo.Location.Query do
     from l in query, where: l.user_id == ^user.id or is_nil(l.user_id)
   end
 
+  @doc """
+  Restricts to common locations — the shared, unowned scaffold.
+  """
+  def only_common(query) do
+    from l in query, where: is_nil(l.user_id)
+  end
+
+  @doc """
+  Restricts to user-owned locations — the complement of `only_common/1`.
+  """
+  def only_user_owned(query) do
+    from l in query, where: not is_nil(l.user_id)
+  end
+
+  def by_ids(query, ids) do
+    from l in query, where: l.id in ^ids
+  end
+
+  def select_ids(query) do
+    from l in query, select: l.id
+  end
+
+  def order_by_name(query) do
+    from l in query, order_by: [asc: l.name_en]
+  end
+
   def countries(query) do
     from [..., l] in query,
       where: l.location_type == @country_location_type
@@ -99,6 +125,23 @@ defmodule Kjogvi.Geo.Location.Query do
 
   defp maybe_exclude_sections(query, true), do: exclude_sections(query)
   defp maybe_exclude_sections(query, _), do: query
+
+  # Imported/restored common rows take ids from this value up, reserving the
+  # lower range for hand-managed rows.
+  @min_start_seq 10_000
+
+  @doc """
+  Moves `locations_id_seq` to at least the reserved import floor
+  (#{@min_start_seq}), but never below the current max id, so ids the sequence
+  allocates next fall in the reserved range and past any explicitly inserted
+  id (`Kjogvi.Geo.Import` bumps before inserting; `Kjogvi.Geo.Restore` after).
+  """
+  def bump_id_sequence do
+    Repo.query!(
+      "SELECT setval('locations_id_seq', GREATEST($1, (SELECT COALESCE(MAX(id), 0) FROM locations)))",
+      [@min_start_seq]
+    )
+  end
 
   @doc """
   Groups locations by `location_type`, selecting `{location_type, count}` pairs.

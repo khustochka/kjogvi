@@ -59,6 +59,11 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 # Print only warnings and errors during test (set DEBUG env var to print debug messages)
 config :logger, level: if(System.get_env("DEBUG"), do: :debug, else: :warning)
 
+# Keep dataset snapshots out of the repo tree (the default path is
+# priv/datasets); tests that exercise the storage loop override the path
+# per-test anyway.
+config :kjogvi, Kjogvi.Datasets, path: Path.join(System.tmp_dir!(), "kjogvi_test_datasets")
+
 # In test we don't send emails
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Test
 

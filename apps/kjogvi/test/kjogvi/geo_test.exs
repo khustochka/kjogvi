@@ -5,6 +5,23 @@ defmodule Kjogvi.GeoTest do
 
   alias Kjogvi.Geo
 
+  describe "common_location_counts_by_type/0" do
+    test "counts only common locations, grouped by type" do
+      country = insert(:country)
+      insert(:subdivision1, country_id: country.id)
+      insert(:subdivision1, country_id: country.id)
+      insert(:location, user: user_fixture(), country: country)
+
+      assert Geo.common_location_counts_by_type() == %{country: 1, subdivision1: 2}
+    end
+
+    test "returns an empty map when only user-owned locations exist" do
+      insert(:location, user: user_fixture(), country: nil)
+
+      assert Geo.common_location_counts_by_type() == %{}
+    end
+  end
+
   describe "checklists_count/1" do
     test "returns 0 when no checklists exist for the location" do
       location = insert(:location)
@@ -566,6 +583,77 @@ defmodule Kjogvi.GeoTest do
                city.id,
                site.id
              ]
+    end
+  end
+
+  describe "common_location_tree/0" do
+    test "includes every common location, even with nothing under it" do
+      country = insert(:country, name_en: "Mongolia")
+
+      [country_node] = Geo.common_location_tree()
+      assert country_node.location.id == country.id
+      assert country_node.children == []
+    end
+
+    test "nests common subdivisions under their country" do
+      country = insert(:country, name_en: "Canada")
+      subdivision = insert(:subdivision1, name_en: "Manitoba", country: country)
+
+      [country_node] = Geo.common_location_tree()
+      assert country_node.location.id == country.id
+      assert [%{location: %{id: sub_id}}] = country_node.children
+      assert sub_id == subdivision.id
+    end
+
+    test "excludes personal locations and specials" do
+      country = insert(:country, name_en: "Canada")
+      insert(:location, name_en: "My Patch", country: country, user_id: user_fixture().id)
+      insert(:special, name_en: "Common Special")
+
+      [country_node] = Geo.common_location_tree()
+      assert country_node.location.id == country.id
+      assert country_node.children == []
+    end
+  end
+
+  describe "common_location_by_slug/1" do
+    test "returns a common location matching the slug" do
+      location = insert(:location, slug: "common-loc")
+
+      assert Geo.common_location_by_slug("common-loc").id == location.id
+    end
+
+    test "does not return a user-owned location" do
+      insert(:location, slug: "personal-loc", user_id: user_fixture().id)
+
+      assert Geo.common_location_by_slug("personal-loc") == nil
+    end
+  end
+
+  describe "search_common_locations/1" do
+    test "finds common locations by name" do
+      location = insert(:country, name_en: "Canada")
+
+      assert [%{id: id}] = Geo.search_common_locations("Cana")
+      assert id == location.id
+    end
+
+    test "excludes personal locations and specials" do
+      insert(:location, name_en: "Canadian Patch", user_id: user_fixture().id)
+      insert(:special, name_en: "Canada Special")
+
+      assert Geo.search_common_locations("Canad") == []
+    end
+  end
+
+  describe "common_direct_children/1" do
+    test "returns common children ordered by name, excluding personal ones" do
+      country = insert(:country, name_en: "Canada")
+      sub_b = insert(:subdivision1, name_en: "Ontario", country: country)
+      sub_a = insert(:subdivision1, name_en: "Manitoba", country: country)
+      insert(:location, name_en: "My Patch", country: country, user_id: user_fixture().id)
+
+      assert Enum.map(Geo.common_direct_children(country), & &1.id) == [sub_a.id, sub_b.id]
     end
   end
 
