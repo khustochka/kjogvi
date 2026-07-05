@@ -88,6 +88,45 @@ defmodule KjogviWeb.Plug do
   end
 
   @doc """
+  Responds with a 404 status for filtered lifelist requests that match no
+  observations, while still letting the page render normally — crawlers stop
+  indexing arbitrary filter combinations, users see the regular empty page.
+  The unfiltered lifelist stays 200 even when empty. Invalid filter params
+  pass through and 404 in the LiveView itself.
+  """
+  def put_lifelist_status(%{path_info: path_info} = conn, _opts) do
+    if lifelist_request?(path_info) do
+      put_status_for_lifelist(conn)
+    else
+      conn
+    end
+  end
+
+  defp lifelist_request?(["community", "lifelist" | _]), do: true
+  defp lifelist_request?(["users", _username, "lifelist" | _]), do: true
+  defp lifelist_request?(_), do: false
+
+  defp put_status_for_lifelist(%{assigns: %{current_scope: scope}} = conn) do
+    case KjogviWeb.Live.Lifelist.Params.to_filter(scope, conn.params) do
+      {:ok, filter} ->
+        if narrowing_filter?(filter) and not Kjogvi.Birding.Lifelist.has_entries?(scope, filter) do
+          put_status(conn, :not_found)
+        else
+          conn
+        end
+
+      {:error, _} ->
+        conn
+    end
+  end
+
+  # Only narrowed requests are 404 candidates; the base lifelist renders 200
+  # even when empty. `exclude_heard_only` does not narrow — heard-only species
+  # still render as extras.
+  defp narrowing_filter?(%{year: nil, month: nil, location: nil, motorless: false}), do: false
+  defp narrowing_filter?(_filter), do: true
+
+  @doc """
   Refines the scope into the `:user` area: resolves `:username` to a user and
   assigns it as `subject_user`. Renders 404 if no user matches the nickname.
   """

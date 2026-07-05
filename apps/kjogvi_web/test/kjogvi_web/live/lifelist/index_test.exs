@@ -106,13 +106,39 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert not (html =~ species1.name_en)
   end
 
-  @tag skip: "Not implemented yet"
-  # See branch empty_lifelist_404
   test "empty year lifelist returns Not Found, but still renders", %{conn: conn, user: user} do
     conn = get(conn, "/users/#{user.nickname}/lifelist/2022")
     resp = html_response(conn, 404)
 
     assert get_number_of_species(resp) == 0
+  end
+
+  test "empty unfiltered lifelist does not return Not Found status", %{conn: conn, user: user} do
+    conn = get(conn, "/users/#{user.nickname}/lifelist")
+    resp = html_response(conn, 200)
+
+    assert get_number_of_species(resp) == 0
+  end
+
+  test "non-empty year lifelist responds OK", %{conn: conn, user: user} do
+    {taxon, _} = Factory.create_species_taxon_with_page()
+
+    insert(:observation,
+      taxon_key: Ornitho.Schema.Taxon.key(taxon),
+      checklist: insert(:checklist, user: user, observ_date: ~D[2022-04-03])
+    )
+
+    conn = get(conn, "/users/#{user.nickname}/lifelist/2022")
+    resp = html_response(conn, 200)
+
+    assert get_number_of_species(resp) == 1
+  end
+
+  test "empty location lifelist returns Not Found", %{conn: conn, user: user} do
+    insert(:country, slug: "canada", name_en: "Canada")
+
+    conn = get(conn, "/users/#{user.nickname}/lifelist/canada")
+    html_response(conn, 404)
   end
 
   test "non-empty year list is indexed by robots", %{conn: conn, user: user} do
@@ -133,7 +159,7 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
 
   test "empty year list is not indexed by robots", %{conn: conn, user: user} do
     conn = get(conn, "/users/#{user.nickname}/lifelist/2022")
-    resp = html_response(conn, 200)
+    resp = html_response(conn, 404)
 
     {:ok, html} = Floki.parse_document(resp)
 
@@ -674,6 +700,13 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
       assert get_number_of_species(html) == 2
       assert html =~ taxon1.name_en
       assert html =~ taxon2.name_en
+    end
+
+    test "empty year lifelist returns Not Found, but still renders", %{conn: conn} do
+      conn = get(conn, "/community/lifelist/2022")
+      resp = html_response(conn, 404)
+
+      assert get_number_of_species(resp) == 0
     end
 
     test "filter links point back to the community URL space", %{conn: conn, user: user} do

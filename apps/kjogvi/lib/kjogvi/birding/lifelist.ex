@@ -67,6 +67,24 @@ defmodule Kjogvi.Birding.Lifelist do
     filter |> Filter.discombo!() |> then(&top(scope, n, &1))
   end
 
+  @spec has_entries?(scope()) :: boolean()
+  @spec has_entries?(scope(), filter()) :: boolean()
+  @doc """
+  Check with a single cheap existence query whether the lifelist has any
+  entries for the given filter. `exclude_heard_only` is ignored: heard-only
+  species still render as extras, so they count toward non-emptiness.
+  """
+  def has_entries?(scope, filter \\ [])
+
+  def has_entries?(scope, %Filter{} = filter) do
+    Lifelist.Query.observations_filtered(scope, %{filter | exclude_heard_only: false})
+    |> Repo.exists?()
+  end
+
+  def has_entries?(scope, filter) do
+    filter |> Filter.discombo!() |> then(&has_entries?(scope, &1))
+  end
+
   @spec years(scope()) :: list(integer())
   @spec years(scope(), filter()) :: list(integer())
   @doc """

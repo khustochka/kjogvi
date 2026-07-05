@@ -5,6 +5,71 @@ defmodule Kjogvi.Birding.LifelistTest do
 
   import Kjogvi.AccountsFixtures
 
+  describe "has_entries?/2" do
+    test "true when an observation matches the filter" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      checklist = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      assert Lifelist.has_entries?(scope, year: 2022)
+    end
+
+    test "false when no observation matches the filter" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      checklist = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      refute Lifelist.has_entries?(scope, year: 2012)
+    end
+
+    test "false when observations are only in another location" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
+      canada = insert(:country, slug: "canada", name_en: "Canada")
+      ukraine = insert(:country, slug: "ukraine", name_en: "Ukraine")
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      checklist = insert(:checklist, user: user, location: ukraine)
+      insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+
+      refute Lifelist.has_entries?(scope, location: canada)
+      assert Lifelist.has_entries?(scope, location: ukraine)
+    end
+
+    test "false when only unreported observations match" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      checklist = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+
+      insert(:observation,
+        checklist: checklist,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon),
+        unreported: true
+      )
+
+      refute Lifelist.has_entries?(scope, year: 2022)
+    end
+
+    test "heard-only species count even with exclude_heard_only" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
+      {taxon, _} = Factory.create_species_taxon_with_page()
+      checklist = insert(:checklist, observ_date: ~D"2022-11-18", user: user)
+
+      insert(:observation,
+        checklist: checklist,
+        taxon_key: Ornitho.Schema.Taxon.key(taxon),
+        voice: true
+      )
+
+      assert Lifelist.has_entries?(scope, year: 2022, exclude_heard_only: true)
+    end
+  end
+
   describe "years/1" do
     test "returns years that have checklists and observation" do
       user = user_fixture()

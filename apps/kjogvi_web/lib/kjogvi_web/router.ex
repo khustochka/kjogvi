@@ -83,7 +83,7 @@ defmodule KjogviWeb.Router do
   # Community area: aggregate public data across all users. The default
   # `:community` scope from the `:browser` pipeline drives it.
   scope "/community", KjogviWeb do
-    pipe_through [:browser]
+    pipe_through [:browser, :put_lifelist_status]
 
     live_session :community,
       on_mount: [
@@ -100,7 +100,7 @@ defmodule KjogviWeb.Router do
   # PUBLIC USER ROUTES
 
   scope "/users/:username", KjogviWeb do
-    pipe_through [:browser, :put_area_user]
+    pipe_through [:browser, :put_area_user, :put_lifelist_status]
 
     live_session :area_user,
       on_mount: [
