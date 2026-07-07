@@ -3,13 +3,15 @@ defmodule Ornitho.Migrations.V01 do
 
   use Ecto.Migration
 
-  def up do
-    create table(:ornitho_migrations) do
+  def up(opts \\ %{}) do
+    prefix = opts[:prefix]
+
+    create table(:ornitho_migrations, prefix: prefix) do
       add :version, :string, null: false, size: 16
     end
 
     # BOOKS
-    create table(:books) do
+    create table(:books, prefix: prefix) do
       add :slug, :string, null: false, size: 16
       add :version, :string, null: false, size: 16
       add :importer, :string, null: false
@@ -23,12 +25,12 @@ defmodule Ornitho.Migrations.V01 do
       timestamps()
     end
 
-    create index(:books, [:slug, :version], unique: true)
+    create index(:books, [:slug, :version], unique: true, prefix: prefix)
 
     # TAXA
 
-    create table(:taxa) do
-      add :book_id, references("books", on_delete: :delete_all), null: false
+    create table(:taxa, prefix: prefix) do
+      add :book_id, references("books", on_delete: :delete_all, prefix: prefix), null: false
       add :name_sci, :string, size: 256, null: false
       add :name_en, :string
       add :code, :string, size: 256, null: false
@@ -41,7 +43,7 @@ defmodule Ornitho.Migrations.V01 do
       add :protonym, :string
       add :order, :string
       add :family, :string
-      add :parent_species_id, references("taxa", on_delete: :nilify_all)
+      add :parent_species_id, references("taxa", on_delete: :nilify_all, prefix: prefix)
       # family_en, species_group, extinct, extinct_year, changes, range, ebird_order_num_str
       add :extras, :map, default: "{}"
       add :sort_order, :integer, null: false
@@ -49,24 +51,27 @@ defmodule Ornitho.Migrations.V01 do
       timestamps()
     end
 
-    create index(:taxa, [:book_id], unique: false)
-    create index(:taxa, [:book_id, :name_sci], unique: true)
-    create index(:taxa, [:book_id, :code], unique: true)
-    create index(:taxa, [:book_id, :sort_order], unique: true)
-    create index(:taxa, [:book_id, :taxon_concept_id], unique: true)
+    create index(:taxa, [:book_id], unique: false, prefix: prefix)
+    create index(:taxa, [:book_id, :name_sci], unique: true, prefix: prefix)
+    create index(:taxa, [:book_id, :code], unique: true, prefix: prefix)
+    create index(:taxa, [:book_id, :sort_order], unique: true, prefix: prefix)
+    create index(:taxa, [:book_id, :taxon_concept_id], unique: true, prefix: prefix)
 
     # GIN index so `codes @> ARRAY[...]` / `codes && ARRAY[...]` lookups are index-backed.
-    create index(:taxa, [:codes], using: "GIN")
+    create index(:taxa, [:codes], using: "GIN", prefix: prefix)
 
     create index(:taxa, [:parent_species_id],
              unique: false,
-             where: "parent_species_id IS NOT NULL"
+             where: "parent_species_id IS NOT NULL",
+             prefix: prefix
            )
   end
 
-  def down do
-    drop table(:taxa)
-    drop table(:books)
-    drop table(:ornitho_migrations)
+  def down(opts \\ %{}) do
+    prefix = opts[:prefix]
+
+    drop table(:taxa, prefix: prefix)
+    drop table(:books, prefix: prefix)
+    drop table(:ornitho_migrations, prefix: prefix)
   end
 end

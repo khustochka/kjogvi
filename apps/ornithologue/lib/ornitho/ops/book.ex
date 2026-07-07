@@ -8,23 +8,23 @@ defmodule Ornitho.Ops.Book do
 
   # def create(%Book{} = book) do
   #   Book.creation_changeset(book, %{})
-  #   |> Ornithologue.repo().insert()
+  #   |> Ornitho.Repo.insert()
   # end
 
   def create(%{} = attrs) do
     Book.creation_changeset(%Book{}, attrs)
-    |> Ornithologue.repo().insert()
+    |> Ornitho.Repo.insert()
   end
 
   def finalize_imported_book(book, taxa_count) do
     book
     |> Book.finalize_changeset(taxa_count: taxa_count)
-    |> Ornithologue.repo().update()
+    |> Ornitho.Repo.update()
   end
 
   def delete(slug, version) do
     Query.Book.base_book()
     |> Query.Book.by_signature(slug, version)
-    |> Ornithologue.repo().delete_all()
+    |> Ornitho.Repo.delete_all()
   end
 end

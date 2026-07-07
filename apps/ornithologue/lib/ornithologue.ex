@@ -32,7 +32,7 @@ defmodule Ornithologue do
         where: ^Utils.tuple_in([:slug, :version], Map.keys(by_book))
       )
       |> Query.Book.select_signature()
-      |> repo().all()
+      |> Ornitho.Repo.all()
 
     books
     |> Enum.reduce(%{}, fn book, acc ->
@@ -40,8 +40,8 @@ defmodule Ornithologue do
         Query.Taxon.by_book(book)
         |> Query.Taxon.select_by_format(opts[:format])
         |> Query.Taxon.by_codes(by_book[{book.slug, book.version}])
-        |> repo().all()
-        |> repo().preload(:parent_species)
+        |> Ornitho.Repo.all()
+        |> Ornitho.Repo.preload(:parent_species)
         |> Enum.map(fn taxon ->
           add_book_to_taxon_and_species(taxon, book)
         end)
@@ -84,5 +84,13 @@ defmodule Ornithologue do
 
   def repo() do
     Application.fetch_env!(:ornithologue, :repo)
+  end
+
+  @doc """
+  The database schema (Ecto prefix) the host app configured for Ornithologue
+  tables, or `nil` for the connection default.
+  """
+  def prefix() do
+    Application.get_env(:ornithologue, :prefix)
   end
 end

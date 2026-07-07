@@ -12,12 +12,19 @@ defmodule Ornitho.Finder.Taxon do
   @search_results_limit 10
   @default_page_size 25
 
+  @doc "All taxa in a book"
+  @spec all(Book.t()) :: [Taxon.t()]
+  def all(book) do
+    Query.Taxon.by_book(book)
+    |> Ornitho.Repo.all()
+  end
+
   @doc "Find a taxon in a book by scientific name"
   @spec by_name_sci(Book.t(), String.t()) :: Taxon.t() | nil
   def by_name_sci(book, name_sci) do
     Query.Taxon.by_book(book)
     |> where(name_sci: ^name_sci)
-    |> Ornithologue.repo().one()
+    |> Ornitho.Repo.one()
   end
 
   @doc "Find a taxon in a book by code"
@@ -25,28 +32,28 @@ defmodule Ornitho.Finder.Taxon do
   def by_code(book, code) do
     Query.Taxon.by_book(book)
     |> where(code: ^code)
-    |> Ornithologue.repo().one()
+    |> Ornitho.Repo.one()
   end
 
   @doc "Find a taxon in a book by code, raise if not found"
   def by_code!(book, code) do
     Query.Taxon.by_book(book)
     |> where(code: ^code)
-    |> Ornithologue.repo().one!()
+    |> Ornitho.Repo.one!()
   end
 
   @doc "Find a taxon in a book by code, raise if not found"
   def by_concept_id(concept_id) do
     Taxon
     |> where(taxon_concept_id: ^concept_id)
-    |> Ornithologue.repo().all()
+    |> Ornitho.Repo.all()
   end
 
   @doc "Find taxa in a book by a list of codes"
   def by_codes(book, codes) do
     Query.Taxon.by_book(book)
     |> where([t], t.code in ^codes)
-    |> Ornithologue.repo().all()
+    |> Ornitho.Repo.all()
   end
 
   @doc "Search for taxa in a book that match a search term"
@@ -57,7 +64,7 @@ defmodule Ornitho.Finder.Taxon do
     |> Query.Taxon.ordered()
     |> limit(^limit)
     |> Query.Taxon.search(search_term)
-    |> Ornithologue.repo().all()
+    |> Ornitho.Repo.all()
   end
 
   @doc "Return a specified page in the list of taxa from a book"
@@ -67,7 +74,7 @@ defmodule Ornitho.Finder.Taxon do
 
     Query.Taxon.by_book(book)
     |> Query.Taxon.ordered()
-    |> Ornithologue.repo().paginate(page: page, page_size: page_size)
+    |> Ornitho.Repo.paginate(page: page, page_size: page_size)
   end
 
   def with_parent_species(%Scrivener.Page{entries: entries} = result) do
@@ -76,16 +83,16 @@ defmodule Ornitho.Finder.Taxon do
 
   def with_parent_species(taxon_or_taxa) do
     taxon_or_taxa
-    |> Ornithologue.repo().preload(:parent_species)
+    |> Ornitho.Repo.preload(:parent_species)
   end
 
   def with_book(taxon_or_taxa) do
     taxon_or_taxa
-    |> Ornithologue.repo().preload(:book)
+    |> Ornitho.Repo.preload(:book)
   end
 
   def with_child_taxa(taxon_or_taxa) do
     taxon_or_taxa
-    |> Ornithologue.repo().preload(:child_taxa)
+    |> Ornitho.Repo.preload(:child_taxa)
   end
 end

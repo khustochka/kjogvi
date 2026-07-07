@@ -11,37 +11,37 @@ defmodule Ornitho.Finder.Book do
   def all() do
     Query.Book.base_book()
     |> Query.Book.ordered()
-    |> Ornithologue.repo().all()
+    |> Ornitho.Repo.all()
   end
 
   def all_signatures() do
     Query.Book.base_book()
     |> select([b], [b.slug, b.version])
-    |> Ornithologue.repo().all()
+    |> Ornitho.Repo.all()
   end
 
   def all_importers() do
     Query.Book.base_book()
     |> select([b], b.importer)
-    |> Ornithologue.repo().all()
+    |> Ornitho.Repo.all()
   end
 
   @spec by_signature(String.t(), String.t()) :: Book.t() | nil
   def by_signature(slug, version) do
     Query.Book.base_book()
     |> Query.Book.by_signature(slug, version)
-    |> Ornithologue.repo().one()
+    |> Ornitho.Repo.one()
   end
 
   def by_signature!(slug, version) do
     Query.Book.base_book()
     |> Query.Book.by_signature(slug, version)
-    |> Ornithologue.repo().one!()
+    |> Ornitho.Repo.one!()
   end
 
   def exists?(slug, version) do
     Query.Book.base_book()
     |> Query.Book.by_signature(slug, version)
-    |> Ornithologue.repo().exists?()
+    |> Ornitho.Repo.exists?()
   end
 end

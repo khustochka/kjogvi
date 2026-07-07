@@ -4,10 +4,10 @@ defmodule Ornitho.Ops do
   """
 
   def transact(fun_or_multi, opts \\ []) do
-    Ornithologue.repo().transact(fun_or_multi, opts)
+    Ornitho.Repo.transact(fun_or_multi, opts)
   end
 
   def insert_all(schema_or_source, entries_or_query, opts \\ []) do
-    Ornithologue.repo().insert_all(schema_or_source, entries_or_query, opts)
+    Ornitho.Repo.insert_all(schema_or_source, entries_or_query, opts)
   end
 end

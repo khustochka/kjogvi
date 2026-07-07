@@ -1,6 +1,15 @@
 defmodule Ornitho.Migrations do
   @moduledoc """
   Migrations for Ornithologue.
+
+  Call from a host migration:
+
+      def up, do: Ornitho.Migrations.up(version: 1)
+      def down, do: Ornitho.Migrations.down(version: 1)
+
+  Accepts a `:prefix` option naming the database schema to install the tables
+  into (created if missing). Defaults to the configured
+  `config :ornithologue, prefix: ...`, so hosts normally don't pass it.
   """
 
   use Ecto.Migration
@@ -19,16 +28,21 @@ defmodule Ornitho.Migrations do
   end
 
   @doc "Migrate up"
-  def up(opts) do
+  def up(opts \\ []) do
     version = opts[:version] || @latest_version
-    current = current_version()
+    prefix = opts[:prefix] || Ornithologue.prefix()
+    current = current_version(prefix)
+
+    if prefix && current < version do
+      execute(~s(CREATE SCHEMA IF NOT EXISTS "#{prefix}"))
+    end
 
     cond do
       current == 0 ->
-        change(@first_version..version, :up)
+        change(@first_version..version, :up, prefix)
 
-      current < opts.version ->
-        change((current + 1)..version, :up)
+      current < version ->
+        change((current + 1)..version, :up, prefix)
 
       true ->
         :ok
@@ -36,36 +50,37 @@ defmodule Ornitho.Migrations do
   end
 
   @doc "Migrate down"
-  def down(opts) do
+  def down(opts \\ []) do
     version = opts[:version] || @latest_version
-    current = max(current_version(), @first_version)
+    prefix = opts[:prefix] || Ornithologue.prefix()
+    current = max(current_version(prefix), @first_version)
 
     if current >= version do
-      change(current..version, :down)
+      change(current..version, :down, prefix)
     end
   end
 
-  def current_version() do
+  def current_version(prefix \\ nil) do
     query = """
     SELECT EXISTS (
     SELECT FROM pg_catalog.pg_class c
     JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-    WHERE  n.nspname = 'public'
+    WHERE  n.nspname = $1
     AND    c.relname = 'ornitho_migrations'
     AND    c.relkind = 'r'    -- only tables
     );
     """
 
-    case repo().query(query, [], log: false) do
-      {:ok, %{rows: [[true]]}} -> read_current_version()
+    case repo().query(query, [prefix || "public"], log: false) do
+      {:ok, %{rows: [[true]]}} -> read_current_version(prefix)
       _ -> 0
     end
   end
 
-  defp read_current_version() do
+  defp read_current_version(prefix) do
     query = """
     SELECT version
-    FROM ornitho_migrations
+    FROM #{migrations_table(prefix)}
     LIMIT 1;
     """
 
@@ -75,7 +90,7 @@ defmodule Ornitho.Migrations do
     end
   end
 
-  defp change(range, direction) do
+  defp change(range, direction, prefix) do
     for index <- range do
       pad_idx =
         index
@@ -84,24 +99,27 @@ defmodule Ornitho.Migrations do
 
       [__MODULE__, "V#{pad_idx}"]
       |> Module.safe_concat()
-      |> apply(direction, [])
+      |> apply(direction, [%{prefix: prefix}])
     end
 
     case direction do
-      :up -> record_current_version(Enum.max(range))
-      :down -> record_current_version(Enum.min(range) - 1)
+      :up -> record_current_version(Enum.max(range), prefix)
+      :down -> record_current_version(Enum.min(range) - 1, prefix)
     end
   end
 
-  defp record_current_version(0) do
+  defp record_current_version(0, _prefix) do
     :ok
   end
 
-  defp record_current_version(1 = version) do
-    execute "INSERT INTO ornitho_migrations (version) VALUES ('#{version}')"
+  defp record_current_version(1 = version, prefix) do
+    execute "INSERT INTO #{migrations_table(prefix)} (version) VALUES ('#{version}')"
   end
 
-  defp record_current_version(version) do
-    execute "UPDATE ornitho_migrations SET version='#{version}'"
+  defp record_current_version(version, prefix) do
+    execute "UPDATE #{migrations_table(prefix)} SET version='#{version}'"
   end
+
+  defp migrations_table(nil), do: "ornitho_migrations"
+  defp migrations_table(prefix), do: ~s("#{prefix}"."ornitho_migrations")
 end

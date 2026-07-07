@@ -77,9 +77,7 @@ defmodule Kjogvi.Search.Taxon do
   Get all taxa from a book.
   """
   def all_taxa(book) do
-    book
-    |> Ornitho.Query.Taxon.by_book()
-    |> Ornithologue.repo().all()
+    Ornitho.Finder.Taxon.all(book)
   end
 
   defp get_user_book(user) do
@@ -88,11 +86,7 @@ defmodule Kjogvi.Search.Taxon do
     else
       [slug, version] = String.split(user.default_book_signature, "/")
 
-      case Ornithologue.repo().one(
-             from(b in Book,
-               where: b.slug == ^slug and b.version == ^version
-             )
-           ) do
+      case Ornitho.Finder.Book.by_signature(slug, version) do
         %Book{} = book -> {:ok, book}
         nil -> :error
       end
