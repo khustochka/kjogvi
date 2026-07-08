@@ -161,17 +161,33 @@ defmodule Kjogvi.Accounts do
     |> Repo.insert()
   end
 
-  # Generate a free nickname from the email when none is given.
-  defp put_suggested_nickname(%{"nickname" => nickname} = attrs)
-       when is_binary(nickname) and nickname != "",
-       do: attrs
-
-  defp put_suggested_nickname(%{"email" => email} = attrs)
-       when is_binary(email) and email != "" do
-    Map.put(attrs, "nickname", suggest_nickname_from_email(email))
+  # Generate a free nickname from the email when none is given. Accepts attrs
+  # keyed by either strings (form params) or atoms (internal callers), and
+  # writes the nickname under the same key style the email uses.
+  defp put_suggested_nickname(attrs) do
+    with "" <- to_string(fetch_attr(attrs, :nickname)),
+         {email_key, email} when is_binary(email) and email != "" <-
+           fetch_attr_entry(attrs, :email) do
+      nickname_key = if is_atom(email_key), do: :nickname, else: "nickname"
+      Map.put(attrs, nickname_key, suggest_nickname_from_email(email))
+    else
+      _ -> attrs
+    end
   end
 
-  defp put_suggested_nickname(attrs), do: attrs
+  defp fetch_attr(attrs, key) do
+    Map.get(attrs, key) || Map.get(attrs, to_string(key))
+  end
+
+  # Returns the `{key, value}` entry for `key` under either an atom or string
+  # key, or `nil` if absent.
+  defp fetch_attr_entry(attrs, key) do
+    cond do
+      Map.has_key?(attrs, key) -> {key, Map.get(attrs, key)}
+      Map.has_key?(attrs, to_string(key)) -> {to_string(key), Map.get(attrs, to_string(key))}
+      true -> nil
+    end
+  end
 
   @doc """
   Register an admin user.
@@ -181,7 +197,7 @@ defmodule Kjogvi.Accounts do
   """
   def register_admin(attrs) do
     %User{}
-    |> User.admin_changeset(attrs)
+    |> User.admin_changeset(put_suggested_nickname(attrs))
     |> Repo.insert()
   end
 

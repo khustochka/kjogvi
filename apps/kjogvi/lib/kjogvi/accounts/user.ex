@@ -98,7 +98,6 @@ defmodule Kjogvi.Accounts.User do
   def admin_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :password, :nickname, :display_name])
-    |> maybe_put_nickname_from_email()
     |> put_change(:roles, [Kjogvi.Accounts.admin_role()])
     |> validate_email(opts)
     |> validate_password(opts)
@@ -149,18 +148,6 @@ defmodule Kjogvi.Accounts.User do
     end
   end
 
-  # Derives the nickname from the part of the email before the @ sign,
-  # unless a nickname was explicitly provided.
-  defp maybe_put_nickname_from_email(changeset) do
-    with nil <- get_change(changeset, :nickname),
-         email when is_binary(email) <- get_change(changeset, :email) do
-      nickname = email |> String.split("@") |> List.first()
-      put_change(changeset, :nickname, nickname)
-    else
-      _ -> changeset
-    end
-  end
-
   @nickname_suffix_range 10_000..99_999
 
   @doc """
@@ -177,13 +164,7 @@ defmodule Kjogvi.Accounts.User do
   """
   def suggest_nickname_from_email(email, taken?)
       when is_binary(email) and is_function(taken?, 1) do
-    base =
-      email
-      |> String.split("@")
-      |> List.first()
-      |> String.downcase()
-      |> String.replace(~r/[^a-z0-9_-]/, "_")
-      |> normalize_nickname_length()
+    base = nickname_base_from_email(email)
 
     if taken?.(base) do
       suggest_with_suffix(base, taken?)
@@ -192,10 +173,16 @@ defmodule Kjogvi.Accounts.User do
     end
   end
 
-  # Reserve room for a hyphen and a 5-digit suffix so the suffixed nickname
-  # still fits within the 20-character maximum.
-  defp normalize_nickname_length(base) do
-    base
+  # Downcases the local part, replaces disallowed characters with underscores,
+  # and pads/truncates to a valid length so the result satisfies the nickname
+  # format. Reserves room for a hyphen and a 5-digit suffix so a suffixed
+  # nickname still fits within the 20-character maximum.
+  defp nickname_base_from_email(email) do
+    email
+    |> String.split("@")
+    |> List.first()
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9_-]/, "_")
     |> String.slice(0, 14)
     |> String.pad_trailing(3, "_")
   end

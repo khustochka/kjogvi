@@ -54,6 +54,7 @@ defmodule Kjogvi.UsersTest do
 
     test "pads a too-short local part to the minimum length" do
       assert Accounts.suggest_nickname_from_email("ab@example.com") == "ab_"
+      assert Accounts.suggest_nickname_from_email("a@example.com") == "a__"
     end
   end
 
@@ -275,14 +276,24 @@ defmodule Kjogvi.UsersTest do
       assert Kjogvi.Accounts.admin_role() in user.roles
     end
 
-    test "validates the derived nickname format" do
-      {:error, changeset} =
+    test "sanitizes disallowed characters in the derived nickname" do
+      {:ok, user} =
         Accounts.register_admin(
           valid_user_attributes(email: "a.b@example.com")
           |> Map.delete(:nickname)
         )
 
-      assert "must contain only letters, digits, hyphens and underscores" in errors_on(changeset).nickname
+      assert user.nickname == "a_b"
+    end
+
+    test "pads a too-short derived nickname to the minimum length" do
+      {:ok, user} =
+        Accounts.register_admin(
+          valid_user_attributes(email: "ab@example.com")
+          |> Map.delete(:nickname)
+        )
+
+      assert user.nickname == "ab_"
     end
   end
 
