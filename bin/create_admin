@@ -1,0 +1,59 @@
+#!/bin/sh
+# Creates an admin user with a generated password and saves it to 1Password
+# via the `op` CLI. Falls back to printing the password when `op` is not
+# installed (or fails).
+#
+#   bin/create_admin [EMAIL] [--vault VAULT] [--url URL]
+set -eu
+
+cd "$(dirname "$0")/.."
+
+email=""
+vault=""
+url="http://localhost:4000/account/login"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --vault)
+      vault="${2:?--vault needs a value}"
+      shift 2
+      ;;
+    --url)
+      url="${2:?--url needs a value}"
+      shift 2
+      ;;
+    *)
+      email="$1"
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$email" ]; then
+  printf 'Email: ' >&2
+  read -r email
+fi
+
+output=$(mix kjogvi.create_admin "$email")
+password=$(printf '%s\n' "$output" | sed -n 's/^Password: //p')
+if [ -z "$password" ]; then
+  echo "Could not extract the password from the mix task output:" >&2
+  printf '%s\n' "$output" >&2
+  exit 1
+fi
+
+echo "Admin user $email created."
+
+if command -v op >/dev/null 2>&1; then
+  title="Kjógvi admin ($email)"
+  if op item create --category=login --title="$title" --url="$url" \
+    ${vault:+--vault="$vault"} \
+    "username=$email" "password=$password" >/dev/null; then
+    echo "Password saved to 1Password as \"$title\"."
+  else
+    echo "Saving to 1Password failed." >&2
+    echo "Password: $password"
+  fi
+else
+  echo "1Password CLI (op) not found."
+  echo "Password: $password"
+fi

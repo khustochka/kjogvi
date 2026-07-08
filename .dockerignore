@@ -43,3 +43,5 @@ erl_crash.dump
 /apps/**/assets/node_modules/
 /apps/**/priv/static/assets/
 /apps/**/priv/static/cache_manifest.json
+
+/bin/create_admin
