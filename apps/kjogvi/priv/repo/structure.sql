@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict ZcIBauxkqK2QYUECnVVp2wRy5ubEyWPQkh33Cfe32PlpkJvIsf9l5XQlEVtdIaV
+\restrict C5B7aDmX4jR8C1qFHtfiFn3Wmhuaka73S1aIpIz1cDYZnlQQnfz0hZy8amE9XxA
 
--- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
+-- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
@@ -1293,7 +1293,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ZcIBauxkqK2QYUECnVVp2wRy5ubEyWPQkh33Cfe32PlpkJvIsf9l5XQlEVtdIaV
+\unrestrict C5B7aDmX4jR8C1qFHtfiFn3Wmhuaka73S1aIpIz1cDYZnlQQnfz0hZy8amE9XxA
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);

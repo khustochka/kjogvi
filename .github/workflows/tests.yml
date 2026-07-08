@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17.9-trixie
+        image: postgres:18.1-trixie
         ports:
           - "5432:5432"
         options: >-

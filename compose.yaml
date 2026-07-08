@@ -1,6 +1,6 @@
 services:
   database:
-    image: postgres:17.9-trixie
+    image: postgres:18.1-trixie
     environment:
       POSTGRES_USER: kjogvi
       POSTGRES_PASSWORD: kjogvi
@@ -8,11 +8,11 @@ services:
     ports:
       - "5498:5432"
     volumes:
-      - pg_data17:/var/lib/postgresql/data
+      - pg_data_dev:/var/lib/postgresql
     healthcheck:
       test: pg_isready -U kjogvi -h 127.0.0.1 -d kjogvi_dev
       interval: 3s
 
 # Declare the volumes that our application uses.
 volumes:
-  pg_data17:
+  pg_data_dev:

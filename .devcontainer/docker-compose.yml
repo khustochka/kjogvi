@@ -29,10 +29,10 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:17.9-trixie
+    image: postgres:18.1-trixie
     restart: unless-stopped
     volumes:
-      - postgres-data-17:/var/lib/postgresql/data
+      - postgres-data-devcontainer:/var/lib/postgresql
       - ./create-db-user.sql:/docker-entrypoint-initdb.d/create-db-user.sql
     environment:
       POSTGRES_USER: kjogvi
@@ -61,6 +61,6 @@ services:
       interval: 5s
 
 volumes:
-  postgres-data-17:
+  postgres-data-devcontainer:
   build:
   deps:
