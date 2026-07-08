@@ -22,7 +22,7 @@ defmodule Ornitho.Migrations.V01 do
       add :taxa_count, :integer
       add :imported_at, :utc_datetime_usec
 
-      timestamps()
+      timestamps(type: :utc_datetime_usec)
     end
 
     create index(:books, [:slug, :version], unique: true, prefix: prefix)
@@ -48,7 +48,7 @@ defmodule Ornitho.Migrations.V01 do
       add :extras, :map, default: "{}"
       add :sort_order, :integer, null: false
 
-      timestamps()
+      timestamps(type: :utc_datetime_usec)
     end
 
     create index(:taxa, [:book_id], unique: false, prefix: prefix)
