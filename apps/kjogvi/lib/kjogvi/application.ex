@@ -11,7 +11,6 @@ defmodule Kjogvi.Application do
 
     children = [
       Kjogvi.Repo,
-      Kjogvi.OrnithoRepo,
       Kjogvi.Cache,
       {Kjogvi.Store.ChecklistPreload, name: Kjogvi.Store.ChecklistPreload},
       {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},

@@ -9,9 +9,6 @@ services:
       - "5498:5432"
     volumes:
       - pg_data17:/var/lib/postgresql/data
-    configs:
-      - source: create_ornitho_db
-        target: /docker-entrypoint-initdb.d/create-ornitho-db.sql  
     healthcheck:
       test: pg_isready -U kjogvi -h 127.0.0.1 -d kjogvi_dev
       interval: 3s
@@ -19,8 +16,3 @@ services:
 # Declare the volumes that our application uses.
 volumes:
   pg_data17:
-
-configs:
-  create_ornitho_db:    
-    content: |
-      CREATE DATABASE ornithologue_dev WITH OWNER kjogvi;

@@ -3,12 +3,11 @@ Logger.configure(level: :debug)
 # _argv = System.argv()
 
 Application.put_env(:ornitho_web, DemoWeb.OrnithoRepo,
-  url: System.get_env("DATABASE_ORNITHO_URL"),
-  hostname: System.get_env("DATABASE_ORNITHO_HOST", "localhost"),
-  port: System.get_env("DATABASE_ORNITHO_PORT", "5498"),
-  username: System.get_env("DATABASE_ORNITHO_USER", "kjogvi"),
-  password: System.get_env("DATABASE_ORNITHO_PASSWORD", "kjogvi"),
-  database: System.get_env("DATABASE_ORNITHO_NAME", "ornithologue_dev"),
+  hostname: System.get_env("DATABASE_HOST", "localhost"),
+  port: System.get_env("DATABASE_PORT", "5498"),
+  username: System.get_env("DATABASE_USER", "kjogvi"),
+  password: System.get_env("DATABASE_PASSWORD", "kjogvi"),
+  database: "ornithologue_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -21,6 +20,7 @@ defmodule DemoWeb.OrnithoRepo do
 end
 
 Application.put_env(:ornithologue, :repo, DemoWeb.OrnithoRepo)
+Application.put_env(:ornithologue, :prefix, nil)
 
 _ = Ecto.Adapters.Postgres.storage_up(DemoWeb.OrnithoRepo.config())
 
@@ -28,9 +28,20 @@ _ = Ecto.Adapters.Postgres.storage_up(DemoWeb.OrnithoRepo.config())
 
 Supervisor.start_link([DemoWeb.OrnithoRepo], strategy: :one_for_one)
 
-for repo <- [DemoWeb.OrnithoRepo] do
-  {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+# Bootstrap the Ornitho tables; both Ecto.Migrator and Ornitho.Migrations
+# version tracking make this a no-op when already migrated.
+defmodule DemoWeb.Migration do
+  use Ecto.Migration
+
+  def up, do: Ornitho.Migrations.up(version: 1)
+  def down, do: Ornitho.Migrations.down(version: 1)
 end
+
+{:ok, _, _} =
+  Ecto.Migrator.with_repo(
+    DemoWeb.OrnithoRepo,
+    &Ecto.Migrator.run(&1, [{1, DemoWeb.Migration}], :up, all: true)
+  )
 
 # Configure the endpoint
 Application.put_env(:ornitho_web, DemoWeb.Endpoint,

@@ -27,7 +27,7 @@ The browser pipeline calls `fetch_current_scope`; each scoped route group sets i
   - `kjogvi_web`: Phoenix 1.8 LiveView web interface (main app)
   - `ornithologue`: Ornithological taxonomy library (reusable package)
   - `ornitho_web`: Taxonomy dashboard UI (composable into `kjogvi_web`)
-- Two Ecto repos — see [Database / Ecto](#database--ecto).
+- One Ecto repo (`Kjogvi.Repo`); taxonomy tables live in the `ornithologue` Postgres schema — see [Database / Ecto](#database--ecto).
 
 ## Critical Development Workflows
 
@@ -46,9 +46,8 @@ MIX_ENV=test mix ecto.setup        # Create test database
 mix test                           # Run tests with coverage
 
 # Database
-mix ecto.create                    # Create databases
-mix ecto.migrate -r Kjogvi.Repo    # Run migrations on main repo
-mix ecto.migrate -r Kjogvi.OrnithoRepo  # Run migrations on taxonomy repo
+mix ecto.create                    # Create database
+mix ecto.migrate                   # Run migrations
 ```
 
 ## Project-Specific Patterns
@@ -75,7 +74,7 @@ Default to plain assigns and lists. Don't reach for streams reflexively — use 
 Heroicons via the `<.icon>` component (e.g. `name="hero-star-solid"`); the bicycle is a bundled inline-SVG variant: `<.icon name="bicycle" />`.
 
 ### Database / Ecto
-Two separate repos: `Kjogvi.Repo` for the main app data and `Kjogvi.OrnithoRepo` for taxonomy. They have independent migrations — run them separately (`mix ecto.migrate -r Kjogvi.Repo` vs `-r Kjogvi.OrnithoRepo`). Pick the right repo for the data you're touching.
+One repo, `Kjogvi.Repo`. Taxonomy tables live in the same database under the `ornithologue` Postgres schema: `config :ornithologue, repo: Kjogvi.Repo, prefix: "ornithologue"` — the [Ornithologue](./apps/ornithologue/) library applies the prefix to all its operations via its `Ornitho.Repo` facade. Never query the taxonomy tables through `Kjogvi.Repo` directly; go through the Ornitho API (`Ornitho.Finder.*`, `Ornitho.Ops.*`), which handles the prefix. The `ornithologue` schema is installed by a regular main-repo migration calling `Ornitho.Migrations.up/1`.
 
 ### Queries vs. context logic
 Keep query-building out of context modules. Each schema has a dedicated `<Schema>.Query` submodule (e.g. [`Kjogvi.Geo.Location.Query`](./apps/kjogvi/lib/kjogvi/geo/location/query.ex), `Birding.Checklist.Query`, `Birding.Lifelist.Query`) that owns `import Ecto.Query` and exposes composable functions returning queries. Contexts call those functions and run the result; prefer **not** to `import Ecto.Query` in a context. Some older contexts still import it directly — that's the pattern being migrated away from, so new/changed code should add or extend a `Query` module instead.
@@ -100,7 +99,7 @@ Locations live in [`Kjogvi.Geo`](./apps/kjogvi/lib/kjogvi/geo.ex), with the [`Lo
 **Display names & privacy.** `Location.long_name/2` builds the comma-joined "own name, …, country" string from the preloaded level associations (`Query.preload_levels/1` / `level_assocs/0`). Pass `:private` to include every segment or `:public` to drop any `is_private` segment — privacy is *not* downward-closed, so a public location can still carry a private ancestor and must be filtered. `public_index` (distinct from `is_private`) marks the subset of locations offered as lifelist filters (`show_on_lifelist?/1`).
 
 ### Taxonomy
-Use `Kjogvi.OrnithoRepo` via [ornithologue](./apps/ornithologue/). Mounted at `/taxonomy` with the `ornitho_web` macro.
+Managed by [ornithologue](./apps/ornithologue/) in the `ornithologue` DB schema; always access it through the Ornitho API. Mounted at `/taxonomy` with the `ornitho_web` macro.
 
 ### Images
 [`Kjogvi.Images`](./apps/kjogvi/lib/kjogvi/images.ex) context; Waffle uploader (`Images.Uploader`) + libvips/Vix resizing (`Images.VixProcessor`). Variant filenames are computed at serve time, not stored — only the original `file` is persisted. URLs resolve against each image's own recorded `storage_backend` (not the env's current one), so images stay viewable across environments sharing a DB (prod-S3 image renders on local dev and vice versa).
@@ -144,7 +143,7 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 2. Passing `@changeset` to templates — use `@form` from `to_form/2`
 3. `import Ecto.Query` in a context — build queries in the schema's `<Schema>.Query` module instead
 4. Raw Heroicons instead of `<.icon>` component
-5. Mixing `Kjogvi.Repo` vs `Kjogvi.OrnithoRepo` — they're separate; migrations, rollback, and `ecto.dump`/`ecto.load` must be run against one repo at a time (`-r Kjogvi.Repo` or `-r Kjogvi.OrnithoRepo`)
+5. Accessing taxonomy tables through `Kjogvi.Repo` directly — they live in the `ornithologue` schema and must be reached through the Ornitho API (`Ornitho.Finder.*` / `Ornitho.Ops.*`), which applies the configured prefix
 
 ## Notes for AI Agents
 

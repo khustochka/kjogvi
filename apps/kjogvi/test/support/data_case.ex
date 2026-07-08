@@ -37,12 +37,10 @@ defmodule Kjogvi.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
-    # Share both repos for non-async tests so spawned processes (e.g. a LiveView)
+    # Share the repo for non-async tests so spawned processes (e.g. a LiveView)
     # can see the connection.
-    for repo <- [Kjogvi.Repo, Kjogvi.OrnithoRepo] do
-      pid = Ecto.Adapters.SQL.Sandbox.start_owner!(repo, shared: not tags[:async])
-      on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
-    end
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Kjogvi.Repo, shared: not tags[:async])
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
 
   @doc """

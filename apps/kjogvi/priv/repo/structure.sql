@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 7K6pb9DZl9gcjGqPgWMD1gzWuDFOC8DegVXvMSsHYrTJ6Jiaxi5gUaOPsNJGpuP
+\restrict ZcIBauxkqK2QYUECnVVp2wRy5ubEyWPQkh33Cfe32PlpkJvIsf9l5XQlEVtdIaV
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -18,6 +18,13 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
+--
+-- Name: ornithologue; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA ornithologue;
+
 
 --
 -- Name: citext; Type: EXTENSION; Schema: -; Owner: -
@@ -50,6 +57,119 @@ COMMENT ON EXTENSION unaccent IS 'text search dictionary that removes accents';
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: books; Type: TABLE; Schema: ornithologue; Owner: -
+--
+
+CREATE TABLE ornithologue.books (
+    id bigint NOT NULL,
+    slug character varying(16) NOT NULL,
+    version character varying(16) NOT NULL,
+    importer character varying(255) NOT NULL,
+    name character varying(256) NOT NULL,
+    description text,
+    publication_date date NOT NULL,
+    extras jsonb DEFAULT '{}'::jsonb,
+    taxa_count integer,
+    imported_at timestamp without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: books_id_seq; Type: SEQUENCE; Schema: ornithologue; Owner: -
+--
+
+CREATE SEQUENCE ornithologue.books_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: books_id_seq; Type: SEQUENCE OWNED BY; Schema: ornithologue; Owner: -
+--
+
+ALTER SEQUENCE ornithologue.books_id_seq OWNED BY ornithologue.books.id;
+
+
+--
+-- Name: ornitho_migrations; Type: TABLE; Schema: ornithologue; Owner: -
+--
+
+CREATE TABLE ornithologue.ornitho_migrations (
+    id bigint NOT NULL,
+    version character varying(16) NOT NULL
+);
+
+
+--
+-- Name: ornitho_migrations_id_seq; Type: SEQUENCE; Schema: ornithologue; Owner: -
+--
+
+CREATE SEQUENCE ornithologue.ornitho_migrations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ornitho_migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: ornithologue; Owner: -
+--
+
+ALTER SEQUENCE ornithologue.ornitho_migrations_id_seq OWNED BY ornithologue.ornitho_migrations.id;
+
+
+--
+-- Name: taxa; Type: TABLE; Schema: ornithologue; Owner: -
+--
+
+CREATE TABLE ornithologue.taxa (
+    id bigint NOT NULL,
+    book_id bigint NOT NULL,
+    name_sci character varying(256) NOT NULL,
+    name_en character varying(255),
+    code character varying(256) NOT NULL,
+    codes character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
+    taxon_concept_id character varying(256),
+    category character varying(32),
+    authority character varying(255),
+    authority_brackets boolean,
+    protonym character varying(255),
+    "order" character varying(255),
+    family character varying(255),
+    parent_species_id bigint,
+    extras jsonb DEFAULT '{}'::jsonb,
+    sort_order integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: taxa_id_seq; Type: SEQUENCE; Schema: ornithologue; Owner: -
+--
+
+CREATE SEQUENCE ornithologue.taxa_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: taxa_id_seq; Type: SEQUENCE OWNED BY; Schema: ornithologue; Owner: -
+--
+
+ALTER SEQUENCE ornithologue.taxa_id_seq OWNED BY ornithologue.taxa.id;
+
 
 --
 -- Name: checklists; Type: TABLE; Schema: public; Owner: -
@@ -485,6 +605,27 @@ ALTER SEQUENCE public.users_tokens_id_seq OWNED BY public.users_tokens.id;
 
 
 --
+-- Name: books id; Type: DEFAULT; Schema: ornithologue; Owner: -
+--
+
+ALTER TABLE ONLY ornithologue.books ALTER COLUMN id SET DEFAULT nextval('ornithologue.books_id_seq'::regclass);
+
+
+--
+-- Name: ornitho_migrations id; Type: DEFAULT; Schema: ornithologue; Owner: -
+--
+
+ALTER TABLE ONLY ornithologue.ornitho_migrations ALTER COLUMN id SET DEFAULT nextval('ornithologue.ornitho_migrations_id_seq'::regclass);
+
+
+--
+-- Name: taxa id; Type: DEFAULT; Schema: ornithologue; Owner: -
+--
+
+ALTER TABLE ONLY ornithologue.taxa ALTER COLUMN id SET DEFAULT nextval('ornithologue.taxa_id_seq'::regclass);
+
+
+--
 -- Name: checklists id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -559,6 +700,30 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 ALTER TABLE ONLY public.users_tokens ALTER COLUMN id SET DEFAULT nextval('public.users_tokens_id_seq'::regclass);
+
+
+--
+-- Name: books books_pkey; Type: CONSTRAINT; Schema: ornithologue; Owner: -
+--
+
+ALTER TABLE ONLY ornithologue.books
+    ADD CONSTRAINT books_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ornitho_migrations ornitho_migrations_pkey; Type: CONSTRAINT; Schema: ornithologue; Owner: -
+--
+
+ALTER TABLE ONLY ornithologue.ornitho_migrations
+    ADD CONSTRAINT ornitho_migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: taxa taxa_pkey; Type: CONSTRAINT; Schema: ornithologue; Owner: -
+--
+
+ALTER TABLE ONLY ornithologue.taxa
+    ADD CONSTRAINT taxa_pkey PRIMARY KEY (id);
 
 
 --
@@ -655,6 +820,62 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users_tokens
     ADD CONSTRAINT users_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: books_slug_version_index; Type: INDEX; Schema: ornithologue; Owner: -
+--
+
+CREATE UNIQUE INDEX books_slug_version_index ON ornithologue.books USING btree (slug, version);
+
+
+--
+-- Name: taxa_book_id_code_index; Type: INDEX; Schema: ornithologue; Owner: -
+--
+
+CREATE UNIQUE INDEX taxa_book_id_code_index ON ornithologue.taxa USING btree (book_id, code);
+
+
+--
+-- Name: taxa_book_id_index; Type: INDEX; Schema: ornithologue; Owner: -
+--
+
+CREATE INDEX taxa_book_id_index ON ornithologue.taxa USING btree (book_id);
+
+
+--
+-- Name: taxa_book_id_name_sci_index; Type: INDEX; Schema: ornithologue; Owner: -
+--
+
+CREATE UNIQUE INDEX taxa_book_id_name_sci_index ON ornithologue.taxa USING btree (book_id, name_sci);
+
+
+--
+-- Name: taxa_book_id_sort_order_index; Type: INDEX; Schema: ornithologue; Owner: -
+--
+
+CREATE UNIQUE INDEX taxa_book_id_sort_order_index ON ornithologue.taxa USING btree (book_id, sort_order);
+
+
+--
+-- Name: taxa_book_id_taxon_concept_id_index; Type: INDEX; Schema: ornithologue; Owner: -
+--
+
+CREATE UNIQUE INDEX taxa_book_id_taxon_concept_id_index ON ornithologue.taxa USING btree (book_id, taxon_concept_id);
+
+
+--
+-- Name: taxa_codes_index; Type: INDEX; Schema: ornithologue; Owner: -
+--
+
+CREATE INDEX taxa_codes_index ON ornithologue.taxa USING gin (codes);
+
+
+--
+-- Name: taxa_parent_species_id_index; Type: INDEX; Schema: ornithologue; Owner: -
+--
+
+CREATE INDEX taxa_parent_species_id_index ON ornithologue.taxa USING btree (parent_species_id) WHERE (parent_species_id IS NOT NULL);
 
 
 --
@@ -917,6 +1138,22 @@ CREATE INDEX users_tokens_user_id_index ON public.users_tokens USING btree (user
 
 
 --
+-- Name: taxa taxa_book_id_fkey; Type: FK CONSTRAINT; Schema: ornithologue; Owner: -
+--
+
+ALTER TABLE ONLY ornithologue.taxa
+    ADD CONSTRAINT taxa_book_id_fkey FOREIGN KEY (book_id) REFERENCES ornithologue.books(id) ON DELETE CASCADE;
+
+
+--
+-- Name: taxa taxa_parent_species_id_fkey; Type: FK CONSTRAINT; Schema: ornithologue; Owner: -
+--
+
+ALTER TABLE ONLY ornithologue.taxa
+    ADD CONSTRAINT taxa_parent_species_id_fkey FOREIGN KEY (parent_species_id) REFERENCES ornithologue.taxa(id) ON DELETE SET NULL;
+
+
+--
 -- Name: checklists checklists_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1056,7 +1293,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7K6pb9DZl9gcjGqPgWMD1gzWuDFOC8DegVXvMSsHYrTJ6Jiaxi5gUaOPsNJGpuP
+\unrestrict ZcIBauxkqK2QYUECnVVp2wRy5ubEyWPQkh33Cfe32PlpkJvIsf9l5XQlEVtdIaV
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1092,3 +1329,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260625120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260625130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260626171732);
 INSERT INTO public."schema_migrations" (version) VALUES (20260629230000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260707180000);

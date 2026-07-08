@@ -27,26 +27,6 @@ config :kjogvi, Kjogvi.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
-config :kjogvi, Kjogvi.OrnithoRepo,
-  hostname: System.get_env("DATABASE_ORNITHO_HOST", "localhost"),
-  port: System.get_env("DATABASE_ORNITHO_PORT", "5498"),
-  username: System.get_env("DATABASE_ORNITHO_USER", "kjogvi"),
-  password: System.get_env("DATABASE_ORNITHO_PASSWORD", "kjogvi"),
-  database:
-    System.get_env(
-      "DATABASE_ORNITHO_NAME",
-      "ornithologue_test#{System.get_env("MIX_TEST_PARTITION")}"
-    ),
-  pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
-
-# nil username fails, no username uses the current user
-ornitho_db_user = System.get_env("DATABASE_ORNITHO_USER")
-
-if ornitho_db_user do
-  config :kjogvi, Kjogvi.OrnithoRepo, username: ornitho_db_user
-end
-
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :kjogvi_web, KjogviWeb.Endpoint,

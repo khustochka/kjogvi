@@ -14,10 +14,6 @@ services:
       DATABASE_PORT: 5432
       DATABASE_USER: kjogvi
       DATABASE_PASSWORD: kjogvi
-      DATABASE_ORNITHO_HOST: db
-      DATABASE_ORNITHO_PORT: 5432
-      DATABASE_ORNITHO_USER: kjogvi
-      DATABASE_ORNITHO_PASSWORD: kjogvi
 
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity

@@ -7,7 +7,6 @@ services:
     environment:
       SECRET_KEY_BASE: M0wBY/H0jPgHjM2ml/wTYn/HKsIopIlsvQvP3MJTXNSptX20f3BcFyjH5MtsFRJW
       DATABASE_URL: postgres://kjogvi:kjogvi@database-demo/kjogvi_prod
-      DATABASE_ORNITHO_URL: postgres://kjogvi:kjogvi@database-demo/ornithologue_prod
       PHX_PORT: 5040
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
@@ -35,9 +34,6 @@ services:
     #   - "5498:5432"
     volumes:
       - pg_data17-demo:/var/lib/postgresql/data
-    configs:
-      - source: create_ornitho_db
-        target: /docker-entrypoint-initdb.d/create-ornitho-db.sql  
     healthcheck:
       test: pg_isready -U kjogvi -h 127.0.0.1 -d kjogvi_prod
       interval: 3s
@@ -45,8 +41,3 @@ services:
 # Declare the volumes that our application uses.
 volumes:
   pg_data17-demo:
-
-configs:
-  create_ornitho_db:    
-    content: |
-      CREATE DATABASE ornithologue_prod WITH OWNER kjogvi;  

@@ -31,6 +31,14 @@ be found at <https://hexdocs.pm/ornithologue>.
     config :ornithologue, repo: MyApp.OrnithoRepo
     ```
 
+    When using your main repository, you can keep the Ornithologue tables in a
+    separate Postgres schema by configuring a prefix (the schema is created by
+    the migration below):
+
+    ```elixir
+    config :ornithologue, repo: MyApp.Repo, prefix: "ornithologue"
+    ```
+
 3. Create a migration file:
 
     ```bash

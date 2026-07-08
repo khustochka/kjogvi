@@ -100,7 +100,6 @@ defmodule Kjogvi.Telemetry.Logger do
   if Code.ensure_loaded?(Ecto.DevLogger) do
     defp ecto_dev_logger(opts) do
       Ecto.DevLogger.install(Kjogvi.Repo, opts)
-      Ecto.DevLogger.install(Kjogvi.OrnithoRepo, opts)
     end
   else
     defp ecto_dev_logger(_), do: :ok

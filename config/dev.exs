@@ -12,24 +12,6 @@ config :kjogvi, Kjogvi.Repo,
   pool_size: 10,
   log: false
 
-config :kjogvi, Kjogvi.OrnithoRepo,
-  hostname: System.get_env("DATABASE_ORNITHO_HOST", "localhost"),
-  port: System.get_env("DATABASE_ORNITHO_PORT", "5498"),
-  username: System.get_env("DATABASE_ORNITHO_USER", "kjogvi"),
-  password: System.get_env("DATABASE_ORNITHO_PASSWORD", "kjogvi"),
-  database: System.get_env("DATABASE_ORNITHO_NAME", "ornithologue_dev"),
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10,
-  log: false
-
-# nil username fails, no username uses the current user
-ornitho_db_user = System.get_env("DATABASE_ORNITHO_USER")
-
-if ornitho_db_user do
-  config :kjogvi, Kjogvi.OrnithoRepo, username: ornitho_db_user
-end
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

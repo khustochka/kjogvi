@@ -1,7 +1,9 @@
 defmodule Ornitho.Factory do
   @moduledoc false
 
-  use ExMachina.Ecto, repo: Kjogvi.OrnithoRepo
+  # The facade applies the host-configured repo and prefix, so factory inserts
+  # land in the right place both in library tests and in host-app tests.
+  use ExMachina.Ecto, repo: Ornitho.Repo
 
   def book_factory do
     %Ornitho.Schema.Book{
