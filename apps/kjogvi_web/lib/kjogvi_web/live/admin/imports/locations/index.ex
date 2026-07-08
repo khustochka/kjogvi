@@ -97,19 +97,12 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   defp assign_dataset_state(socket) do
     socket
     |> assign(:counts, ordered_counts())
-    |> assign(:snapshot_modified_at, snapshot_modified_at())
+    |> assign(:snapshot_state, Datasets.snapshot_status(Dump.storage_key(:common_locations)))
   end
 
   defp ordered_counts do
     Geo.common_location_counts_by_type()
     |> Enum.sort_by(fn {type, _count} -> Map.fetch!(@type_order, type) end)
-  end
-
-  defp snapshot_modified_at do
-    case Datasets.last_modified(Dump.storage_key(:common_locations)) do
-      {:ok, modified_at} -> modified_at
-      {:error, _} -> nil
-    end
   end
 
   defp loading?(%AsyncResult{loading: loading}), do: not is_nil(loading)
@@ -178,19 +171,28 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
           <li :if={@counts == []}>No common locations yet.</li>
         </ul>
 
-        <%= if @snapshot_modified_at do %>
-          <p class="text-sm text-slate-700 mb-4">
-            Snapshot from {format_timestamp(@snapshot_modified_at)}.
-          </p>
-          <.form id="restore-common-locations-form" for={nil} phx-submit="start_restore">
-            <.button disabled={loading?(@restore_result)}>
-              {if loading?(@restore_result), do: "Restoring…", else: "Restore"}
-            </.button>
-          </.form>
-        <% else %>
-          <p id="restore-no-snapshot" class="text-sm text-amber-700">
-            No snapshot available to restore from.
-          </p>
+        <%= case @snapshot_state do %>
+          <% {:ok, modified_at} -> %>
+            <p class="text-sm text-slate-700 mb-4">
+              Snapshot from {format_timestamp(modified_at)}.
+            </p>
+            <.form id="restore-common-locations-form" for={nil} phx-submit="start_restore">
+              <.button disabled={loading?(@restore_result)}>
+                {if loading?(@restore_result), do: "Restoring…", else: "Restore"}
+              </.button>
+            </.form>
+          <% :none -> %>
+            <p id="restore-no-snapshot" class="text-sm text-amber-700">
+              No snapshot available to restore from.
+            </p>
+          <% :not_configured -> %>
+            <p id="restore-storage-not-configured" class="text-sm text-amber-700">
+              Snapshot storage is not configured.
+            </p>
+          <% {:error, _reason} -> %>
+            <p id="restore-snapshot-check-failed" class="text-sm text-amber-700">
+              Checking snapshot storage failed.
+            </p>
         <% end %>
 
         <.status_line
@@ -202,24 +204,33 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
       <section id="dump-common-locations" class="border border-slate-300 rounded-lg p-6 mb-8 lg:mb-0">
         <.h2 class="mb-4!">Dump Common Locations</.h2>
 
-        <p class="text-sm text-slate-700 mb-4">
-          <%= if @snapshot_modified_at do %>
-            Current snapshot from {format_timestamp(@snapshot_modified_at)}. Dumping replaces it.
-          <% else %>
-            No snapshot yet.
-          <% end %>
-        </p>
-
-        <%= if @counts == [] do %>
-          <p id="dump-no-locations" class="text-sm text-amber-700">
-            Nothing to dump: there are no common locations.
+        <%= if @snapshot_state == :not_configured do %>
+          <p id="dump-storage-not-configured" class="text-sm text-amber-700">
+            Snapshot storage is not configured.
           </p>
         <% else %>
-          <.form id="dump-common-locations-form" for={nil} phx-submit="start_dump">
-            <.button disabled={loading?(@dump_result)}>
-              {if loading?(@dump_result), do: "Dumping…", else: "Dump"}
-            </.button>
-          </.form>
+          <p class="text-sm text-slate-700 mb-4">
+            <%= case @snapshot_state do %>
+              <% {:ok, modified_at} -> %>
+                Current snapshot from {format_timestamp(modified_at)}. Dumping replaces it.
+              <% :none -> %>
+                No snapshot yet.
+              <% {:error, _reason} -> %>
+                Checking for an existing snapshot failed.
+            <% end %>
+          </p>
+
+          <%= if @counts == [] do %>
+            <p id="dump-no-locations" class="text-sm text-amber-700">
+              Nothing to dump: there are no common locations.
+            </p>
+          <% else %>
+            <.form id="dump-common-locations-form" for={nil} phx-submit="start_dump">
+              <.button disabled={loading?(@dump_result)}>
+                {if loading?(@dump_result), do: "Dumping…", else: "Dump"}
+              </.button>
+            </.form>
+          <% end %>
         <% end %>
 
         <.status_line id="dump-common-locations-status" status={status(@dump_result, "Dump")} />

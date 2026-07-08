@@ -14,6 +14,24 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
   alias Kjogvi.Repo
   alias Kjogvi.Util.PubSubTopic
 
+  defmodule ErroringAdapter do
+    @behaviour Kjogvi.Datasets.Adapter
+
+    def configured?(_config), do: true
+    def write(_config, _key, _content), do: {:error, :unavailable}
+    def read(_config, _key), do: {:error, :unavailable}
+    def last_modified(_config, _key), do: {:error, :unavailable}
+  end
+
+  defmodule RaisingAdapter do
+    @behaviour Kjogvi.Datasets.Adapter
+
+    def configured?(_config), do: true
+    def write(_config, _key, _content), do: raise("storage down")
+    def read(_config, _key), do: raise("storage down")
+    def last_modified(_config, _key), do: raise("storage down")
+  end
+
   # Points the dataset storage at a scratch directory so tests never touch the
   # shared configured path.
   setup %{conn: conn} do
@@ -84,6 +102,50 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
 
       assert has_element?(lv, "#dump-no-locations")
       refute has_element?(lv, "#dump-common-locations-form")
+    end
+  end
+
+  describe "storage problems" do
+    test "with unconfigured storage, shows notices instead of the forms", %{conn: conn} do
+      insert(:country)
+      Application.put_env(:kjogvi, Kjogvi.Datasets, adapter: Kjogvi.Datasets.S3Adapter)
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+
+      assert has_element?(lv, "#restore-storage-not-configured")
+      assert has_element?(lv, "#dump-storage-not-configured")
+      assert has_element?(lv, "#locations-import-storage-not-configured")
+      refute has_element?(lv, "#restore-common-locations-form")
+      refute has_element?(lv, "#dump-common-locations-form")
+      refute has_element?(lv, "#locations-import-form")
+    end
+
+    test "a failed storage check shows a notice and keeps dump available", %{conn: conn} do
+      insert(:country)
+      Application.put_env(:kjogvi, Kjogvi.Datasets, adapter: ErroringAdapter)
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+
+      assert has_element?(lv, "#restore-snapshot-check-failed")
+      refute has_element?(lv, "#restore-common-locations-form")
+      assert has_element?(lv, "#locations-import-source-check-failed")
+
+      assert has_element?(
+               lv,
+               "#dump-common-locations",
+               "Checking for an existing snapshot failed."
+             )
+
+      assert has_element?(lv, "#dump-common-locations-form button", "Dump")
+    end
+
+    test "a raising storage check does not crash the page", %{conn: conn} do
+      Application.put_env(:kjogvi, Kjogvi.Datasets, adapter: RaisingAdapter)
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+
+      assert has_element?(lv, "#restore-snapshot-check-failed")
+      assert has_element?(lv, "#locations-import-source-check-failed")
     end
   end
 

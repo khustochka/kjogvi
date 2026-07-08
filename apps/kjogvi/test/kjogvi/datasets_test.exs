@@ -21,6 +21,36 @@ defmodule Kjogvi.DatasetsTest do
     %{dir: dir}
   end
 
+  describe "configured?/0" do
+    test "true when the local adapter has a path" do
+      assert Datasets.configured?()
+    end
+
+    test "false when the local adapter has no path" do
+      Application.put_env(:kjogvi, Kjogvi.Datasets, adapter: Kjogvi.Datasets.LocalAdapter)
+
+      refute Datasets.configured?()
+    end
+
+    test "false when the S3 adapter has no bucket" do
+      Application.put_env(:kjogvi, Kjogvi.Datasets,
+        adapter: Kjogvi.Datasets.S3Adapter,
+        bucket: nil
+      )
+
+      refute Datasets.configured?()
+    end
+
+    test "true when the S3 adapter has a bucket" do
+      Application.put_env(:kjogvi, Kjogvi.Datasets,
+        adapter: Kjogvi.Datasets.S3Adapter,
+        bucket: "snapshots"
+      )
+
+      assert Datasets.configured?()
+    end
+  end
+
   test "write/read round-trips a snapshot under a nested key", %{dir: dir} do
     assert :ok = Datasets.write("geo/test.csv", "a,b\n1,2\n")
 
@@ -47,6 +77,39 @@ defmodule Kjogvi.DatasetsTest do
 
     test "returns enoent for a missing snapshot" do
       assert {:error, :enoent} = Datasets.last_modified("geo/missing.csv")
+    end
+  end
+
+  describe "snapshot_status/1" do
+    defmodule RaisingAdapter do
+      @behaviour Kjogvi.Datasets.Adapter
+
+      def configured?(_config), do: true
+      def write(_config, _key, _content), do: raise("storage down")
+      def read(_config, _key), do: raise("storage down")
+      def last_modified(_config, _key), do: raise("storage down")
+    end
+
+    test "returns the modification time for an existing snapshot" do
+      assert :ok = Datasets.write("geo/test.csv", "content")
+
+      assert {:ok, %DateTime{}} = Datasets.snapshot_status("geo/test.csv")
+    end
+
+    test "returns none for a missing snapshot" do
+      assert Datasets.snapshot_status("geo/missing.csv") == :none
+    end
+
+    test "returns not_configured when the adapter is unconfigured" do
+      Application.put_env(:kjogvi, Kjogvi.Datasets, adapter: Kjogvi.Datasets.S3Adapter)
+
+      assert Datasets.snapshot_status("geo/test.csv") == :not_configured
+    end
+
+    test "returns an error instead of raising when the storage check blows up" do
+      Application.put_env(:kjogvi, Kjogvi.Datasets, adapter: RaisingAdapter)
+
+      assert {:error, %RuntimeError{}} = Datasets.snapshot_status("geo/test.csv")
     end
   end
 end

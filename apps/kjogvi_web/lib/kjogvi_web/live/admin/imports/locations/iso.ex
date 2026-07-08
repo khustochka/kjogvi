@@ -13,8 +13,8 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Iso do
 
   The import upserts on `iso_code`, so it is re-runnable: with ISO data already
   present the button re-imports (updates existing rows from a newer release)
-  rather than being disabled. Blocked only when no source file exists in the
-  storage.
+  rather than being disabled. Blocked when no source file exists in the
+  storage, or when the storage is unconfigured or unreachable.
   """
 
   use KjogviWeb, :live_component
@@ -34,16 +34,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Iso do
   # can show what's there and whether this is a fresh import or a re-import.
   defp assign_state(socket) do
     socket
-    |> assign(:source_modified_at, source_modified_at())
+    |> assign(:source_state, Datasets.snapshot_status(Import.source_key()))
     |> assign(:imported, Import.country_exists?())
     |> assign(:counts, Geo.location_counts_by_type())
-  end
-
-  defp source_modified_at do
-    case Datasets.last_modified(Import.source_key()) do
-      {:ok, modified_at} -> modified_at
-      {:error, _} -> nil
-    end
   end
 
   def handle_event("start_import", _params, socket) do
@@ -100,25 +93,34 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Iso do
         <li>Subdivisions: {Map.get(@counts, :subdivision1, 0)}</li>
       </ul>
 
-      <%= if @source_modified_at do %>
-        <p class="text-sm text-slate-700 mb-4">
-          Source file from {Calendar.strftime(@source_modified_at, "%Y-%m-%d %H:%M:%S UTC")}.
-        </p>
-        <.form
-          id="locations-import-form"
-          for={nil}
-          phx-submit="start_import"
-          phx-target={@myself}
-        >
-          <.button disabled={@running}>
-            {import_button_label(@running, @imported)}
-          </.button>
-        </.form>
-      <% else %>
-        <p class="text-sm text-amber-700" id="locations-import-no-source">
-          No source file. Upload the ISO 3166 JSONL to the datasets storage
-          under <code>{Import.source_key()}</code> to enable the import.
-        </p>
+      <%= case @source_state do %>
+        <% {:ok, modified_at} -> %>
+          <p class="text-sm text-slate-700 mb-4">
+            Source file from {Calendar.strftime(modified_at, "%Y-%m-%d %H:%M:%S UTC")}.
+          </p>
+          <.form
+            id="locations-import-form"
+            for={nil}
+            phx-submit="start_import"
+            phx-target={@myself}
+          >
+            <.button disabled={@running}>
+              {import_button_label(@running, @imported)}
+            </.button>
+          </.form>
+        <% :none -> %>
+          <p class="text-sm text-amber-700" id="locations-import-no-source">
+            No source file. Upload the ISO 3166 JSONL to the datasets storage
+            under <code>{Import.source_key()}</code> to enable the import.
+          </p>
+        <% :not_configured -> %>
+          <p class="text-sm text-amber-700" id="locations-import-storage-not-configured">
+            Snapshot storage is not configured.
+          </p>
+        <% {:error, _reason} -> %>
+          <p class="text-sm text-amber-700" id="locations-import-source-check-failed">
+            Checking for the source file failed.
+          </p>
       <% end %>
     </div>
     """

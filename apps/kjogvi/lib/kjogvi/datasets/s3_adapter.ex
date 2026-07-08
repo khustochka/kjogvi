@@ -10,6 +10,11 @@ defmodule Kjogvi.Datasets.S3Adapter do
   @behaviour Kjogvi.Datasets.Adapter
 
   @impl true
+  def configured?(config) do
+    config[:bucket] not in [nil, ""]
+  end
+
+  @impl true
   def write(config, key, content) do
     bucket!(config)
     |> ExAws.S3.put_object(key, IO.iodata_to_binary(content))

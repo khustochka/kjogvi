@@ -6,6 +6,8 @@ defmodule Kjogvi.Datasets.Adapter do
   reads its own keys from it.
   """
 
+  @callback configured?(config :: keyword()) :: boolean()
+
   @callback write(config :: keyword(), key :: String.t(), content :: iodata()) ::
               :ok | {:error, term()}
 

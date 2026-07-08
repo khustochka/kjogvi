@@ -8,6 +8,11 @@ defmodule Kjogvi.Datasets.LocalAdapter do
   @behaviour Kjogvi.Datasets.Adapter
 
   @impl true
+  def configured?(config) do
+    config[:path] not in [nil, ""]
+  end
+
+  @impl true
   def write(config, key, content) do
     path = full_path(config, key)
 
