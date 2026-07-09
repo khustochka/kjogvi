@@ -66,6 +66,15 @@ Decisions made with user: country stored as **ISO 3166-1 alpha-2 code string**; 
 ### Stage 5 — Avatar (design deferred)
 Add avatar to `user_profiles` + upload UI. **Details (storage backend, Waffle vs. simpler, variants) to be discussed with the user when this stage is reached** — stop and discuss before implementing.
 
+## Progress log
+
+### Stage 1 — done (2026-07-08)
+- Migration `20260708000000_create_user_preferences`: `user_preferences` table (`user_id` FK `on_delete: :delete_all` + unique index, `ebird` jsonb, `logbook_settings` jsonb default `[]`, timestamps). Migrated dev + test; `structure.sql` re-dumped. (Deviation, per user: eBird creds are a single `ebird` jsonb column with an inline `Ebird` embed — username/password — not two string columns.)
+- New `Kjogvi.Accounts.UserPreferences` (`changeset/2`, `ebird_configured_sync?/1`, `ebird_configured_async?/1`) and `Kjogvi.Accounts.UserPreferences.LogbookSetting` (copy of the Extras embed; old one removed in Stage 2).
+- `User`: `has_one :preferences, on_replace: :update` (`:update` needed — form params carry no id, so `cast_assoc` would hit `on_replace: :raise` when a row exists); `preferences_changeset/3` (default_book_signature + `cast_assoc(:preferences)`). `settings_changeset/3` untouched.
+- `Accounts`: `update_user_preferences/2` (preload + cast_assoc + `Logbook.Cache.invalidate/1`), `get_user_preferences/1` (row or default struct).
+- Tests: `accounts/user_preferences_test.exs` — changeset casts, configured checks, lazy row creation, update of existing row, default-struct read. `mix lint.fix` + full `mix test` green (675 + 539).
+
 ## Verification (each stage)
 
 - `mix lint.fix` and `mix test` before every commit (`MIX_ENV=test mix ecto.migrate` after each new migration).

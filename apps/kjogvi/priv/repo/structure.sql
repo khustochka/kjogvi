@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict C5B7aDmX4jR8C1qFHtfiFn3Wmhuaka73S1aIpIz1cDYZnlQQnfz0hZy8amE9XxA
+\restrict MPajV4xkcL2nBEJJK1aldrhw652D9bGWOfHGrxXPXYQd5IGIMK1zuHOlLad4BlM
 
 -- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
@@ -533,6 +533,39 @@ ALTER SEQUENCE public.species_taxa_mappings_id_seq OWNED BY public.species_taxa_
 
 
 --
+-- Name: user_preferences; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_preferences (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    ebird jsonb,
+    logbook_settings jsonb DEFAULT '[]'::jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_preferences_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_preferences_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_preferences_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_preferences_id_seq OWNED BY public.user_preferences.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -689,6 +722,13 @@ ALTER TABLE ONLY public.species_taxa_mappings ALTER COLUMN id SET DEFAULT nextva
 
 
 --
+-- Name: user_preferences id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_preferences ALTER COLUMN id SET DEFAULT nextval('public.user_preferences_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -804,6 +844,14 @@ ALTER TABLE ONLY public.species_pages
 
 ALTER TABLE ONLY public.species_taxa_mappings
     ADD CONSTRAINT species_taxa_mappings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_preferences user_preferences_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_preferences
+    ADD CONSTRAINT user_preferences_pkey PRIMARY KEY (id);
 
 
 --
@@ -1096,6 +1144,13 @@ CREATE UNIQUE INDEX species_taxa_mappings_taxon_key_index ON public.species_taxa
 
 
 --
+-- Name: user_preferences_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_preferences_user_id_index ON public.user_preferences USING btree (user_id);
+
+
+--
 -- Name: users_default_book_signature_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1282,6 +1337,14 @@ ALTER TABLE ONLY public.species_taxa_mappings
 
 
 --
+-- Name: user_preferences user_preferences_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_preferences
+    ADD CONSTRAINT user_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: users_tokens users_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1293,7 +1356,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict C5B7aDmX4jR8C1qFHtfiFn3Wmhuaka73S1aIpIz1cDYZnlQQnfz0hZy8amE9XxA
+\unrestrict MPajV4xkcL2nBEJJK1aldrhw652D9bGWOfHGrxXPXYQd5IGIMK1zuHOlLad4BlM
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1330,3 +1393,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260625130000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260626171732);
 INSERT INTO public."schema_migrations" (version) VALUES (20260629230000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260707180000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260708000000);

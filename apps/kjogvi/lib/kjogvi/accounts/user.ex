@@ -24,6 +24,8 @@ defmodule Kjogvi.Accounts.User do
     field :public_token, :string
     embeds_one :extras, Extras, on_replace: :update, defaults_to_struct: true
 
+    has_one :preferences, Kjogvi.Accounts.UserPreferences, on_replace: :update
+
     timestamps(type: :utc_datetime_usec)
 
     # Public life list size, populated by `Accounts.list_users_by_lifelist_size/1`.
@@ -128,6 +130,16 @@ defmodule Kjogvi.Accounts.User do
     |> validate_nickname(opts)
     |> validate_display_name()
     |> cast_embed(:extras)
+  end
+
+  @doc """
+  Changeset for the user's preferences: book signature plus the associated
+  `UserPreferences` record (created lazily via `cast_assoc` on first save).
+  """
+  def preferences_changeset(user, attrs, _opts \\ []) do
+    user
+    |> cast(attrs, [:default_book_signature])
+    |> cast_assoc(:preferences)
   end
 
   defp validate_email(changeset, opts) do

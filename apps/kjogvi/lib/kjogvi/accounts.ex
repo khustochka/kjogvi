@@ -7,6 +7,7 @@ defmodule Kjogvi.Accounts do
   alias Kjogvi.Repo
 
   alias Kjogvi.Accounts.User
+  alias Kjogvi.Accounts.UserPreferences
   alias Kjogvi.Accounts.UserToken
   alias Kjogvi.Accounts.UserNotifier
 
@@ -362,6 +363,33 @@ defmodule Kjogvi.Accounts do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error, changeset}
     end
+  end
+
+  @doc """
+  Updates the user's preferences, creating the `UserPreferences` row on first save.
+  """
+  def update_user_preferences(%User{} = user, attrs) do
+    user
+    |> Repo.preload(:preferences)
+    |> User.preferences_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, user} ->
+        # logbook_settings drives Logbook.recent_entries/2; evict cached logbook feed
+        # so it's recomputed against the new settings on next read.
+        Kjogvi.Birding.Logbook.Cache.invalidate(user.id)
+        {:ok, user}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+  The user's preferences, or a default `%UserPreferences{}` when none saved yet.
+  """
+  def get_user_preferences(%User{} = user) do
+    Repo.get_by(UserPreferences, user_id: user.id) || %UserPreferences{}
   end
 
   ## Session
