@@ -154,7 +154,6 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
       assert lv |> element("#user_profile_0_country") |> has_element?()
       assert lv |> element("#user_profile_0_ebird_profile_url") |> has_element?()
       assert lv |> element("#user_profile_0_website_url") |> has_element?()
-      assert lv |> element("#user_profile_0_birding_since") |> has_element?()
     end
 
     test "lists common countries in the country select", %{conn: conn} do
@@ -176,8 +175,7 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
             "about" => "A keen birder.",
             "country" => "US",
             "ebird_profile_url" => "https://ebird.org/profile/abc",
-            "website_url" => "https://example.com",
-            "birding_since" => "2008"
+            "website_url" => "https://example.com"
           }
         }
       })
@@ -188,21 +186,18 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
       assert profile.country == "US"
       assert profile.ebird_profile_url == "https://ebird.org/profile/abc"
       assert profile.website_url == "https://example.com"
-      assert profile.birding_since == 2008
     end
 
     test "prefills saved profile fields", %{conn: conn, user: user} do
       {:ok, _} =
         Accounts.update_user_profile_settings(user, %{
-          "profile" => %{"website_url" => "https://example.com", "birding_since" => "2008"}
+          "profile" => %{"website_url" => "https://example.com"}
         })
 
       {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
 
       assert lv |> element("#user_profile_0_website_url") |> render() =~
                ~s(value="https://example.com")
-
-      assert lv |> element("#user_profile_0_birding_since") |> render() =~ ~s(value="2008")
     end
 
     test "shows a validation error for a bad URL and does not save", %{conn: conn, user: user} do
@@ -219,23 +214,6 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
         |> render_submit()
 
       assert result =~ "must be a valid http(s) URL"
-      refute Repo.get_by(UserProfile, user_id: user.id)
-    end
-
-    test "shows a validation error for an out-of-range year", %{conn: conn, user: user} do
-      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
-
-      result =
-        lv
-        |> form("#settings_form", %{
-          "user" => %{
-            "nickname" => user.nickname,
-            "profile" => %{"birding_since" => "1800"}
-          }
-        })
-        |> render_submit()
-
-      assert result =~ "must be greater than or equal to 1900"
       refute Repo.get_by(UserProfile, user_id: user.id)
     end
   end

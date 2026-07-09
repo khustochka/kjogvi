@@ -13,8 +13,7 @@ defmodule Kjogvi.Accounts.UserProfileTest do
           "about" => "Birder since forever.",
           "country" => "US",
           "ebird_profile_url" => "https://ebird.org/profile/abc",
-          "website_url" => "https://example.com",
-          "birding_since" => "2005"
+          "website_url" => "https://example.com"
         })
 
       assert changeset.valid?
@@ -23,7 +22,6 @@ defmodule Kjogvi.Accounts.UserProfileTest do
       assert profile.country == "US"
       assert profile.ebird_profile_url == "https://ebird.org/profile/abc"
       assert profile.website_url == "https://example.com"
-      assert profile.birding_since == 2005
     end
 
     test "accepts a blank changeset" do
@@ -59,19 +57,6 @@ defmodule Kjogvi.Accounts.UserProfileTest do
       refute changeset.valid?
       assert %{website_url: [_]} = errors_on(changeset)
     end
-
-    test "rejects a birding_since before 1900" do
-      changeset = UserProfile.changeset(%UserProfile{}, %{"birding_since" => "1899"})
-      refute changeset.valid?
-      assert %{birding_since: [_]} = errors_on(changeset)
-    end
-
-    test "rejects a birding_since in the future" do
-      next_year = Date.utc_today().year + 1
-      changeset = UserProfile.changeset(%UserProfile{}, %{"birding_since" => "#{next_year}"})
-      refute changeset.valid?
-      assert %{birding_since: [_]} = errors_on(changeset)
-    end
   end
 
   describe "Accounts.update_user_profile_settings/2" do
@@ -81,13 +66,12 @@ defmodule Kjogvi.Accounts.UserProfileTest do
 
       {:ok, updated} =
         Accounts.update_user_profile_settings(user, %{
-          "profile" => %{"country" => "US", "birding_since" => "2010"}
+          "profile" => %{"country" => "US"}
         })
 
       assert updated.nickname == user.nickname
 
-      assert %UserProfile{country: "US", birding_since: 2010} =
-               Repo.get_by(UserProfile, user_id: user.id)
+      assert %UserProfile{country: "US"} = Repo.get_by(UserProfile, user_id: user.id)
     end
 
     test "updates an existing profile row" do

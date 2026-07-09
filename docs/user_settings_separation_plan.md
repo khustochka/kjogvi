@@ -4,12 +4,12 @@
 
 Today all user settings live on the `users` table: identity fields (`nickname`, `display_name`), `default_book_signature`, and an `extras` jsonb embed holding eBird credentials and logbook settings. This mixes concerns and makes the `extras` embed a dumping ground. The goal is to split them into two dedicated 1:1 tables:
 
-- **`user_profiles`** — public-facing "who I am" data: about, country, eBird profile link, website URL, birding-since year (avatar comes last, details TBD). `nickname` and `display_name` **stay in `users`** but remain edited on the Profile tab.
+- **`user_profiles`** — public-facing "who I am" data: about, country, eBird profile link, website URL (avatar comes last, details TBD). `nickname` and `display_name` **stay in `users`** but remain edited on the Profile tab.
 - **`user_preferences`** — behavioral settings: eBird sync credentials, logbook settings (both moved out of `extras`). `default_book_signature` **stays in `users`** but remains edited on the Preferences tab.
 
 Migrations are **structure only — no data migration**. The `users.extras` column stays in the DB (data preserved for a possible later manual migration + column drop) but all code reading/writing it is removed, so existing users will re-enter their eBird/logbook settings.
 
-Decisions made with user: country stored as **ISO 3166-1 alpha-2 code string**; extra profile fields approved: **website URL** and **birding since (year)**; profile fields are **edit-only** for now (no public display); **avatar is the last stage**, details to be discussed when we get there.
+Decisions made with user: country stored as **ISO 3166-1 alpha-2 code string**; extra profile field approved: **website URL** (birding-since was added then later dropped); profile fields are **edit-only** for now (no public display); **avatar is the last stage**, details to be discussed when we get there.
 
 ## Current state (key files)
 
@@ -25,7 +25,7 @@ Decisions made with user: country stored as **ISO 3166-1 alpha-2 code string**; 
 ## Design
 
 - `Kjogvi.Accounts.UserPreferences` (`user_preferences` table): `user_id` (FK, unique, `on_delete: :delete_all`), `ebird_username :string`, `ebird_password :string` (redacted), `logbook_settings` jsonb (`embeds_many`, column `:map` default `"[]"`), timestamps. `LogbookSetting` embed moves to `Kjogvi.Accounts.UserPreferences.LogbookSetting` (same fields).
-- `Kjogvi.Accounts.UserProfile` (`user_profiles` table): `user_id` (FK, unique, `on_delete: :delete_all`), `about :text`, `country :string` (ISO alpha-2), `ebird_profile_url :string`, `website_url :string`, `birding_since :integer`, timestamps. Avatar column added later in the avatar stage.
+- `Kjogvi.Accounts.UserProfile` (`user_profiles` table): `user_id` (FK, unique, `on_delete: :delete_all`), `about :text`, `country :string` (ISO alpha-2), `ebird_profile_url :string`, `website_url :string`, timestamps. Avatar column added later in the avatar stage.
 - `User` gets `has_one :preferences` and `has_one :profile`. Rows are created **lazily** via `cast_assoc` on first settings save — no eager creation at registration, which also handles all existing users.
 - `User.settings_changeset/3` is replaced by two tab-specific changesets:
   - `profile_settings_changeset/3`: casts `nickname`, `display_name` + `cast_assoc(:profile)`
@@ -55,12 +55,12 @@ Decisions made with user: country stored as **ISO 3166-1 alpha-2 code string**; 
 
 ### Stage 3 — UserProfile backend
 1. Migration `create_user_profiles` (structure above, no avatar yet).
-2. New `apps/kjogvi/lib/kjogvi/accounts/user_profile.ex`: `changeset/2` casting `about, country, ebird_profile_url, website_url, birding_since` with validations — `about` max length (~2000), `country` format `~r/^[A-Z]{2}$/`, URLs must be http(s), `birding_since` in `1900..current year`.
+2. New `apps/kjogvi/lib/kjogvi/accounts/user_profile.ex`: `changeset/2` casting `about, country, ebird_profile_url, website_url` with validations — `about` max length (~2000), `country` format `~r/^[A-Z]{2}$/`, URLs must be http(s).
 3. `User`: add `has_one :profile`; extend `profile_settings_changeset/3` with `cast_assoc(:profile)`; `Accounts.update_user_profile_settings/2` preloads `:profile`.
 4. Tests for changeset + update.
 
 ### Stage 4 — Profile settings UI
-1. Profile tab (`live/my/settings/profile.ex`): add fields under nickname/display_name via `inputs_for @settings_form[:profile]` — about (textarea), country (select from common country locations' name/iso_code, with prompt), eBird profile URL, website URL, birding since (number input). Responsive, no icons, follow existing form styling.
+1. Profile tab (`live/my/settings/profile.ex`): add fields under nickname/display_name via `inputs_for @settings_form[:profile]` — about (textarea), country (select from common country locations' name/iso_code, with prompt), eBird profile URL, website URL. Responsive, no icons, follow existing form styling.
 2. LiveView tests for editing/validation.
 
 ### Stage 5 — Avatar (design deferred)
@@ -98,6 +98,9 @@ Add avatar to `user_profiles` + upload UI. **Details (storage backend, Waffle vs
 - Profile tab (`live/my/settings/profile.ex`): added the profile fields under nickname/display_name via `inputs_for @settings_form[:profile]` — about (textarea, rows 4), country (select from `Geo.list_common_countries/0` → `{name_en, iso_code}`, with prompt), eBird profile URL (`type="url"`), website URL (`type="url"`), birding since (`type="number"`, `min=1900 max=current year`), each with a `<:hint>`. Mount preloads `:profile` (`Accounts.preload_profile/1`) so `inputs_for` renders, and assigns `@country_options` + `@current_year`; validate/update now use the preloaded `@user` (not `scope.current_user`) so `cast_assoc(:profile)` sees the loaded assoc.
 - `Geo.list_common_countries/0` — common (non user-owned) countries ordered by name, built from existing `Location.Query` composables (`only_common` + `countries` + `order_by_name`).
 - Tests: `settings/profile_test.exs` "profile fields" describe — renders all five fields, country select lists common countries, saves all fields, prefills saved values, and surfaces validation errors for a bad URL and an out-of-range year (neither writes a row). `has_one` `inputs_for` indexes IDs as `user_profile_0_*`. `mix lint.fix` + full `mix test` green (685 + 545).
+
+### Post-stage-4 change (2026-07-09)
+- Dropped `birding_since` per user request: removed from the Stage 3 migration in place (rolled back dev + test, edited `20260708000001_create_user_profiles`, re-migrated, re-dumped `structure.sql`), the `UserProfile` schema/changeset, the profile form (and the now-unused `@current_year` assign), and all related tests. The "done" entries above still describe the field as it originally shipped in those commits.
 
 ## Verification (each stage)
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict V7T3AxGldyMevjA3BP7pPFd3mV1QeMnAjohaA3STCALv9m75FDnBIy5SAWsWy9n
+\restrict EpTp29H9kwTtb3PKGrIbSj34jhVsdyvDQJjlhiBjIC0jgoINvTaRb3uI4g9abDY
 
 -- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
@@ -576,7 +576,6 @@ CREATE TABLE public.user_profiles (
     country character varying(255),
     ebird_profile_url character varying(255),
     website_url character varying(255),
-    birding_since integer,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
@@ -1422,7 +1421,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict V7T3AxGldyMevjA3BP7pPFd3mV1QeMnAjohaA3STCALv9m75FDnBIy5SAWsWy9n
+\unrestrict EpTp29H9kwTtb3PKGrIbSj34jhVsdyvDQJjlhiBjIC0jgoINvTaRb3uI4g9abDY
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);

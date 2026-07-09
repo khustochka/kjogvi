@@ -8,7 +8,6 @@ defmodule Kjogvi.Repo.Migrations.CreateUserProfiles do
       add :country, :string
       add :ebird_profile_url, :string
       add :website_url, :string
-      add :birding_since, :integer
 
       timestamps()
     end

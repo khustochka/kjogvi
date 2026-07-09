@@ -68,16 +68,6 @@ defmodule KjogviWeb.Live.My.Settings.Profile do
               type="url"
               label="Website URL"
             />
-
-            <CoreComponents.input
-              field={profile_form[:birding_since]}
-              type="number"
-              label="Birding since"
-              min="1900"
-              max={@current_year}
-            >
-              <:hint>The year you started birding.</:hint>
-            </CoreComponents.input>
           </.inputs_for>
 
           <div class="mt-2 flex items-center justify-between gap-6">
@@ -104,7 +94,6 @@ defmodule KjogviWeb.Live.My.Settings.Profile do
       socket
       |> assign(:page_title, "Profile")
       |> assign(:user, user)
-      |> assign(:current_year, Date.utc_today().year)
       |> assign(:country_options, country_options())
       |> assign(:settings_form, to_form(settings_changeset))
 
