@@ -94,6 +94,11 @@ Add avatar to `user_profiles` + upload UI. **Details (storage backend, Waffle vs
 - `Accounts`: `update_user_profile_settings/2` preloads `:profile` before the changeset; added `preload_profile/1` (mirrors `preload_preferences/1`, for Stage 4's `inputs_for`).
 - Tests: `accounts/user_profile_test.exs` — changeset casts/validations (blank ok, over-long about, bad country codes, non-http(s) URLs, host-less URL, out-of-range year) and `update_user_profile_settings/2` (lazy row creation, update of existing row, error changeset with no row written). `mix lint.fix` + full `mix test` green (685 + 539).
 
+### Stage 4 — done (2026-07-08)
+- Profile tab (`live/my/settings/profile.ex`): added the profile fields under nickname/display_name via `inputs_for @settings_form[:profile]` — about (textarea, rows 4), country (select from `Geo.list_common_countries/0` → `{name_en, iso_code}`, with prompt), eBird profile URL (`type="url"`), website URL (`type="url"`), birding since (`type="number"`, `min=1900 max=current year`), each with a `<:hint>`. Mount preloads `:profile` (`Accounts.preload_profile/1`) so `inputs_for` renders, and assigns `@country_options` + `@current_year`; validate/update now use the preloaded `@user` (not `scope.current_user`) so `cast_assoc(:profile)` sees the loaded assoc.
+- `Geo.list_common_countries/0` — common (non user-owned) countries ordered by name, built from existing `Location.Query` composables (`only_common` + `countries` + `order_by_name`).
+- Tests: `settings/profile_test.exs` "profile fields" describe — renders all five fields, country select lists common countries, saves all fields, prefills saved values, and surfaces validation errors for a bad URL and an out-of-range year (neither writes a row). `has_one` `inputs_for` indexes IDs as `user_profile_0_*`. `mix lint.fix` + full `mix test` green (685 + 545).
+
 ## Verification (each stage)
 
 - `mix lint.fix` and `mix test` before every commit (`MIX_ENV=test mix ecto.migrate` after each new migration).

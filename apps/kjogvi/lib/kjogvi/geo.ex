@@ -20,6 +20,18 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
+  Common (shared, non user-owned) countries ordered by name — used to build the
+  country select on the profile form.
+  """
+  def list_common_countries do
+    Location
+    |> Location.Query.only_common()
+    |> Location.Query.countries()
+    |> Location.Query.order_by_name()
+    |> Repo.all()
+  end
+
+  @doc """
   A map of `location_type => count` over all locations, used to report what the
   ISO 3166 import produced (or what already occupies the table).
   """

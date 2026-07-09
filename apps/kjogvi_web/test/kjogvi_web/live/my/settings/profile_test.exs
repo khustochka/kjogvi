@@ -3,6 +3,11 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
 
   import Phoenix.LiveViewTest
   import Kjogvi.AccountsFixtures
+  import Kjogvi.GeoFixtures
+
+  alias Kjogvi.Accounts
+  alias Kjogvi.Accounts.UserProfile
+  alias Kjogvi.Repo
 
   describe "Profile page" do
     test "renders profile page", %{conn: conn} do
@@ -132,6 +137,106 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
 
       assert result =~ "must contain only letters, spaces and common punctuation"
       assert Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id).display_name == user.display_name
+    end
+  end
+
+  describe "profile fields" do
+    setup %{conn: conn} do
+      user = user_fixture()
+      location_fixture(%{location_type: :country, iso_code: "US", name_en: "United States"})
+      %{conn: login_user(conn, user), user: user}
+    end
+
+    test "renders the profile fields", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      assert lv |> element("#user_profile_0_about") |> has_element?()
+      assert lv |> element("#user_profile_0_country") |> has_element?()
+      assert lv |> element("#user_profile_0_ebird_profile_url") |> has_element?()
+      assert lv |> element("#user_profile_0_website_url") |> has_element?()
+      assert lv |> element("#user_profile_0_birding_since") |> has_element?()
+    end
+
+    test "lists common countries in the country select", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      assert lv
+             |> element("#user_profile_0_country option[value=US]")
+             |> render() =~ "United States"
+    end
+
+    test "saves the profile fields", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      lv
+      |> form("#settings_form", %{
+        "user" => %{
+          "nickname" => user.nickname,
+          "profile" => %{
+            "about" => "A keen birder.",
+            "country" => "US",
+            "ebird_profile_url" => "https://ebird.org/profile/abc",
+            "website_url" => "https://example.com",
+            "birding_since" => "2008"
+          }
+        }
+      })
+      |> render_submit()
+
+      profile = Repo.get_by(UserProfile, user_id: user.id)
+      assert profile.about == "A keen birder."
+      assert profile.country == "US"
+      assert profile.ebird_profile_url == "https://ebird.org/profile/abc"
+      assert profile.website_url == "https://example.com"
+      assert profile.birding_since == 2008
+    end
+
+    test "prefills saved profile fields", %{conn: conn, user: user} do
+      {:ok, _} =
+        Accounts.update_user_profile_settings(user, %{
+          "profile" => %{"website_url" => "https://example.com", "birding_since" => "2008"}
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      assert lv |> element("#user_profile_0_website_url") |> render() =~
+               ~s(value="https://example.com")
+
+      assert lv |> element("#user_profile_0_birding_since") |> render() =~ ~s(value="2008")
+    end
+
+    test "shows a validation error for a bad URL and does not save", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      result =
+        lv
+        |> form("#settings_form", %{
+          "user" => %{
+            "nickname" => user.nickname,
+            "profile" => %{"website_url" => "not-a-url"}
+          }
+        })
+        |> render_submit()
+
+      assert result =~ "must be a valid http(s) URL"
+      refute Repo.get_by(UserProfile, user_id: user.id)
+    end
+
+    test "shows a validation error for an out-of-range year", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      result =
+        lv
+        |> form("#settings_form", %{
+          "user" => %{
+            "nickname" => user.nickname,
+            "profile" => %{"birding_since" => "1800"}
+          }
+        })
+        |> render_submit()
+
+      assert result =~ "must be greater than or equal to 1900"
+      refute Repo.get_by(UserProfile, user_id: user.id)
     end
   end
 end
