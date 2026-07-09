@@ -79,8 +79,29 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   end
 
   defp start_ebird_preload(%{assigns: %{user: user}} = socket) do
-    Store.ChecklistPreload.reset_preloads(user)
+    # Resolve eBird credentials here (in the DB-connected LiveView) so the
+    # background task receives ready credentials and, when unconfigured, we
+    # surface the error immediately instead of spawning a task.
+    case Ebird.Web.ebird_credentials(user) do
+      {:ok, credentials} ->
+        Store.ChecklistPreload.reset_preloads(user)
+        start_ebird_preload_task(user, credentials)
 
+        socket
+        |> clear_flash()
+        |> assign(:async_result, AsyncResult.loading(%{message: "eBird preload in progress..."}))
+        |> derive_flash()
+        |> assign_preloads_data()
+
+      {:error, error} ->
+        socket
+        |> clear_flash()
+        |> assign(:async_result, AsyncResult.failed(AsyncResult.loading(%{}), error))
+        |> derive_flash()
+    end
+  end
+
+  defp start_ebird_preload_task(user, credentials) do
     Kjogvi.Server.ExclusiveTaskProcessor.start_task(
       {:ebird_preload, user.id},
       fn key ->
@@ -91,7 +112,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
         # completion message that subscribers (this component, the admin
         # dashboard) display.
         with {:ok, checklists} <-
-               Ebird.Web.preload_new_checklists_for_user(user, broadcast_key: key) do
+               Ebird.Web.preload_new_checklists_for_user(user, credentials, broadcast_key: key) do
           Store.ChecklistPreload.store_checklists(user, checklists)
           {:ok, %{message: "eBird preload done: #{length(checklists)} new checklists."}}
         end
@@ -99,12 +120,6 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
       message: "eBird preload in progress...",
       timeout: 2 * 60 * 1000
     )
-
-    socket
-    |> clear_flash()
-    |> assign(:async_result, AsyncResult.loading(%{message: "eBird preload in progress..."}))
-    |> derive_flash()
-    |> assign_preloads_data()
   end
 
   def render(assigns) do

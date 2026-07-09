@@ -53,7 +53,7 @@ defmodule KjogviWeb.Live.My.Settings.Profile do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_scope.current_user
-    settings_changeset = Accounts.User.settings_changeset(user, %{})
+    settings_changeset = Accounts.User.profile_settings_changeset(user, %{})
 
     socket =
       socket
@@ -66,7 +66,7 @@ defmodule KjogviWeb.Live.My.Settings.Profile do
   def handle_event("validate_settings", %{"user" => user_params}, socket) do
     changeset =
       socket.assigns.current_scope.current_user
-      |> Accounts.User.settings_changeset(user_params)
+      |> Accounts.User.profile_settings_changeset(user_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, :settings_form, to_form(changeset))}
@@ -75,11 +75,11 @@ defmodule KjogviWeb.Live.My.Settings.Profile do
   def handle_event("update_settings", %{"user" => user_params}, socket) do
     user = socket.assigns.current_scope.current_user
 
-    case Accounts.update_user_settings(user, user_params) do
+    case Accounts.update_user_profile_settings(user, user_params) do
       {:ok, user} ->
         settings_form =
           user
-          |> Accounts.User.settings_changeset(%{})
+          |> Accounts.User.profile_settings_changeset(%{})
           |> to_form()
 
         scope = %{socket.assigns.current_scope | current_user: user}

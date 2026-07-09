@@ -156,31 +156,23 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       assert html =~ "Prospect Park"
     end
 
-    # End-to-end failure path: a user without eBird credentials makes the task
-    # return `{:error, _}`. The task closure must not store anything, and the
-    # processor's `:error` lifecycle must surface a failure flash.
-    test "on failure nothing is stored and an error flash is shown",
+    # Failure path: a user without eBird credentials never starts the background
+    # task — the error is surfaced immediately and nothing is stored.
+    test "on missing eBird configuration nothing is stored and an error flash is shown",
          %{conn: conn} do
       # A bare fixture has no eBird username/password configured.
       user = Kjogvi.AccountsFixtures.user_fixture()
-      key = {:ebird_preload, user.id}
-
-      # Subscribe first so we can deterministically wait for the task to finish
-      # instead of polling.
-      Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
 
       {:ok, lv, _html} =
         conn
         |> login_user(user)
         |> live(~p"/my/imports")
 
-      lv
-      |> element("form[phx-submit='start_preload']")
-      |> render_submit()
+      html =
+        lv
+        |> element("form[phx-submit='start_preload']")
+        |> render_submit()
 
-      assert_receive {:lifecycle, :error, ^key, _async_result}, 2_000
-
-      html = flush_render(lv)
       assert html =~ "eBird preload failed: User does not have eBird configuration."
       assert Store.ChecklistPreload.get_preloads(user).checklists == []
     end

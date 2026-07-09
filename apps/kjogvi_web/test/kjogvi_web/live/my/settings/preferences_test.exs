@@ -107,8 +107,8 @@ defmodule KjogviWeb.Live.My.Settings.PreferencesTest do
       disabled = insert(:country, name_en: "Poland")
 
       {:ok, user} =
-        Kjogvi.Accounts.update_user_settings(user, %{
-          "extras" => %{
+        Kjogvi.Accounts.update_user_preferences(user, %{
+          "preferences" => %{
             "logbook_settings" => %{
               "0" => %{"location_id" => "#{enabled.id}", "life" => "true", "year" => "false"},
               "1" => %{"location_id" => "#{disabled.id}", "life" => "false", "year" => "false"}
@@ -131,7 +131,7 @@ defmodule KjogviWeb.Live.My.Settings.PreferencesTest do
       lv
       |> form("#settings_form", %{
         "user" => %{
-          "extras" => %{
+          "preferences" => %{
             "logbook_settings" => %{
               "0" => %{"location_id" => "", "life" => "true", "year" => "false"}
             }
@@ -141,9 +141,10 @@ defmodule KjogviWeb.Live.My.Settings.PreferencesTest do
       |> render_submit()
 
       user = Repo.get!(Kjogvi.Accounts.User, user.id)
-      assert length(user.extras.logbook_settings) == 1
+      preferences = Kjogvi.Accounts.get_user_preferences(user)
+      assert length(preferences.logbook_settings) == 1
 
-      setting = hd(user.extras.logbook_settings)
+      setting = hd(preferences.logbook_settings)
       assert setting.location_id == nil
       assert setting.life == true
       assert setting.year == false

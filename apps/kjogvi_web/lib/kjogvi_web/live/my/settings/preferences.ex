@@ -32,13 +32,13 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
           <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
             eBird settings
           </h3>
-          <.inputs_for :let={settings_form_extras} field={@settings_form[:extras]}>
-            <.inputs_for :let={ebird_form} field={settings_form_extras[:ebird]}>
+          <.inputs_for :let={preferences_form} field={@settings_form[:preferences]}>
+            <.inputs_for :let={ebird_form} field={preferences_form[:ebird]}>
               <CoreComponents.input
                 field={ebird_form[:username]}
                 label="Username"
                 id="ebird_username"
-                value={@current_scope.current_user.extras.ebird.username}
+                value={@preferences.ebird.username}
               />
               <div>
                 <.input
@@ -46,7 +46,7 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
                   type="password"
                   label="Password"
                   id="ebird_password"
-                  value={@current_scope.current_user.extras.ebird.password}
+                  value={@preferences.ebird.password}
                 />
               </div>
             </.inputs_for>
@@ -75,7 +75,7 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
                   <td class="py-2">
                     <input
                       type="hidden"
-                      name={"user[extras][logbook_settings][#{i}][location_id]"}
+                      name={"user[preferences][logbook_settings][#{i}][location_id]"}
                       value={row.location_id || ""}
                     />
                     <span :if={row.location_id == nil} class="inline-flex items-center gap-1">
@@ -97,12 +97,12 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
                   <td class="text-center py-2">
                     <input
                       type="hidden"
-                      name={"user[extras][logbook_settings][#{i}][life]"}
+                      name={"user[preferences][logbook_settings][#{i}][life]"}
                       value="false"
                     />
                     <input
                       type="checkbox"
-                      name={"user[extras][logbook_settings][#{i}][life]"}
+                      name={"user[preferences][logbook_settings][#{i}][life]"}
                       value="true"
                       checked={row.life}
                       class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
@@ -111,12 +111,12 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
                   <td class="text-center py-2">
                     <input
                       type="hidden"
-                      name={"user[extras][logbook_settings][#{i}][year]"}
+                      name={"user[preferences][logbook_settings][#{i}][year]"}
                       value="false"
                     />
                     <input
                       type="checkbox"
-                      name={"user[extras][logbook_settings][#{i}][year]"}
+                      name={"user[preferences][logbook_settings][#{i}][year]"}
                       value="true"
                       checked={row.year}
                       class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
@@ -140,19 +140,24 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
 
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
-    user = scope.current_user
-    settings_changeset = Accounts.User.settings_changeset(user, %{})
+    # Preload :preferences so `inputs_for @settings_form[:preferences]` can render.
+    user = Accounts.preload_preferences(scope.current_user)
+    preferences = Accounts.get_user_preferences(user)
+    settings_changeset = Accounts.User.preferences_changeset(user, %{})
 
     books = Ornitho.Finder.Book.all()
 
     book_options =
       Enum.map(books, fn b -> {"#{b.name} (#{b.slug}/#{b.version})", "#{b.slug}/#{b.version}"} end)
 
-    logbook_location_rows = build_logbook_location_rows(scope, user)
+    logbook_location_rows =
+      build_logbook_location_rows(scope, preferences.logbook_settings)
 
     socket =
       socket
       |> assign(:page_title, "Preferences")
+      |> assign(:user, user)
+      |> assign(:preferences, preferences)
       |> assign(:settings_form, to_form(settings_changeset))
       |> assign(:book_options, book_options)
       |> assign(:logbook_location_rows, logbook_location_rows)
@@ -162,42 +167,47 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
 
   def handle_event("validate_settings", %{"user" => user_params}, socket) do
     changeset =
-      socket.assigns.current_scope.current_user
-      |> Accounts.User.settings_changeset(user_params)
+      socket.assigns.user
+      |> Accounts.User.preferences_changeset(user_params)
       |> Map.put(:action, :validate)
 
-    # Rebuild the logbook rows from the in-progress edits (not the saved user) so
-    # the checkboxes reflect what was just clicked; otherwise `checked={row.life}`
+    # Rebuild the logbook rows from the in-progress edits (not the saved settings)
+    # so the checkboxes reflect what was just clicked; otherwise `checked={row.life}`
     # snaps back to the stored value on every change.
-    edited_user = Ecto.Changeset.apply_changes(changeset)
+    logbook_settings =
+      changeset
+      |> Ecto.Changeset.apply_changes()
+      |> edited_logbook_settings()
 
     {:noreply,
      socket
      |> assign(:settings_form, to_form(changeset))
      |> assign(
        :logbook_location_rows,
-       build_logbook_location_rows(socket.assigns.current_scope, edited_user)
+       build_logbook_location_rows(socket.assigns.current_scope, logbook_settings)
      )}
   end
 
   def handle_event("update_settings", %{"user" => user_params}, socket) do
-    user = socket.assigns.current_scope.current_user
+    user = socket.assigns.user
 
-    case Accounts.update_user_settings(user, user_params) do
+    case Accounts.update_user_preferences(user, user_params) do
       {:ok, user} ->
-        settings_form =
-          user
-          |> Accounts.User.settings_changeset(%{})
-          |> to_form()
-
+        preferences = Accounts.get_user_preferences(user)
+        settings_form = user |> Accounts.User.preferences_changeset(%{}) |> to_form()
         scope = %{socket.assigns.current_scope | current_user: user}
 
         socket =
           socket
           |> put_flash(:info, "User account updated.")
           |> assign(:current_scope, scope)
+          |> assign(:user, user)
+          |> assign(:preferences, preferences)
           |> assign(:settings_form, settings_form)
-          |> assign(:logbook_location_rows, build_logbook_location_rows(scope, user))
+          |> assign(
+            :logbook_location_rows,
+            build_logbook_location_rows(scope, preferences.logbook_settings)
+          )
 
         {:noreply, socket}
 
@@ -206,12 +216,16 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     end
   end
 
+  # Reads logbook settings off the edited user's preferences assoc, which is
+  # absent until the form first touches it.
+  defp edited_logbook_settings(%{preferences: %{logbook_settings: settings}}), do: settings
+  defp edited_logbook_settings(_user), do: []
+
   # Build the list of rows for the logbook settings table.
   # World + the countries/regions the user has observations in + any location
   # with an enabled setting that isn't otherwise in the list (so a deliberate
   # toggle survives even if the user currently has no observations there).
-  defp build_logbook_location_rows(scope, user) do
-    logbook_settings = user.extras.logbook_settings
+  defp build_logbook_location_rows(scope, logbook_settings) do
     existing_settings = Map.new(logbook_settings, &{&1.location_id, &1})
 
     offered_locations = Geo.get_locations_by_ids(Lifelist.location_ids(scope))

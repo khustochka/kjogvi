@@ -505,7 +505,7 @@ defmodule Kjogvi.ImagesTest do
 
       {:ok, user} =
         AccountsFixtures.user_fixture()
-        |> Kjogvi.Accounts.update_user_settings(%{"default_book_signature" => "ebird/v2024"})
+        |> Kjogvi.Accounts.update_user_preferences(%{"default_book_signature" => "ebird/v2024"})
 
       %{user: user}
     end

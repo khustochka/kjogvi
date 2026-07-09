@@ -11,10 +11,10 @@ defmodule Kjogvi.Birding.LogbookTest do
   # Build a public scope for a given user.
   defp scope(user), do: %Scope{subject_user: user, area: :user}
 
-  # Persist logbook_settings on the user through the real changeset path.
+  # Persist logbook_settings on the user's preferences through the real changeset path.
   defp put_logbook_settings(user, settings) do
     {:ok, user} =
-      Kjogvi.Accounts.update_user_settings(user, %{extras: %{logbook_settings: settings}})
+      Kjogvi.Accounts.update_user_preferences(user, %{preferences: %{logbook_settings: settings}})
 
     user
   end
@@ -641,8 +641,15 @@ defmodule Kjogvi.Birding.LogbookTest do
   end
 
   describe "any_enabled?/1" do
-    test "returns false for empty logbook_settings" do
+    test "returns true by default for users without saved preferences" do
       user = user_fixture()
+      assert Logbook.any_enabled?(scope(user)) == true
+    end
+
+    test "returns false when settings are saved with nothing enabled" do
+      user =
+        user_fixture() |> put_logbook_settings([%{location_id: nil, life: false, year: false}])
+
       assert Logbook.any_enabled?(scope(user)) == false
     end
 

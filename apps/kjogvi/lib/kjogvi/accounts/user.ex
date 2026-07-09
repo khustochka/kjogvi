@@ -8,8 +8,6 @@ defmodule Kjogvi.Accounts.User do
 
   @type t :: %__MODULE__{}
 
-  alias Kjogvi.Accounts.User.Extras
-
   schema "users" do
     field :email, :string
     field :nickname, :string
@@ -22,7 +20,10 @@ defmodule Kjogvi.Accounts.User do
     field :default_book_signature, :string
     # Opaque, stable public identifier (used e.g. in image storage paths).
     field :public_token, :string
-    embeds_one :extras, Extras, on_replace: :update, defaults_to_struct: true
+    # Legacy dumping-ground column, superseded by UserProfile/UserPreferences.
+    # Retained (as an untyped map) only to preserve existing data for a possible
+    # later manual migration; no code reads or writes it.
+    field :extras, :map
 
     has_one :preferences, Kjogvi.Accounts.UserPreferences, on_replace: :update
 
@@ -122,14 +123,14 @@ defmodule Kjogvi.Accounts.User do
   end
 
   @doc """
-  Changeset for user's extra settings.
+  Changeset for the user's profile settings: identity fields (`nickname`,
+  `display_name`) edited on the Profile tab.
   """
-  def settings_changeset(user, attrs, opts \\ []) do
+  def profile_settings_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:nickname, :display_name, :default_book_signature])
+    |> cast(attrs, [:nickname, :display_name])
     |> validate_nickname(opts)
     |> validate_display_name()
-    |> cast_embed(:extras)
   end
 
   @doc """
@@ -356,20 +357,5 @@ defmodule Kjogvi.Accounts.User do
 
   def display_name(%{display_name: display_name, nickname: nickname}) do
     display_name || nickname
-  end
-
-  @doc """
-  Determines if the user is configured for sync eBird update: has username, can ask for password.
-  """
-  def ebird_configured_sync?(user) do
-    not is_nil(user.extras.ebird.username)
-  end
-
-  @doc """
-  Determines if the user is configured for async eBird update: has username and password.
-  """
-  def ebird_configured_async?(user) do
-    not is_nil(user.extras.ebird.username) &&
-      not is_nil(user.extras.ebird.password)
   end
 end

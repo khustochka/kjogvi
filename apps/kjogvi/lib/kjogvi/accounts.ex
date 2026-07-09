@@ -349,20 +349,13 @@ defmodule Kjogvi.Accounts do
     end
   end
 
-  def update_user_settings(%User{} = user, attrs) do
+  @doc """
+  Updates the user's profile settings (identity fields on the Profile tab).
+  """
+  def update_user_profile_settings(%User{} = user, attrs) do
     user
-    |> User.settings_changeset(attrs)
+    |> User.profile_settings_changeset(attrs)
     |> Repo.update()
-    |> case do
-      {:ok, user} ->
-        # logbook_settings drives Logbook.recent_entries/2; evict cached logbook feed
-        # so it's recomputed against the new settings on next read.
-        Kjogvi.Birding.Logbook.Cache.invalidate(user.id)
-        {:ok, user}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-    end
   end
 
   @doc """
@@ -390,6 +383,14 @@ defmodule Kjogvi.Accounts do
   """
   def get_user_preferences(%User{} = user) do
     Repo.get_by(UserPreferences, user_id: user.id) || UserPreferences.default()
+  end
+
+  @doc """
+  Preloads the user's `:preferences` association (needed for `cast_assoc` /
+  `inputs_for` on the preferences form).
+  """
+  def preload_preferences(%User{} = user) do
+    Repo.preload(user, :preferences)
   end
 
   ## Session
