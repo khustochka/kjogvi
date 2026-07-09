@@ -26,6 +26,7 @@ defmodule Kjogvi.Accounts.User do
     field :extras, :map
 
     has_one :preferences, Kjogvi.Accounts.UserPreferences, on_replace: :update
+    has_one :profile, Kjogvi.Accounts.UserProfile, on_replace: :update
 
     timestamps(type: :utc_datetime_usec)
 
@@ -124,13 +125,15 @@ defmodule Kjogvi.Accounts.User do
 
   @doc """
   Changeset for the user's profile settings: identity fields (`nickname`,
-  `display_name`) edited on the Profile tab.
+  `display_name`) plus the associated `UserProfile` record (created lazily via
+  `cast_assoc` on first save).
   """
   def profile_settings_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:nickname, :display_name])
     |> validate_nickname(opts)
     |> validate_display_name()
+    |> cast_assoc(:profile)
   end
 
   @doc """

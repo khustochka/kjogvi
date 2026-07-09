@@ -87,6 +87,13 @@ Add avatar to `user_profiles` + upload UI. **Details (storage backend, Waffle vs
 - Tests updated: `logbook_test.exs`, `my/logbook/index_test.exs`, `my/settings/preferences_test.exs` (new `preferences` param shape, reads via `get_user_preferences`), `my/imports/index_test.exs` (immediate-error path, no lifecycle broadcast), plus `update_user_settings` → `update_user_preferences` renames in images/taxon/checklists tests. `mix lint.fix` + full `mix test` green (28 + 674 + 539).
 - `users.extras` column kept in DB, now unused. Per user: the `User` schema keeps an `extras` field, but as a plain untyped `:map` (not the `embeds_one`), so the existing jsonb data stays reachable for a possible later manual migration; no code reads or writes it. End-to-end verified against dev (rolled back): lazy row creation, eBird config detection, logbook default (World life+year), and `ebird_credentials/1` error path.
 
+### Stage 3 — done (2026-07-08)
+- Migration `20260708000001_create_user_profiles`: `user_profiles` table (`user_id` FK `on_delete: :delete_all` + unique index; `about` text, `country` string, `ebird_profile_url`, `website_url`, `birding_since` integer, timestamps). Migrated dev + test; `structure.sql` re-dumped (`mix ecto.dump` — no auto-dump alias in this repo).
+- New `Kjogvi.Accounts.UserProfile` with `changeset/2` validating: `about` max 2000, `country` `~r/^[A-Z]{2}$/`, `ebird_profile_url`/`website_url` http(s) with a non-empty host (via `validate_url/2` using `URI.new`), `birding_since` in `1900..current year`.
+- `User`: `has_one :profile, on_replace: :update`; `profile_settings_changeset/3` now also `cast_assoc(:profile)`.
+- `Accounts`: `update_user_profile_settings/2` preloads `:profile` before the changeset; added `preload_profile/1` (mirrors `preload_preferences/1`, for Stage 4's `inputs_for`).
+- Tests: `accounts/user_profile_test.exs` — changeset casts/validations (blank ok, over-long about, bad country codes, non-http(s) URLs, host-less URL, out-of-range year) and `update_user_profile_settings/2` (lazy row creation, update of existing row, error changeset with no row written). `mix lint.fix` + full `mix test` green (685 + 539).
+
 ## Verification (each stage)
 
 - `mix lint.fix` and `mix test` before every commit (`MIX_ENV=test mix ecto.migrate` after each new migration).

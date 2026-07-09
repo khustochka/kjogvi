@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict MPajV4xkcL2nBEJJK1aldrhw652D9bGWOfHGrxXPXYQd5IGIMK1zuHOlLad4BlM
+\restrict V7T3AxGldyMevjA3BP7pPFd3mV1QeMnAjohaA3STCALv9m75FDnBIy5SAWsWy9n
 
 -- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
@@ -566,6 +566,42 @@ ALTER SEQUENCE public.user_preferences_id_seq OWNED BY public.user_preferences.i
 
 
 --
+-- Name: user_profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_profiles (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    about text,
+    country character varying(255),
+    ebird_profile_url character varying(255),
+    website_url character varying(255),
+    birding_since integer,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_profiles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_profiles_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_profiles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_profiles_id_seq OWNED BY public.user_profiles.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -729,6 +765,13 @@ ALTER TABLE ONLY public.user_preferences ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: user_profiles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_profiles ALTER COLUMN id SET DEFAULT nextval('public.user_profiles_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -852,6 +895,14 @@ ALTER TABLE ONLY public.species_taxa_mappings
 
 ALTER TABLE ONLY public.user_preferences
     ADD CONSTRAINT user_preferences_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_profiles user_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_profiles
+    ADD CONSTRAINT user_profiles_pkey PRIMARY KEY (id);
 
 
 --
@@ -1151,6 +1202,13 @@ CREATE UNIQUE INDEX user_preferences_user_id_index ON public.user_preferences US
 
 
 --
+-- Name: user_profiles_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_profiles_user_id_index ON public.user_profiles USING btree (user_id);
+
+
+--
 -- Name: users_default_book_signature_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1345,6 +1403,14 @@ ALTER TABLE ONLY public.user_preferences
 
 
 --
+-- Name: user_profiles user_profiles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_profiles
+    ADD CONSTRAINT user_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: users_tokens users_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1356,7 +1422,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict MPajV4xkcL2nBEJJK1aldrhw652D9bGWOfHGrxXPXYQd5IGIMK1zuHOlLad4BlM
+\unrestrict V7T3AxGldyMevjA3BP7pPFd3mV1QeMnAjohaA3STCALv9m75FDnBIy5SAWsWy9n
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1394,3 +1460,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260626171732);
 INSERT INTO public."schema_migrations" (version) VALUES (20260629230000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260707180000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260708000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260708000001);

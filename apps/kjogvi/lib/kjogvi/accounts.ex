@@ -354,6 +354,7 @@ defmodule Kjogvi.Accounts do
   """
   def update_user_profile_settings(%User{} = user, attrs) do
     user
+    |> Repo.preload(:profile)
     |> User.profile_settings_changeset(attrs)
     |> Repo.update()
   end
@@ -391,6 +392,14 @@ defmodule Kjogvi.Accounts do
   """
   def preload_preferences(%User{} = user) do
     Repo.preload(user, :preferences)
+  end
+
+  @doc """
+  Preloads the user's `:profile` association (needed for `cast_assoc` /
+  `inputs_for` on the profile form).
+  """
+  def preload_profile(%User{} = user) do
+    Repo.preload(user, :profile)
   end
 
   ## Session
