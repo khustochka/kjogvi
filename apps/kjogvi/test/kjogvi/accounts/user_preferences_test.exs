@@ -123,11 +123,13 @@ defmodule Kjogvi.Accounts.UserPreferencesTest do
   end
 
   describe "Accounts.get_user_preferences/1" do
-    test "returns a default struct when the user has no preferences row" do
+    test "returns defaults with World logbook enabled when the user has no preferences row" do
       user = user_fixture()
 
-      assert %UserPreferences{id: nil, logbook_settings: []} =
-               Accounts.get_user_preferences(user)
+      assert %UserPreferences{
+               id: nil,
+               logbook_settings: [%{location_id: nil, life: true, year: true}]
+             } = Accounts.get_user_preferences(user)
     end
 
     test "returns the saved row" do

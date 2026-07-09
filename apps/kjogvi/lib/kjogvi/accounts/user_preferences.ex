@@ -26,6 +26,14 @@ defmodule Kjogvi.Accounts.UserPreferences do
     timestamps()
   end
 
+  @doc """
+  Defaults for users without a saved preferences row: logbook enabled for the
+  World scope (life and year lists).
+  """
+  def default do
+    %__MODULE__{logbook_settings: [%LogbookSetting{location_id: nil, life: true, year: true}]}
+  end
+
   def changeset(preferences, attrs) do
     preferences
     |> cast(attrs, [])

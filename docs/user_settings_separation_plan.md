@@ -74,6 +74,7 @@ Add avatar to `user_profiles` + upload UI. **Details (storage backend, Waffle vs
 - `User`: `has_one :preferences, on_replace: :update` (`:update` needed — form params carry no id, so `cast_assoc` would hit `on_replace: :raise` when a row exists); `preferences_changeset/3` (default_book_signature + `cast_assoc(:preferences)`). `settings_changeset/3` untouched.
 - `Accounts`: `update_user_preferences/2` (preload + cast_assoc + `Logbook.Cache.invalidate/1`), `get_user_preferences/1` (row or default struct).
 - Tests: `accounts/user_preferences_test.exs` — changeset casts, configured checks, lazy row creation, update of existing row, default-struct read. `mix lint.fix` + full `mix test` green (675 + 539).
+- Follow-up (per user): `UserPreferences.default/0` — users without a saved row (admin and regular alike) get logbook enabled for World (`location_id: nil, life: true, year: true`); `get_user_preferences/1` returns it instead of an empty struct.
 
 ## Verification (each stage)
 

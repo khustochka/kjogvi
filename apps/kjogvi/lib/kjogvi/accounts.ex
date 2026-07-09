@@ -386,10 +386,10 @@ defmodule Kjogvi.Accounts do
   end
 
   @doc """
-  The user's preferences, or a default `%UserPreferences{}` when none saved yet.
+  The user's preferences, or `UserPreferences.default/0` when none saved yet.
   """
   def get_user_preferences(%User{} = user) do
-    Repo.get_by(UserPreferences, user_id: user.id) || %UserPreferences{}
+    Repo.get_by(UserPreferences, user_id: user.id) || UserPreferences.default()
   end
 
   ## Session
