@@ -37,6 +37,10 @@ const Hooks = {
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
+  // Firefox kills the websocket as soon as a full-page navigation starts,
+  // which would flash the "Connection interrupted" popup while the new
+  // document loads; only show it if the drop outlasts a normal page load.
+  disconnectedTimeout: 2000,
   params: {_csrf_token: csrfToken},
   hooks: {...colocatedHooks, ...Hooks},
 })
