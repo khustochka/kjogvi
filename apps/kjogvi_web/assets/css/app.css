@@ -111,15 +111,16 @@ only when LiveView classes are applied, for example:
 
 /* Connection-status bar (client/server error popups).
    The bar is position:fixed and lives at the very end of the DOM, so it can't
-   push content down through normal flow. Instead, when LiveView marks its
-   container as disconnected/errored (phx-client-error / phx-server-error are
-   added to the LiveView root element, not <html>), we reserve space by padding
-   its top, so the bar sits above all content rather than overlapping it. */
+   push content down through normal flow. Instead we reserve space by padding
+   the top of the LiveView root's children, so the bar sits above all content
+   rather than overlapping it. Keyed off the popup's own visibility (not the
+   phx-client-error/phx-server-error container classes): LiveView sets those
+   classes the moment the socket drops, while the popup is only revealed after
+   disconnectedTimeout — padding on the class alone shows an empty bar. */
 [data-phx-main] > * {
   transition: padding-top 150ms ease;
 }
-.phx-client-error > *,
-.phx-server-error > * {
+body:has(#client-error:not([hidden]), #server-error:not([hidden])) [data-phx-main] > * {
   padding-top: 2.5rem;
 }
 
