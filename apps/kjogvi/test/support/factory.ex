@@ -38,6 +38,19 @@ defmodule Kjogvi.Factory do
     }
   end
 
+  # A country-level eBird region; pass the code fields explicitly for
+  # subdivision rows.
+  def ebird_location_factory do
+    code = sequence(:ebird_code, &"X#{&1}")
+
+    %Kjogvi.Geo.EbirdLocation{
+      code: code,
+      location_type: :country,
+      country_code: code,
+      name: sequence(:ebird_name, &"eBird Region #{&1}")
+    }
+  end
+
   def special_factory do
     %Kjogvi.Geo.Location{
       slug: sequence(:slug, &"special#{&1}"),

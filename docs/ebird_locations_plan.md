@@ -101,8 +101,10 @@ following the ISO import's `:telemetry.span` pattern.
   log what was skipped.
 - `Repo.insert_all` in chunks, upsert on `code` (re-runnable against a newer
   eBird dump; refreshes name fields, never touches `location_id`).
-- Run locally once: `mix run -e 'Kjogvi.Geo.Ebird.Import.from_json("…")'`.
-  No web UI for this — it is a bootstrap script by design (per 3b).
+- Like the ISO import, the source JSON lives read-only in the datasets storage
+  under `geo/sources/all_ebird_locs.json` (uploaded out-of-band; S3 in prod):
+  `import/0` reads it from there for the admin imports card, `from_json/1`
+  takes an explicit local path.
 
 ## 5. Matching eBird ↔ common locations
 
@@ -290,6 +292,9 @@ files in dev — so the page works identically everywhere.
 - **ISO 3166 import** — the existing `Imports.Locations` component, moved here
   from `/my/imports` (it was admin-gated there anyway). Kept as the bootstrap /
   "newer ISO release" tool.
+- **eBird regions import** — bootstrap card mirroring the ISO one, reading its
+  source from the datasets storage (§4.1). Both bootstrap cards sit in an
+  "Initial Imports" section below the dataset cards.
 
 `/my/imports` keeps Legacy and eBird-preload (user-data imports) only.
 
@@ -449,3 +454,23 @@ stages, especially if this requires writing code (app or test) just for the sake
   (read-only — uploaded out-of-band), the HTTP-URL path and
   `LOCATIONS_IMPORT_URL` are gone, and `build_iso_3166.exs` defaults its output
   to `priv/datasets/geo/sources/`.
+- **Stage 4** (2026-07-10) — eBird bootstrap import + dataset plumbing:
+  `Geo.Ebird.Import.from_json/1` (chunked upsert on `code`, refreshes name
+  fields, never touches `location_id`, skips and reports no-`countryCode`
+  pseudo-rows; telemetry `[:kjogvi, :geo, :ebird, :import]` + logger handler).
+  `EbirdLocation.Query` skeleton (`order_by_code`, `for_country`, `matched`,
+  `count_by_type_with_matched`) and `Geo.ebird_location_counts_by_type/0`.
+  Dump/Restore extended to the `:ebird_locations` dataset
+  (`geo/ebird_locations.csv`, ordered by `code`; restore upserts on `code`
+  replacing everything incl. `location_id`, clearing existing links first so
+  a link that moved between codes can't hit the unique index). Imports page
+  got Restore/Dump eBird cards (keys `{:geo_restore, :ebird}` /
+  `{:geo_dump, :ebird}`; restore card shows per-type totals + matched counts);
+  restore/dump cards refactored into shared `restore_card`/`dump_card`
+  components, notice ids now card-prefixed. The eBird import also got a web UI
+  card mirroring the ISO one (`Imports.Locations.Ebird`; `Import.import/0`
+  reads the source from the datasets storage under
+  `geo/sources/all_ebird_locs.json`); the two bootstrap import cards sit in
+  their own "Initial Imports" section below the dataset cards. *Ran the real
+  import locally: 8,489 regions (252 countries, 3,557 sub1, 4,680 sub2),
+  skipped `aba`; source JSON placed in `priv/datasets/geo/sources/`.*

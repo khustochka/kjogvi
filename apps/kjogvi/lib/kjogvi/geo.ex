@@ -7,6 +7,7 @@ defmodule Kjogvi.Geo do
 
   alias Kjogvi.Accounts.User
   alias Kjogvi.Repo
+  alias __MODULE__.EbirdLocation
   alias __MODULE__.Location
 
   # Maps each hierarchy level to its rank, so tree siblings can be ordered top
@@ -51,6 +52,16 @@ defmodule Kjogvi.Geo do
     |> Location.Query.count_by_type()
     |> Repo.all()
     |> Map.new()
+  end
+
+  @doc """
+  A map of `location_type => %{total: n, matched: n}` over the eBird locations
+  dataset, where matched rows are those linked to a common location.
+  """
+  def ebird_location_counts_by_type do
+    EbirdLocation.Query.count_by_type_with_matched()
+    |> Repo.all()
+    |> Map.new(fn {type, total, matched} -> {type, %{total: total, matched: matched}} end)
   end
 
   @doc """
