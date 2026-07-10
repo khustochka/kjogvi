@@ -8,6 +8,8 @@ defmodule Kjogvi.Accounts.UserProfile do
   """
 
   use Kjogvi.Schema
+  use Waffle.Ecto.Schema
+
   import Ecto.Changeset
 
   @type t :: %__MODULE__{}
@@ -19,6 +21,9 @@ defmodule Kjogvi.Accounts.UserProfile do
     field :country, :string
     field :ebird_profile_url, :string
     field :website_url, :string
+
+    field :avatar, Kjogvi.Images.AvatarUploader.Type
+    field :avatar_storage_backend, :string
 
     belongs_to :user, Kjogvi.Accounts.User
 
@@ -32,6 +37,19 @@ defmodule Kjogvi.Accounts.UserProfile do
     |> validate_format(:country, ~r/^[A-Z]{2}$/, message: "must be a two-letter ISO country code")
     |> validate_url(:ebird_profile_url)
     |> validate_url(:website_url)
+  end
+
+  @doc """
+  Changeset for replacing the avatar file.
+
+  `cast_attachments` uploads the file to storage during the cast; the profile
+  must have `:user` loaded, as the storage path is scoped by the user's public
+  token.
+  """
+  def avatar_changeset(profile, attrs) do
+    profile
+    |> cast(attrs, [:avatar_storage_backend])
+    |> cast_attachments(attrs, [:avatar])
   end
 
   defp validate_url(changeset, field) do

@@ -217,4 +217,94 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
       refute Repo.get_by(UserProfile, user_id: user.id)
     end
   end
+
+  describe "avatar" do
+    @avatar_file Path.expand(
+                   Path.join([
+                     __DIR__,
+                     "../../../..",
+                     "support",
+                     "fixtures",
+                     "files",
+                     "sample_bird.jpg"
+                   ])
+                 )
+
+    setup %{conn: conn} do
+      user = user_fixture()
+
+      on_exit(fn ->
+        avatar_dir =
+          Path.join([
+            Application.get_env(:waffle, :storage_dir_prefix, ""),
+            "uploads/avatars",
+            user.public_token
+          ])
+
+        File.rm_rf!(avatar_dir)
+      end)
+
+      %{conn: login_user(conn, user), user: user}
+    end
+
+    test "shows a placeholder when no avatar is set", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      assert lv |> element("#avatar-placeholder") |> has_element?()
+      refute lv |> element("#avatar-preview") |> has_element?()
+      refute lv |> element("#remove-avatar") |> has_element?()
+    end
+
+    test "uploads and displays an avatar", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      result = upload_avatar(lv)
+
+      assert result =~ "Avatar updated."
+      assert lv |> element("#avatar-preview") |> has_element?()
+      refute lv |> element("#avatar-placeholder") |> has_element?()
+
+      profile = Repo.get_by!(UserProfile, user_id: user.id)
+      assert profile.avatar
+      assert profile.avatar_storage_backend == "local"
+    end
+
+    test "removes the avatar", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+      upload_avatar(lv)
+
+      result = lv |> element("#remove-avatar") |> render_click()
+
+      assert result =~ "Avatar removed."
+      assert lv |> element("#avatar-placeholder") |> has_element?()
+      refute lv |> element("#avatar-preview") |> has_element?()
+      assert Repo.get_by!(UserProfile, user_id: user.id).avatar == nil
+    end
+
+    test "profile form still saves after an avatar upload created the row", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+      upload_avatar(lv)
+
+      lv
+      |> form("#settings_form", %{
+        "user" => %{"nickname" => user.nickname, "profile" => %{"about" => "A keen birder."}}
+      })
+      |> render_submit()
+
+      profile = Repo.get_by!(UserProfile, user_id: user.id)
+      assert profile.about == "A keen birder."
+      assert profile.avatar
+    end
+
+    defp upload_avatar(lv) do
+      lv
+      |> file_input("#avatar_form", :avatar, [
+        %{name: "me.jpg", content: File.read!(@avatar_file), type: "image/jpeg"}
+      ])
+      |> render_upload("me.jpg")
+    end
+  end
 end

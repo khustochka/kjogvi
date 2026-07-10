@@ -163,6 +163,7 @@ defmodule KjogviWeb.ImageComponents do
       phx-hook={@client_preview? && "ImageUploadPreview"}
       class={[
         "border-2 border-dashed rounded-xl p-8 text-center transition-colors",
+        "[&.phx-drop-target-active]:border-forest-500 [&.phx-drop-target-active]:bg-forest-100",
         if(@uploaded?,
           do: "border-forest-400 bg-forest-50",
           else: "border-stone-300 bg-stone-50 hover:border-forest-400"
