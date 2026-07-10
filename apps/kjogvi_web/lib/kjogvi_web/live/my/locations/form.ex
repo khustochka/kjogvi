@@ -129,7 +129,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Location saved")
-         |> push_navigate(to: ~p"/my/locations/#{location.slug}")}
+         |> push_navigate(to: after_save_path(socket.assigns.action, location))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
@@ -347,6 +347,13 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   defp cancel_path(:edit, location), do: ~p"/my/locations/#{location.slug}"
   defp cancel_path(:create, _), do: ~p"/my/locations"
+
+  # A freshly created special is empty until it has members, so go straight to
+  # adding them; every other save lands on the location page.
+  defp after_save_path(:create, %{location_type: :special} = location),
+    do: ~p"/my/locations/#{location.slug}/members"
+
+  defp after_save_path(_action, location), do: ~p"/my/locations/#{location.slug}"
 
   # Slot-occupancy/parent errors don't map to a visible input (the level FKs are
   # derived from the parent), so surface them near the parent picker.

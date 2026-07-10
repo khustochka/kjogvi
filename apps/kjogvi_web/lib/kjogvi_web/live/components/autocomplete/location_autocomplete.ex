@@ -18,7 +18,7 @@ defmodule KjogviWeb.Live.Components.LocationAutocomplete do
   alias KjogviWeb.Live.Components.Autocomplete.Highlight
 
   attr :id, :string, required: true
-  attr :hidden_name, :string, required: true
+  attr :hidden_name, :string, default: nil
   attr :hidden_value, :any, default: ""
   attr :current_value, :string, default: ""
 
@@ -28,6 +28,10 @@ defmodule KjogviWeb.Live.Components.LocationAutocomplete do
   attr :on_select_params, :map, default: %{}
   attr :compact, :boolean, default: false
   attr :errors, :list, default: []
+
+  # Multi-select behaviour, passed through to `Autocomplete` (see its docs).
+  attr :clear_on_select, :boolean, default: false
+  attr :keep_focus_on_select, :boolean, default: false
 
   # Scope whose visible locations the search is restricted to.
   attr :scope, Kjogvi.Scope, required: true
@@ -53,6 +57,8 @@ defmodule KjogviWeb.Live.Components.LocationAutocomplete do
       on_select_params={@on_select_params}
       compact={@compact}
       errors={@errors}
+      clear_on_select={@clear_on_select}
+      keep_focus_on_select={@keep_focus_on_select}
     >
       <:result :let={%{result: result, term: term}}>
         <Highlight.highlighted_text text={Location.long_name(:private, result)} term={term} />

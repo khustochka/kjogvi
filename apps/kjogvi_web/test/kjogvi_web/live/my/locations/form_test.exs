@@ -553,4 +553,42 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
                live(conn, ~p"/my/locations/#{location.slug}/edit")
     end
   end
+
+  describe "saving a special" do
+    test "creating redirects to its members page", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "my-patch",
+          name_en: "My Patch",
+          location_type: "special",
+          is_private: "false"
+        }
+      )
+      |> render_submit()
+
+      assert_redirect(view, ~p"/my/locations/my-patch/members")
+    end
+
+    test "editing redirects to its show page", %{conn: conn, user: user} do
+      special = insert(:special, slug: "my-patch", user_id: user.id)
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/edit")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "my-patch",
+          name_en: "My Patch (updated)",
+          location_type: "special",
+          is_private: "false"
+        }
+      )
+      |> render_submit()
+
+      assert_redirect(view, ~p"/my/locations/my-patch")
+    end
+  end
 end

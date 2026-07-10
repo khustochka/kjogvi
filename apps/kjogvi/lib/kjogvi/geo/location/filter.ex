@@ -42,4 +42,12 @@ defmodule Kjogvi.Geo.Location.Filter do
   def for_parent_pick do
     %__MODULE__{exclude_specials: true, exclude_sections: true}
   end
+
+  @doc """
+  Filter for the special-location member picker: hides `special` locations, since
+  a special may not be a member of another special.
+  """
+  def for_special_members do
+    %__MODULE__{exclude_specials: true}
+  end
 end

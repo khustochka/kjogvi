@@ -72,7 +72,8 @@ defmodule Kjogvi.Geo.Location do
 
     many_to_many :special_child_locations, Location,
       join_through: "special_locations",
-      join_keys: [parent_location_id: :id, child_location_id: :id]
+      join_keys: [parent_location_id: :id, child_location_id: :id],
+      on_replace: :delete
 
     many_to_many :special_parent_locations, Location,
       join_through: "special_locations",
@@ -113,6 +114,14 @@ defmodule Kjogvi.Geo.Location do
   points at.
   """
   def level_fk_by_level, do: @level_fk_by_level
+
+  @doc """
+  Whether the location can be a hierarchy parent — i.e. have sub-locations.
+  `section` (the lowest level) and `special` (outside the hierarchy) cannot.
+  """
+  def hierarchy_parent?(location) do
+    location.location_type in @hierarchy_parent_types
+  end
 
   @doc """
   The location's ancestor ids, top to bottom: the non-null level FK values
@@ -215,6 +224,31 @@ defmodule Kjogvi.Geo.Location do
     @level_fks
     |> Map.new(fn fk -> {fk, Map.get(parent, fk)} end)
     |> Map.put(fk, parent.id)
+  end
+
+  @doc """
+  Changeset replacing a special location's member list.
+
+  Requires `special_child_locations` to be preloaded. A `special` may not itself
+  be a member (which also rules out self-membership). Beyond that any location
+  is accepted — no consistency with the special's own placement is enforced.
+  """
+  def special_members_changeset(location, members) do
+    location
+    |> change()
+    |> put_assoc(:special_child_locations, members)
+    |> validate_members_not_special(members)
+  end
+
+  defp validate_members_not_special(changeset, members) do
+    case Enum.filter(members, &(&1.location_type == :special)) do
+      [] ->
+        changeset
+
+      specials ->
+        names = Enum.map_join(specials, ", ", & &1.name_en)
+        add_error(changeset, :special_child_locations, "cannot include specials: #{names}")
+    end
   end
 
   @doc """

@@ -127,6 +127,50 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     refute has_element?(show_live, "#location-members")
   end
 
+  test "shows members section with edit button for own special without members", %{
+    conn: conn,
+    user: user
+  } do
+    special = insert(:special, user_id: user.id)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{special.slug}")
+
+    assert has_element?(show_live, "#location-members #edit-members-button")
+    assert has_element?(show_live, "#no-members")
+  end
+
+  test "does not show add sub-location button for special and section locations", %{
+    conn: conn,
+    user: user
+  } do
+    special = insert(:special, user_id: user.id)
+    section = insert(:location, location_type: :section, user_id: user.id)
+    site = insert(:location, user_id: user.id)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{special.slug}")
+    refute has_element?(show_live, "#add-sub-location-button")
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{section.slug}")
+    refute has_element?(show_live, "#add-sub-location-button")
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{site.slug}")
+    assert has_element?(show_live, "#add-sub-location-button")
+  end
+
+  test "does not show edit members button for non-special or unowned locations", %{
+    conn: conn,
+    user: user
+  } do
+    own_site = insert(:location, user_id: user.id)
+    common_special = insert(:special)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{own_site.slug}")
+    refute has_element?(show_live, "#edit-members-button")
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{common_special.slug}")
+    refute has_element?(show_live, "#edit-members-button")
+  end
+
   test "shows lifelist badge when location has public_index", %{conn: conn} do
     location = insert(:location, name_en: "Canada", public_index: 1)
 

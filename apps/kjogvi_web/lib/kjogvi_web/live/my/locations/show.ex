@@ -122,6 +122,8 @@ defmodule KjogviWeb.Live.My.Locations.Show do
               Edit
             </.action_button>
             <.action_button
+              :if={Location.hierarchy_parent?(@location)}
+              id="add-sub-location-button"
               navigate={~p"/my/locations/new?parent_id=#{@location.id}"}
               icon="hero-plus"
               variant="secondary"
@@ -257,10 +259,28 @@ defmodule KjogviWeb.Live.My.Locations.Show do
       </div>
 
       <%!-- Member locations (for special locations) --%>
-      <div :if={@member_locations != []} id="location-members">
-        <.h2 class="mb-3!">Member locations</.h2>
+      <div :if={@location.location_type == :special} id="location-members">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <.h2 class="mb-0!">Member locations</.h2>
+          <.action_button
+            :if={@can_modify}
+            id="edit-members-button"
+            navigate={~p"/my/locations/#{@location.slug}/members"}
+            icon="hero-pencil-square"
+            variant="secondary"
+          >
+            Edit members
+          </.action_button>
+        </div>
 
-        <div class="border border-stone-200 rounded-lg divide-y divide-stone-100">
+        <p :if={@member_locations == []} id="no-members" class="text-sm text-stone-500">
+          No member locations yet.
+        </p>
+
+        <div
+          :if={@member_locations != []}
+          class="border border-stone-200 rounded-lg divide-y divide-stone-100"
+        >
           <%= for member <- @member_locations do %>
             <div class="flex items-center justify-between gap-2 px-4 py-2.5">
               <.location_row location={member} />

@@ -244,6 +244,33 @@ defmodule Kjogvi.Geo do
 
   def special_member_locations(%Location{}), do: []
 
+  @doc """
+  Replaces the member list of a special location with the locations named by
+  `member_ids`.
+
+  Members are resolved among the locations `scope` may see, so ids outside the
+  scope are dropped. A `special` may not be a member; any other location is
+  accepted — no consistency between the members and the special's own placement
+  is enforced.
+
+  Returns `{:error, :forbidden}` when the scope may not modify the location.
+  """
+  def update_special_members(scope, %Location{location_type: :special} = location, member_ids) do
+    if User.owns?(scope.current_user, location) do
+      members =
+        scoped_locations(scope)
+        |> Location.Query.by_ids(member_ids)
+        |> Repo.all()
+
+      location
+      |> Repo.preload(:special_child_locations)
+      |> Location.special_members_changeset(members)
+      |> Repo.update()
+    else
+      {:error, :forbidden}
+    end
+  end
+
   def get_specials(scope) do
     scoped_locations(scope)
     |> Location.Query.specials()

@@ -377,6 +377,74 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "update_special_members/3" do
+    setup do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{current_user: user, area: :private}
+      special = insert(:special, user_id: user.id)
+      %{user: user, scope: scope, special: special}
+    end
+
+    test "replaces the member list", %{scope: scope, special: special} do
+      old_member = insert(:location, user_id: scope.current_user.id)
+      new_member = insert(:location, user_id: scope.current_user.id)
+
+      Kjogvi.Repo.insert_all("special_locations", [
+        %{parent_location_id: special.id, child_location_id: old_member.id}
+      ])
+
+      assert {:ok, _location} = Geo.update_special_members(scope, special, [new_member.id])
+
+      assert Geo.special_member_locations(special) |> Enum.map(& &1.id) == [new_member.id]
+    end
+
+    test "clears members with an empty list", %{scope: scope, special: special} do
+      member = insert(:location, user_id: scope.current_user.id)
+
+      Kjogvi.Repo.insert_all("special_locations", [
+        %{parent_location_id: special.id, child_location_id: member.id}
+      ])
+
+      assert {:ok, _location} = Geo.update_special_members(scope, special, [])
+      assert Geo.special_member_locations(special) == []
+    end
+
+    test "accepts common locations as members", %{scope: scope, special: special} do
+      country = insert(:country)
+
+      assert {:ok, _location} = Geo.update_special_members(scope, special, [country.id])
+      assert Geo.special_member_locations(special) |> Enum.map(& &1.id) == [country.id]
+    end
+
+    test "rejects a special as a member", %{scope: scope, special: special} do
+      other_special = insert(:special, user_id: scope.current_user.id)
+
+      assert {:error, changeset} =
+               Geo.update_special_members(scope, special, [other_special.id])
+
+      assert {msg, _} = changeset.errors[:special_child_locations]
+      assert msg =~ "cannot include specials"
+    end
+
+    test "drops ids outside the scope's visible locations", %{scope: scope, special: special} do
+      visible = insert(:location, user_id: scope.current_user.id)
+      other_users = insert(:location, user_id: user_fixture().id)
+
+      assert {:ok, _location} =
+               Geo.update_special_members(scope, special, [visible.id, other_users.id])
+
+      assert Geo.special_member_locations(special) |> Enum.map(& &1.id) == [visible.id]
+    end
+
+    test "returns forbidden when the special is not owned by the scope's user", %{scope: scope} do
+      other_special = insert(:special, user_id: user_fixture().id)
+      member = insert(:location, user_id: scope.current_user.id)
+
+      assert {:error, :forbidden} =
+               Geo.update_special_members(scope, other_special, [member.id])
+    end
+  end
+
   describe "location_tree/1" do
     setup do
       user = user_fixture()

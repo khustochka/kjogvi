@@ -129,6 +129,7 @@ defmodule KjogviWeb.Router do
       live "/locations", Live.My.Locations.Index, :index
       live "/locations/new", Live.My.Locations.Form, :new
       live "/locations/:slug/edit", Live.My.Locations.Form, :edit
+      live "/locations/:slug/members", Live.My.Locations.Members, :edit
       live "/locations/:slug", Live.My.Locations.Show, :show
 
       live "/checklists", Live.My.Checklists.Index, :index
