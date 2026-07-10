@@ -3,6 +3,11 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
 
   import Phoenix.LiveViewTest
   import Kjogvi.AccountsFixtures
+  import Kjogvi.GeoFixtures
+
+  alias Kjogvi.Accounts
+  alias Kjogvi.Accounts.UserProfile
+  alias Kjogvi.Repo
 
   describe "Profile page" do
     test "renders profile page", %{conn: conn} do
@@ -132,6 +137,174 @@ defmodule KjogviWeb.Live.My.Settings.ProfileTest do
 
       assert result =~ "must contain only letters, spaces and common punctuation"
       assert Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id).display_name == user.display_name
+    end
+  end
+
+  describe "profile fields" do
+    setup %{conn: conn} do
+      user = user_fixture()
+      location_fixture(%{location_type: :country, iso_code: "US", name_en: "United States"})
+      %{conn: login_user(conn, user), user: user}
+    end
+
+    test "renders the profile fields", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      assert lv |> element("#user_profile_0_about") |> has_element?()
+      assert lv |> element("#user_profile_0_country") |> has_element?()
+      assert lv |> element("#user_profile_0_ebird_profile_url") |> has_element?()
+      assert lv |> element("#user_profile_0_website_url") |> has_element?()
+    end
+
+    test "lists common countries in the country select", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      assert lv
+             |> element("#user_profile_0_country option[value=US]")
+             |> render() =~ "United States"
+    end
+
+    test "saves the profile fields", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      lv
+      |> form("#settings_form", %{
+        "user" => %{
+          "nickname" => user.nickname,
+          "profile" => %{
+            "about" => "A keen birder.",
+            "country" => "US",
+            "ebird_profile_url" => "https://ebird.org/profile/abc",
+            "website_url" => "https://example.com"
+          }
+        }
+      })
+      |> render_submit()
+
+      profile = Repo.get_by(UserProfile, user_id: user.id)
+      assert profile.about == "A keen birder."
+      assert profile.country == "US"
+      assert profile.ebird_profile_url == "https://ebird.org/profile/abc"
+      assert profile.website_url == "https://example.com"
+    end
+
+    test "prefills saved profile fields", %{conn: conn, user: user} do
+      {:ok, _} =
+        Accounts.update_user_profile_settings(user, %{
+          "profile" => %{"website_url" => "https://example.com"}
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      assert lv |> element("#user_profile_0_website_url") |> render() =~
+               ~s(value="https://example.com")
+    end
+
+    test "shows a validation error for a bad URL and does not save", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      result =
+        lv
+        |> form("#settings_form", %{
+          "user" => %{
+            "nickname" => user.nickname,
+            "profile" => %{"website_url" => "not-a-url"}
+          }
+        })
+        |> render_submit()
+
+      assert result =~ "must be a valid http(s) URL"
+      refute Repo.get_by(UserProfile, user_id: user.id)
+    end
+  end
+
+  describe "avatar" do
+    @avatar_file Path.expand(
+                   Path.join([
+                     __DIR__,
+                     "../../../..",
+                     "support",
+                     "fixtures",
+                     "files",
+                     "sample_bird.jpg"
+                   ])
+                 )
+
+    setup %{conn: conn} do
+      user = user_fixture()
+
+      on_exit(fn ->
+        avatar_dir =
+          Path.join([
+            Application.get_env(:waffle, :storage_dir_prefix, ""),
+            "uploads/avatars",
+            user.public_token
+          ])
+
+        File.rm_rf!(avatar_dir)
+      end)
+
+      %{conn: login_user(conn, user), user: user}
+    end
+
+    test "shows a placeholder when no avatar is set", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      assert lv |> element("#avatar-placeholder") |> has_element?()
+      refute lv |> element("#avatar-preview") |> has_element?()
+      refute lv |> element("#remove-avatar") |> has_element?()
+    end
+
+    test "uploads and displays an avatar", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+
+      result = upload_avatar(lv)
+
+      assert result =~ "Avatar updated."
+      assert lv |> element("#avatar-preview") |> has_element?()
+      refute lv |> element("#avatar-placeholder") |> has_element?()
+
+      profile = Repo.get_by!(UserProfile, user_id: user.id)
+      assert profile.avatar
+      assert profile.avatar_storage_backend == "local"
+    end
+
+    test "removes the avatar", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+      upload_avatar(lv)
+
+      result = lv |> element("#remove-avatar") |> render_click()
+
+      assert result =~ "Avatar removed."
+      assert lv |> element("#avatar-placeholder") |> has_element?()
+      refute lv |> element("#avatar-preview") |> has_element?()
+      assert Repo.get_by!(UserProfile, user_id: user.id).avatar == nil
+    end
+
+    test "profile form still saves after an avatar upload created the row", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/my/settings/profile")
+      upload_avatar(lv)
+
+      lv
+      |> form("#settings_form", %{
+        "user" => %{"nickname" => user.nickname, "profile" => %{"about" => "A keen birder."}}
+      })
+      |> render_submit()
+
+      profile = Repo.get_by!(UserProfile, user_id: user.id)
+      assert profile.about == "A keen birder."
+      assert profile.avatar
+    end
+
+    defp upload_avatar(lv) do
+      lv
+      |> file_input("#avatar_form", :avatar, [
+        %{name: "me.jpg", content: File.read!(@avatar_file), type: "image/jpeg"}
+      ])
+      |> render_upload("me.jpg")
     end
   end
 end

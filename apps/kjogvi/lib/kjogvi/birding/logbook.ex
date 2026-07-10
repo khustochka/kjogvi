@@ -17,6 +17,7 @@ defmodule Kjogvi.Birding.Logbook do
   Priority within a type: world > country > subdivision (by ancestry depth).
   """
 
+  alias Kjogvi.Accounts
   alias Kjogvi.Birding.Logbook.Cache
   alias Kjogvi.Birding.Logbook.Entry
   alias Kjogvi.Birding.Logbook.Query
@@ -28,7 +29,7 @@ defmodule Kjogvi.Birding.Logbook do
   @doc """
   Returns logbook entries for the most recent days that have entries.
 
-  Logbook settings are read from the subject user's `extras.logbook_settings`.
+  Logbook settings are read from the subject user's `UserPreferences`.
   Results for the public feed (`view: :public`) are cached per
   `(user_id, limit, cutoff_days)` and the current date; cache entries are
   evicted when observations or `logbook_settings` change (see
@@ -79,7 +80,8 @@ defmodule Kjogvi.Birding.Logbook do
         {Date.add(Date.utc_today(), -Keyword.get(filter, :cutoff_days)), nil}
       end
 
-    logbook_settings = Kjogvi.Scope.subject_user(scope).extras.logbook_settings
+    logbook_settings =
+      Accounts.get_user_preferences(Kjogvi.Scope.subject_user(scope)).logbook_settings
 
     location_ids =
       logbook_settings
@@ -118,11 +120,12 @@ defmodule Kjogvi.Birding.Logbook do
   @spec any_enabled?(Kjogvi.Scope.t()) :: boolean()
   def any_enabled?(%Kjogvi.Scope{} = scope) do
     case Kjogvi.Scope.subject_user(scope) do
-      %{extras: %{logbook_settings: logbook_settings}} ->
-        Enum.any?(logbook_settings, &(&1.life || &1.year))
-
-      _ ->
+      nil ->
         false
+
+      user ->
+        Accounts.get_user_preferences(user).logbook_settings
+        |> Enum.any?(&(&1.life || &1.year))
     end
   end
 

@@ -1,4 +1,4 @@
-defmodule Kjogvi.Accounts.User.Extras.LogbookSetting do
+defmodule Kjogvi.Accounts.UserPreferences.LogbookSetting do
   @moduledoc """
   A single logbook setting entry: controls whether life and/or year list entries
   are shown for a given location in the logbook.

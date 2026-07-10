@@ -7,6 +7,7 @@ defmodule Kjogvi.Accounts do
   alias Kjogvi.Repo
 
   alias Kjogvi.Accounts.User
+  alias Kjogvi.Accounts.UserPreferences
   alias Kjogvi.Accounts.UserToken
   alias Kjogvi.Accounts.UserNotifier
 
@@ -348,9 +349,23 @@ defmodule Kjogvi.Accounts do
     end
   end
 
-  def update_user_settings(%User{} = user, attrs) do
+  @doc """
+  Updates the user's profile settings (identity fields on the Profile tab).
+  """
+  def update_user_profile_settings(%User{} = user, attrs) do
     user
-    |> User.settings_changeset(attrs)
+    |> Repo.preload(:profile)
+    |> User.profile_settings_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Updates the user's preferences, creating the `UserPreferences` row on first save.
+  """
+  def update_user_preferences(%User{} = user, attrs) do
+    user
+    |> Repo.preload(:preferences)
+    |> User.preferences_changeset(attrs)
     |> Repo.update()
     |> case do
       {:ok, user} ->
@@ -362,6 +377,29 @@ defmodule Kjogvi.Accounts do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error, changeset}
     end
+  end
+
+  @doc """
+  The user's preferences, or `UserPreferences.default/0` when none saved yet.
+  """
+  def get_user_preferences(%User{} = user) do
+    Repo.get_by(UserPreferences, user_id: user.id) || UserPreferences.default()
+  end
+
+  @doc """
+  Preloads the user's `:preferences` association (needed for `cast_assoc` /
+  `inputs_for` on the preferences form).
+  """
+  def preload_preferences(%User{} = user) do
+    Repo.preload(user, :preferences)
+  end
+
+  @doc """
+  Preloads the user's `:profile` association (needed for `cast_assoc` /
+  `inputs_for` on the profile form).
+  """
+  def preload_profile(%User{} = user) do
+    Repo.preload(user, :profile)
   end
 
   ## Session

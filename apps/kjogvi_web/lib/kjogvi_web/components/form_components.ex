@@ -122,24 +122,26 @@ defmodule KjogviWeb.FormComponents do
   """
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
   attr :class, :any
-  # TODO: define variants
-  # attr :variant, :string, values: ~w(primary)
+
+  attr :variant, :string,
+    values: ~w(primary danger),
+    default: "primary",
+    doc: "`danger` renders red, for destructive actions"
+
   slot :inner_block, required: true
+
+  @variant_classes %{
+    "primary" => "bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-500",
+    "danger" => "bg-rose-700 hover:bg-rose-600 disabled:bg-rose-400"
+  }
 
   @spec button(%{:rest => nil | maybe_improper_list() | map(), optional(any()) => any()}) ::
           Phoenix.LiveView.Rendered.t()
   def button(%{rest: rest} = assigns) do
-    # variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
-
-    # assigns =
-    #   assign_new(assigns, :class, fn ->
-    #     ["btn", Map.fetch!(variants, assigns[:variant])]
-    #   end)
-
     assigns =
       assign(assigns, :class, [
-        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900",
-        "hover:bg-zinc-700 disabled:bg-zinc-500 py-2 px-3",
+        "phx-submit-loading:opacity-75 rounded-lg py-2 px-3",
+        Map.fetch!(@variant_classes, assigns.variant),
         "text-sm font-medium font-header leading-6 text-white active:text-white/80",
         assigns[:class]
       ])

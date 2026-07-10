@@ -14,7 +14,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
     user = AccountsFixtures.user_fixture()
 
     {:ok, user} =
-      Kjogvi.Accounts.update_user_settings(user, %{"default_book_signature" => "ebird/v2024"})
+      Kjogvi.Accounts.update_user_preferences(user, %{"default_book_signature" => "ebird/v2024"})
 
     {user, book}
   end

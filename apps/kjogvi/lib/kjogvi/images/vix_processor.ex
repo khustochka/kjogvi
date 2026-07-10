@@ -58,6 +58,36 @@ defmodule Kjogvi.Images.VixProcessor do
   defp save_opts(_), do: @jpeg_save_opts
 
   @doc """
+  Resize an image to fit within a `max_size`-square box (never upscaling),
+  preserving aspect ratio, and write it as JPEG to a temporary file. Returns
+  `{:ok, path}`.
+
+  Unlike `resize/3`, the output is always JPEG regardless of the source
+  format: transparency is flattened onto white. EXIF orientation is applied
+  before the metadata is stripped.
+  """
+  def resize_to_fit(input_path, max_size) do
+    output_path = Waffle.File.generate_temporary_path(".jpg")
+
+    with {:ok, image} <-
+           Operation.thumbnail(input_path, max_size, height: max_size, size: :VIPS_SIZE_DOWN),
+         {:ok, flattened} <- flatten_alpha(image),
+         :ok <- VipsImage.write_to_file(flattened, output_path, @jpeg_save_opts) do
+      {:ok, output_path}
+    end
+  end
+
+  # JPEG has no alpha channel; vips would flatten onto black, so flatten onto
+  # white explicitly.
+  defp flatten_alpha(image) do
+    if VipsImage.has_alpha?(image) do
+      Operation.flatten(image, background: [255.0, 255.0, 255.0])
+    else
+      {:ok, image}
+    end
+  end
+
+  @doc """
   Extract image metadata: dimensions and EXIF capture date.
 
   Returns a map with `:width`, `:height`, and optionally `:exif_date` (a

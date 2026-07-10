@@ -25,24 +25,37 @@ defmodule KjogviWeb.Live.My.Logbook.IndexTest do
            |> has_element?()
   end
 
-  test "when no lists are enabled and logbook is empty, shows enable-lists callout", %{conn: conn} do
+  test "when no lists are enabled and logbook is empty, shows enable-lists callout", %{
+    conn: conn,
+    user: user
+  } do
+    # Save preferences with nothing enabled; the default would otherwise enable World.
+    {:ok, _user} =
+      Kjogvi.Accounts.update_user_preferences(user, %{
+        "preferences" => %{
+          "logbook_settings" => %{
+            "0" => %{"location_id" => "", "life" => "false", "year" => "false"}
+          }
+        }
+      })
+
     {:ok, lv, _html} = live(conn, ~p"/my/logbook")
 
     assert has_element?(lv, "#logbook-empty-no-settings")
   end
 
-  test "when at least one list is enabled, the enable-lists callout is hidden", %{user: user} do
+  test "when at least one list is enabled, the enable-lists callout is hidden", %{
+    conn: conn,
+    user: user
+  } do
     {:ok, _user} =
-      Kjogvi.Accounts.update_user_settings(user, %{
-        "extras" => %{
+      Kjogvi.Accounts.update_user_preferences(user, %{
+        "preferences" => %{
           "logbook_settings" => %{
             "0" => %{"location_id" => "", "life" => "true", "year" => "false"}
           }
         }
       })
-
-    # Re-login the (unchanged) user to pick up updated extras in scope.
-    conn = login_user(build_conn(), Kjogvi.Repo.get!(Kjogvi.Accounts.User, user.id))
 
     {:ok, lv, _html} = live(conn, ~p"/my/logbook")
 

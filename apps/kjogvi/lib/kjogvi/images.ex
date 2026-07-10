@@ -9,7 +9,9 @@ defmodule Kjogvi.Images do
 
   import Ecto.Query
 
+  alias Kjogvi.Accounts.UserProfile
   alias Kjogvi.Repo
+  alias Kjogvi.Images.AvatarUploader
   alias Kjogvi.Images.Image
   alias Kjogvi.Images.ImageObservation
   alias Kjogvi.Images.VixProcessor
@@ -336,6 +338,32 @@ defmodule Kjogvi.Images do
   defp maybe_preload_user(%Image{user: %Kjogvi.Accounts.User{}} = image), do: image
   defp maybe_preload_user(%Image{} = image), do: Repo.preload(image, :user)
 
+  @doc """
+  Public URL for a user's avatar, or `nil` when none is set.
+
+  Like `url/2`, the URL is built from the profile's own recorded
+  `avatar_storage_backend`, so avatars stay resolvable when a database is
+  shared across environments. The profile's user must be available (the
+  storage path is scoped by its public token); it is preloaded here if the
+  caller hasn't already done so.
+  """
+  def avatar_url(nil), do: nil
+  def avatar_url(%UserProfile{avatar: nil}), do: nil
+
+  def avatar_url(%UserProfile{} = profile) do
+    profile = maybe_preload_profile_user(profile)
+    key = AvatarUploader.s3_key(:avatar, {profile.avatar, profile})
+
+    [backend_host(profile.avatar_storage_backend), "/", key, cache_buster(profile.avatar)]
+    |> Enum.join()
+  end
+
+  defp maybe_preload_profile_user(%UserProfile{user: %Kjogvi.Accounts.User{}} = profile) do
+    profile
+  end
+
+  defp maybe_preload_profile_user(%UserProfile{} = profile), do: Repo.preload(profile, :user)
+
   # The host prefix for the image's backend. `local` has no host: its files are
   # served by the endpoint at the relative `/uploads/...` path, so the URL is
   # host-relative (begins with the leading "/" added by the caller).
@@ -362,7 +390,12 @@ defmodule Kjogvi.Images do
 
   defp to_unix(naive), do: naive |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
 
-  defp current_storage_backend do
+  @doc """
+  The backend name (`"local"`, `"s3_dev"`, `"s3_prod"`) new uploads are
+  written with in this environment — the value persisted on each record so
+  its URL can be resolved later (see `url/2`).
+  """
+  def current_storage_backend do
     :kjogvi
     |> Application.get_env(:images, [])
     |> Keyword.get(:storage_backend, "local")

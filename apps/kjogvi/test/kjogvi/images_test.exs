@@ -112,22 +112,27 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
+  # Points the env at fake backends so URL building can be asserted without
+  # touching storage. Shared by the `url/2` and `avatar_url/1` tests.
+  defp images_env(_context) do
+    previous = Application.get_env(:kjogvi, :images)
+
+    Application.put_env(:kjogvi, :images,
+      storage_backend: "s3_dev",
+      hosts: %{
+        "local" => nil,
+        "s3_dev" => "https://dev-bucket.s3.example.com",
+        # A trailing slash must not double up in the URL.
+        "s3_prod" => "https://prod-bucket.s3.example.com/"
+      }
+    )
+
+    on_exit(fn -> Application.put_env(:kjogvi, :images, previous) end)
+    :ok
+  end
+
   describe "url/2" do
-    setup do
-      previous = Application.get_env(:kjogvi, :images)
-
-      Application.put_env(:kjogvi, :images,
-        storage_backend: "s3_dev",
-        hosts: %{
-          "local" => nil,
-          "s3_dev" => "https://dev-bucket.s3.example.com",
-          # A trailing slash must not double up in the URL.
-          "s3_prod" => "https://prod-bucket.s3.example.com/"
-        }
-      )
-
-      on_exit(fn -> Application.put_env(:kjogvi, :images, previous) end)
-    end
+    setup :images_env
 
     # An image carrying a stored file, built without touching storage.
     defp image_with_file(user, backend) do
@@ -204,6 +209,44 @@ defmodule Kjogvi.ImagesTest do
       ~N[2026-06-03 12:00:00]
       |> DateTime.from_naive!("Etc/UTC")
       |> DateTime.to_unix()
+    end
+  end
+
+  describe "avatar_url/1" do
+    setup :images_env
+
+    alias Kjogvi.Accounts.UserProfile
+
+    # A profile carrying a stored avatar, built without touching storage.
+    defp profile_with_avatar(user, backend) do
+      %UserProfile{
+        user_id: user.id,
+        user: user,
+        avatar_storage_backend: backend,
+        avatar: %{file_name: "me.heic", updated_at: ~N[2026-06-03 12:00:00]}
+      }
+    end
+
+    test "returns nil without a profile or an avatar" do
+      assert Images.avatar_url(nil) == nil
+      assert Images.avatar_url(%UserProfile{}) == nil
+    end
+
+    test "builds the URL from the profile's recorded backend, with the fixed jpg name" do
+      user = AccountsFixtures.user_fixture()
+
+      assert Images.avatar_url(profile_with_avatar(user, "s3_prod")) ==
+               "https://prod-bucket.s3.example.com" <>
+                 "/uploads/avatars/#{user.public_token}/avatar.jpg" <>
+                 "?#{expected_unix()}"
+    end
+
+    test "local avatars get a host-relative path served by the endpoint" do
+      user = AccountsFixtures.user_fixture()
+      url = Images.avatar_url(profile_with_avatar(user, "local"))
+
+      assert String.starts_with?(url, "/uploads/avatars/")
+      refute url =~ "://"
     end
   end
 
@@ -505,7 +548,7 @@ defmodule Kjogvi.ImagesTest do
 
       {:ok, user} =
         AccountsFixtures.user_fixture()
-        |> Kjogvi.Accounts.update_user_settings(%{"default_book_signature" => "ebird/v2024"})
+        |> Kjogvi.Accounts.update_user_preferences(%{"default_book_signature" => "ebird/v2024"})
 
       %{user: user}
     end
