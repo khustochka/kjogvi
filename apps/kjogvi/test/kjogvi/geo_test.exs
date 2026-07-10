@@ -426,6 +426,70 @@ defmodule Kjogvi.GeoTest do
       assert msg =~ "cannot include specials"
     end
 
+    test "rejects a member outside the special's parent", %{scope: scope} do
+      country = insert(:country)
+      special = insert(:special, user_id: scope.current_user.id, country: country)
+      outside = insert(:location, user_id: scope.current_user.id, country: insert(:country))
+
+      assert {:error, changeset} = Geo.update_special_members(scope, special, [outside.id])
+      assert {msg, _} = changeset.errors[:special_child_locations]
+      assert msg =~ "must be under the special's parent"
+    end
+
+    test "accepts members at any depth under the parent", %{scope: scope} do
+      country = insert(:country)
+      subdivision = insert(:subdivision1, country: country)
+      special = insert(:special, user_id: scope.current_user.id, country: country)
+      direct = insert(:location, user_id: scope.current_user.id, country: country)
+
+      deeper =
+        insert(:location,
+          user_id: scope.current_user.id,
+          country: country,
+          subdivision1: subdivision
+        )
+
+      assert {:ok, _location} =
+               Geo.update_special_members(scope, special, [direct.id, deeper.id])
+
+      ids = Geo.special_member_locations(special) |> Enum.map(& &1.id) |> Enum.sort()
+      assert ids == Enum.sort([direct.id, deeper.id])
+    end
+
+    test "checks membership against the special's deepest ancestor", %{scope: scope} do
+      country = insert(:country)
+      subdivision = insert(:subdivision1, country: country)
+
+      special =
+        insert(:special,
+          user_id: scope.current_user.id,
+          country: country,
+          subdivision1: subdivision
+        )
+
+      same_country_other_subdivision =
+        insert(:location,
+          user_id: scope.current_user.id,
+          country: country,
+          subdivision1: insert(:subdivision1, country: country)
+        )
+
+      assert {:error, changeset} =
+               Geo.update_special_members(scope, special, [same_country_other_subdivision.id])
+
+      assert {msg, _} = changeset.errors[:special_child_locations]
+      assert msg =~ "must be under the special's parent"
+    end
+
+    test "rejects the parent itself as a member", %{scope: scope} do
+      country = insert(:country)
+      special = insert(:special, user_id: scope.current_user.id, country: country)
+
+      assert {:error, changeset} = Geo.update_special_members(scope, special, [country.id])
+      assert {msg, _} = changeset.errors[:special_child_locations]
+      assert msg =~ "must be under the special's parent"
+    end
+
     test "drops ids outside the scope's visible locations", %{scope: scope, special: special} do
       visible = insert(:location, user_id: scope.current_user.id)
       other_users = insert(:location, user_id: user_fixture().id)
@@ -846,6 +910,27 @@ defmodule Kjogvi.GeoTest do
 
       assert regular.id in ids
       refute special.id in ids
+    end
+
+    test "special-members filter with a parent restricts to its descendants" do
+      scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
+      country = insert(:country)
+      inside = insert(:location, slug: "park-inside", name_en: "Park Inside", country: country)
+
+      _outside =
+        insert(:location,
+          slug: "park-outside",
+          name_en: "Park Outside",
+          country: insert(:country)
+        )
+
+      ids =
+        Geo.search_locations(scope, "Park",
+          filter: Geo.Location.Filter.for_special_members(country)
+        )
+        |> Enum.map(& &1.id)
+
+      assert ids == [inside.id]
     end
 
     test "parent-pick filter excludes specials and sections" do

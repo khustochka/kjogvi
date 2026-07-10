@@ -22,6 +22,19 @@ defmodule Kjogvi.Geo.Location.FilterTest do
     end
   end
 
+  describe "for_special_members/1" do
+    test "excludes specials, unrestricted without a parent" do
+      assert %Filter{exclude_specials: true, within: nil} = Filter.for_special_members()
+    end
+
+    test "restricts to the parent's descendants" do
+      parent = %Kjogvi.Geo.Location{id: 5, location_type: :country}
+
+      assert %Filter{exclude_specials: true, within: ^parent} =
+               Filter.for_special_members(parent)
+    end
+  end
+
   describe "discombo!/1" do
     test "builds from options, validating types" do
       assert %Filter{exclude_specials: true} = Filter.discombo!(exclude_specials: true)

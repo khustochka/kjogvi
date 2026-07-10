@@ -19,6 +19,12 @@ defmodule Kjogvi.Geo.Location.Filter do
     exclude_sections: [
       type: :boolean,
       default: false
+    ],
+    # A %Location{} or nil. Typed :any — naming the module here would be a
+    # compile-time reference back into the Location cycle (xref).
+    within: [
+      type: :any,
+      default: nil
     ]
   ]
 
@@ -45,9 +51,12 @@ defmodule Kjogvi.Geo.Location.Filter do
 
   @doc """
   Filter for the special-location member picker: hides `special` locations, since
-  a special may not be a member of another special.
+  a special may not be a member of another special. When the special sits under a
+  `parent`, restricts to that parent's descendants — every member must belong to
+  it (see `Location.special_members_changeset/2`); a parentless special accepts
+  members anywhere.
   """
-  def for_special_members do
-    %__MODULE__{exclude_specials: true}
+  def for_special_members(parent \\ nil) do
+    %__MODULE__{exclude_specials: true, within: parent}
   end
 end

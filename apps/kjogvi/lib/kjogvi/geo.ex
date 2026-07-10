@@ -249,9 +249,9 @@ defmodule Kjogvi.Geo do
   `member_ids`.
 
   Members are resolved among the locations `scope` may see, so ids outside the
-  scope are dropped. A `special` may not be a member; any other location is
-  accepted — no consistency between the members and the special's own placement
-  is enforced.
+  scope are dropped. A `special` may not be a member, and when the special sits
+  under a parent every member must belong to that parent (directly or through
+  deeper levels) — see `Location.special_members_changeset/2`.
 
   Returns `{:error, :forbidden}` when the scope may not modify the location.
   """

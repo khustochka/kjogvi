@@ -230,14 +230,18 @@ defmodule Kjogvi.Geo.Location do
   Changeset replacing a special location's member list.
 
   Requires `special_child_locations` to be preloaded. A `special` may not itself
-  be a member (which also rules out self-membership). Beyond that any location
-  is accepted — no consistency with the special's own placement is enforced.
+  be a member (which also rules out self-membership). When the special sits under
+  a parent (its deepest set level FK), every member must belong to that parent,
+  directly or through deeper levels; a parentless special accepts members
+  anywhere. Later re-parenting a member can silently break this — that's on the
+  user, no re-check happens.
   """
   def special_members_changeset(location, members) do
     location
     |> change()
     |> put_assoc(:special_child_locations, members)
     |> validate_members_not_special(members)
+    |> validate_members_within_parent(location, members)
   end
 
   defp validate_members_not_special(changeset, members) do
@@ -249,6 +253,42 @@ defmodule Kjogvi.Geo.Location do
         names = Enum.map_join(specials, ", ", & &1.name_en)
         add_error(changeset, :special_child_locations, "cannot include specials: #{names}")
     end
+  end
+
+  # The level FKs are denormalized, so "belongs to the parent at any depth" is a
+  # single column read: the member's FK at the parent's level names the parent.
+  defp validate_members_within_parent(changeset, special, members) do
+    case deepest_level_fk(special) do
+      nil ->
+        changeset
+
+      {fk, parent_id} ->
+        case Enum.reject(members, &(Map.fetch!(&1, fk) == parent_id)) do
+          [] ->
+            changeset
+
+          outside ->
+            names = Enum.map_join(outside, ", ", & &1.name_en)
+
+            add_error(
+              changeset,
+              :special_child_locations,
+              "must be under the special's parent: #{names}"
+            )
+        end
+    end
+  end
+
+  # The location's deepest set level FK as `{column, id}`, or nil when top-level.
+  defp deepest_level_fk(location) do
+    @level_fks
+    |> Enum.reverse()
+    |> Enum.find_value(fn fk ->
+      case Map.fetch!(location, fk) do
+        nil -> nil
+        id -> {fk, id}
+      end
+    end)
   end
 
   @doc """

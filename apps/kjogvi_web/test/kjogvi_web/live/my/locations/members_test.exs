@@ -159,6 +159,37 @@ defmodule KjogviWeb.Live.My.Locations.MembersTest do
     refute has_element?(view, "#restore-member-#{member.id}")
   end
 
+  test "member suggestions are restricted to the special's parent", %{conn: conn, user: user} do
+    country = insert(:country)
+    special = insert(:special, name_en: "Circle", user_id: user.id, country: country)
+    _inside = insert(:location, name_en: "Park Inside", user_id: user.id, country: country)
+
+    _outside =
+      insert(:location, name_en: "Park Outside", user_id: user.id, country: insert(:country))
+
+    {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
+
+    html = view |> element("#member-search") |> render_keyup(%{"value" => "Park"})
+
+    # The matched term is wrapped in highlight markup, so assert on the rest.
+    assert html =~ "Inside"
+    refute html =~ "Outside"
+  end
+
+  test "saving a member outside the special's parent shows an error", %{conn: conn, user: user} do
+    country = insert(:country)
+    special = insert(:special, user_id: user.id, country: country)
+    outside = insert(:location, name_en: "Elsewhere", user_id: user.id, country: insert(:country))
+    add_members(special, [outside])
+
+    {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
+
+    view |> element("#save-members-button") |> render_click()
+
+    assert has_element?(view, "#flash-group-error", "must be under the special's parent")
+    assert Geo.special_member_locations(special) |> Enum.map(& &1.id) == [outside.id]
+  end
+
   test "member suggestions exclude special locations", %{conn: conn, user: user} do
     special = insert(:special, name_en: "Park Circle", user_id: user.id)
     _site = insert(:location, name_en: "Park Site", user_id: user.id)

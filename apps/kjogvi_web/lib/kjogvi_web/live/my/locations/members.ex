@@ -3,7 +3,9 @@ defmodule KjogviWeb.Live.My.Locations.Members do
   LiveView for editing the member locations of a special location.
 
   Holds the pending member list in `@members`; adds go through the location
-  autocomplete (specials excluded — a special may not be a member). Removing
+  autocomplete (specials excluded — a special may not be a member — and, when
+  the special sits under a parent, restricted to that parent's descendants).
+  Removing
   keeps the row visible but marks it in `@removed_ids`, from where it can be
   restored. Nothing persists until Save, which replaces the member list
   (minus removed rows) via `Geo.update_special_members/3`.
@@ -45,10 +47,13 @@ defmodule KjogviWeb.Live.My.Locations.Members do
           |> Geo.special_member_locations()
           |> Location.Query.put_levels()
 
+        parent = location |> Geo.ancestor_locations() |> List.last()
+
         {:ok,
          socket
          |> assign(:page_title, "Members of #{location.name_en}")
          |> assign(:location, location)
+         |> assign(:member_filter, Location.Filter.for_special_members(parent))
          |> assign(:members, members)
          |> assign(:removed_ids, MapSet.new())}
     end
@@ -143,7 +148,7 @@ defmodule KjogviWeb.Live.My.Locations.Members do
           placeholder="Search locations..."
           on_select_event="member_selected"
           scope={@current_scope}
-          filter={Location.Filter.for_special_members()}
+          filter={@member_filter}
           clear_on_select
           keep_focus_on_select
         />

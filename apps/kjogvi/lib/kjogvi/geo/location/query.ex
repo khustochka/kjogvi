@@ -112,12 +112,26 @@ defmodule Kjogvi.Geo.Location.Query do
   end
 
   @doc """
+  Restricts to descendants of `location` — rows whose level FK for the location's
+  own level points at it, at any depth. The location itself is not a descendant
+  and is excluded; a location whose level can't be an ancestor (`section`,
+  `special`) has no descendants, so nothing matches.
+  """
+  def within(query, %{id: id, location_type: location_type}) do
+    case descendant_fk(location_type) do
+      nil -> from [..., l] in query, where: false
+      fk -> from [..., l] in query, where: field(l, ^fk) == ^id
+    end
+  end
+
+  @doc """
   Folds a `Location.Filter` into `query`, applying each set refinement.
   """
   def apply_filter(query, %Location.Filter{} = filter) do
     query
     |> maybe_exclude_specials(filter.exclude_specials)
     |> maybe_exclude_sections(filter.exclude_sections)
+    |> maybe_within(filter.within)
   end
 
   defp maybe_exclude_specials(query, true), do: exclude_specials(query)
@@ -125,6 +139,9 @@ defmodule Kjogvi.Geo.Location.Query do
 
   defp maybe_exclude_sections(query, true), do: exclude_sections(query)
   defp maybe_exclude_sections(query, _), do: query
+
+  defp maybe_within(query, nil), do: query
+  defp maybe_within(query, location), do: within(query, location)
 
   # Imported/restored common rows take ids from this value up, reserving the
   # lower range for hand-managed rows.
