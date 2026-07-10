@@ -3,9 +3,10 @@ defmodule KjogviWeb.Live.My.Locations.Members do
   LiveView for editing the member locations of a special location.
 
   Holds the pending member list in `@members`; adds go through the location
-  autocomplete (specials excluded — a special may not be a member), removals
-  through per-row buttons. Nothing persists until Save, which replaces the
-  member list via `Geo.update_special_members/3`.
+  autocomplete (specials excluded — a special may not be a member). Removing
+  keeps the row visible but marks it in `@removed_ids`, from where it can be
+  restored. Nothing persists until Save, which replaces the member list
+  (minus removed rows) via `Geo.update_special_members/3`.
   """
 
   use KjogviWeb, :live_view
@@ -48,7 +49,8 @@ defmodule KjogviWeb.Live.My.Locations.Members do
          socket
          |> assign(:page_title, "Members of #{location.name_en}")
          |> assign(:location, location)
-         |> assign(:members, members)}
+         |> assign(:members, members)
+         |> assign(:removed_ids, MapSet.new())}
     end
   end
 
@@ -60,12 +62,22 @@ defmodule KjogviWeb.Live.My.Locations.Members do
   @impl true
   def handle_event("remove_member", %{"id" => id}, socket) do
     id = String.to_integer(id)
-    {:noreply, assign(socket, :members, Enum.reject(socket.assigns.members, &(&1.id == id)))}
+    {:noreply, update(socket, :removed_ids, &MapSet.put(&1, id))}
+  end
+
+  def handle_event("restore_member", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+    {:noreply, update(socket, :removed_ids, &MapSet.delete(&1, id))}
   end
 
   def handle_event("save", _params, socket) do
     scope = socket.assigns.current_scope
-    member_ids = Enum.map(socket.assigns.members, & &1.id)
+    removed_ids = socket.assigns.removed_ids
+
+    member_ids =
+      socket.assigns.members
+      |> Enum.map(& &1.id)
+      |> Enum.reject(&MapSet.member?(removed_ids, &1))
 
     case Geo.update_special_members(scope, socket.assigns.location, member_ids) do
       {:ok, location} ->
@@ -90,7 +102,7 @@ defmodule KjogviWeb.Live.My.Locations.Members do
     members = socket.assigns.members
 
     if Enum.any?(members, &(&1.id == result.id)) do
-      {:noreply, socket}
+      {:noreply, update(socket, :removed_ids, &MapSet.delete(&1, result.id))}
     else
       {:noreply, assign(socket, :members, members ++ [result])}
     end
@@ -149,10 +161,28 @@ defmodule KjogviWeb.Live.My.Locations.Members do
         <li
           :for={member <- @members}
           id={"member-#{member.id}"}
-          class="flex items-center justify-between gap-2 px-4 py-2.5"
+          class={[
+            "flex items-center justify-between gap-2 px-4 py-2.5",
+            MapSet.member?(@removed_ids, member.id) && "bg-red-50"
+          ]}
         >
-          <span class="text-sm text-stone-800">{Location.long_name(:private, member)}</span>
+          <span class={[
+            "text-sm",
+            if(MapSet.member?(@removed_ids, member.id),
+              do: "text-stone-500",
+              else: "text-stone-800"
+            )
+          ]}>
+            {Location.long_name(:private, member)}
+            <span
+              :if={MapSet.member?(@removed_ids, member.id)}
+              class="ml-2 text-xs font-semibold uppercase text-red-600"
+            >
+              Removed
+            </span>
+          </span>
           <button
+            :if={not MapSet.member?(@removed_ids, member.id)}
             type="button"
             id={"remove-member-#{member.id}"}
             phx-click="remove_member"
@@ -161,6 +191,17 @@ defmodule KjogviWeb.Live.My.Locations.Members do
             class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 rounded"
           >
             Remove
+          </button>
+          <button
+            :if={MapSet.member?(@removed_ids, member.id)}
+            type="button"
+            id={"restore-member-#{member.id}"}
+            phx-click="restore_member"
+            phx-value-id={member.id}
+            title={"Restore #{member.name_en}"}
+            class="inline-flex items-center gap-1 rounded-lg bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-200 border border-green-500"
+          >
+            <.icon name="hero-arrow-uturn-left" class="w-3.5 h-3.5" /> Restore
           </button>
         </li>
       </ul>

@@ -882,16 +882,16 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> element(~s(button[aria-label="Remove observation"])) |> render_click()
 
       html = render(lv)
-      # Should show as grayed out with Restore button
+      # Should show as marked removed with Restore button
       assert html =~ "Restore"
-      assert html =~ "line-through"
+      assert html =~ "Removed"
 
       # Restore the observation
       lv |> element("button", "Restore") |> render_click()
 
       # Should be back to normal with Remove button
       assert has_element?(lv, ~s(button[aria-label="Remove observation"]))
-      refute render(lv) =~ "line-through"
+      refute render(lv) =~ "Removed"
     end
   end
 

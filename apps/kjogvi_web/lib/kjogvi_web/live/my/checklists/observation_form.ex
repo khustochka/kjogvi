@@ -37,7 +37,7 @@ defmodule KjogviWeb.Live.My.Checklists.ObservationForm do
 
       <%= if @is_marked_for_deletion do %>
         <div class="flex items-center justify-between">
-          <div class="flex-1 line-through text-gray-500">
+          <div class="flex-1 text-gray-500">
             <span class="font-medium">
               {@obs_form[:id].value}
             </span>
@@ -46,6 +46,9 @@ defmodule KjogviWeb.Live.My.Checklists.ObservationForm do
             </span>
             <span :if={@obs_form[:quantity].value} class="ml-2">
               × {@obs_form[:quantity].value}
+            </span>
+            <span class="ml-2 text-xs font-semibold uppercase text-red-600">
+              Removed
             </span>
           </div>
           <button

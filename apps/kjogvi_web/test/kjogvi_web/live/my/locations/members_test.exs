@@ -98,6 +98,20 @@ defmodule KjogviWeb.Live.My.Locations.MembersTest do
     assert Geo.special_member_locations(special) |> Enum.map(& &1.id) == [member.id]
   end
 
+  test "removing a member keeps the row visible, marked as removed", %{conn: conn, user: user} do
+    special = insert(:special, user_id: user.id)
+    member = insert(:location, user_id: user.id)
+    add_members(special, [member])
+
+    {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
+
+    view |> element("#remove-member-#{member.id}") |> render_click()
+
+    assert has_element?(view, "#member-#{member.id}")
+    assert has_element?(view, "#restore-member-#{member.id}")
+    refute has_element?(view, "#remove-member-#{member.id}")
+  end
+
   test "removing a member and saving persists the removal", %{conn: conn, user: user} do
     special = insert(:special, user_id: user.id)
     keep = insert(:location, user_id: user.id)
@@ -107,12 +121,42 @@ defmodule KjogviWeb.Live.My.Locations.MembersTest do
     {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
 
     view |> element("#remove-member-#{remove.id}") |> render_click()
-
-    refute has_element?(view, "#member-#{remove.id}")
-
     view |> element("#save-members-button") |> render_click()
 
     assert Geo.special_member_locations(special) |> Enum.map(& &1.id) == [keep.id]
+  end
+
+  test "restoring a removed member and saving keeps it", %{conn: conn, user: user} do
+    special = insert(:special, user_id: user.id)
+    member = insert(:location, user_id: user.id)
+    add_members(special, [member])
+
+    {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
+
+    view |> element("#remove-member-#{member.id}") |> render_click()
+    view |> element("#restore-member-#{member.id}") |> render_click()
+
+    assert has_element?(view, "#remove-member-#{member.id}")
+
+    view |> element("#save-members-button") |> render_click()
+
+    assert Geo.special_member_locations(special) |> Enum.map(& &1.id) == [member.id]
+  end
+
+  test "re-selecting a removed member restores it", %{conn: conn, user: user} do
+    special = insert(:special, user_id: user.id)
+    member = insert(:location, user_id: user.id)
+    add_members(special, [member])
+
+    {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
+
+    view |> element("#remove-member-#{member.id}") |> render_click()
+
+    send(view.pid, {:autocomplete_select, "member_selected", %{"result" => member}})
+    _ = render(view)
+
+    assert has_element?(view, "#remove-member-#{member.id}")
+    refute has_element?(view, "#restore-member-#{member.id}")
   end
 
   test "member suggestions exclude special locations", %{conn: conn, user: user} do
