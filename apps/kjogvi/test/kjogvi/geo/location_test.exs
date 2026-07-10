@@ -422,6 +422,22 @@ defmodule Kjogvi.Geo.LocationTest do
     end
   end
 
+  describe "descendant_of?/2" do
+    test "true when the ancestor is named by any level FK" do
+      location = %Location{country_id: 1, subdivision1_id: 2}
+
+      assert Location.descendant_of?(location, %Location{id: 1})
+      assert Location.descendant_of?(location, %Location{id: 2})
+    end
+
+    test "false for an unrelated location and for the location itself" do
+      location = %Location{id: 3, country_id: 1}
+
+      refute Location.descendant_of?(location, %Location{id: 5})
+      refute Location.descendant_of?(location, location)
+    end
+  end
+
   describe "parent_id_from_levels/1" do
     test "is the deepest set level FK" do
       location = %Location{country_id: 1, subdivision1_id: 2, subdivision2_id: nil}

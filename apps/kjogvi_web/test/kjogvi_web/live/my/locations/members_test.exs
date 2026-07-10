@@ -176,6 +176,48 @@ defmodule KjogviWeb.Live.My.Locations.MembersTest do
     refute html =~ "Outside"
   end
 
+  test "flags a member that is no longer under the special's parent", %{conn: conn, user: user} do
+    country = insert(:country)
+    special = insert(:special, user_id: user.id, country: country)
+    inside = insert(:location, user_id: user.id, country: country)
+    outside = insert(:location, user_id: user.id, country: insert(:country))
+    add_members(special, [inside, outside])
+
+    {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
+
+    assert has_element?(view, "#outside-member-#{outside.id}", "Outside parent")
+    refute has_element?(view, "#outside-member-#{inside.id}")
+  end
+
+  test "does not flag members of a parentless special", %{conn: conn, user: user} do
+    special = insert(:special, user_id: user.id)
+    member = insert(:location, user_id: user.id)
+    add_members(special, [member])
+
+    {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
+
+    refute has_element?(view, "#outside-member-#{member.id}")
+  end
+
+  test "removing a flagged member clears the flag", %{conn: conn, user: user} do
+    country = insert(:country)
+    special = insert(:special, user_id: user.id, country: country)
+    outside = insert(:location, user_id: user.id, country: insert(:country))
+    add_members(special, [outside])
+
+    {:ok, view, _html} = live(conn, ~p"/my/locations/#{special.slug}/members")
+
+    view |> element("#remove-member-#{outside.id}") |> render_click()
+
+    refute has_element?(view, "#outside-member-#{outside.id}")
+    assert has_element?(view, "#restore-member-#{outside.id}")
+
+    view |> element("#save-members-button") |> render_click()
+
+    assert_redirect(view, ~p"/my/locations/#{special.slug}")
+    assert Geo.special_member_locations(special) == []
+  end
+
   test "saving a member outside the special's parent shows an error", %{conn: conn, user: user} do
     country = insert(:country)
     special = insert(:special, user_id: user.id, country: country)

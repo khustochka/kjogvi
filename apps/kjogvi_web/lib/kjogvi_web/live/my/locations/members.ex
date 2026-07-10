@@ -5,7 +5,8 @@ defmodule KjogviWeb.Live.My.Locations.Members do
   Holds the pending member list in `@members`; adds go through the location
   autocomplete (specials excluded — a special may not be a member — and, when
   the special sits under a parent, restricted to that parent's descendants).
-  Removing
+  A member that has since moved outside the parent is flagged, since saving
+  would reject it. Removing
   keeps the row visible but marks it in `@removed_ids`, from where it can be
   restored. Nothing persists until Save, which replaces the member list
   (minus removed rows) via `Geo.update_special_members/3`.
@@ -53,6 +54,7 @@ defmodule KjogviWeb.Live.My.Locations.Members do
          socket
          |> assign(:page_title, "Members of #{location.name_en}")
          |> assign(:location, location)
+         |> assign(:parent, parent)
          |> assign(:member_filter, Location.Filter.for_special_members(parent))
          |> assign(:members, members)
          |> assign(:removed_ids, MapSet.new())}
@@ -117,6 +119,14 @@ defmodule KjogviWeb.Live.My.Locations.Members do
     {:noreply, socket}
   end
 
+  # A member no longer under the special's parent (its ancestry changed after it
+  # was added). Save rejects it, so the row is flagged for removal.
+  defp outside_parent?(nil, _member), do: false
+
+  defp outside_parent?(parent, member) do
+    not Location.descendant_of?(member, parent)
+  end
+
   defp members_error(changeset) do
     case changeset.errors[:special_child_locations] do
       {msg, _opts} -> "Could not save members: #{msg}"
@@ -168,7 +178,11 @@ defmodule KjogviWeb.Live.My.Locations.Members do
           id={"member-#{member.id}"}
           class={[
             "flex items-center justify-between gap-2 px-4 py-2.5",
-            MapSet.member?(@removed_ids, member.id) && "bg-red-50"
+            cond do
+              MapSet.member?(@removed_ids, member.id) -> "bg-red-50"
+              outside_parent?(@parent, member) -> "bg-amber-50"
+              true -> nil
+            end
           ]}
         >
           <span class={[
@@ -184,6 +198,14 @@ defmodule KjogviWeb.Live.My.Locations.Members do
               class="ml-2 text-xs font-semibold uppercase text-red-600"
             >
               Removed
+            </span>
+            <span
+              :if={outside_parent?(@parent, member) and not MapSet.member?(@removed_ids, member.id)}
+              id={"outside-member-#{member.id}"}
+              class="ml-2 text-xs font-semibold uppercase text-amber-700"
+              title={"Not under #{@parent.name_en} — remove it to be able to save"}
+            >
+              Outside parent
             </span>
           </span>
           <button

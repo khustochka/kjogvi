@@ -134,6 +134,14 @@ defmodule Kjogvi.Geo.Location do
   end
 
   @doc """
+  Whether `location` sits under `ancestor` at any depth — `ancestor` is named by
+  one of its level FKs. A location is not a descendant of itself.
+  """
+  def descendant_of?(location, ancestor) do
+    ancestor.id in ancestor_ids(location)
+  end
+
+  @doc """
   The id of the location's direct parent — its deepest set level FK — or `nil`
   for a top-level location. The inverse of `level_fks_from_parent/1`: editing
   this location and re-picking the same parent reproduces its level FKs.
