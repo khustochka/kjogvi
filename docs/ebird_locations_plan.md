@@ -474,3 +474,23 @@ stages, especially if this requires writing code (app or test) just for the sake
   their own "Initial Imports" section below the dataset cards. *Ran the real
   import locally: 8,489 regions (252 countries, 3,557 sub1, 4,680 sub2),
   skipped `aba`; source JSON placed in `priv/datasets/geo/sources/`.*
+- **Stage 5** (2026-07-10) — Matcher + derived statuses:
+  `Geo.Ebird.Matcher.match_country/2` (country pass, code pass, name pass on
+  leftovers via public `normalize_name/1` — NFD, strip diacritics, downcase,
+  collapse punctuation/whitespace; unambiguous 1:1 only). All passes in one
+  `Repo.transact/1`; never overwrites a link (`is_nil(location_id)` guards) and
+  never takes a common location linked from another eBird row; sub2 rows are
+  invisible to matching and statuses (linked by the stage-8 import). Returns
+  `%{code: n, name: n, left: n}`; telemetry `[:kjogvi, :geo, :ebird, :match]`
+  + logger handlers. `EbirdLocation.Query` grew the link-update queries, the
+  stat aggregations (`country_match_stats`, `sub1_match_stats`,
+  `iso_sub1_stats` — anchored on the linked common country, so manually linked
+  eBird-only countries work) and pure `derive_status/1` (§5.1 statuses,
+  iso_extra outranks mixed per confirmed Q1; Q2 confirmed: junk rows stay
+  unmatched, no ignored flag). `Geo.ebird_country_statuses/0` /
+  `ebird_country_status/1` merge the stats and add `:status`.
+  `ebird_location_factory` now derives `country_code` from a passed `code`;
+  new `ebird_subdivision1_factory`. *Sanity-run on the real data: AD
+  `%{code: 8, name: 0, left: 0}` → `:matched`; CZ (zero code overlap)
+  `%{code: 1, name: 13, left: 1}` → `:partial`; HU `%{code: 43, name: 0,
+  left: 0}` → `:matched_iso_extra` (the Hungary case); re-runs are no-ops.*

@@ -17,7 +17,9 @@ defmodule Kjogvi.Telemetry.Logger do
       [:kjogvi, :geo, :dump, :stop] => &__MODULE__.geo_dataset_stop/4,
       [:kjogvi, :geo, :restore, :stop] => &__MODULE__.geo_dataset_stop/4,
       [:kjogvi, :geo, :ebird, :import, :start] => &__MODULE__.ebird_import_start/4,
-      [:kjogvi, :geo, :ebird, :import, :stop] => &__MODULE__.ebird_import_stop/4
+      [:kjogvi, :geo, :ebird, :import, :stop] => &__MODULE__.ebird_import_stop/4,
+      [:kjogvi, :geo, :ebird, :match, :start] => &__MODULE__.ebird_match_start/4,
+      [:kjogvi, :geo, :ebird, :match, :stop] => &__MODULE__.ebird_match_stop/4
     }
 
     for {key, fun} <- handlers do
@@ -90,6 +92,24 @@ defmodule Kjogvi.Telemetry.Logger do
     Logger.info(
       "[Kjogvi.Geo.Ebird.Import] Finished: #{count} regions in #{duration_ms(duration)}ms" <>
         skipped,
+      metadata
+    )
+  end
+
+  @doc false
+  def ebird_match_start(_, _, metadata, _) do
+    Logger.info(
+      "[Kjogvi.Geo.Ebird.Matcher] Started: country=#{metadata[:country_code]}.",
+      metadata
+    )
+  end
+
+  @doc false
+  def ebird_match_stop(_, %{duration: duration}, metadata, _) do
+    %{country_code: country_code, code: code, name: name, left: left} = metadata
+
+    Logger.info(
+      "[Kjogvi.Geo.Ebird.Matcher] #{country_code}: code=#{code} name=#{name} left=#{left} in #{duration_ms(duration)}ms",
       metadata
     )
   end

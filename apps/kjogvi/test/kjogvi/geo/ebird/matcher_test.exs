@@ -1,0 +1,217 @@
+defmodule Kjogvi.Geo.Ebird.MatcherTest do
+  use Kjogvi.DataCase, async: false
+
+  @moduletag :capture_log
+
+  alias Kjogvi.Geo.Ebird.Matcher
+  alias Kjogvi.Geo.EbirdLocation
+  alias Kjogvi.Repo
+
+  defp reload(ebird_row), do: Repo.get!(EbirdLocation, ebird_row.id)
+
+  describe "normalize_name/1" do
+    test "strips diacritics, downcases, collapses punctuation and whitespace" do
+      assert Matcher.normalize_name("Rhône–Alpes") == "rhone alpes"
+      assert Matcher.normalize_name("Saint-Denis") == "saint denis"
+      assert Matcher.normalize_name("Co. Kerry") == "co kerry"
+      assert Matcher.normalize_name("  Århus   County ") == "arhus county"
+      assert Matcher.normalize_name("Baden-Württemberg") == "baden wurttemberg"
+    end
+
+    test "nil and empty names normalize to the empty string" do
+      assert Matcher.normalize_name(nil) == ""
+      assert Matcher.normalize_name("") == ""
+      assert Matcher.normalize_name(" - ") == ""
+    end
+  end
+
+  describe "match_country/2 code passes" do
+    test "links the country row and subdivision1 rows by iso code" do
+      country = insert(:country, iso_code: "AD")
+      sub1_a = insert(:subdivision1, iso_code: "AD-02", country: country)
+      sub1_b = insert(:subdivision1, iso_code: "AD-03", country: country)
+
+      ebird_country = insert(:ebird_location, code: "AD")
+      ebird_a = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+      ebird_b = insert(:ebird_subdivision1, country_code: "AD", code: "AD-03")
+
+      assert Matcher.match_country("AD") == %{code: 3, name: 0, left: 0}
+
+      assert reload(ebird_country).location_id == country.id
+      assert reload(ebird_a).location_id == sub1_a.id
+      assert reload(ebird_b).location_id == sub1_b.id
+    end
+
+    test "never links to a subdivision of another country" do
+      insert(:country, iso_code: "AD")
+      other_country = insert(:country, iso_code: "XY")
+      insert(:subdivision1, iso_code: "AD-02", name_en: "Canillo", country: other_country)
+
+      insert(:ebird_location, code: "AD")
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+
+      assert Matcher.match_country("AD") == %{code: 1, name: 0, left: 1}
+      assert reload(ebird_sub1).location_id == nil
+    end
+
+    test "eBird-only country gets no subdivision passes" do
+      insert(:ebird_location, code: "XK")
+      insert(:ebird_subdivision1, country_code: "XK", code: "XK-01")
+      insert(:ebird_subdivision1, country_code: "XK", code: "XK-02")
+
+      assert Matcher.match_country("XK") == %{code: 0, name: 0, left: 3}
+    end
+
+    test "a manually linked country row anchors the code pass" do
+      # eBird-only country linked by hand to a created common country.
+      country = insert(:country, iso_code: nil, name_en: "Kosovo")
+      insert(:ebird_location, code: "XK", location: country)
+      sub1 = insert(:subdivision1, iso_code: "XK-01", country: country)
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "XK", code: "XK-01")
+
+      assert Matcher.match_country("XK") == %{code: 1, name: 0, left: 0}
+      assert reload(ebird_sub1).location_id == sub1.id
+    end
+  end
+
+  describe "match_country/2 name pass" do
+    test "links leftovers by normalized name" do
+      country = insert(:country, iso_code: "FR")
+      sub1 = insert(:subdivision1, iso_code: "FR-ARA", name_en: "Rhône–Alpes", country: country)
+
+      insert(:ebird_location, code: "FR")
+
+      ebird_sub1 =
+        insert(:ebird_subdivision1, country_code: "FR", code: "FR-V", name: "Rhone-Alpes")
+
+      assert Matcher.match_country("FR") == %{code: 1, name: 1, left: 0}
+      assert reload(ebird_sub1).location_id == sub1.id
+    end
+
+    test "skips names ambiguous on the eBird side" do
+      country = insert(:country, iso_code: "FR")
+      insert(:subdivision1, iso_code: "FR-A", name_en: "Centre", country: country)
+
+      insert(:ebird_location, code: "FR")
+      ebird_a = insert(:ebird_subdivision1, country_code: "FR", code: "FR-X", name: "Centre")
+      ebird_b = insert(:ebird_subdivision1, country_code: "FR", code: "FR-Y", name: "Centre")
+
+      assert Matcher.match_country("FR") == %{code: 1, name: 0, left: 2}
+      assert reload(ebird_a).location_id == nil
+      assert reload(ebird_b).location_id == nil
+    end
+
+    test "skips names ambiguous on the common side" do
+      country = insert(:country, iso_code: "FR")
+      insert(:subdivision1, iso_code: "FR-A", name_en: "Centre", country: country)
+      insert(:subdivision1, iso_code: "FR-B", name_en: "Centre", country: country)
+
+      insert(:ebird_location, code: "FR")
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "FR", code: "FR-X", name: "Centre")
+
+      assert Matcher.match_country("FR") == %{code: 1, name: 0, left: 1}
+      assert reload(ebird_sub1).location_id == nil
+    end
+
+    test "candidates come only from the matched country" do
+      insert(:country, iso_code: "FR")
+      other_country = insert(:country, iso_code: "XY")
+      insert(:subdivision1, iso_code: "XY-01", name_en: "Centre", country: other_country)
+
+      insert(:ebird_location, code: "FR")
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "FR", code: "FR-X", name: "Centre")
+
+      assert Matcher.match_country("FR") == %{code: 1, name: 0, left: 1}
+      assert reload(ebird_sub1).location_id == nil
+    end
+  end
+
+  describe "match_country/2 safety" do
+    test "never overwrites an existing link" do
+      country = insert(:country, iso_code: "AD")
+      insert(:subdivision1, iso_code: "AD-02", country: country)
+      elsewhere = insert(:subdivision1, country: country)
+
+      insert(:ebird_location, code: "AD")
+
+      ebird_sub1 =
+        insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", location: elsewhere)
+
+      assert Matcher.match_country("AD") == %{code: 1, name: 0, left: 0}
+      assert reload(ebird_sub1).location_id == elsewhere.id
+    end
+
+    test "never steals a common location linked from another eBird row" do
+      country = insert(:country, iso_code: "AD")
+      sub1 = insert(:subdivision1, iso_code: "AD-02", name_en: "Canillo", country: country)
+      insert(:ebird_subdivision1, country_code: "AD", code: "AD-98", location: sub1)
+
+      insert(:ebird_location, code: "AD")
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+
+      assert Matcher.match_country("AD") == %{code: 1, name: 0, left: 1}
+      assert reload(ebird_sub1).location_id == nil
+    end
+
+    test "re-running changes nothing" do
+      country = insert(:country, iso_code: "AD")
+      insert(:subdivision1, iso_code: "AD-02", country: country)
+      insert(:subdivision1, iso_code: "FR-ARA", name_en: "Rhône–Alpes", country: country)
+
+      insert(:ebird_location, code: "AD")
+      insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+      insert(:ebird_subdivision1, country_code: "AD", code: "AD-X", name: "Rhone-Alpes")
+      insert(:ebird_subdivision1, country_code: "AD", code: "AD-Y", name: "No Match")
+
+      assert Matcher.match_country("AD") == %{code: 2, name: 1, left: 1}
+
+      links = EbirdLocation |> Repo.all() |> Map.new(&{&1.code, &1.location_id})
+      assert Matcher.match_country("AD") == %{code: 0, name: 0, left: 1}
+      assert EbirdLocation |> Repo.all() |> Map.new(&{&1.code, &1.location_id}) == links
+    end
+
+    test "subdivision2 rows are untouched and not counted" do
+      country = insert(:country, iso_code: "AD")
+      insert(:subdivision1, iso_code: "AD-02", country: country)
+
+      insert(:ebird_location, code: "AD")
+      insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+
+      ebird_sub2 =
+        insert(:ebird_subdivision1,
+          country_code: "AD",
+          code: "AD-02-C",
+          location_type: :subdivision2,
+          subnational1_code: "AD-02",
+          subnational2_code: "AD-02-C"
+        )
+
+      assert Matcher.match_country("AD") == %{code: 2, name: 0, left: 0}
+      assert reload(ebird_sub2).location_id == nil
+    end
+  end
+
+  test "emits a telemetry stop event with the summary" do
+    ref = make_ref()
+    test_pid = self()
+
+    :telemetry.attach(
+      {__MODULE__, ref},
+      [:kjogvi, :geo, :ebird, :match, :stop],
+      fn event, measurements, metadata, _ ->
+        send(test_pid, {:telemetry, event, measurements, metadata})
+      end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach({__MODULE__, ref}) end)
+
+    insert(:country, iso_code: "AD")
+    insert(:ebird_location, code: "AD")
+
+    assert Matcher.match_country("AD") == %{code: 1, name: 0, left: 0}
+
+    assert_received {:telemetry, [:kjogvi, :geo, :ebird, :match, :stop], %{duration: _},
+                     %{result: :ok, country_code: "AD", code: 1, name: 0, left: 0}}
+  end
+end

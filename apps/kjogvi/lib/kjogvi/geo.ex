@@ -65,6 +65,60 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
+  Match stats and derived status for every eBird country, keyed by country
+  code. Each entry carries `:status` (see
+  `Kjogvi.Geo.EbirdLocation.Query.derive_status/1`) plus the underlying
+  counts: `country_linked`, `country_code_match`, `sub1_total`, `sub1_linked`,
+  `sub1_code_matched`, `iso_sub1_total`, `iso_extra`.
+  """
+  def ebird_country_statuses do
+    ebird_statuses_from(EbirdLocation)
+  end
+
+  @doc """
+  The `ebird_country_statuses/0` entry for one country, or nil if the country
+  code is unknown.
+  """
+  def ebird_country_status(country_code) do
+    EbirdLocation
+    |> EbirdLocation.Query.for_country(country_code)
+    |> ebird_statuses_from()
+    |> Map.get(country_code)
+  end
+
+  defp ebird_statuses_from(base) do
+    sub1 =
+      base
+      |> EbirdLocation.Query.sub1_match_stats()
+      |> Repo.all()
+      |> Map.new(&{&1.country_code, &1})
+
+    iso =
+      base
+      |> EbirdLocation.Query.iso_sub1_stats()
+      |> Repo.all()
+      |> Map.new(&{&1.country_code, &1})
+
+    base
+    |> EbirdLocation.Query.country_match_stats()
+    |> Repo.all()
+    |> Map.new(fn country ->
+      stats =
+        country
+        |> Map.merge(
+          Map.get(sub1, country.country_code, %{
+            sub1_total: 0,
+            sub1_linked: 0,
+            sub1_code_matched: 0
+          })
+        )
+        |> Map.merge(Map.get(iso, country.country_code, %{iso_sub1_total: 0, iso_extra: 0}))
+
+      {country.country_code, Map.put(stats, :status, EbirdLocation.Query.derive_status(stats))}
+    end)
+  end
+
+  @doc """
   Returns hierarchical context for the lifelist location filter, as a strict
   drill-down: World lists the countries, selecting a country reveals its
   subdivisions, and so on one level at a time.
