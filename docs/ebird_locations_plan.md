@@ -1,6 +1,7 @@
 # Common Locations & eBird Regions: Data Management Plan
 
-Status: draft for review · Branch: `ebird-locations-map` · 2026-07-01
+Status: in progress — stages 1–5 done (see §11), next up: stage 6 ·
+Branch: `ebird-locations-map` · 2026-07-01
 
 ## 1. Goal
 
@@ -75,22 +76,22 @@ legal: only *user-owned* locations are restricted from common-only types.
 
 All query logic goes in `Query` submodules per convention.
 
-| Module | Purpose |
-|---|---|
-| `Kjogvi.Geo.Ebird.Import` | One-time JSON → `ebird_locations` (bootstrap, run locally) |
-| `Kjogvi.Geo.Ebird.Matcher` | Per-country matching passes (code, name) — §5 |
-| `Kjogvi.Geo.Ebird.Sub2Import` | Per-country eBird sub2 → common subdivision2 locations — §6 |
-| `Kjogvi.Geo.Dump` | Dump a dataset to CSV via the storage adapter — §7 |
-| `Kjogvi.Geo.Restore` | Restore a dataset from CSV via the storage adapter — §7 |
-| `Kjogvi.Datasets.LocalAdapter` / `.S3Adapter` | Universal dataset storage backends, not geo-specific (local default, S3 in prod) — §7.3 |
-| `Kjogvi.Geo.EbirdLocation.Query` | Composable queries: by country, match status aggregation, unmatched rows… |
+| Module | Purpose | Status |
+|---|---|---|
+| `Kjogvi.Geo.Ebird.Import` | One-time JSON → `ebird_locations` (bootstrap, run locally) | ✅ stage 4 |
+| `Kjogvi.Geo.Ebird.Matcher` | Per-country matching passes (code, name) — §5 | ✅ stage 5 |
+| `Kjogvi.Geo.Ebird.Sub2Import` | Per-country eBird sub2 → common subdivision2 locations — §6 | stage 8 |
+| `Kjogvi.Geo.Dump` | Dump a dataset to CSV via the storage adapter — §7 | ✅ stages 2, 4 |
+| `Kjogvi.Geo.Restore` | Restore a dataset from CSV via the storage adapter — §7 | ✅ stages 2, 4 |
+| `Kjogvi.Datasets.LocalAdapter` / `.S3Adapter` | Universal dataset storage backends, not geo-specific (local default, S3 in prod) — §7.3 | ✅ stage 2 |
+| `Kjogvi.Geo.EbirdLocation.Query` | Composable queries: by country, match status aggregation, unmatched rows… | ✅ stages 4, 5 |
 
 Context entry points on `Kjogvi.Geo` (or a `Kjogvi.Geo.Ebird` context if it gets
 crowded). Telemetry events (`[:kjogvi, :geo, :dump]`, `[:kjogvi, :geo,
 :restore]`, `[:kjogvi, :geo, :ebird, :match]`, …) for logging/observability,
 following the ISO import's `:telemetry.span` pattern.
 
-### 4.1 eBird JSON import (bootstrap)
+### 4.1 eBird JSON import (bootstrap) ✅ implemented (stage 4)
 
 `Kjogvi.Geo.Ebird.Import.from_json(path)`:
 
@@ -106,7 +107,7 @@ following the ISO import's `:telemetry.span` pattern.
   `import/0` reads it from there for the admin imports card, `from_json/1`
   takes an explicit local path.
 
-## 5. Matching eBird ↔ common locations
+## 5. Matching eBird ↔ common locations ✅ implemented (stage 5, except §5.3 UI)
 
 ### 5.1 Row-level links, derived country status
 
@@ -174,7 +175,7 @@ through `ExclusiveTaskProcessor` (key `{:ebird_match, :all}`).
 ISO-only subdivisions need **no action** — they already exist as common
 locations and simply have no eBird counterpart (the Hungary case).
 
-## 6. subdivision2 import (country by country)
+## 6. subdivision2 import (country by country) — not started (stage 8)
 
 `Sub2Import.import_country(country_code)` — enabled only when the country is
 ready (§5.1):
@@ -195,7 +196,7 @@ ready (§5.1):
 Note: GB/ES sub2s may have real ISO 3166-2 codes; we deliberately *don't* try
 to reconcile that now — they enter as eBird-created rows, `iso_code` nil.
 
-## 7. Dump & restore (CSV on S3)
+## 7. Dump & restore (CSV on S3) ✅ implemented (stages 2, 4)
 
 ### 7.1 Format
 
@@ -276,7 +277,7 @@ untouched (it's for the user's own locations). Common locations and eBird
 locations get separate indexes (`/admin/locations`, `/admin/ebird`), not tabs
 of one page. New nav links in the private layout's admin section.
 
-### 8.1 `/admin/imports/locations` — dataset operations page
+### 8.1 `/admin/imports/locations` — dataset operations page ✅ implemented (stages 3–4)
 
 (Other imports will get their own pages under `/admin/imports/…`.)
 
@@ -298,7 +299,13 @@ files in dev — so the page works identically everywhere.
 
 `/my/imports` keeps Legacy and eBird-preload (user-data imports) only.
 
-### 8.2 `/admin/locations` — common locations management
+### 8.2 `/admin/locations` — common locations management — partially implemented
+
+Read-only index (tree + text search) and show page shipped in stages 1/1a,
+including the shared-component extraction described below. Still to come: the
+eBird match badges + status filter chips on the index (stage 7), CRUD with the
+Geo authorization change (stage 7), and the show page's per-country actions —
+*run match*, *import sub2s*, workbench link (stages 6–8).
 
 **Separate LiveView, shared rendering.** Reusing `My.Locations.Index` whole
 was considered, but it diverges on too much: data assembly (`Geo.location_tree`
@@ -331,7 +338,7 @@ rather than being rendered verbatim.
   path: `scope.area == :admin` may manage common (`user_id IS NULL`) locations;
   creation in the admin area sets `user_id: nil`.
 
-### 8.3 `/admin/ebird` — eBird locations management
+### 8.3 `/admin/ebird` — eBird locations management — not started (stage 6)
 
 - **Index**: eBird countries with match status, matched/total counts, filters —
   the eBird-side mirror of 8.2 (may even be the same LiveView behind two
@@ -352,31 +359,31 @@ chips not icon soup, responsive, no truncation.
 Roughly one PR-sized stage each; tests ride with their phase. The common
 locations track comes first; all eBird work is deferred until it's done.
 
-**Track A — common locations**
+**Track A — common locations** ✅ done (stages 1–3, see §11)
 
-1. **Common locations admin UI, read-only** — `/admin/locations` index + show
+1. ✅ **Common locations admin UI, read-only** — `/admin/locations` index + show
    page (no edit/add yet; no eBird badges yet), admin nav links. Works off the
    ISO-imported scaffold already in the DB, and doubles as the inspection tool
    for verifying phase 2's restores.
-2. **Dump/restore core** — `Geo.Dump` / `Geo.Restore` for the common locations
+2. ✅ **Dump/restore core** — `Geo.Dump` / `Geo.Restore` for the common locations
    dataset **only** (the eBird dataset is added in phase 4), CSV round-trip
    tests (incl. id preservation, sequence bump, user-rows untouched). `Kjogvi.Datasets` storage adapters (§7.3): local
    adapter as the default plus the prod-only S3 adapter (S3 calls kept thin;
    tests stay on local files).
-3. **Admin imports page** — `/admin/imports` with the restore/dump cards
+3. ✅ **Admin imports page** — `/admin/imports` with the restore/dump cards
    (ExclusiveTaskProcessor-backed), ISO card moved over from `/my/imports`.
    *Then run locally: ISO import → dump → upload to S3.*
 
-**Track B — eBird (deferred)**
+**Track B — eBird**
 
-4. **eBird bootstrap import** — `Ebird.Import.from_json/1`,
+4. ✅ **eBird bootstrap import** — `Ebird.Import.from_json/1`,
    `EbirdLocation.Query` skeleton (schema already exists on this branch).
    Tests with a small JSON fixture; extend dump/restore + imports page to the
    eBird dataset. *Then run the import locally against the real file.*
-5. **Matcher** — code + name passes, derived country statuses in
+5. ✅ **Matcher** — code + name passes, derived country statuses in
    `EbirdLocation.Query`. Pure-logic tests (normalization, ambiguity,
    idempotence, never-overwrite-manual).
-6. **eBird admin UI** — `/admin/ebird` index + country workbench (run match,
+6. **eBird admin UI** ← next — `/admin/ebird` index + country workbench (run match,
    link/unlink, create-from-eBird). *Then start actually matching countries,
    dumping to S3 as they land.*
 7. **Common locations admin UI, full** — eBird status badges and filters on
@@ -393,14 +400,12 @@ with 7–8 — that's the "gradual" part, and dumps to S3 checkpoint it.
 
 ## 10. Open questions (confirm before/while implementing)
 
-1. **Status labels** — §5.1 proposes derived statuses replacing "fully matched
-   / code matched / added from iso / smth else"; do the semantics match your
-   intent (esp. `matched_iso_extra` for Hungary)?
-2. **Ignored eBird rows** — is "leave junk regions (XX, ABA-style) unmatched
-   forever" acceptable, or do you want an explicit ignored flag so `partial`
-   filters aren't polluted?
+1. ~~**Status labels**~~ — resolved (stage 5): §5.1 semantics confirmed;
+   `matched_iso_extra` outranks `matched_mixed` in badge precedence.
+2. ~~**Ignored eBird rows**~~ — resolved (stage 5): junk regions stay
+   unmatched, no ignored flag.
 3. **Sub2 slugs** — eBird-code-based (`us_al_001`, stable/unique, proposed) vs
-   name-based (readable, collision-prone)?
+   name-based (readable, collision-prone)? *Still open — decide by stage 8.*
 
 The work is supposed to be performed in stages, with commit after every stage. Do not start work
 on a new stage unless specifically instructed. Ideally after each stage the tests should pass,
