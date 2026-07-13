@@ -1234,6 +1234,95 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "create_location/2 in the admin area" do
+    setup do
+      %{scope: admin_scope_fixture()}
+    end
+
+    test "creates a common location, common-only types included", %{scope: scope} do
+      assert {:ok, country} =
+               Geo.create_location(scope, %{
+                 "slug" => "greenland",
+                 "name_en" => "Greenland",
+                 "is_private" => "false",
+                 "location_type" => "country"
+               })
+
+      assert country.user_id == nil
+
+      assert {:ok, subdivision1} =
+               Geo.create_location(scope, %{
+                 "slug" => "gl-north",
+                 "name_en" => "North Greenland",
+                 "is_private" => "false",
+                 "location_type" => "subdivision1",
+                 "parent_id" => country.id
+               })
+
+      assert subdivision1.user_id == nil
+      assert subdivision1.country_id == country.id
+    end
+
+    test "rejects a user-owned parent", %{scope: scope} do
+      country = insert(:country)
+
+      personal =
+        insert(:location, location_type: :city, country: country, user_id: user_fixture().id)
+
+      assert {:error, changeset} =
+               Geo.create_location(scope, %{
+                 "slug" => "common-site",
+                 "name_en" => "Common Site",
+                 "is_private" => "false",
+                 "location_type" => "site",
+                 "parent_id" => personal.id
+               })
+
+      assert %{parent_id: ["must be a common location"]} = errors_on(changeset)
+    end
+  end
+
+  describe "update_location/3 and delete_location/2 in the admin area" do
+    setup do
+      %{scope: admin_scope_fixture(), common: insert(:country, name_en: "Canada")}
+    end
+
+    test "can update a common location", %{scope: scope, common: common} do
+      assert {:ok, updated} = Geo.update_location(scope, common, %{"name_en" => "Kanada"})
+      assert updated.name_en == "Kanada"
+    end
+
+    test "can delete a common location", %{scope: scope, common: common} do
+      assert {:ok, _} = Geo.delete_location(scope, common)
+    end
+
+    test "cannot modify a user's location", %{scope: scope, common: common} do
+      personal =
+        insert(:location, location_type: :city, country: common, user_id: user_fixture().id)
+
+      assert {:error, :forbidden} =
+               Geo.update_location(scope, personal, %{"name_en" => "Hijacked"})
+
+      assert {:error, :forbidden} = Geo.delete_location(scope, personal)
+    end
+
+    test "a user's own scope cannot modify a common location", %{common: common} do
+      %{scope: scope} = scope_fixture()
+
+      assert {:error, :forbidden} = Geo.update_location(scope, common, %{"name_en" => "Mine"})
+      assert {:error, :forbidden} = Geo.delete_location(scope, common)
+    end
+
+    test "refuses to delete a location an eBird region links to", %{
+      scope: scope,
+      common: common
+    } do
+      insert(:ebird_location, code: "CA", location_id: common.id)
+
+      assert {:error, :has_ebird_link} = Geo.delete_location(scope, common)
+    end
+  end
+
   describe "update_location/3 with a location_type change" do
     setup do
       %{user: owner, scope: scope} = scope_fixture()
@@ -1358,5 +1447,9 @@ defmodule Kjogvi.GeoTest do
   defp scope_fixture do
     user = user_fixture()
     %{user: user, scope: %Kjogvi.Scope{current_user: user, area: :private}}
+  end
+
+  defp admin_scope_fixture do
+    %Kjogvi.Scope{current_user: admin_fixture(), area: :admin}
   end
 end

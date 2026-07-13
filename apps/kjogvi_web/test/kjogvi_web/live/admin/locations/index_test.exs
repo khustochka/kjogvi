@@ -76,6 +76,65 @@ defmodule KjogviWeb.Live.Admin.Locations.IndexTest do
     assert has_element?(index_live, "p", "No common locations yet")
   end
 
+  test "links to the new location form", %{conn: conn} do
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    assert has_element?(index_live, "#new-location-button[href='/admin/locations/new']")
+  end
+
+  describe "eBird match status" do
+    test "a country row carries its status badge linking to the workbench", %{conn: conn} do
+      country = insert(:country, name_en: "Andorra", iso_code: "AD")
+      insert(:ebird_location, code: "AD", location_id: country.id)
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+      assert has_element?(index_live, "a[href='/admin/ebird/AD']", "matched")
+    end
+
+    test "an unmatched eBird country shows on its ISO counterpart", %{conn: conn} do
+      insert(:country, name_en: "Czechia", iso_code: "CZ")
+      insert(:ebird_location, code: "CZ")
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+      assert has_element?(index_live, "a[href='/admin/ebird/CZ']", "unmatched")
+    end
+
+    test "status chips filter the tree to matching countries", %{conn: conn} do
+      matched = insert(:country, name_en: "Andorra", iso_code: "AD")
+      insert(:ebird_location, code: "AD", location_id: matched.id)
+      insert(:country, name_en: "Czechia", iso_code: "CZ")
+      insert(:ebird_location, code: "CZ")
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations?status=matched")
+
+      assert has_element?(index_live, "a", "Andorra")
+      refute has_element?(index_live, "a", "Czechia")
+      assert has_element?(index_live, "#ebird-status-filter", "matched (1)")
+      assert has_element?(index_live, "#ebird-status-filter", "unmatched (1)")
+    end
+
+    test "the no-eBird chip finds countries without an eBird counterpart", %{conn: conn} do
+      insert(:country, name_en: "Bonaire", iso_code: "BQ")
+      matched = insert(:country, name_en: "Andorra", iso_code: "AD")
+      insert(:ebird_location, code: "AD", location_id: matched.id)
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations?status=no_ebird")
+
+      assert has_element?(index_live, "a", "Bonaire")
+      refute has_element?(index_live, "a", "Andorra")
+    end
+
+    test "shows the empty state when no country has the status", %{conn: conn} do
+      insert(:country, name_en: "Bonaire", iso_code: "BQ")
+
+      {:ok, index_live, _html} = live(conn, ~p"/admin/locations?status=matched")
+
+      assert has_element?(index_live, "p", "No countries with this status")
+    end
+  end
+
   describe "search" do
     test "shows common locations matching the query", %{conn: conn} do
       insert(:country, name_en: "Canada")

@@ -72,14 +72,87 @@ defmodule KjogviWeb.Live.Admin.Locations.ShowTest do
     refute has_element?(show_live, "#location-checklists-count")
   end
 
-  test "shows no edit, delete, or lifelist actions", %{conn: conn} do
+  test "shows edit, add sub-location, and delete actions but no lifelist link", %{conn: conn} do
     country = insert(:country, name_en: "Canada", slug: "canada")
 
     {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
 
-    refute has_element?(show_live, "a", "Edit")
-    refute has_element?(show_live, "button", "Delete")
+    assert has_element?(show_live, "#edit-location-button[href='/admin/locations/canada/edit']")
+
+    assert has_element?(
+             show_live,
+             "#add-sub-location-button[href='/admin/locations/new?parent_id=#{country.id}']"
+           )
+
+    assert has_element?(show_live, "#delete-location-button")
     refute has_element?(show_live, "a[href='/my/lifelist/#{country.slug}']")
+  end
+
+  describe "delete" do
+    test "deletes an unused common location and returns to the index", %{conn: conn} do
+      country = insert(:country, name_en: "Canada", slug: "canada")
+
+      {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
+
+      refute has_element?(show_live, "#delete-location-button[disabled]")
+
+      show_live
+      |> element("#delete-location-button")
+      |> render_click()
+
+      flash = assert_redirect(show_live, "/admin/locations")
+      assert flash["info"] == "Location deleted"
+      assert Kjogvi.Repo.get(Kjogvi.Geo.Location, country.id) == nil
+    end
+
+    test "the button is disabled when the location has children", %{conn: conn} do
+      country = insert(:country, name_en: "Canada", slug: "canada")
+      insert(:subdivision1, country: country)
+
+      {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
+
+      assert has_element?(show_live, "#delete-location-button[disabled]")
+    end
+
+    test "the button is disabled when an eBird region links here", %{conn: conn} do
+      country = insert(:country, name_en: "Canada", slug: "canada", iso_code: "CA")
+      insert(:ebird_location, code: "CA", location_id: country.id)
+
+      {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
+
+      assert has_element?(show_live, "#delete-location-button[disabled]")
+    end
+  end
+
+  describe "eBird details" do
+    test "shows the eBird code linking to the workbench and the status badge", %{conn: conn} do
+      country = insert(:country, name_en: "Andorra", slug: "andorra", iso_code: "AD")
+      insert(:ebird_location, code: "AD", location_id: country.id)
+
+      {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
+
+      assert has_element?(show_live, "#location-ebird-code a[href='/admin/ebird/AD']", "AD")
+      assert has_element?(show_live, "#location-ebird-status", "matched")
+    end
+
+    test "an unmatched country still shows its would-be status", %{conn: conn} do
+      country = insert(:country, name_en: "Czechia", slug: "czechia", iso_code: "CZ")
+      insert(:ebird_location, code: "CZ")
+
+      {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
+
+      refute has_element?(show_live, "#location-ebird-code")
+      assert has_element?(show_live, "#location-ebird-status", "unmatched")
+    end
+
+    test "a country with no eBird counterpart shows neither", %{conn: conn} do
+      country = insert(:country, name_en: "Bonaire", slug: "bonaire", iso_code: "BQ")
+
+      {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
+
+      refute has_element?(show_live, "#location-ebird-code")
+      refute has_element?(show_live, "#location-ebird-status")
+    end
   end
 
   test "redirects to the index for an unknown slug", %{conn: conn} do

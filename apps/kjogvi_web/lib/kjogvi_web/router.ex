@@ -127,8 +127,8 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :mount_area_private}
       ] do
       live "/locations", Live.My.Locations.Index, :index
-      live "/locations/new", Live.My.Locations.Form, :new
-      live "/locations/:slug/edit", Live.My.Locations.Form, :edit
+      live "/locations/new", Live.Locations.Form, :new
+      live "/locations/:slug/edit", Live.Locations.Form, :edit
       live "/locations/:slug/members", Live.My.Locations.Members, :edit
       live "/locations/:slug", Live.My.Locations.Show, :show
 
@@ -172,6 +172,8 @@ defmodule KjogviWeb.Router do
         {KjogviWeb.UserAuth, :mount_area_admin}
       ] do
       live "/locations", Live.Admin.Locations.Index, :index
+      live "/locations/new", Live.Locations.Form, :new
+      live "/locations/:slug/edit", Live.Locations.Form, :edit
       live "/locations/:slug", Live.Admin.Locations.Show, :show
 
       live "/ebird", Live.Admin.Ebird.Index, :index

@@ -54,6 +54,15 @@ defmodule Kjogvi.Geo.Location.Filter do
   end
 
   @doc """
+  Filter for the admin common-location parent picker: `for_parent_pick/0`
+  restricted to common locations — a common location may not hang under
+  anyone's personal location.
+  """
+  def for_common_parent_pick do
+    %__MODULE__{only_common: true, exclude_specials: true, exclude_sections: true}
+  end
+
+  @doc """
   Filter for the special-location member picker: hides `special` locations, since
   a special may not be a member of another special. When the special sits under a
   `parent`, restricts to that parent's descendants — every member must belong to

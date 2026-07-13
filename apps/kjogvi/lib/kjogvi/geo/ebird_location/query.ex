@@ -21,6 +21,13 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
     from e in query, where: e.id == ^id
   end
 
+  @doc """
+  Rows linked to the given common location.
+  """
+  def for_location(query \\ EbirdLocation, location_id) do
+    from e in query, where: e.location_id == ^location_id
+  end
+
   def countries(query \\ EbirdLocation) do
     from e in query, where: e.location_type == :country
   end

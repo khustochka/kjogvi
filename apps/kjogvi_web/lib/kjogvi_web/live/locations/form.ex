@@ -1,6 +1,10 @@
-defmodule KjogviWeb.Live.My.Locations.Form do
+defmodule KjogviWeb.Live.Locations.Form do
   @moduledoc """
-  LiveView for creating and editing locations.
+  LiveView for creating and editing locations. Serves two areas: `:private`
+  (`/my/locations`, the user's own locations) and `:admin`
+  (`/admin/locations`, the common locations dataset — locations are created
+  unowned, the type select includes the common-only `country`/`subdivision1`
+  levels, and the parent picker offers common locations only).
 
   State is split into:
     * `@location` — the pristine DB row (or a fresh struct for `:create`). Never
@@ -22,27 +26,20 @@ defmodule KjogviWeb.Live.My.Locations.Form do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :container_class, "max-w-5xl")}
+    area = socket.assigns.current_scope.area
+
+    {:ok,
+     socket
+     |> assign(:container_class, "max-w-5xl")
+     |> assign(:area, area)
+     |> assign(:type_options, type_options(area))
+     |> assign(:parent_filter, parent_filter(area))}
   end
 
   @impl true
   def handle_params(%{"slug" => slug}, _url, socket) do
-    location = Geo.location_by_slug_scope(socket.assigns.current_scope, slug)
-
-    cond do
-      is_nil(location) ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Location not found")
-         |> push_navigate(to: ~p"/my/locations")}
-
-      not User.owns?(socket.assigns.current_scope.current_user, location) ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You can only edit your own locations")
-         |> push_navigate(to: ~p"/my/locations/#{location.slug}")}
-
-      true ->
+    case load_editable(socket, slug) do
+      {:ok, location} ->
         parent_id = Location.parent_id_from_levels(location)
 
         parent_struct =
@@ -57,6 +54,12 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           |> assign(:parent_struct, parent_struct)
           |> assign_form(initial_params(location, parent_id))
         }
+
+      {:error, message, path} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, message)
+         |> push_navigate(to: path)}
     end
   end
 
@@ -77,8 +80,57 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     }
   end
 
+  # Resolves the location to edit for the area: the admin area edits common
+  # locations (specials aren't part of the managed dataset), the private area
+  # the user's own.
+  defp load_editable(%{assigns: %{area: :admin}} = _socket, slug) do
+    case Geo.common_location_by_slug(slug) do
+      nil ->
+        {:error, "Location not found", ~p"/admin/locations"}
+
+      %Location{location_type: :special} = location ->
+        {:error, "Special locations cannot be edited here", ~p"/admin/locations/#{location.slug}"}
+
+      location ->
+        {:ok, location}
+    end
+  end
+
+  defp load_editable(socket, slug) do
+    scope = socket.assigns.current_scope
+    location = Geo.location_by_slug_scope(scope, slug)
+
+    cond do
+      is_nil(location) ->
+        {:error, "Location not found", ~p"/my/locations"}
+
+      not User.owns?(scope.current_user, location) ->
+        {:error, "You can only edit your own locations", ~p"/my/locations/#{location.slug}"}
+
+      true ->
+        {:ok, location}
+    end
+  end
+
   defp load_parent(nil), do: nil
   defp load_parent(parent_id), do: Repo.get(Location, parent_id)
+
+  # The admin area manages the common scaffold, so the common-only levels are
+  # offered and `special` (not managed there) is not.
+  defp type_options(:admin), do: Location.hierarchy_levels()
+  defp type_options(_area), do: Location.user_assignable_types()
+
+  defp parent_filter(:admin), do: Location.Filter.for_common_parent_pick()
+  defp parent_filter(_area), do: Location.Filter.for_parent_pick()
+
+  defp index_path(:admin), do: ~p"/admin/locations"
+  defp index_path(_area), do: ~p"/my/locations"
+
+  defp index_label(:admin), do: "Common Locations"
+  defp index_label(_area), do: "Locations"
+
+  defp show_path(:admin, location), do: ~p"/admin/locations/#{location.slug}"
+  defp show_path(_area, location), do: ~p"/my/locations/#{location.slug}"
 
   defp assign_form(socket, params) do
     changeset = Geo.change_location(socket.assigns.location, params)
@@ -129,7 +181,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Location saved")
-         |> push_navigate(to: after_save_path(socket.assigns.action, location))}
+         |> push_navigate(to: after_save_path(socket.assigns, location))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
@@ -138,7 +190,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
         {:noreply,
          socket
          |> put_flash(:error, "You can only edit your own locations")
-         |> push_navigate(to: ~p"/my/locations")}
+         |> push_navigate(to: index_path(socket.assigns.area))}
     end
   end
 
@@ -166,11 +218,11 @@ defmodule KjogviWeb.Live.My.Locations.Form do
   def render(assigns) do
     ~H"""
     <nav id="location-breadcrumbs" class="text-sm text-stone-500 mb-4">
-      <.breadcrumb_link href={~p"/my/locations"}>Locations</.breadcrumb_link>
+      <.breadcrumb_link href={index_path(@area)}>{index_label(@area)}</.breadcrumb_link>
       <span :if={@action == :edit} class="mx-1 text-stone-400">/</span>
       <.breadcrumb_link
         :if={@action == :edit}
-        href={~p"/my/locations/#{@location.slug}"}
+        href={show_path(@area, @location)}
         phx-no-format
       >{@location.name_en}</.breadcrumb_link>
       <span class="mx-1 text-stone-400">/</span>
@@ -194,7 +246,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
             current_id={@form[:parent_id].value}
             on_select_event="parent_selected"
             scope={@current_scope}
-            filter={Location.Filter.for_parent_pick()}
+            filter={@parent_filter}
           />
           <ul
             :if={ancestry_errors(@form) != []}
@@ -215,11 +267,11 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           <select
             id={@form[:location_type].id}
             name={@form[:location_type].name}
-            size={length(Location.user_assignable_types())}
+            size={length(@type_options)}
             class="inline-block w-auto min-w-48 pr-8 rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 text-base"
           >
             {Phoenix.HTML.Form.options_for_select(
-              Location.user_assignable_types(),
+              @type_options,
               @form[:location_type].value || ""
             )}
           </select>
@@ -280,7 +332,7 @@ defmodule KjogviWeb.Live.My.Locations.Form do
           Save
         </button>
 
-        <.action_button navigate={cancel_path(@action, @location)} variant="secondary">
+        <.action_button navigate={cancel_path(@area, @action, @location)} variant="secondary">
           Cancel
         </.action_button>
       </div>
@@ -345,15 +397,16 @@ defmodule KjogviWeb.Live.My.Locations.Form do
     """
   end
 
-  defp cancel_path(:edit, location), do: ~p"/my/locations/#{location.slug}"
-  defp cancel_path(:create, _), do: ~p"/my/locations"
+  defp cancel_path(area, :edit, location), do: show_path(area, location)
+  defp cancel_path(area, :create, _), do: index_path(area)
 
   # A freshly created special is empty until it has members, so go straight to
-  # adding them; every other save lands on the location page.
-  defp after_save_path(:create, %{location_type: :special} = location),
+  # adding them; every other save lands on the location page. Specials are not
+  # created in the admin area.
+  defp after_save_path(%{action: :create, area: :private}, %{location_type: :special} = location),
     do: ~p"/my/locations/#{location.slug}/members"
 
-  defp after_save_path(_action, location), do: ~p"/my/locations/#{location.slug}"
+  defp after_save_path(%{area: area}, location), do: show_path(area, location)
 
   # Slot-occupancy/parent errors don't map to a visible input (the level FKs are
   # derived from the parent), so surface them near the parent picker.

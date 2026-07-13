@@ -22,6 +22,42 @@ defmodule Kjogvi.Geo.EbirdTest do
     end
   end
 
+  describe "statuses_for_common_countries/1" do
+    test "keys entries by location id for linked eBird countries" do
+      country = insert(:country, iso_code: "AD")
+      insert(:ebird_location, code: "AD", location_id: country.id)
+
+      assert Ebird.statuses_for_common_countries([country]) ==
+               %{country.id => %{code: "AD", status: :matched}}
+    end
+
+    test "falls back to the ISO code while the eBird country is unlinked" do
+      country = insert(:country, iso_code: "CZ")
+      insert(:ebird_location, code: "CZ")
+
+      assert Ebird.statuses_for_common_countries([country]) ==
+               %{country.id => %{code: "CZ", status: :unmatched}}
+    end
+
+    test "no ISO-code fallback to an eBird country linked elsewhere" do
+      other = insert(:country, iso_code: "XX")
+      insert(:ebird_location, code: "AD", location_id: other.id)
+      country = insert(:country, iso_code: "AD")
+
+      assert Ebird.statuses_for_common_countries([country]) == %{}
+    end
+
+    test "countries with no eBird counterpart and non-countries have no entry" do
+      country = insert(:country, iso_code: "AD")
+      insert(:ebird_location, code: "AD", location_id: country.id)
+      no_ebird = insert(:country, iso_code: "BQ")
+      subdivision1 = insert(:subdivision1, iso_code: "AD-02", country: country)
+
+      assert Ebird.statuses_for_common_countries([country, no_ebird, subdivision1])
+             |> Map.keys() == [country.id]
+    end
+  end
+
   describe "matchable_locations/1" do
     test "returns the country and subdivision1 rows ordered by code, sub2s excluded" do
       insert(:ebird_location, code: "AD")

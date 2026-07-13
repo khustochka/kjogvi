@@ -1,8 +1,9 @@
 defmodule KjogviWeb.Live.Admin.Locations.Show do
   @moduledoc """
-  Admin page for a single common location: details, ancestors, and its common
-  children, read-only. Only common (unowned) locations resolve here; the
-  checklists count spans all users.
+  Admin page for a single common location: details (including its eBird match,
+  when any), ancestors, its common children, and the edit / add sub-location /
+  delete actions. Only common (unowned) locations resolve here; the checklists
+  count spans all users.
   """
 
   use KjogviWeb, :live_view
@@ -21,17 +22,27 @@ defmodule KjogviWeb.Live.Admin.Locations.Show do
         loc ->
           loc
           |> Location.Query.put_levels()
-          |> Repo.preload(:special_parent_locations)
+          |> Repo.preload([:special_parent_locations, :ebird_location])
       end
 
     if location do
+      checklists_count = Geo.checklists_count(location.id)
+
+      # Deletability counts *all* descendants (any user's locations may hang
+      # under a common one), not just the common children listed on the page.
+      can_delete =
+        Geo.children_count(location.id) == 0 and checklists_count == 0 and
+          is_nil(location.ebird_location)
+
       {:ok,
        socket
        |> assign(:page_title, location.name_en)
        |> assign(:location, location)
        |> assign(:ancestors, Geo.ancestor_locations(location))
-       |> assign(:checklists_count, Geo.checklists_count(location.id))
-       |> assign(:children, Geo.common_direct_children(location))}
+       |> assign(:checklists_count, checklists_count)
+       |> assign(:children, Geo.common_direct_children(location))
+       |> assign(:can_delete, can_delete)
+       |> assign(:ebird_entry, ebird_entry(location))}
     else
       {:ok,
        socket
@@ -40,9 +51,48 @@ defmodule KjogviWeb.Live.Admin.Locations.Show do
     end
   end
 
+  # The country's eBird match entry (code + derived status) — present even
+  # while the eBird country row is unlinked (the code-pass would-be match).
+  defp ebird_entry(%Location{location_type: :country} = location) do
+    Geo.Ebird.statuses_for_common_countries([location])[location.id]
+  end
+
+  defp ebird_entry(_location), do: nil
+
   @impl true
   def handle_params(_params, _url, socket) do
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("delete", _params, socket) do
+    case Geo.delete_location(socket.assigns.current_scope, socket.assigns.location) do
+      {:ok, _location} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Location deleted")
+         |> push_navigate(to: ~p"/admin/locations")}
+
+      {:error, :has_children} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has sub-locations")}
+
+      {:error, :has_checklists} ->
+        {:noreply, put_flash(socket, :error, "Cannot delete: location has checklists")}
+
+      {:error, :has_ebird_link} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Cannot delete: an eBird region links here — unlink it in the workbench first"
+         )}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, "Only common locations can be deleted here")}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not delete location")}
+    end
   end
 
   @impl true
@@ -81,6 +131,42 @@ defmodule KjogviWeb.Live.Admin.Locations.Show do
           >
             {Location.long_name(:private, @location)}
           </p>
+          <div class="mt-6 flex flex-wrap items-center gap-2">
+            <.action_button
+              :if={@location.location_type != :special}
+              id="edit-location-button"
+              navigate={~p"/admin/locations/#{@location.slug}/edit"}
+              icon="hero-pencil-square"
+              variant="secondary"
+            >
+              Edit
+            </.action_button>
+            <.action_button
+              :if={Location.hierarchy_parent?(@location)}
+              id="add-sub-location-button"
+              navigate={~p"/admin/locations/new?parent_id=#{@location.id}"}
+              icon="hero-plus"
+              variant="secondary"
+            >
+              Add sub-location
+            </.action_button>
+            <button
+              id="delete-location-button"
+              type="button"
+              phx-click="delete"
+              data-confirm={"Delete location \"#{@location.name_en}\"? This cannot be undone."}
+              disabled={!@can_delete}
+              title={
+                if @can_delete,
+                  do: "Delete this location",
+                  else:
+                    "Cannot delete: location has sub-locations, checklists, or an eBird region link"
+              }
+              class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+            >
+              <.icon name="hero-trash" class="w-4 h-4" /> Delete
+            </button>
+          </div>
           <p
             :if={@location.import_source}
             id="location-import-source"
@@ -138,6 +224,26 @@ defmodule KjogviWeb.Live.Admin.Locations.Show do
               {@location.lat}, {@location.lon}
             </dd>
           </div>
+
+          <div :if={@location.ebird_location} id="location-ebird-code">
+            <dt class="text-xs font-medium text-stone-400 uppercase tracking-wider">eBird</dt>
+            <dd class="mt-0.5 text-sm font-mono">
+              <.link
+                href={~p"/admin/ebird/#{@location.ebird_location.country_code}"}
+                phx-no-format
+              >{@location.ebird_location.code}</.link>
+            </dd>
+          </div>
+
+          <.link
+            :if={@ebird_entry}
+            id="location-ebird-status"
+            navigate={~p"/admin/ebird/#{@ebird_entry.code}"}
+            title="eBird matching workbench"
+            class="no-underline"
+          >
+            <.ebird_status_badge status={@ebird_entry.status} />
+          </.link>
 
           <div
             :for={parent <- @location.special_parent_locations}

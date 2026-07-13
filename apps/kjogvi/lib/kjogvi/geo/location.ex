@@ -490,6 +490,33 @@ defmodule Kjogvi.Geo.Location do
     @location_types -- @common_only_types
   end
 
+  @doc """
+  Rejects level FK ancestors that are user-owned when the location itself is
+  common (`user_id` nil): the shared dataset may not hang under anyone's
+  personal location — such a row would export dangling FKs in the dataset dump.
+  Like `validate_user_owned_type/1`, applied by the context once `user_id` is
+  known.
+  """
+  def validate_common_ancestry(changeset) do
+    ancestor_ids =
+      @level_fks
+      |> Enum.map(&get_field(changeset, &1))
+      |> Enum.reject(&is_nil/1)
+
+    with nil <- get_field(changeset, :user_id),
+         [_ | _] <- ancestor_ids,
+         true <- owned_ancestors?(ancestor_ids) do
+      add_error(changeset, :parent_id, "must be a common location")
+    else
+      _ -> changeset
+    end
+  end
+
+  defp owned_ancestors?(ancestor_ids) do
+    from(l in __MODULE__, where: l.id in ^ancestor_ids and not is_nil(l.user_id))
+    |> Repo.exists?()
+  end
+
   def show_on_lifelist?(location) do
     not is_nil(location.public_index)
   end

@@ -1,6 +1,6 @@
 # Common Locations & eBird Regions: Data Management Plan
 
-Status: in progress — stages 1–6 done (see §11), next up: stage 7 ·
+Status: in progress — stages 1–7 done (see §11), next up: stage 8 ·
 Branch: `ebird-locations-map` · 2026-07-01
 
 ## 1. Goal
@@ -299,13 +299,14 @@ files in dev — so the page works identically everywhere.
 
 `/my/imports` keeps Legacy and eBird-preload (user-data imports) only.
 
-### 8.2 `/admin/locations` — common locations management — partially implemented
+### 8.2 `/admin/locations` — common locations management ✅ implemented (stages 1–7)
 
 Read-only index (tree + text search) and show page shipped in stages 1/1a,
-including the shared-component extraction described below. Still to come: the
-eBird match badges + status filter chips on the index (stage 7), CRUD with the
-Geo authorization change (stage 7), and the show page's per-country actions —
-*run match*, *import sub2s*, workbench link (stages 6–8).
+including the shared-component extraction described below; stage 7 added the
+eBird match badges + status filter chips on the index, CRUD with the Geo
+authorization change, and the show page's eBird details (code + status badge
+linking to the workbench, which owns *run match*). Still to come: the
+per-country *import sub2s* action (stage 8).
 
 **Separate LiveView, shared rendering.** Reusing `My.Locations.Index` whole
 was considered, but it diverges on too much: data assembly (`Geo.location_tree`
@@ -386,9 +387,9 @@ locations track comes first; all eBird work is deferred until it's done.
 6. ✅ **eBird admin UI** — `/admin/ebird` index + country workbench (run match,
    link/unlink, create-from-eBird). *Then start actually matching countries,
    dumping to S3 as they land.*
-7. **Common locations admin UI, full** ← next — eBird status badges and filters
+7. ✅ **Common locations admin UI, full** — eBird status badges and filters
    on the index, CRUD (+ the Geo authorization change).
-8. **sub2 import** — `Sub2Import` + per-country action in the UI.
+8. **sub2 import** ← next — `Sub2Import` + per-country action in the UI.
 9. **Cleanup** — the ISO card stays (it reads its source from the datasets
    storage and remains the "newer ISO release" tool; the HTTP-URL import path +
    `LOCATIONS_IMPORT_URL` were already dropped in stage 3); set the
@@ -522,3 +523,26 @@ stages, especially if this requires writing code (app or test) just for the sake
   "eBird Locations". *Sanity-run on the real data: 252 countries — 1 matched
   (AD), 1 partial (CZ 13/14), 1 matched_iso_extra (HU, HU-ER listed as
   ISO-only), 249 unmatched.*
+- **Stage 7** (2026-07-12) — Common locations admin UI, full. Geo
+  authorization: the `:admin` area may manage common (`user_id IS NULL`)
+  locations — `create_location` creates them unowned there, `update_location`
+  / `delete_location` allow owner-or-admin-on-common (`can_manage?/2`); delete
+  also refuses `{:error, :has_ebird_link}` when an eBird region links to the
+  location (the FK would silently nilify curated state — unlink in the
+  workbench first). `Location.validate_common_ancestry/1` (a common location
+  may not hang under a user-owned parent — it would dump dangling FKs),
+  `Location.Filter.for_common_parent_pick/0`, `EbirdLocation.Query.for_location/2`,
+  and `Geo.Ebird.statuses_for_common_countries/1` (status entries keyed by
+  common location id; unlinked eBird countries matched by ISO code so
+  unmatched countries still show). Web: `/admin/locations` index gained eBird
+  status badges on country rows (linking to the workbench; rendered via an
+  `ebird_statuses` attr threaded through `tree_node`/`location_card`/
+  `common_node`), status filter chips (`?status=`, incl. a `no_ebird` pseudo
+  status) and a New Location button; the show page gained Edit / Add
+  sub-location / Delete actions and eBird details (code + status badge).
+  CRUD: `My.Locations.Form` moved to `Live.Locations.Form` serving both areas
+  per the multi-area LV pattern (branches on `scope.area`: paths, type options
+  incl. `country`/`subdivision1` but not `special`, common-only parent
+  autocomplete), mounted at `/admin/locations/new` + `/admin/locations/:slug/edit`.
+  *Sanity-run on the real data: 249 common countries — AD matched, CZ partial,
+  HU matched_iso_extra, 243 unmatched; BQ/CW/SX report no eBird counterpart.*

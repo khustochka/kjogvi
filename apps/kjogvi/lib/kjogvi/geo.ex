@@ -403,15 +403,21 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Creates a location owned by the scope's `current_user`.
+  Creates a location owned by the scope's `current_user`. In the `:admin` area
+  the location is created common (no owner) instead — that's how curated
+  common locations enter the dataset.
   """
   def create_location(scope, attrs) do
     %Location{}
     |> Location.changeset(attrs)
-    |> Ecto.Changeset.put_change(:user_id, scope.current_user && scope.current_user.id)
+    |> Ecto.Changeset.put_change(:user_id, owner_id(scope))
     |> Location.validate_user_owned_type()
+    |> Location.validate_common_ancestry()
     |> Repo.insert()
   end
+
+  defp owner_id(%{area: :admin}), do: nil
+  defp owner_id(scope), do: scope.current_user && scope.current_user.id
 
   @doc """
   Updates a location.
@@ -424,12 +430,17 @@ defmodule Kjogvi.Geo do
   Ownership (`user_id`) is not editable, so it is never changed here.
   """
   def update_location(scope, %Location{} = location, attrs) do
-    if User.owns?(scope.current_user, location) do
+    if can_manage?(scope, location) do
       Repo.transact(fn -> update_and_cascade(location, attrs) end)
     else
       {:error, :forbidden}
     end
   end
+
+  # The owner may manage their own locations; the `:admin` area may manage
+  # common (unowned) ones — but not anyone's personal locations.
+  defp can_manage?(%{area: :admin}, %Location{user_id: nil}), do: true
+  defp can_manage?(scope, location), do: User.owns?(scope.current_user, location)
 
   # Updates the location and, when its `location_type` changed, cascades the
   # descendants' level FKs onto the new level column. Runs inside the
@@ -441,6 +452,7 @@ defmodule Kjogvi.Geo do
       location
       |> Location.changeset(attrs)
       |> Location.validate_user_owned_type()
+      |> Location.validate_common_ancestry()
 
     with {:ok, updated} <- Repo.update(changeset) do
       if updated.location_type != old_type do
@@ -455,14 +467,17 @@ defmodule Kjogvi.Geo do
   Deletes a location.
 
   Refuses with `{:error, :forbidden}` when the scope may not modify it, or with
-  `{:error, :has_children}` / `{:error, :has_checklists}` when it is still in use.
+  `{:error, :has_children}` / `{:error, :has_checklists}` /
+  `{:error, :has_ebird_link}` when it is still in use. The eBird guard keeps a
+  delete from silently discarding a curated eBird region link (the FK would
+  nilify it); unlink in the eBird workbench first.
   """
   def delete_location(scope, %Location{} = location) do
     children = children_count(location.id)
     checklists = checklists_count(location.id)
 
     cond do
-      not User.owns?(scope.current_user, location) ->
+      not can_manage?(scope, location) ->
         {:error, :forbidden}
 
       children > 0 ->
@@ -471,8 +486,16 @@ defmodule Kjogvi.Geo do
       checklists > 0 ->
         {:error, :has_checklists}
 
+      ebird_linked?(location) ->
+        {:error, :has_ebird_link}
+
       true ->
         Repo.delete(location)
     end
+  end
+
+  defp ebird_linked?(location) do
+    Kjogvi.Geo.EbirdLocation.Query.for_location(location.id)
+    |> Repo.exists?()
   end
 end

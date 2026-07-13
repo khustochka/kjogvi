@@ -63,6 +63,38 @@ defmodule Kjogvi.Geo.Ebird do
   end
 
   @doc """
+  eBird match status entries for the given common country locations, keyed by
+  location id: `%{location_id => %{code: ebird_code, status: status}}`.
+
+  A country's entry comes from the eBird country row linked to it, or — while
+  none is linked — from the row whose code equals the location's ISO code (the
+  code pass's would-be match, so unmatched countries still show as
+  `:unmatched`). Countries with no eBird counterpart (and non-country
+  locations) have no entry.
+  """
+  def statuses_for_common_countries(locations) do
+    countries = countries_with_statuses()
+
+    by_location_id =
+      Map.new(for %{ebird_location: %{location_id: id}} = entry <- countries, id, do: {id, entry})
+
+    by_code =
+      Map.new(
+        for %{ebird_location: %{location_id: nil}} = entry <- countries,
+            do: {entry.ebird_location.code, entry}
+      )
+
+    for %Location{location_type: :country} = location <- locations,
+        entry = by_location_id[location.id] || by_code[iso_code_upcased(location)],
+        into: %{} do
+      {location.id, %{code: entry.ebird_location.code, status: entry.stats.status}}
+    end
+  end
+
+  defp iso_code_upcased(%Location{iso_code: nil}), do: nil
+  defp iso_code_upcased(%Location{iso_code: iso_code}), do: String.upcase(iso_code)
+
+  @doc """
   The eBird country row for `country_code`, with its linked common location
   preloaded, or nil.
   """
