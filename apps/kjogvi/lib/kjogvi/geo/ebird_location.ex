@@ -23,11 +23,7 @@ defmodule Kjogvi.Geo.EbirdLocation do
     field :country_code, :string
     field :subnational1_code, :string
     field :subnational2_code, :string
-    field :local_abbrev, :string
     field :name, :string
-    field :name_long, :string
-    field :name_short, :string
-    field :nice_name, :string
 
     belongs_to(:location, Location)
 
@@ -58,11 +54,7 @@ defmodule Kjogvi.Geo.EbirdLocation do
     country_code
     subnational1_code
     subnational2_code
-    local_abbrev
     name
-    name_long
-    name_short
-    nice_name
     location_id
   )a
 

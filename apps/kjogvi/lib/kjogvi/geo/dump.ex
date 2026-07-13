@@ -49,11 +49,7 @@ defmodule Kjogvi.Geo.Dump do
       country_code
       subnational1_code
       subnational2_code
-      local_abbrev
       name
-      name_long
-      name_short
-      nice_name
       location_id
     )a
   }

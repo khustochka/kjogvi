@@ -172,11 +172,7 @@ defmodule Kjogvi.Geo.Restore do
       country_code: string(row["country_code"]),
       subnational1_code: string(row["subnational1_code"]),
       subnational2_code: string(row["subnational2_code"]),
-      local_abbrev: string(row["local_abbrev"]),
       name: string(row["name"]),
-      name_long: string(row["name_long"]),
-      name_short: string(row["name_short"]),
-      nice_name: string(row["nice_name"]),
       location_id: integer(row["location_id"]),
       inserted_at: now,
       updated_at: now

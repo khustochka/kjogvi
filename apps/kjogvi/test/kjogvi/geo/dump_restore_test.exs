@@ -230,10 +230,7 @@ defmodule Kjogvi.Geo.DumpRestoreTest do
         code: "AD",
         country_code: "AD",
         location_id: location.id,
-        name: "Andorra",
-        name_long: "Principality of Andorra",
-        nice_name: "Andorra (AD)",
-        local_abbrev: "AD"
+        name: "Andorra"
       )
 
       insert(:ebird_location,
