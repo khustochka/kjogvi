@@ -111,6 +111,11 @@ defmodule Kjogvi.Geo.Location.Query do
       where: l.location_type != @section_location_type
   end
 
+  def exclude_disabled(query) do
+    from [..., l] in query,
+      where: not l.disabled
+  end
+
   @doc """
   Restricts to descendants of `location` — rows whose level FK for the location's
   own level points at it, at any depth. The location itself is not a descendant
@@ -132,11 +137,15 @@ defmodule Kjogvi.Geo.Location.Query do
     |> maybe_exclude_specials(filter.exclude_specials)
     |> maybe_exclude_sections(filter.exclude_sections)
     |> maybe_only_common(filter.only_common)
+    |> maybe_exclude_disabled(filter.exclude_disabled)
     |> maybe_within(filter.within)
   end
 
   defp maybe_exclude_specials(query, true), do: exclude_specials(query)
   defp maybe_exclude_specials(query, _), do: query
+
+  defp maybe_exclude_disabled(query, true), do: exclude_disabled(query)
+  defp maybe_exclude_disabled(query, _), do: query
 
   defp maybe_only_common(query, true), do: only_common(query)
   defp maybe_only_common(query, _), do: query

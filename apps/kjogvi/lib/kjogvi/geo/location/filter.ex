@@ -24,6 +24,10 @@ defmodule Kjogvi.Geo.Location.Filter do
       type: :boolean,
       default: false
     ],
+    exclude_disabled: [
+      type: :boolean,
+      default: false
+    ],
     # A %Location{} or nil. Typed :any — naming the module here would be a
     # compile-time reference back into the Location cycle (xref).
     within: [
@@ -38,19 +42,22 @@ defmodule Kjogvi.Geo.Location.Filter do
 
   @doc """
   Filter for the checklist add/edit location picker: hides `special` locations, since a
-  checklist's location must be a concrete hierarchy location.
+  checklist's location must be a concrete hierarchy location, and `disabled` locations,
+  which are no longer offered for selection (an already-chosen disabled location still
+  saves).
   """
   def for_checklist_input do
-    %__MODULE__{exclude_specials: true}
+    %__MODULE__{exclude_specials: true, exclude_disabled: true}
   end
 
   @doc """
   Filter for the location parent picker: hides locations that can't be a parent —
   `special` (outside the hierarchy) and `section` (the lowest level, never an
-  ancestor).
+  ancestor) — and `disabled` locations, no longer offered as a parent (an
+  already-chosen disabled parent still saves).
   """
   def for_parent_pick do
-    %__MODULE__{exclude_specials: true, exclude_sections: true}
+    %__MODULE__{exclude_specials: true, exclude_sections: true, exclude_disabled: true}
   end
 
   @doc """
@@ -59,7 +66,12 @@ defmodule Kjogvi.Geo.Location.Filter do
   anyone's personal location.
   """
   def for_common_parent_pick do
-    %__MODULE__{only_common: true, exclude_specials: true, exclude_sections: true}
+    %__MODULE__{
+      only_common: true,
+      exclude_specials: true,
+      exclude_sections: true,
+      exclude_disabled: true
+    }
   end
 
   @doc """

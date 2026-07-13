@@ -949,6 +949,33 @@ defmodule Kjogvi.GeoTest do
       refute special.id in ids
       refute section.id in ids
     end
+
+    test "checklist-input and parent-pick filters exclude disabled locations" do
+      scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
+
+      disabled =
+        insert(:location,
+          slug: "park-disabled",
+          name_en: "Park Disabled",
+          location_type: :city,
+          disabled: true
+        )
+
+      checklist_ids =
+        Geo.search_locations(scope, "Park", filter: Geo.Location.Filter.for_checklist_input())
+        |> Enum.map(& &1.id)
+
+      parent_ids =
+        Geo.search_locations(scope, "Park", filter: Geo.Location.Filter.for_parent_pick())
+        |> Enum.map(& &1.id)
+
+      refute disabled.id in checklist_ids
+      refute disabled.id in parent_ids
+
+      # An already-selected disabled location is still found by an unfiltered
+      # search, so it stays selectable/saveable.
+      assert disabled.id in (Geo.search_locations(scope, "Park") |> Enum.map(& &1.id))
+    end
   end
 
   describe "get_locations/0" do
