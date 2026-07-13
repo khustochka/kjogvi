@@ -7,60 +7,43 @@ defmodule Kjogvi.Geo.Ebird.ImportTest do
   alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Repo
 
-  # Writes `entries` (a map of code => attrs, eBird dump style) as a scratch
-  # JSON file and returns its path.
-  defp write_json(entries) do
+  # Writes `entries` (a list of eBird subregion objects) as a scratch JSONL
+  # file and returns its path.
+  defp write_jsonl(entries) do
     path =
-      Path.join(System.tmp_dir!(), "ebird_locs_test_#{System.unique_integer([:positive])}.json")
+      Path.join(System.tmp_dir!(), "ebird_locs_test_#{System.unique_integer([:positive])}.jsonl")
 
-    File.write!(path, Jason.encode!(entries))
+    File.write!(path, entries |> Enum.map_join("\n", &Jason.encode!/1))
     on_exit(fn -> File.rm(path) end)
     path
   end
 
   defp entries do
-    %{
-      "AD" => %{
-        "countryCode" => "AD",
-        "localAbbrev" => "AD",
-        "name" => "Andorra",
-        "nameLong" => "Principality of Andorra",
-        "nameShort" => "",
-        "niceName" => "Andorra (AD)"
-      },
-      "AD-02" => %{
-        "countryCode" => "AD",
-        "localAbbrev" => "02",
-        "name" => "Canillo",
-        "niceName" => "Canillo, Andorra (AD)",
-        "subnational1Code" => "AD-02"
-      },
-      "CA-AB-EI" => %{
-        "countryCode" => "CA",
+    [
+      %{"code" => "AD", "name" => "Andorra", "level" => "country", "parent_code" => nil},
+      %{"code" => "AD-02", "name" => "Canillo", "level" => "subregion1", "parent_code" => "AD"},
+      %{
+        "code" => "CA-AB-EI",
         "name" => "Red Deer",
-        "niceName" => "Red Deer, Alberta, Canada (CA)",
-        "subnational1Code" => "CA-AB",
-        "subnational2Code" => "CA-AB-EI"
+        "level" => "subregion2",
+        "parent_code" => "CA-AB"
       },
-      "aba" => %{"name" => "ABA"}
-    }
+      %{"code" => "aba", "name" => "ABA", "level" => "custom", "parent_code" => nil}
+    ]
   end
 
-  test "imports regions with types derived from the code fields" do
-    assert {:ok, %{count: 3}} = entries() |> write_json() |> Import.from_json()
+  test "imports regions with codes derived from the eBird code hierarchy" do
+    assert {:ok, %{count: 3}} = entries() |> write_jsonl() |> Import.from_jsonl()
 
     country = Repo.get_by!(EbirdLocation, code: "AD")
     assert country.location_type == :country
     assert country.country_code == "AD"
+    assert country.subnational1_code == nil
     assert country.name == "Andorra"
-    assert country.name_long == "Principality of Andorra"
-    # Empty strings are stored as nil.
-    assert country.name_short == nil
-    assert country.nice_name == "Andorra (AD)"
-    assert country.local_abbrev == "AD"
 
     sub1 = Repo.get_by!(EbirdLocation, code: "AD-02")
     assert sub1.location_type == :subdivision1
+    assert sub1.country_code == "AD"
     assert sub1.subnational1_code == "AD-02"
     assert sub1.subnational2_code == nil
 
@@ -71,15 +54,15 @@ defmodule Kjogvi.Geo.Ebird.ImportTest do
     assert sub2.subnational2_code == "CA-AB-EI"
   end
 
-  test "skips entries without a countryCode and reports them" do
+  test "skips entries with an unrecognized level and reports them" do
     assert {:ok, %{count: 3, skipped: ["aba"]}} =
-             entries() |> write_json() |> Import.from_json()
+             entries() |> write_jsonl() |> Import.from_jsonl()
 
     refute Repo.get_by(EbirdLocation, code: "aba")
   end
 
   test "re-running refreshes names but never touches the match state" do
-    assert {:ok, _} = entries() |> write_json() |> Import.from_json()
+    assert {:ok, _} = entries() |> write_jsonl() |> Import.from_jsonl()
 
     location = insert(:country, iso_code: "AD")
 
@@ -87,8 +70,13 @@ defmodule Kjogvi.Geo.Ebird.ImportTest do
     |> Ecto.Changeset.change(location_id: location.id)
     |> Repo.update!()
 
-    renamed = put_in(entries()["AD"]["name"], "Andorra Renamed")
-    assert {:ok, %{count: 3}} = renamed |> write_json() |> Import.from_json()
+    renamed =
+      Enum.map(entries(), fn
+        %{"code" => "AD"} = entry -> %{entry | "name" => "Andorra Renamed"}
+        entry -> entry
+      end)
+
+    assert {:ok, %{count: 3}} = renamed |> write_jsonl() |> Import.from_jsonl()
 
     reimported = Repo.get_by!(EbirdLocation, code: "AD")
     assert reimported.name == "Andorra Renamed"
@@ -115,8 +103,9 @@ defmodule Kjogvi.Geo.Ebird.ImportTest do
       :ok
     end
 
-    test "imports the source JSON from the storage" do
-      assert :ok = Kjogvi.Datasets.write(Import.source_key(), Jason.encode!(entries()))
+    test "imports the source JSONL from the storage" do
+      jsonl = entries() |> Enum.map_join("\n", &Jason.encode!/1)
+      assert :ok = Kjogvi.Datasets.write(Import.source_key(), jsonl)
 
       assert {:ok, %{count: 3, skipped: ["aba"]}} = Import.import()
       assert Repo.aggregate(EbirdLocation, :count) == 3
@@ -142,7 +131,7 @@ defmodule Kjogvi.Geo.Ebird.ImportTest do
 
     on_exit(fn -> :telemetry.detach({__MODULE__, ref}) end)
 
-    assert {:ok, _} = entries() |> write_json() |> Import.from_json()
+    assert {:ok, _} = entries() |> write_jsonl() |> Import.from_jsonl()
 
     assert_received {:telemetry, [:kjogvi, :geo, :ebird, :import, :stop], %{duration: _},
                      %{result: :ok, count: 3, skipped: ["aba"]}}

@@ -2,14 +2,18 @@ defmodule Kjogvi.Geo.Ebird.Import do
   @moduledoc """
   Bootstrap import of eBird's region tree into `Kjogvi.Geo.EbirdLocation`.
 
-  Reads eBird's region dump (`all_ebird_locs.json`) — a JSON map of region
-  code to attributes — and bulk-upserts one row per region.
+  Reads eBird's region dump (`ebird_subregions.jsonl`) — JSON Lines, one
+  `{code, name, level, parent_code}` object per line — and bulk-upserts one
+  row per region. The split-out `country_code` / `subnational1_code` /
+  `subnational2_code` columns the matcher relies on are derived from the
+  eBird `code` itself (`"US-CA-037"` → country `"US"`, sub1 `"US-CA"`,
+  sub2 `"US-CA-037"`), since eBird codes encode the hierarchy.
 
   The source file lives in the `Kjogvi.Datasets` snapshot storage under
-  `source_key/0` (`geo/sources/all_ebird_locs.json`) — local files in
+  `source_key/0` (`geo/sources/ebird_subregions.jsonl`) — local files in
   dev/test, S3 in prod — and is *read-only* from the app's side: it is
   uploaded to the storage out-of-band, never written by the app. `import/0`
-  reads it from there (the admin imports card); `from_json/1` takes an
+  reads it from there (the admin imports card); `from_jsonl/1` takes an
   explicit local path, bypassing the storage config (bootstrap scripts,
   tests). The curated snapshot (`Kjogvi.Geo.Dump`) remains the canonical
   seed — this import is for bootstrap and newer eBird dumps.
@@ -18,19 +22,25 @@ defmodule Kjogvi.Geo.Ebird.Import do
 
   Upserts on `code`: the name/code columns are refreshed from the dump, while
   `location_id` — the curated match state — is never touched, and rows are
-  never deleted. Entries with no `countryCode` (pseudo-regions like `"aba"`)
-  are skipped and reported in the result.
+  never deleted. Entries with an unrecognized `level` are skipped and
+  reported in the result.
   """
 
   alias Kjogvi.Datasets
   alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Repo
 
-  # ~13 bind parameters per row; keeps a batch well under Postgres's 65535
+  # ~8 bind parameters per row; keeps a batch well under Postgres's 65535
   # bind-parameter limit.
   @chunk_size 3000
 
-  @source_key "geo/sources/all_ebird_locs.json"
+  @source_key "geo/sources/ebird_subregions.jsonl"
+
+  @levels %{
+    "country" => :country,
+    "subregion1" => :subdivision1,
+    "subregion2" => :subdivision2
+  }
 
   @doc """
   The source file's fixed key in the `Kjogvi.Datasets` storage.
@@ -38,27 +48,33 @@ defmodule Kjogvi.Geo.Ebird.Import do
   def source_key, do: @source_key
 
   @doc """
-  Imports the eBird region JSON read from the configured `Kjogvi.Datasets`
+  Imports the eBird region JSONL read from the configured `Kjogvi.Datasets`
   storage (`source_key/0`). `{:error, :enoent}` when no source file has been
   uploaded yet; `{:ok, %{count: n, skipped: [code, ...]}}` on success.
   """
   def import do
     with {:ok, body} <- Datasets.read(@source_key) do
       body
-      |> Jason.decode!()
+      |> decode_jsonl()
       |> run()
     end
   end
 
   @doc """
-  Imports the eBird region JSON from an explicit local `path`, bypassing the
+  Imports the eBird region JSONL from an explicit local `path`, bypassing the
   storage config. Returns `{:ok, %{count: n, skipped: [code, ...]}}`.
   """
-  def from_json(path) do
+  def from_jsonl(path) do
     path
     |> File.read!()
-    |> Jason.decode!()
+    |> decode_jsonl()
     |> run()
+  end
+
+  defp decode_jsonl(body) do
+    body
+    |> String.split("\n", trim: true)
+    |> Enum.map(&Jason.decode!/1)
   end
 
   defp run(entries) do
@@ -76,14 +92,14 @@ defmodule Kjogvi.Geo.Ebird.Import do
 
   defp parse(entries) do
     now = DateTime.utc_now()
-    {valid, malformed} = Enum.split_with(entries, fn {_code, attrs} -> attrs["countryCode"] end)
+    {valid, malformed} = Enum.split_with(entries, &Map.has_key?(@levels, &1["level"]))
 
     rows =
       valid
-      |> Enum.map(fn {code, attrs} -> row(code, attrs, now) end)
+      |> Enum.map(&row(&1, now))
       |> Enum.sort_by(& &1.code)
 
-    {rows, malformed |> Enum.map(&elem(&1, 0)) |> Enum.sort()}
+    {rows, malformed |> Enum.map(& &1["code"]) |> Enum.sort()}
   end
 
   defp upsert_all(rows, skipped) do
@@ -114,30 +130,33 @@ defmodule Kjogvi.Geo.Ebird.Import do
   # Refresh everything the dump carries; never `location_id` (curated match
   # state) or `inserted_at`.
   defp replace_columns do
-    ~w(location_type country_code subnational1_code subnational2_code
-       local_abbrev name name_long name_short nice_name updated_at)a
+    ~w(location_type country_code subnational1_code subnational2_code name updated_at)a
   end
 
-  defp row(code, attrs, now) do
+  defp row(%{"code" => code, "level" => level} = attrs, now) do
+    {country_code, subnational1_code, subnational2_code} = ancestor_codes(code)
+
     %{
       code: code,
-      location_type: location_type(attrs),
-      country_code: attrs["countryCode"],
-      subnational1_code: presence(attrs["subnational1Code"]),
-      subnational2_code: presence(attrs["subnational2Code"]),
-      local_abbrev: presence(attrs["localAbbrev"]),
+      location_type: Map.fetch!(@levels, level),
+      country_code: country_code,
+      subnational1_code: subnational1_code,
+      subnational2_code: subnational2_code,
       name: presence(attrs["name"]),
-      name_long: presence(attrs["nameLong"]),
-      name_short: presence(attrs["nameShort"]),
-      nice_name: presence(attrs["niceName"]),
       inserted_at: now,
       updated_at: now
     }
   end
 
-  defp location_type(%{"subnational2Code" => _}), do: :subdivision2
-  defp location_type(%{"subnational1Code" => _}), do: :subdivision1
-  defp location_type(_), do: :country
+  # eBird codes encode the hierarchy: `US-CA-037` → country `US`,
+  # subnational1 `US-CA`, subnational2 `US-CA-037`.
+  defp ancestor_codes(code) do
+    case String.split(code, "-") do
+      [country] -> {country, nil, nil}
+      [country, _] -> {country, code, nil}
+      [country, sub1 | _] -> {country, "#{country}-#{sub1}", code}
+    end
+  end
 
   defp presence(nil), do: nil
   defp presence(""), do: nil

@@ -10,7 +10,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.EbirdTest do
   alias Kjogvi.Repo
 
   # Points the dataset storage at a scratch directory for the duration of a
-  # test (the importer reads its source JSON from there).
+  # test (the importer reads its source JSONL from there).
   setup do
     dir = Path.join(System.tmp_dir!(), "datasets_#{System.unique_integer([:positive])}")
     original = Application.get_env(:kjogvi, Kjogvi.Datasets)
@@ -28,17 +28,18 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.EbirdTest do
     :ok
   end
 
-  # Writes the source JSON under the importer's fixed storage key.
+  # Writes the source JSONL under the importer's fixed storage key.
   defp write_source(entries) do
-    assert :ok = Kjogvi.Datasets.write(Import.source_key(), Jason.encode!(entries))
+    jsonl = entries |> Enum.map_join("\n", &Jason.encode!/1)
+    assert :ok = Kjogvi.Datasets.write(Import.source_key(), jsonl)
   end
 
   defp entries do
-    %{
-      "AD" => %{"countryCode" => "AD", "name" => "Andorra"},
-      "AD-02" => %{"countryCode" => "AD", "name" => "Canillo", "subnational1Code" => "AD-02"},
-      "aba" => %{"name" => "ABA"}
-    }
+    [
+      %{"code" => "AD", "name" => "Andorra", "level" => "country", "parent_code" => nil},
+      %{"code" => "AD-02", "name" => "Canillo", "level" => "subregion1", "parent_code" => "AD"},
+      %{"code" => "aba", "name" => "ABA", "level" => "custom", "parent_code" => nil}
+    ]
   end
 
   defp login_admin(conn) do
