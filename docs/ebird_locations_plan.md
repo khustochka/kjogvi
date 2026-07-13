@@ -1,6 +1,6 @@
 # Common Locations & eBird Regions: Data Management Plan
 
-Status: in progress — stages 1–5 done (see §11), next up: stage 6 ·
+Status: in progress — stages 1–6 done (see §11), next up: stage 7 ·
 Branch: `ebird-locations-map` · 2026-07-01
 
 ## 1. Goal
@@ -107,7 +107,7 @@ following the ISO import's `:telemetry.span` pattern.
   `import/0` reads it from there for the admin imports card, `from_json/1`
   takes an explicit local path.
 
-## 5. Matching eBird ↔ common locations ✅ implemented (stage 5, except §5.3 UI)
+## 5. Matching eBird ↔ common locations ✅ implemented (stages 5–6)
 
 ### 5.1 Row-level links, derived country status
 
@@ -338,7 +338,7 @@ rather than being rendered verbatim.
   path: `scope.area == :admin` may manage common (`user_id IS NULL`) locations;
   creation in the admin area sets `user_id: nil`.
 
-### 8.3 `/admin/ebird` — eBird locations management — not started (stage 6)
+### 8.3 `/admin/ebird` — eBird locations management ✅ implemented (stage 6)
 
 - **Index**: eBird countries with match status, matched/total counts, filters —
   the eBird-side mirror of 8.2 (may even be the same LiveView behind two
@@ -383,11 +383,11 @@ locations track comes first; all eBird work is deferred until it's done.
 5. ✅ **Matcher** — code + name passes, derived country statuses in
    `EbirdLocation.Query`. Pure-logic tests (normalization, ambiguity,
    idempotence, never-overwrite-manual).
-6. **eBird admin UI** ← next — `/admin/ebird` index + country workbench (run match,
+6. ✅ **eBird admin UI** — `/admin/ebird` index + country workbench (run match,
    link/unlink, create-from-eBird). *Then start actually matching countries,
    dumping to S3 as they land.*
-7. **Common locations admin UI, full** — eBird status badges and filters on
-   the index, CRUD (+ the Geo authorization change).
+7. **Common locations admin UI, full** ← next — eBird status badges and filters
+   on the index, CRUD (+ the Geo authorization change).
 8. **sub2 import** — `Sub2Import` + per-country action in the UI.
 9. **Cleanup** — the ISO card stays (it reads its source from the datasets
    storage and remains the "newer ISO release" tool; the HTTP-URL import path +
@@ -499,3 +499,26 @@ stages, especially if this requires writing code (app or test) just for the sake
   `%{code: 8, name: 0, left: 0}` → `:matched`; CZ (zero code overlap)
   `%{code: 1, name: 13, left: 1}` → `:partial`; HU `%{code: 43, name: 0,
   left: 0}` → `:matched_iso_extra` (the Hungary case); re-runs are no-ops.*
+- **Stage 6** (2026-07-12) — eBird admin UI. New `Kjogvi.Geo.Ebird` context:
+  the eBird entry points moved off `Kjogvi.Geo` (`location_counts_by_type/0`,
+  `country_statuses/0`, `country_status/1` — callers/tests updated) plus new
+  `countries_with_statuses/0`, `get_country/1`, `matchable_locations/1`,
+  `unmatched_iso_subdivision1s/1`, a `match_country` delegate, and the manual
+  resolution ops: `link/2` (common locations only; reloads the row so a stale
+  struct can't overwrite; unique-constraint error when the location is taken),
+  `unlink/1`, `create_common_location/1` (slug from the eBird code, name from
+  `name`, `import_source: :ebird_regions`, `iso_code` nil; a subdivision1 goes
+  under the linked common country, else `{:error, :country_not_linked}`; bare
+  `change/1` changeset since country codes make two-letter slugs). Also
+  `EbirdLocation.code_match?/1`, `Query.preload_location/1`,
+  `Location.Filter.for_ebird_link/1` on a new `only_common` filter flag.
+  Web: `/admin/ebird` index (`Live.Admin.Ebird.Index` — status badge, sub1
+  linked counts, ISO-only count, status filter chips via `?status=`) and the
+  workbench `/admin/ebird/:country_code` (`Live.Admin.Ebird.Show` — run match
+  with flash summary, per-row link autocomplete / unlink / create-from-eBird,
+  by-code vs other link indicator, ISO-only subdivisions listed for context);
+  separate LiveViews, not one behind two routes (per the §8.3 open point).
+  `KjogviWeb.EbirdComponents` (status badge + labels), admin menu link
+  "eBird Locations". *Sanity-run on the real data: 252 countries — 1 matched
+  (AD), 1 partial (CZ 13/14), 1 matched_iso_extra (HU, HU-ER listed as
+  ISO-only), 249 unmatched.*

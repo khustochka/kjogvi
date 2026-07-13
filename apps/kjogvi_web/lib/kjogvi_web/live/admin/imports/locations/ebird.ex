@@ -34,7 +34,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Ebird do
   # Reads the import's preconditions and the current type counts so the template
   # can show what's there and whether this is a fresh import or a re-import.
   defp assign_state(socket) do
-    counts = Geo.ebird_location_counts_by_type()
+    counts = Geo.Ebird.location_counts_by_type()
 
     socket
     |> assign(:source_state, Datasets.snapshot_status(Import.source_key()))

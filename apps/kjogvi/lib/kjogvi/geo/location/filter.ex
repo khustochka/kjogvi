@@ -20,6 +20,10 @@ defmodule Kjogvi.Geo.Location.Filter do
       type: :boolean,
       default: false
     ],
+    only_common: [
+      type: :boolean,
+      default: false
+    ],
     # A %Location{} or nil. Typed :any — naming the module here would be a
     # compile-time reference back into the Location cycle (xref).
     within: [
@@ -58,5 +62,14 @@ defmodule Kjogvi.Geo.Location.Filter do
   """
   def for_special_members(parent \\ nil) do
     %__MODULE__{exclude_specials: true, within: parent}
+  end
+
+  @doc """
+  Filter for the eBird workbench link picker: common locations only, specials
+  excluded. When the eBird country row is already linked, pass its common
+  `country` to restrict candidates to that country's descendants.
+  """
+  def for_ebird_link(country \\ nil) do
+    %__MODULE__{only_common: true, exclude_specials: true, within: country}
   end
 end

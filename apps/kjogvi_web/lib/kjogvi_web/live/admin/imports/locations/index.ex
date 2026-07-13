@@ -152,7 +152,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   end
 
   defp ebird_stats do
-    by_type = Geo.ebird_location_counts_by_type()
+    by_type = Geo.Ebird.location_counts_by_type()
 
     counts =
       EbirdLocation.location_types()

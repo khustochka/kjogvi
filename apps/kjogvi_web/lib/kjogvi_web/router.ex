@@ -174,6 +174,9 @@ defmodule KjogviWeb.Router do
       live "/locations", Live.Admin.Locations.Index, :index
       live "/locations/:slug", Live.Admin.Locations.Show, :show
 
+      live "/ebird", Live.Admin.Ebird.Index, :index
+      live "/ebird/:country_code", Live.Admin.Ebird.Show, :show
+
       live "/imports/locations", Live.Admin.Imports.Locations.Index, :index
 
       live "/exclusive-tasks", Live.Admin.ExclusiveTasks.Index, :index

@@ -51,7 +51,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
     end
   end
 
-  describe "ebird_country_statuses/0" do
+  describe "country_statuses/0" do
     test "matched: country and subdivisions linked by code, sets equal" do
       country = insert(:country, iso_code: "AD")
       sub1 = insert(:subdivision1, iso_code: "AD-02", country: country)
@@ -68,7 +68,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
                sub1_code_matched: 1,
                iso_sub1_total: 1,
                iso_extra: 0
-             } = Geo.ebird_country_statuses()["AD"]
+             } = Geo.Ebird.country_statuses()["AD"]
     end
 
     test "matched_mixed: a link that is not code-consistent" do
@@ -78,7 +78,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       insert(:ebird_location, code: "FR", location: country)
       insert(:ebird_subdivision1, country_code: "FR", code: "FR-V", location: sub1)
 
-      assert %{status: :matched_mixed, sub1_code_matched: 0} = Geo.ebird_country_statuses()["FR"]
+      assert %{status: :matched_mixed, sub1_code_matched: 0} = Geo.Ebird.country_statuses()["FR"]
     end
 
     test "matched_iso_extra: an ISO subdivision with no eBird counterpart" do
@@ -90,7 +90,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       insert(:ebird_subdivision1, country_code: "HU", code: "HU-BU", location: sub1)
 
       assert %{status: :matched_iso_extra, iso_sub1_total: 2, iso_extra: 1} =
-               Geo.ebird_country_statuses()["HU"]
+               Geo.Ebird.country_statuses()["HU"]
     end
 
     test "partial: some subdivisions unlinked" do
@@ -102,7 +102,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       insert(:ebird_subdivision1, country_code: "AF", code: "AF-XXX")
 
       assert %{status: :partial, sub1_total: 2, sub1_linked: 1} =
-               Geo.ebird_country_statuses()["AF"]
+               Geo.Ebird.country_statuses()["AF"]
     end
 
     test "unmatched: nothing linked" do
@@ -110,7 +110,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       insert(:ebird_subdivision1, country_code: "XX", code: "XX-01")
 
       assert %{status: :unmatched, sub1_total: 1, sub1_linked: 0, iso_sub1_total: 0} =
-               Geo.ebird_country_statuses()["XX"]
+               Geo.Ebird.country_statuses()["XX"]
     end
 
     test "eBird-only country manually linked anchors ISO stats via the link" do
@@ -124,7 +124,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
                country_code_match: false,
                iso_sub1_total: 1,
                iso_extra: 1
-             } = Geo.ebird_country_statuses()["XK"]
+             } = Geo.Ebird.country_statuses()["XK"]
     end
 
     test "country without any subdivision rows on either side is matched" do
@@ -132,29 +132,29 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       insert(:ebird_location, code: "GI", location: country)
 
       assert %{status: :matched, sub1_total: 0, iso_sub1_total: 0} =
-               Geo.ebird_country_statuses()["GI"]
+               Geo.Ebird.country_statuses()["GI"]
     end
 
     test "covers every eBird country" do
       insert(:ebird_location, code: "AA")
       insert(:ebird_location, code: "BB")
 
-      assert Geo.ebird_country_statuses() |> Map.keys() |> Enum.sort() == ["AA", "BB"]
+      assert Geo.Ebird.country_statuses() |> Map.keys() |> Enum.sort() == ["AA", "BB"]
     end
   end
 
-  describe "ebird_country_status/1" do
+  describe "country_status/1" do
     test "returns the single country's entry" do
       country = insert(:country, iso_code: "AD")
       insert(:ebird_location, code: "AD", location: country)
       insert(:ebird_location, code: "XX")
 
-      assert %{status: :matched} = Geo.ebird_country_status("AD")
-      assert %{status: :unmatched} = Geo.ebird_country_status("XX")
+      assert %{status: :matched} = Geo.Ebird.country_status("AD")
+      assert %{status: :unmatched} = Geo.Ebird.country_status("XX")
     end
 
     test "returns nil for an unknown code" do
-      assert Geo.ebird_country_status("ZZ") == nil
+      assert Geo.Ebird.country_status("ZZ") == nil
     end
   end
 end

@@ -38,6 +38,13 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   end
 
   @doc """
+  Preloads the linked location with its level associations, for display names.
+  """
+  def preload_location(query \\ EbirdLocation) do
+    preload(query, location: ^Location.Query.level_assocs())
+  end
+
+  @doc """
   Rows linked to a common location.
   """
   def matched(query \\ EbirdLocation) do
@@ -167,7 +174,7 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
 
   @doc """
   Derives a country's match status from its merged stats (see
-  `Kjogvi.Geo.ebird_country_statuses/0`), per the §5.1 table: `:matched`
+  `Kjogvi.Geo.Ebird.country_statuses/0`), per the §5.1 table: `:matched`
   (everything linked code-consistently, eBird and ISO sets equal),
   `:matched_iso_extra` (all eBird rows linked but ISO has extra subdivisions),
   `:matched_mixed` (all linked, some links not by code), `:partial`,

@@ -131,11 +131,15 @@ defmodule Kjogvi.Geo.Location.Query do
     query
     |> maybe_exclude_specials(filter.exclude_specials)
     |> maybe_exclude_sections(filter.exclude_sections)
+    |> maybe_only_common(filter.only_common)
     |> maybe_within(filter.within)
   end
 
   defp maybe_exclude_specials(query, true), do: exclude_specials(query)
   defp maybe_exclude_specials(query, _), do: query
+
+  defp maybe_only_common(query, true), do: only_common(query)
+  defp maybe_only_common(query, _), do: query
 
   defp maybe_exclude_sections(query, true), do: exclude_sections(query)
   defp maybe_exclude_sections(query, _), do: query

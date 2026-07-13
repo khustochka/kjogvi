@@ -36,6 +36,22 @@ defmodule Kjogvi.Geo.EbirdLocation do
 
   def location_types, do: @location_types
 
+  @doc """
+  Whether the row's link is code-consistent: the linked location's `iso_code`
+  equals the eBird code for the row's own level (§ "matched by code" — derived,
+  never stored). False for unlinked rows; requires `location` to be preloaded
+  on linked ones.
+  """
+  def code_match?(%__MODULE__{location_id: nil}), do: false
+
+  def code_match?(%__MODULE__{location_type: :country} = ebird_location) do
+    ebird_location.location.iso_code == ebird_location.code
+  end
+
+  def code_match?(%__MODULE__{location_type: :subdivision1} = ebird_location) do
+    ebird_location.location.iso_code == ebird_location.subnational1_code
+  end
+
   @castable_fields ~w(
     code
     location_type
