@@ -50,6 +50,8 @@ defmodule Kjogvi.Geo.Location do
     field :location_type, Ecto.Enum, values: @location_types
     field :iso_code, :string
     field :is_private, :boolean, default: false
+    field :disabled, :boolean, default: false
+    field :hide_flag, :boolean, default: false
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
@@ -91,6 +93,7 @@ defmodule Kjogvi.Geo.Location do
     name_en
     location_type
     is_private
+    disabled
     lat
     lon
     extras
@@ -159,7 +162,8 @@ defmodule Kjogvi.Geo.Location do
         :slug,
         :name_en,
         :location_type,
-        :is_private
+        :is_private,
+        :disabled
       ])
       |> validate_length(:slug, min: 3)
       |> validate_format(:slug, ~r/\A[a-z0-9_-]+\z/,
@@ -480,6 +484,16 @@ defmodule Kjogvi.Geo.Location do
     else
       changeset
     end
+  end
+
+  @doc """
+  Casts the admin-only `hide_flag` from `attrs`. `hide_flag` is kept out of
+  `@editable_fields` so the owner-facing form can never set it; the context
+  applies this only in the `:admin` area (`Kjogvi.Geo.create_location/2`,
+  `update_location/3`).
+  """
+  def put_hide_flag(changeset, attrs) do
+    cast(changeset, attrs, [:hide_flag])
   end
 
   @doc """

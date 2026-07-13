@@ -1143,6 +1143,85 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "create_location/2 and update_location/3 disabled and hide_flag" do
+    test "owner can set disabled" do
+      %{user: user, scope: scope} = scope_fixture()
+      country = insert(:country, name_en: "Canada")
+
+      {:ok, created} =
+        Geo.create_location(scope, %{
+          "slug" => "disabled-city",
+          "name_en" => "Disabled City",
+          "is_private" => "false",
+          "disabled" => "true",
+          "location_type" => "city",
+          "parent_id" => country.id
+        })
+
+      assert created.disabled
+      assert created.user_id == user.id
+    end
+
+    test "private area ignores hide_flag" do
+      %{scope: scope} = scope_fixture()
+      country = insert(:country, name_en: "Canada")
+
+      {:ok, created} =
+        Geo.create_location(scope, %{
+          "slug" => "sneaky-city",
+          "name_en" => "Sneaky City",
+          "is_private" => "false",
+          "hide_flag" => "true",
+          "location_type" => "city",
+          "parent_id" => country.id
+        })
+
+      refute created.hide_flag
+    end
+
+    test "admin area sets hide_flag" do
+      scope = %Kjogvi.Scope{area: :admin}
+
+      {:ok, created} =
+        Geo.create_location(scope, %{
+          "slug" => "hidden-country",
+          "name_en" => "Hidden Country",
+          "is_private" => "false",
+          "hide_flag" => "true",
+          "location_type" => "country"
+        })
+
+      assert created.hide_flag
+    end
+
+    test "admin area can update hide_flag; private area cannot" do
+      user = user_fixture()
+      country = insert(:country, name_en: "Canada")
+
+      location =
+        insert(:location,
+          location_type: :city,
+          country: country,
+          user_id: user.id,
+          slug: "toggle-city"
+        )
+
+      private_scope = %Kjogvi.Scope{current_user: user, area: :private}
+
+      {:ok, unchanged} =
+        Geo.update_location(private_scope, location, %{"hide_flag" => "true"})
+
+      refute unchanged.hide_flag
+
+      admin_scope = %Kjogvi.Scope{area: :admin}
+      common = insert(:country, name_en: "Sweden", slug: "sweden")
+
+      {:ok, hidden} = Geo.update_location(admin_scope, common, %{"hide_flag" => "true"})
+
+      assert hidden.hide_flag
+    end
+  end
+
   describe "create_location/2 slug uniqueness" do
     setup do
       country = insert(:country, name_en: "Canada")

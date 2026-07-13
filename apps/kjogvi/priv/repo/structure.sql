@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict uczVrMXj9PIsF5KV98rUjF2L1PPS3aZjWMcdZoHftCT58qi0KdqorAJHOxnkB1X
+\restrict uoZkNxMHvC3Mc0ltBwEPRugEbEwoDMLKqcjVJQEGnrnwROzgHqzgoCCASFmb28G
 
 -- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
@@ -356,7 +356,9 @@ CREATE TABLE public.locations (
     subdivision1_id bigint,
     subdivision2_id bigint,
     city_id bigint,
-    site_id bigint
+    site_id bigint,
+    disabled boolean DEFAULT false NOT NULL,
+    hide_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -1419,7 +1421,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict uczVrMXj9PIsF5KV98rUjF2L1PPS3aZjWMcdZoHftCT58qi0KdqorAJHOxnkB1X
+\unrestrict uoZkNxMHvC3Mc0ltBwEPRugEbEwoDMLKqcjVJQEGnrnwROzgHqzgoCCASFmb28G
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1460,3 +1462,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260708000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260708000001);
 INSERT INTO public."schema_migrations" (version) VALUES (20260709000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260713101232);
+INSERT INTO public."schema_migrations" (version) VALUES (20260713120000);

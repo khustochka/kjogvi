@@ -297,6 +297,12 @@ defmodule KjogviWeb.Live.Locations.Form do
         <div class="flex items-center h-[38px]">
           <CoreComponents.input type="checkbox" field={@form[:is_private]} label="Private loc" />
         </div>
+        <div class="flex items-center h-[38px]">
+          <CoreComponents.input type="checkbox" field={@form[:disabled]} label="Disabled" />
+        </div>
+        <div :if={@area == :admin} class="flex items-center h-[38px]">
+          <CoreComponents.input type="checkbox" field={@form[:hide_flag]} label="Hide flag" />
+        </div>
       </div>
 
       <.map_picker lat={@form[:lat]} lon={@form[:lon]} parent={@parent_struct} />
@@ -432,6 +438,8 @@ defmodule KjogviWeb.Live.Locations.Form do
       "name_en" => location.name_en,
       "location_type" => location.location_type,
       "is_private" => location.is_private,
+      "disabled" => location.disabled,
+      "hide_flag" => location.hide_flag,
       "lat" => location.lat,
       "lon" => location.lon,
       "parent_id" => parent_id

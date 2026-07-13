@@ -55,6 +55,32 @@ defmodule KjogviWeb.Live.Admin.Locations.FormTest do
       assert saved.location_type == :country
     end
 
+    test "renders the admin-only hide_flag checkbox", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/locations/new")
+
+      assert has_element?(view, "#location_hide_flag")
+      assert has_element?(view, "#location_disabled")
+    end
+
+    test "creates a common country with hide_flag set", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/locations/new")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "atlantis",
+          name_en: "Atlantis",
+          location_type: "country",
+          is_private: "false",
+          hide_flag: "true"
+        }
+      )
+      |> render_submit()
+
+      saved = Geo.location_by_slug("atlantis")
+      assert saved.hide_flag
+    end
+
     test "creates a subdivision1 under the parent from the query param", %{conn: conn} do
       country = insert(:country, name_en: "Greenland")
 

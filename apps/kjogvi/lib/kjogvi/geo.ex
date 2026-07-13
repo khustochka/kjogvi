@@ -411,10 +411,17 @@ defmodule Kjogvi.Geo do
     %Location{}
     |> Location.changeset(attrs)
     |> Ecto.Changeset.put_change(:user_id, owner_id(scope))
+    |> put_hide_flag(scope, attrs)
     |> Location.validate_user_owned_type()
     |> Location.validate_common_ancestry()
     |> Repo.insert()
   end
+
+  # `hide_flag` is admin-only; only cast it from the `:admin` area.
+  defp put_hide_flag(changeset, %{area: :admin}, attrs),
+    do: Location.put_hide_flag(changeset, attrs)
+
+  defp put_hide_flag(changeset, _scope, _attrs), do: changeset
 
   defp owner_id(%{area: :admin}), do: nil
   defp owner_id(scope), do: scope.current_user && scope.current_user.id
@@ -431,7 +438,7 @@ defmodule Kjogvi.Geo do
   """
   def update_location(scope, %Location{} = location, attrs) do
     if can_manage?(scope, location) do
-      Repo.transact(fn -> update_and_cascade(location, attrs) end)
+      Repo.transact(fn -> update_and_cascade(scope, location, attrs) end)
     else
       {:error, :forbidden}
     end
@@ -445,12 +452,13 @@ defmodule Kjogvi.Geo do
   # Updates the location and, when its `location_type` changed, cascades the
   # descendants' level FKs onto the new level column. Runs inside the
   # `update_location/3` transaction.
-  defp update_and_cascade(location, attrs) do
+  defp update_and_cascade(scope, location, attrs) do
     old_type = location.location_type
 
     changeset =
       location
       |> Location.changeset(attrs)
+      |> put_hide_flag(scope, attrs)
       |> Location.validate_user_owned_type()
       |> Location.validate_common_ancestry()
 
