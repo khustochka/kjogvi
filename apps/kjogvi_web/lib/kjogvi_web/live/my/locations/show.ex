@@ -97,7 +97,12 @@ defmodule KjogviWeb.Live.My.Locations.Show do
       <%!-- Header + stats --%>
       <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <.h1 class="mb-0!">
+          <.h1 class={[
+            "mb-0!",
+            @location.disabled &&
+              "inline-flex items-center gap-1 bg-stone-200 text-stone-500! px-3 py-1 rounded-lg"
+          ]}>
+            <.disabled_marker :if={@location.disabled} class="w-6 h-6 align-middle" />
             {@location.name_en}
             <%= if @location.is_private do %>
               <span title="Private">
@@ -182,6 +187,8 @@ defmodule KjogviWeb.Live.My.Locations.Show do
             <dt class="text-xs font-medium text-stone-400 uppercase tracking-wider">Slug</dt>
             <dd class="mt-0.5 text-sm text-stone-800 font-mono">{@location.slug}</dd>
           </div>
+
+          <.disabled_badge :if={@location.disabled} />
 
           <div :if={@location.iso_code && @location.iso_code != ""}>
             <dt class="text-xs font-medium text-stone-400 uppercase tracking-wider">ISO</dt>

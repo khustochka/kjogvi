@@ -155,6 +155,24 @@ defmodule KjogviWeb.Live.Admin.Locations.ShowTest do
     end
   end
 
+  test "marks the header and details for a disabled location", %{conn: conn} do
+    country = insert(:country, name_en: "Canada", slug: "canada", disabled: true)
+
+    {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
+
+    assert has_element?(show_live, "h1 span[title='Disabled']")
+    assert has_element?(show_live, "#location-details span", "disabled")
+  end
+
+  test "does not mark an enabled location as disabled", %{conn: conn} do
+    country = insert(:country, name_en: "Canada", slug: "canada", disabled: false)
+
+    {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
+
+    refute has_element?(show_live, "h1 span[title='Disabled']")
+    refute has_element?(show_live, "#location-details span", "disabled")
+  end
+
   test "redirects to the index for an unknown slug", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/admin/locations"}}} =
              live(conn, ~p"/admin/locations/nonexistent")

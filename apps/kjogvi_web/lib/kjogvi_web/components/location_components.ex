@@ -29,6 +29,7 @@ defmodule KjogviWeb.LocationComponents do
     <div class="min-w-0">
       <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-0.5 sm:space-y-0">
         <div class="flex items-center space-x-2 min-w-0">
+          <.disabled_marker :if={@location.disabled} />
           <span class="text-sm font-medium text-stone-800">
             <.link
               href={location_path(@admin, @location)}
@@ -94,6 +95,7 @@ defmodule KjogviWeb.LocationComponents do
             common_node_text_size(@location.location_type)
           ]}
         >
+          <.disabled_marker :if={@location.disabled} />
           <span :if={country_flag(@location) != ""} aria-hidden="true">
             {country_flag(@location)}
           </span>
@@ -157,7 +159,10 @@ defmodule KjogviWeb.LocationComponents do
     assigns = assign(assigns, :kind, location_kind(assigns.location))
 
     ~H"""
-    <div class={location_card_class(@kind, @location.location_type, @variant)}>
+    <div class={[
+      location_card_class(@kind, @location.location_type, @variant),
+      @location.disabled && "bg-stone-100! opacity-60"
+    ]}>
       <.common_node
         :if={@kind == :common}
         location={@location}
@@ -331,7 +336,11 @@ defmodule KjogviWeb.LocationComponents do
       )
 
     ~H"""
-    <div class={["flex items-center gap-1.5 px-3", tree_node_pad(@node.location)]}>
+    <div class={[
+      "flex items-center gap-1.5 px-3",
+      tree_node_pad(@node.location),
+      @node.location.disabled && "bg-stone-100!"
+    ]}>
       <.tree_toggle
         :if={@has_children}
         target={@body_id}
@@ -417,6 +426,7 @@ defmodule KjogviWeb.LocationComponents do
   defp common_node_text_size(:subdivision1), do: "text-lg font-semibold"
   defp common_node_text_size(_), do: "text-base font-semibold"
 
+  defp country_flag(%{location_type: :country, hide_flag: true}), do: ""
   defp country_flag(%{location_type: :country} = location), do: Location.to_flag_emoji(location)
   defp country_flag(_), do: ""
 
@@ -459,6 +469,34 @@ defmodule KjogviWeb.LocationComponents do
     ~H"""
     <span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full shrink-0 bg-forest-100 text-forest-600">
       lifelist filter
+    </span>
+    """
+  end
+
+  @doc """
+  Renders a prominent marker for a disabled location: a no-entry icon shown in
+  front of the location name, sized to sit alongside the name it precedes. Its
+  `sr-only` label makes the disabled state audible to screen readers.
+  """
+  attr :class, :string, default: "w-4 h-4"
+
+  def disabled_marker(assigns) do
+    ~H"""
+    <span title="Disabled" class="shrink-0 text-rose-600">
+      <span class="sr-only">Disabled</span>
+      <.icon name="hero-no-symbol" class={@class} />
+    </span>
+    """
+  end
+
+  @doc """
+  Renders a grayed "disabled" text badge, for the location detail box where a
+  visible label reads clearer than the bare icon.
+  """
+  def disabled_badge(assigns) do
+    ~H"""
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full shrink-0 bg-stone-200 text-stone-600">
+      <.icon name="hero-no-symbol" class="w-3 h-3" /> disabled
     </span>
     """
   end
