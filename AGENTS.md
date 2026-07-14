@@ -147,15 +147,32 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 
 ## Notes for AI Agents
 
-- Add and update tests for all new and changed code before committing.
-- Check for tests verifying the same functionality.
+### Elixir style
+
+- Code assertively, not defensively. Elixir isn't strictly typed, but pattern matching makes it soft-typed — let a function's clauses/patterns state the shapes it accepts and let it crash (`FunctionClauseError`, `MatchError`) on anything else, rather than adding `if is_nil(x)`/`case`/guard fallbacks to tolerate shapes that shouldn't reach it.
+- Before guarding against `nil` (or another unexpected shape) at the point you noticed it, check whether it can be eliminated upstream instead — e.g. a changeset/schema default, a query that shouldn't return it, a caller that should have already branched. Prefer fixing the source over adding a defensive check downstream.
+- Reserve nil/shape guards for genuine boundaries: user input, external API responses, and other data Elixir's pattern matching can't have already constrained.
+
+### Code organization
+
 - Avoid partial imports (`import ..., only: ...`) unless necessary. In general, only use `import` where Phoenix/LiveView prescribes it — e.g. importing function components. Otherwise prefer calling the function with its module name, plus an `alias` if it helps.
-- Update module and function documentation when making changes.
-- Keep documentation concise. Don't explain what's obvious from the code (e.g. don't write 'Returns `true` if...'), and don't describe the change you made or how the code used to work.
-- Before committing, run `mix lint.fix` (to auto-fix formatting + linting) and the tests.
 - Follow the LiveView naming pattern: `KjogviWeb.Live.Something` lives in `apps/kjogvi_web/lib/kjogvi_web/live/something.ex` (this contradicts the Phoenix recommended pattern of `KjogviWeb.SmthLive`, but is my preference).
 - Avoid adding utility functions unrelated to a module's topic (whether in a LiveView or elsewhere), especially trivial ones like converting `nil` to an empty string. Put them under `Kjogvi.Util`, or avoid them altogether.
 - For multi-step database writes, use `Repo.transact/1` rather than `Ecto.Multi`.
+
+### Documentation
+
+- Update module and function documentation when making changes.
+- Keep documentation concise. Don't explain what's obvious from the code (e.g. don't write 'Returns `true` if...'), and don't describe the change you made or how the code used to work.
+
+### Testing & committing
+
+- Add and update tests for all new and changed code before committing.
+- Check for tests verifying the same functionality.
+- Before committing, run `mix lint.fix` (to auto-fix formatting + linting) and the tests.
+
+### Frontend & accessibility
+
 - When designing frontend, always make it responsive (check on smaller screen sizes).
 - Be mindful of how it will present on text-based browsers (e.g. lynx) and for screen readers.
 - When creating a bunch of homogenous elements, implement them using `<ul>` and `<li>`, even if they are not rendered visually as a list.
