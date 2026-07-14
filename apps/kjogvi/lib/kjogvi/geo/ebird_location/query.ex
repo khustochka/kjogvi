@@ -162,6 +162,39 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   end
 
   @doc """
+  The ISO side of one country's comparison: every common subdivision1 of the
+  country the eBird `country_code` corresponds to, whatever its link state.
+
+  The common country is reached by its own link when there is one, falling back
+  to `iso_code == country_code` — so the ISO column is populated before the
+  country row is linked (and keeps working for a manually linked eBird-only
+  country, whose ISO code matches nothing).
+  """
+  def common_subdivision1s_for_country(country_code) do
+    from l in Location,
+      where: l.location_type == :subdivision1 and is_nil(l.user_id),
+      where:
+        l.country_id in subquery(
+          from(c in Location,
+            left_join: e in EbirdLocation,
+            on: e.location_id == c.id and e.location_type == :country,
+            where: c.location_type == :country and is_nil(c.user_id),
+            where: e.code == ^country_code or c.iso_code == ^country_code,
+            select: c.id
+          )
+        )
+  end
+
+  @doc """
+  Narrows a *location* query to those no eBird row links — locations still free
+  to be claimed. Complements `matched_location_ids/1`, which selects the taken
+  ones.
+  """
+  def unclaimed(location_query) do
+    from l in location_query, where: l.id not in subquery(matched_location_ids())
+  end
+
+  @doc """
   One row per eBird country row: `country_code`, whether it is linked, and
   whether the link is code-consistent (linked location's `iso_code` equals the
   eBird code).
@@ -195,28 +228,6 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   end
 
   @doc """
-  Per linked eBird country: how many subdivision1s its linked common country
-  has, and how many of those no eBird row points at (`iso_extra` — ISO-only
-  subdivisions, the Hungary case). Anchored on the link, not the code, so
-  manually linked eBird-only countries work too.
-  """
-  def iso_sub1_stats(query \\ EbirdLocation) do
-    from e in query,
-      join: c in assoc(e, :location),
-      join: s in Location,
-      on: s.country_id == c.id and s.location_type == :subdivision1 and is_nil(s.user_id),
-      left_join: m in EbirdLocation,
-      on: m.location_id == s.id,
-      where: e.location_type == :country,
-      group_by: e.country_code,
-      select: %{
-        country_code: e.country_code,
-        iso_sub1_total: count(s.id),
-        iso_extra: filter(count(s.id), is_nil(m.id))
-      }
-  end
-
-  @doc """
   eBird country codes that have a matching ISO common country (by
   `iso_code == code`) — whether an unlinked eBird country has an ISO counterpart
   at all, separating the `:ebird_only` shape from the linkable ones.
@@ -242,15 +253,20 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   end
 
   @doc """
-  Common subdivision1 rows as `{country_code, iso_code, name_en}`, keyed by the
-  eBird `country_code` of the country whose ISO code matches — the ISO side of
-  the mismatch-shape comparison. Reaches the common country by `iso_code`, not by
-  link, so it works for still-unlinked countries.
+  Common subdivision1 rows as `{country_code, iso_code, name_en}` keyed by eBird
+  `country_code` — the ISO side of the mismatch-shape comparison.
+
+  The common country is reached by the eBird country row's own link, falling back
+  to `iso_code == code`: the fallback covers countries the passes haven't linked
+  yet, the link covers one whose ISO code matches nothing (a manually linked
+  eBird-only country like Kosovo).
   """
   def common_sub1_codes_and_names_by_country(query \\ EbirdLocation) do
     from e in query,
       join: c in Location,
-      on: c.iso_code == e.code and c.location_type == :country and is_nil(c.user_id),
+      on:
+        (c.id == e.location_id or c.iso_code == e.code) and c.location_type == :country and
+          is_nil(c.user_id),
       join: s in Location,
       on: s.country_id == c.id and s.location_type == :subdivision1 and is_nil(s.user_id),
       where: e.location_type == :country,
@@ -271,14 +287,25 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   The `has_iso_country` gate separates `:ebird_only` from the shapes that compare
   subdivision sets:
 
-    * `:matched` — the eBird and ISO subdivision1 code sets are identical (a
-      perfect match, linked by the bulk pass with no leftovers — including a
-      country with no subdivisions on either side).
+    * `:matched` — nothing is left to link. Either the eBird and ISO subdivision1
+      code sets are identical (a perfect match the bulk pass links with no
+      leftovers — including a country with no subdivisions on either side), or
+      eBird models the country as a single unit with no subdivisions at all
+      (Monaco, Singapore, Greenland): once its country row is linked it is
+      complete, and the ISO subdivisions it lacks are context, not a shortfall.
     * `:ebird_only` — the eBird country has no ISO counterpart at all;
       create-from-eBird.
+    * `:ebird_only_subregions` — the mirror of the Monaco case: ISO treats the
+      country as one unit while eBird subdivides it (Puerto Rico's 78 municipios,
+      the Caymans, French Polynesia). No pass can help — there is nothing on the
+      ISO side to match against — so every row needs create-from-eBird. Distinct
+      from `:mixed`, where the two sides *do* both have subdivisions and merely
+      disagree.
     * `:iso_extra` — every eBird subdivision1 code is among the ISO country's
       codes but ISO has more (a strict superset — subdivisions eBird doesn't
       cover); the code pass links every eBird row and leaves the ISO extras.
+      Requires eBird to have *some* subdivisions: with none there is no pass to
+      run, which is `:matched` above.
     * `:name_candidate` — the eBird and ISO subdivision1 *name* sets are equal
       though codes differ (the Poland case); the name pass links them.
     * `:mixed` — eBird and ISO subdivisions overlap only partially, neither by
@@ -292,6 +319,8 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
     cond do
       not stats.has_iso_country -> :ebird_only
       stats.code_set_equal -> :matched
+      stats.sub1_total == 0 -> :matched
+      stats.iso_sub1_total == 0 -> :ebird_only_subregions
       stats.code_subset -> :iso_extra
       stats.name_set_match -> :name_candidate
       true -> :mixed

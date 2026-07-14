@@ -40,8 +40,10 @@ Principles the whole workflow rests on:
 | ISO 3166 bootstrap import (countries + subdivision1s, upsert on `iso_code`) | `Kjogvi.Geo.Import`, card on `/admin/imports/locations` |
 | eBird region bootstrap import (upsert on `code`, never touches `location_id`) | `Kjogvi.Geo.Ebird.Import`, card on same page |
 | Per-country matcher: country pass, code pass, name pass (unambiguous 1:1 only, names normalized incl. non-decomposing letters; never overwrites) | `Kjogvi.Geo.Ebird.Matcher.match_country/2`, *run match* in the workbench |
-| Derived country statuses — mismatch *shapes* (`matched · iso_extra · name_candidate · ebird_only · mixed`), plus a separate "not fully linked" work filter | `EbirdLocation.Query.derive_status/1`, badges on both admin indexes |
+| Derived country statuses — mismatch *shapes* (`matched · iso_extra · ebird_only_subregions · name_candidate · ebird_only · mixed`), plus a separate "not fully linked" work filter | `EbirdLocation.Query.derive_status/1`, badges on both admin indexes |
+| `iso_extra` count — ISO subdivision codes eBird has none for, as set arithmetic (`iso_codes − ebird_codes`), so it reads the same before and after the passes run | `Kjogvi.Geo.Ebird.country_statuses/0`, count on `/admin/ebird` |
 | Manual resolution: link (autocomplete) / unlink / create-from-eBird | Workbench `/admin/ebird/:country_code` |
+| Side-by-side eBird-vs-ISO subdivision comparison (linked pairs on one line, each side's leftovers against a blank cell, unlinked code/name matches flagged as suggestions) | `Kjogvi.Geo.Ebird.subdivision1_comparison/1`, the workbench's subdivisions table |
 | Common locations admin CRUD (create/edit/delete, ancestry + eBird-link guards) | `/admin/locations` |
 | Dump / restore of both datasets as CSV through the storage adapter (local in dev, S3 in prod) | `Kjogvi.Geo.Dump` / `Kjogvi.Geo.Restore`, cards on `/admin/imports/locations` |
 | Raw-import guards: bootstrap card disabled once the dataset has rows, confirm when empty but a snapshot exists | `Kjogvi.Geo.Import.Guard`, both cards on `/admin/imports/locations` |
@@ -83,8 +85,9 @@ the bulk pass and each manual fix link a whole country at once. This gives two
 **independent axes**, kept as two separate filter dimensions on `/admin/ebird`:
 
 - **Status = the mismatch *shape*** of the eBird-vs-ISO subdivision sets:
-  `matched · iso_extra · name_candidate · ebird_only · mixed`. It is a property
-  of the *sets*, computed regardless of link progress — a perfect code-set match
+  `matched · iso_extra · ebird_only_subregions · name_candidate · ebird_only ·
+  mixed`. It is a property of the *sets*, computed regardless of link progress —
+  a perfect code-set match
   reads `matched` even before the pass physically links it. Link state never
   enters the status: a country linked by some non-code pairing still shows its
   set shape.
@@ -95,8 +98,9 @@ the bulk pass and each manual fix link a whole country at once. This gives two
 
 The status **is** the triage classification: the badges on `/admin/ebird` (and
 mirrored on `/admin/locations`) are the dashboard, and everything not `matched`
-names its own mismatch shape — `iso_extra`, `name_candidate`, `ebird_only`,
-`mixed` (§3.3). No separate hint layer: the shape you see is the status.
+names its own mismatch shape — `iso_extra`, `ebird_only_subregions`,
+`name_candidate`, `ebird_only`, `mixed` (§3.3). No separate hint layer: the
+shape you see is the status.
 
 ### 3.3 Triage: per-country review playbook
 
@@ -104,12 +108,29 @@ Filter to **not fully linked** for the work queue, then work through it by shape
 in the workbench. The status names the shape and the fix (all set comparisons
 are over the *full* eBird and ISO subdivision1 sets; names are compared
 normalized — diacritics and non-decomposing letters folded, so "Łódzkie"
-matches "Lodzkie"):
+matches "Lodzkie").
+
+The workbench renders each country's subdivisions as a **side-by-side
+eBird-vs-ISO table**, so the shape the status names is visible directly: linked
+rows pair on one line, and ISO extras and eBird-only rows sit against a blank
+cell. Still-unlinked rows that a pass *would* pair are previewed too, computed
+in the passes' own order — **ISO code first, then names over what code left** —
+so the table shows what *Run match* would do before committing to it. A
+same-code pair whose names differ slightly (Bosnia's `BA-BIH`: "Federacija
+Bosna i Hercegovina" vs "…Bosne i Hercegovine") therefore reads as one row, not
+two unmatched ones.
+
+Matching by code is the norm and passes unlabelled — a pending code pair is just
+a faint arrow against the linked row's solid one. Only the exceptions are
+badged: `by name` where the codes differ, and `other` on a country linked to a
+location whose ISO code isn't eBird's. The ISO column is read-only context;
+every action stays on the eBird side.
 
 | Status | Shape | Action |
 |---|---|---|
-| `matched` | The eBird and ISO subdivision1 code sets are identical (a perfect match — including no subdivisions on either side) | *Run match* / the bulk pass links every row with no leftovers |
-| `iso_extra` | Every eBird subdivision1 code is among the ISO country's codes, but ISO has more (subdivisions eBird doesn't cover) | *Run match* — the code pass links every eBird row; the ISO extras stay as valid common locations eBird simply lacks |
+| `matched` | Nothing left to link: either the code sets are identical (a perfect match — including no subdivisions on either side), or eBird has no subdivisions at all while ISO does (Monaco, Singapore, Greenland — the country row alone completes it, and the index notes the ISO count as context) | *Run match* / the bulk pass links every row with no leftovers |
+| `iso_extra` | eBird has *some* subdivisions and every one of their codes is among the ISO country's, but ISO has more (subdivisions eBird doesn't cover) | *Run match* — the code pass links every eBird row; the ISO extras stay as valid common locations eBird simply lacks |
+| `ebird_only_subregions` | The mirror of Monaco: ISO treats the country as one unit while eBird subdivides it (Puerto Rico's municipios, the Caymans, French Polynesia). No overlap exists to match on | *Create from eBird* per row — no pass can help, since there is nothing on the ISO side to match against |
 | `name_candidate` | Codes differ but the eBird and ISO subdivision1 *name* sets are equal (the Poland case: same woewodships, alphabetic → numeric codes) | *Run match* — the name pass auto-links the unambiguous 1:1 name matches; resolve any leftovers |
 | `ebird_only` | The eBird country has no ISO counterpart at all | *Create from eBird* — makes the common country and links it; then match its subdivisions |
 | `mixed` | The eBird and ISO subdivisions overlap only partially — by neither code set nor whole name set (junk pseudo-regions like the high seas, word-order name differences, a genuine no-match) | Manual: *link* via autocomplete / *create from eBird* where warranted, or leave unlinked deliberately (unlinked is the "ignored" state) |
@@ -202,11 +223,12 @@ Roughly one PR-sized item each, in suggested order:
    storage (existence check via `Datasets.snapshot_status/1`).
 2. **Triage statuses** *(done — `EbirdLocation.Query.derive_status/1`)* — the
    per-country classification by mismatch shape (`matched`, `iso_extra`,
-   `name_candidate`, `ebird_only`, `mixed`; §3.2–3.3), derived over the full
+   `ebird_only_subregions`, `name_candidate`, `ebird_only`, `mixed`; §3.2–3.3),
+   derived over the full
    eBird-vs-ISO subdivision sets in `Kjogvi.Geo.Ebird`, independent of link
    state. Pure derivation, no schema. Names compared via
-   `Matcher.normalize_name/1`, which also folds non-decomposing Latin letters
-   (ł, ø, ß, …) so eBird's flattened spellings match ISO's. Badges + status
+   `Kjogvi.Util.String.normalize_for_match/1`, which also folds non-decomposing
+   Latin letters (ł, ø, ß, …) so eBird's flattened spellings match ISO's. Badges + status
    filter on `/admin/ebird` and `/admin/locations`, plus a separate "not fully
    linked" work filter on the eBird index; the eBird index shows each linked
    country's common location.
@@ -223,14 +245,22 @@ Roughly one PR-sized item each, in suggested order:
    (`Ebird.matched_country_codes/0`), so it is *stricter* than `match_country/2`'s
    code pass, which links any code match: the all-or-nothing set check gates
    whether a country's subdivisions are touched at all.
-4. **subdivision2 import** — `Sub2Import.import_country/1` per the existing
+4. **Bulk create-from-eBird for `ebird_only_subregions`** — the five countries
+   whose subregions exist only in eBird (Puerto Rico's 78 municipios, KY, PF, MP,
+   VI) can only be resolved by creating a common location per eBird row, which is
+   78 clicks for PR alone. A per-country *create all* would fix that, but it is a
+   bulk write of curated data: it needs the same idempotency and slug-collision
+   handling as `create_common_location/1`, plus an exclusive task. Deliberately
+   deferred — the per-row button works today. Small–medium.
+5. **subdivision2 import** — `Sub2Import.import_country/1` per the existing
    spec (plan doc §6): enabled only for ready countries, creates linked common
    subdivision2s (slug from the eBird code), exclusive task per country,
    per-country button. Medium.
 
 Item 1 makes the workflow safe; items 2–3 make starting fast and hand review a
-pre-classified list; item 4 fills out the long tail. Curation itself (§3.3)
-can proceed in parallel from the moment item 1 lands.
+pre-classified list; item 4 takes the click-work out of the eBird-only
+subregions; item 5 fills out the long tail. Curation itself (§3.3) can proceed
+in parallel from the moment item 1 lands.
 
 ## 6. Future ideas (deliberately deferred)
 

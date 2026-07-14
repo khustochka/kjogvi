@@ -16,7 +16,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
   alias Kjogvi.Geo.Location
   alias Kjogvi.Util.Number
 
-  @statuses [:matched, :iso_extra, :name_candidate, :ebird_only, :mixed]
+  @statuses [:matched, :iso_extra, :ebird_only_subregions, :name_candidate, :ebird_only, :mixed]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -227,11 +227,20 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
             {stats.sub1_linked}/{stats.sub1_total} subdivisions linked
           </span>
           <span
-            :if={stats.iso_extra > 0}
+            :if={stats.iso_extra > 0 and stats.sub1_total > 0}
             class="text-sm text-stone-500"
             title="ISO subdivisions with no eBird counterpart"
           >
             {stats.iso_extra} ISO-only
+          </span>
+          <%!-- eBird models the country as one unit: its ISO subdivisions are
+          context, not work left over. --%>
+          <span
+            :if={stats.iso_extra > 0 and stats.sub1_total == 0}
+            class="text-sm text-stone-400"
+            title="eBird has no subdivisions for this country; ISO does"
+          >
+            {stats.iso_extra} in ISO only
           </span>
           <span :if={country.location} class="ml-auto flex items-center gap-1 text-sm">
             <span class="text-stone-400">&rarr;</span>

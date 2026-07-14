@@ -15,8 +15,12 @@ defmodule Kjogvi.Geo.EbirdTest do
       insert(:ebird_location, code: "AD", location_id: country.id)
       insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
 
+      # AD: eBird subdivides it, ISO has no subdivisions. CZ: no ISO country.
       assert [
-               %{ebird_location: %EbirdLocation{code: "AD"}, stats: %{status: :mixed}},
+               %{
+                 ebird_location: %EbirdLocation{code: "AD"},
+                 stats: %{status: :ebird_only_subregions}
+               },
                %{ebird_location: %EbirdLocation{code: "CZ"}, stats: %{status: :ebird_only}}
              ] = Ebird.countries_with_statuses()
     end
@@ -34,8 +38,9 @@ defmodule Kjogvi.Geo.EbirdTest do
     test "falls back to the ISO code while the eBird country is unlinked" do
       country = insert(:country, iso_code: "CZ")
       insert(:ebird_location, code: "CZ")
-      # A mismatched eBird subdivision keeps CZ's shape :mixed; without any
-      # subdivisions it would be a trivially matched empty set.
+      # Both sides subdivide but agree on neither code nor name, so CZ's shape is
+      # :mixed; without any subdivisions it would be a trivially matched empty set.
+      insert(:subdivision1, iso_code: "CZ-10", name_en: "Praha", country: country)
       insert(:ebird_subdivision1, country_code: "CZ", code: "CZ-99", name: "No Match")
 
       assert Ebird.statuses_for_common_countries([country]) ==
@@ -89,25 +94,131 @@ defmodule Kjogvi.Geo.EbirdTest do
     end
   end
 
-  describe "unmatched_iso_subdivision1s/1" do
-    test "lists the linked country's subdivisions no eBird row points at" do
+  describe "subdivision1_comparison/1" do
+    test "pairs linked rows and lists each side's leftovers" do
       country = insert(:country, iso_code: "HU")
-      linked = insert(:subdivision1, iso_code: "HU-BU", country: country)
-      extra = insert(:subdivision1, iso_code: "HU-BA", name_en: "Baranya", country: country)
+      linked = insert(:subdivision1, iso_code: "HU-BU", name_en: "Budapest", country: country)
+      iso_only = insert(:subdivision1, iso_code: "HU-BA", name_en: "Baranya", country: country)
 
       insert(:ebird_location, code: "HU", location_id: country.id)
-      insert(:ebird_subdivision1, country_code: "HU", code: "HU-BU", location_id: linked.id)
 
-      assert [%Location{id: extra_id}] = Ebird.unmatched_iso_subdivision1s("HU")
-      assert extra_id == extra.id
+      ebird_linked =
+        insert(:ebird_subdivision1, country_code: "HU", code: "HU-BU", location_id: linked.id)
+
+      ebird_only =
+        insert(:ebird_subdivision1, country_code: "HU", code: "HU-ZZ", name: "High Seas")
+
+      assert [baranya, budapest, seas] = Ebird.subdivision1_comparison("HU")
+
+      assert %{ebird: nil, pairing: :iso_only} = baranya
+      assert baranya.location.id == iso_only.id
+
+      assert %{pairing: :linked} = budapest
+      assert budapest.ebird.id == ebird_linked.id
+      assert budapest.location.id == linked.id
+
+      assert %{location: nil, pairing: :ebird_only} = seas
+      assert seas.ebird.id == ebird_only.id
     end
 
-    test "empty when the eBird country row is not linked" do
-      country = insert(:country, iso_code: "HU")
-      insert(:subdivision1, iso_code: "HU-BA", country: country)
-      insert(:ebird_location, code: "HU")
+    test "suggests an unlinked pair by code even when the names differ" do
+      country = insert(:country, iso_code: "BA")
 
-      assert Ebird.unmatched_iso_subdivision1s("HU") == []
+      federacija =
+        insert(:subdivision1,
+          iso_code: "BA-BIH",
+          name_en: "Federacija Bosne i Hercegovine",
+          country: country
+        )
+
+      insert(:ebird_location, code: "BA", location_id: country.id)
+
+      ebird =
+        insert(:ebird_subdivision1,
+          country_code: "BA",
+          code: "BA-BIH",
+          name: "Federacija Bosna i Hercegovina"
+        )
+
+      assert [row] = Ebird.subdivision1_comparison("BA")
+      assert %{pairing: :code_suggestion} = row
+      assert row.ebird.id == ebird.id
+      assert row.location.id == federacija.id
+    end
+
+    test "prefers the code pairing over a competing name pairing" do
+      country = insert(:country, iso_code: "BA")
+      by_code = insert(:subdivision1, iso_code: "BA-BIH", name_en: "Republika", country: country)
+      by_name = insert(:subdivision1, iso_code: "BA-XX", name_en: "Federacija", country: country)
+      insert(:ebird_location, code: "BA", location_id: country.id)
+
+      ebird =
+        insert(:ebird_subdivision1, country_code: "BA", code: "BA-BIH", name: "Federacija")
+
+      rows = Ebird.subdivision1_comparison("BA")
+
+      assert [%{ebird: %{id: ebird_id}, location: %{id: location_id}, pairing: :code_suggestion}] =
+               Enum.filter(rows, &(&1.pairing == :code_suggestion))
+
+      assert ebird_id == ebird.id
+      assert location_id == by_code.id
+
+      # The name-matching location is left over rather than stealing the row.
+      assert [%{location: %{id: leftover_id}}] = Enum.filter(rows, &(&1.pairing == :iso_only))
+      assert leftover_id == by_name.id
+    end
+
+    test "suggests unlinked pairs whose normalized names match" do
+      country = insert(:country, iso_code: "PL")
+      lodzkie = insert(:subdivision1, iso_code: "PL-LD", name_en: "Łódzkie", country: country)
+      insert(:ebird_location, code: "PL", location_id: country.id)
+      ebird = insert(:ebird_subdivision1, country_code: "PL", code: "PL-91", name: "Lodzkie")
+
+      assert [row] = Ebird.subdivision1_comparison("PL")
+      assert %{pairing: :name_suggestion} = row
+      assert row.ebird.id == ebird.id
+      assert row.location.id == lodzkie.id
+    end
+
+    test "leaves an ambiguous name unpaired on both sides" do
+      country = insert(:country, iso_code: "PL")
+      insert(:subdivision1, iso_code: "PL-LD", name_en: "Lodzkie", country: country)
+      insert(:subdivision1, iso_code: "PL-XX", name_en: "Lodzkie", country: country)
+      insert(:ebird_location, code: "PL", location_id: country.id)
+      insert(:ebird_subdivision1, country_code: "PL", code: "PL-91", name: "Lodzkie")
+
+      rows = Ebird.subdivision1_comparison("PL")
+
+      assert Enum.map(rows, & &1.pairing) == [:ebird_only, :iso_only, :iso_only]
+    end
+
+    test "omits a subdivision linked from another country's eBird row" do
+      country = insert(:country, iso_code: "HU")
+      sub1 = insert(:subdivision1, iso_code: "HU-BU", name_en: "Budapest", country: country)
+      insert(:ebird_location, code: "HU", location_id: country.id)
+      # Linked from an eBird row that is not among HU's subdivisions.
+      insert(:ebird_subdivision1, country_code: "XX", code: "XX-01", location_id: sub1.id)
+
+      assert Ebird.subdivision1_comparison("HU") == []
+    end
+
+    test "populates the ISO side before the country row is linked" do
+      country = insert(:country, iso_code: "AD")
+      sub1 = insert(:subdivision1, iso_code: "AD-02", name_en: "Canillo", country: country)
+      insert(:ebird_location, code: "AD")
+
+      assert [row] = Ebird.subdivision1_comparison("AD")
+      assert %{ebird: nil, pairing: :iso_only} = row
+      assert row.location.id == sub1.id
+    end
+
+    test "reaches the ISO side through the link for an eBird-only country" do
+      country = insert(:country, iso_code: nil, slug: "xk")
+      sub1 = insert(:subdivision1, iso_code: "XK-01", name_en: "Pristina", country: country)
+      insert(:ebird_location, code: "XK", location_id: country.id)
+
+      assert [row] = Ebird.subdivision1_comparison("XK")
+      assert row.location.id == sub1.id
     end
   end
 
