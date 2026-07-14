@@ -13,22 +13,11 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
   alias Kjogvi.Util.Number
   alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
-  @statuses [:matched, :iso_extra, :name_candidate, :ebird_only, :mixed]
-
   @impl true
   def mount(_params, _session, socket) do
     tree = Geo.common_location_tree()
 
     countries = for %{location: %{location_type: :country} = location} <- tree, do: location
-    ebird_statuses = Geo.Ebird.statuses_for_common_countries(countries)
-
-    status_counts =
-      Enum.frequencies_by(countries, fn country ->
-        case ebird_statuses[country.id] do
-          nil -> :no_ebird
-          entry -> entry.status
-        end
-      end)
 
     {:ok,
      socket
@@ -36,46 +25,17 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
      |> assign(:location_tree, tree)
      |> assign(:locations_count, count_nodes(tree))
      |> assign(:countries_count, length(countries))
-     |> assign(:ebird_statuses, ebird_statuses)
-     |> assign(:statuses, @statuses)
-     |> assign(:status_counts, status_counts)
      |> assign(:search_term, "")
      |> assign(:search_results, [])}
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    status = parse_status(params["status"])
-
-    filtered =
-      case status do
-        nil ->
-          socket.assigns.location_tree
-
-        status ->
-          Enum.filter(socket.assigns.location_tree, fn node ->
-            node_status(node, socket.assigns.ebird_statuses) == status
-          end)
-      end
+  def handle_params(_params, _url, socket) do
+    filtered = socket.assigns.location_tree
 
     {:noreply,
      socket
-     |> assign(:status, status)
      |> assign(:filtered_tree, filtered)}
-  end
-
-  defp node_status(%{location: location}, ebird_statuses) do
-    case ebird_statuses[location.id] do
-      nil -> :no_ebird
-      entry -> entry.status
-    end
-  end
-
-  defp parse_status(nil), do: nil
-  defp parse_status("no_ebird"), do: :no_ebird
-
-  defp parse_status(param) do
-    Enum.find(@statuses, &(Atom.to_string(&1) == param))
   end
 
   @impl true
@@ -125,7 +85,7 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
           </.action_button>
           <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
             <span id="common-locations-count" class="text-lg font-header font-bold tracking-tight">
-            {Number.delimit(@locations_count)}
+              {Number.delimit(@locations_count)}
             </span>
             <span class="text-forest-100 text-sm font-medium">locations</span>
           </div>
@@ -166,7 +126,6 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
               location={location}
               variant={:flat}
               admin={true}
-              ebird_statuses={@ebird_statuses}
             />
           </li>
         </ul>
@@ -180,33 +139,12 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
 
       <%!-- eBird status filter + location tree (hidden when searching) --%>
       <div :if={@search_term == ""} class="space-y-6">
-        <ul id="ebird-status-filter" class="flex flex-wrap gap-2">
-          <.inline_filter_pill selected={@status == nil} href={~p"/admin/locations"}>
-            All ({@countries_count})
-          </.inline_filter_pill>
-          <.inline_filter_pill
-            :for={status <- @statuses}
-            selected={@status == status}
-            active={Map.get(@status_counts, status, 0) > 0}
-            href={~p"/admin/locations?status=#{status}"}
-          >
-            {ebird_status_label(status)} ({Map.get(@status_counts, status, 0)})
-          </.inline_filter_pill>
-          <.inline_filter_pill
-            selected={@status == :no_ebird}
-            active={Map.get(@status_counts, :no_ebird, 0) > 0}
-            href={~p"/admin/locations?status=no_ebird"}
-          >
-            no eBird ({Map.get(@status_counts, :no_ebird, 0)})
-          </.inline_filter_pill>
-        </ul>
-
         <ul :if={length(@filtered_tree) > 0} class="space-y-4">
           <li
             :for={node <- @filtered_tree}
             class="border border-stone-200 rounded-lg overflow-hidden"
           >
-            <.tree_node node={node} admin={true} ebird_statuses={@ebird_statuses} />
+            <.tree_node node={node} admin={true} />
           </li>
         </ul>
 

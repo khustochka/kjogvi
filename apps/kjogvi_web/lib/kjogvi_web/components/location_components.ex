@@ -10,7 +10,6 @@ defmodule KjogviWeb.LocationComponents do
     router: KjogviWeb.Router,
     statics: KjogviWeb.static_paths()
 
-  import KjogviWeb.EbirdComponents
   import KjogviWeb.IconComponents
 
   alias Kjogvi.Accounts.User
@@ -68,23 +67,11 @@ defmodule KjogviWeb.LocationComponents do
   edit/delete actions (commons aren't user-owned), only a link to their page and
   a lifelist link. `admin` links to the admin locations pages instead and drops
   the lifelist link.
-
-  `ebird_statuses` (admin index) is a `location_id`-keyed map of eBird match
-  entries (`Kjogvi.Geo.Ebird.statuses_for_common_countries/1`); a country with
-  an entry gets its match status badge, linking to the eBird workbench.
   """
   attr :location, :map, required: true
   attr :admin, :boolean, default: false
-  attr :ebird_statuses, :map, default: nil
 
   def common_node(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :ebird_entry,
-        assigns.ebird_statuses && assigns.ebird_statuses[assigns.location.id]
-      )
-
     ~H"""
     <div class="flex items-center justify-between gap-2">
       <div class="min-w-0">
@@ -115,14 +102,6 @@ defmodule KjogviWeb.LocationComponents do
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
           <span class="text-xs text-stone-400">{@location.slug}</span>
           <.type_badge :if={@location.location_type} type={@location.location_type} />
-          <.link
-            :if={@ebird_entry}
-            navigate={~p"/admin/ebird/#{@ebird_entry.code}"}
-            title="eBird matching workbench"
-            class="no-underline"
-          >
-            <.ebird_status_badge status={@ebird_entry.status} />
-          </.link>
         </div>
       </div>
       <.lifelist_link :if={!@admin} slug={@location.slug} />
@@ -153,7 +132,6 @@ defmodule KjogviWeb.LocationComponents do
   attr :current_user, :any, default: nil
   attr :delete_error, :any, default: nil
   attr :admin, :boolean, default: false
-  attr :ebird_statuses, :map, default: nil
 
   def location_card(assigns) do
     assigns = assign(assigns, :kind, location_kind(assigns.location))
@@ -167,7 +145,6 @@ defmodule KjogviWeb.LocationComponents do
         :if={@kind == :common}
         location={@location}
         admin={@admin}
-        ebird_statuses={@ebird_statuses}
       />
       <.personal_body
         :if={@kind == :personal}
@@ -320,7 +297,6 @@ defmodule KjogviWeb.LocationComponents do
   attr :current_user, :any, default: nil
   attr :delete_error, :any, default: nil
   attr :admin, :boolean, default: false
-  attr :ebird_statuses, :map, default: nil
 
   def tree_node(assigns) do
     location = assigns.node.location
@@ -355,7 +331,6 @@ defmodule KjogviWeb.LocationComponents do
           current_user={@current_user}
           delete_error={@delete_error}
           admin={@admin}
-          ebird_statuses={@ebird_statuses}
         />
       </div>
     </div>
@@ -371,7 +346,6 @@ defmodule KjogviWeb.LocationComponents do
           current_user={@current_user}
           delete_error={@delete_error}
           admin={@admin}
-          ebird_statuses={@ebird_statuses}
         />
       </li>
     </ul>
