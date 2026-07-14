@@ -5,7 +5,12 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   (`Kjogvi.Geo.Ebird.subdivision1_comparison/1`) — paired rows on one line,
   each side's leftovers against an empty cell. The match passes button and the
   manual resolution actions (link via autocomplete, unlink, create-from-eBird)
-  act on the eBird side; the ISO column is read-only context.
+  act on the eBird side and occupy the row's third column, after eBird and ISO;
+  the ISO column is read-only context.
+
+  Create-from-eBird is offered only where the row has no ISO counterpart at all:
+  a linked or merely suggested row already has the location the button would
+  make.
   """
 
   use KjogviWeb, :live_view
@@ -210,9 +215,11 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
           class="border border-stone-200 rounded-lg divide-y divide-stone-100"
         >
           <li :for={row <- @comparison} id={comparison_row_id(row)} class="px-4 py-2.5 space-y-2">
-            <%!-- Columns of equal share with a fixed-width marker between, so the
-            two sides' codes and names line up down the whole table. --%>
-            <div class="grid sm:grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 items-baseline">
+            <%!-- Each row is its own grid, so every track must be content-independent
+            for the columns to line up down the table: equal-share sides, a
+            fixed-width marker between, and a fixed-width actions column (`auto`
+            would collapse on an ISO-only row and shift that row's cells). --%>
+            <div class="grid sm:grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)_11rem] gap-x-3 gap-y-1 items-baseline">
               <%!-- eBird side --%>
               <div class="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-2 items-baseline">
                 <span :if={row.ebird} class="font-mono text-sm text-stone-500">
@@ -241,10 +248,15 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
                   no ISO subdivision
                 </span>
               </div>
-            </div>
 
-            <div :if={row.ebird} class="flex flex-wrap gap-2">
-              <.region_actions region={row.ebird} country={@country} />
+              <div class="flex flex-wrap gap-2">
+                <.region_actions
+                  :if={row.ebird}
+                  region={row.ebird}
+                  country={@country}
+                  creatable={row.location == nil}
+                />
+              </div>
             </div>
 
             <.link_form
@@ -321,6 +333,10 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   attr :region, EbirdLocation, required: true
   attr :country, EbirdLocation, required: true
 
+  attr :creatable, :boolean,
+    default: true,
+    doc: "false hides create-from-eBird: an ISO counterpart exists, so link it instead"
+
   defp region_actions(assigns) do
     ~H"""
     <%= if @region.location do %>
@@ -343,7 +359,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
         Link
       </button>
       <button
-        :if={@region.location_type == :country or @country.location != nil}
+        :if={@creatable and (@region.location_type == :country or @country.location != nil)}
         type="button"
         phx-click="create_location"
         phx-value-id={@region.id}

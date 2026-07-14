@@ -48,6 +48,23 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Create from eBird")
   end
 
+  test "hides create for a subdivision an ISO one can be linked to", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    by_code = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+    insert(:subdivision1, country: country, iso_code: "AD-02", name_en: "Canillo")
+    # Codes differ, so only the name pass pairs this one.
+    by_name = insert(:ebird_subdivision1, country_code: "AD", code: "AD-99", name: "Encamp")
+    insert(:subdivision1, country: country, iso_code: "AD-03", name_en: "Encamp")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    for region <- [by_code, by_name] do
+      assert has_element?(view, "#ebird-region-#{region.id} button", "Link")
+      refute has_element?(view, "#ebird-region-#{region.id} button", "Create from eBird")
+    end
+  end
+
   test "marks a non-code-consistent link", %{conn: conn} do
     country = insert(:country, iso_code: "RS", name_en: "Serbia")
     ebird_country = insert(:ebird_location, code: "XK", name: "Kosovo", location_id: country.id)
