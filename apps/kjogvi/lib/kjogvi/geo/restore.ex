@@ -13,12 +13,20 @@ defmodule Kjogvi.Geo.Restore do
   (`{:error, {:user_owned_id_collision, ids}}`). The id sequence is bumped
   afterwards so subsequent inserts don't collide with restored ids.
 
+  eBird locations are upserted **on `code`**, replacing every column including
+  `location_id` — the snapshot *is* the curated match state. All existing
+  links are cleared first: `location_id` is unique, so a link that moved to a
+  different `code` since the snapshot's counterpart state would otherwise
+  collide mid-upsert. Restore common locations before eBird ones — the links
+  reference them.
+
   Deletions are not propagated: a row dropped from the snapshot stays in the
   DB (same open TODO as `Kjogvi.Geo.Import`).
   """
 
   alias Kjogvi.Datasets
   alias Kjogvi.Geo.Dump
+  alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Geo.Location
   alias Kjogvi.Geo.Location.Query
   alias Kjogvi.Repo
@@ -45,9 +53,9 @@ defmodule Kjogvi.Geo.Restore do
     restore(dataset, File.read!(path))
   end
 
-  defp restore(:common_locations = dataset, content) do
+  defp restore(dataset, content) do
     :telemetry.span([:kjogvi, :geo, :restore], %{dataset: dataset}, fn ->
-      result = upsert_all(parse(content))
+      result = upsert_all(dataset, parse(dataset, content))
       {result, stop_metadata(dataset, result)}
     end)
   end
@@ -58,33 +66,56 @@ defmodule Kjogvi.Geo.Restore do
   defp stop_metadata(dataset, {:error, reason}),
     do: %{dataset: dataset, result: :error, reason: reason}
 
-  defp parse(content) do
+  defp parse(dataset, content) do
     now = DateTime.utc_now()
 
     content
     |> String.splitter("\n", trim: true)
     |> CSV.decode!(headers: true)
-    |> Enum.map(&row_attrs(&1, now))
+    |> Enum.map(&row_attrs(dataset, &1, now))
   end
 
   # The dump is ordered parents-first, so inserting in row order satisfies the
   # level FK references within one pass.
-  defp upsert_all(rows) do
+  defp upsert_all(:common_locations, rows) do
     Repo.transaction(
       fn ->
         ensure_no_user_owned_collisions(rows)
 
-        count =
-          rows
-          |> Enum.chunk_every(@chunk_size)
-          |> Enum.map(&upsert_chunk/1)
-          |> Enum.sum()
+        count = upsert_chunks(Location, rows, replace_columns(:common_locations), [:id])
 
         Query.bump_id_sequence()
         count
       end,
       timeout: :infinity
     )
+  end
+
+  defp upsert_all(:ebird_locations, rows) do
+    Repo.transaction(
+      fn ->
+        EbirdLocation.Query.matched()
+        |> Repo.update_all(set: [location_id: nil])
+
+        upsert_chunks(EbirdLocation, rows, replace_columns(:ebird_locations), [:code])
+      end,
+      timeout: :infinity
+    )
+  end
+
+  defp upsert_chunks(schema, rows, replace, conflict_target) do
+    rows
+    |> Enum.chunk_every(@chunk_size)
+    |> Enum.map(fn chunk ->
+      {count, _} =
+        Repo.insert_all(schema, chunk,
+          on_conflict: {:replace, replace},
+          conflict_target: conflict_target
+        )
+
+      count
+    end)
+    |> Enum.sum()
   end
 
   defp ensure_no_user_owned_collisions(rows) do
@@ -100,23 +131,18 @@ defmodule Kjogvi.Geo.Restore do
     end
   end
 
-  defp upsert_chunk(rows) do
-    {count, _} =
-      Repo.insert_all(Location, rows,
-        on_conflict: {:replace, replace_columns()},
-        conflict_target: [:id]
-      )
-
-    count
+  # Refresh every dumped column except the conflict key; `inserted_at` (and
+  # for common locations `user_id`, nil on every common row) keeps its
+  # existing value.
+  defp replace_columns(:common_locations) do
+    (Dump.columns(:common_locations) -- [:id]) ++ [:updated_at]
   end
 
-  # Refresh every dumped column except the conflict key; `inserted_at` and
-  # `user_id` (nil on every common row) keep their existing values.
-  defp replace_columns do
-    (Dump.columns() -- [:id]) ++ [:updated_at]
+  defp replace_columns(:ebird_locations) do
+    (Dump.columns(:ebird_locations) -- [:code]) ++ [:updated_at]
   end
 
-  defp row_attrs(row, now) do
+  defp row_attrs(:common_locations, row, now) do
     %{
       id: String.to_integer(row["id"]),
       slug: row["slug"],
@@ -134,6 +160,20 @@ defmodule Kjogvi.Geo.Restore do
       subdivision2_id: integer(row["subdivision2_id"]),
       city_id: integer(row["city_id"]),
       site_id: integer(row["site_id"]),
+      inserted_at: now,
+      updated_at: now
+    }
+  end
+
+  defp row_attrs(:ebird_locations, row, now) do
+    %{
+      code: row["code"],
+      location_type: String.to_existing_atom(row["location_type"]),
+      country_code: string(row["country_code"]),
+      subnational1_code: string(row["subnational1_code"]),
+      subnational2_code: string(row["subnational2_code"]),
+      name: string(row["name"]),
+      location_id: integer(row["location_id"]),
       inserted_at: now,
       updated_at: now
     }

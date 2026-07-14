@@ -10,15 +10,27 @@ defmodule Kjogvi.Geo.Location.FilterTest do
   end
 
   describe "for_checklist_input/0" do
-    test "excludes specials" do
-      assert %Filter{exclude_specials: true, exclude_sections: false} =
+    test "excludes specials and disabled" do
+      assert %Filter{exclude_specials: true, exclude_sections: false, exclude_disabled: true} =
                Filter.for_checklist_input()
     end
   end
 
   describe "for_parent_pick/0" do
-    test "excludes specials and sections" do
-      assert %Filter{exclude_specials: true, exclude_sections: true} = Filter.for_parent_pick()
+    test "excludes specials, sections and disabled" do
+      assert %Filter{exclude_specials: true, exclude_sections: true, exclude_disabled: true} =
+               Filter.for_parent_pick()
+    end
+  end
+
+  describe "for_common_parent_pick/0" do
+    test "excludes specials, sections and disabled, common only" do
+      assert %Filter{
+               only_common: true,
+               exclude_specials: true,
+               exclude_sections: true,
+               exclude_disabled: true
+             } = Filter.for_common_parent_pick()
     end
   end
 

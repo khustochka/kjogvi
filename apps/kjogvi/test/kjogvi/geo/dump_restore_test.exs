@@ -4,6 +4,7 @@ defmodule Kjogvi.Geo.DumpRestoreTest do
   @moduletag :capture_log
 
   alias Kjogvi.Geo.Dump
+  alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Geo.Location
   alias Kjogvi.Geo.Location.Query
   alias Kjogvi.Geo.Restore
@@ -14,7 +15,7 @@ defmodule Kjogvi.Geo.DumpRestoreTest do
     path =
       Path.join(
         System.tmp_dir!(),
-        "common_locations_#{System.unique_integer([:positive])}.csv"
+        "geo_dataset_#{System.unique_integer([:positive])}.csv"
       )
 
     on_exit(fn -> File.rm(path) end)
@@ -34,12 +35,20 @@ defmodule Kjogvi.Geo.DumpRestoreTest do
     Location
     |> Query.only_common()
     |> Repo.all()
-    |> Enum.map(&Map.take(&1, Dump.columns()))
+    |> Enum.map(&Map.take(&1, Dump.columns(:common_locations)))
     |> Enum.sort_by(& &1.id)
   end
 
   defp delete_common do
     Location |> Query.only_common() |> Repo.delete_all()
+  end
+
+  # The dumped columns of every eBird location, code-ordered, for before/after
+  # comparison across a dump/restore round trip.
+  defp ebird_snapshot do
+    EbirdLocation.Query.order_by_code()
+    |> Repo.all()
+    |> Enum.map(&Map.take(&1, Dump.columns(:ebird_locations)))
   end
 
   describe "Dump.to_file/2" do
@@ -188,6 +197,96 @@ defmodule Kjogvi.Geo.DumpRestoreTest do
     end
   end
 
+  describe "ebird_locations dataset" do
+    test "dumps rows ordered by code with the match state" do
+      location = insert(:country, iso_code: "AD")
+
+      insert(:ebird_location,
+        code: "AD-02",
+        location_type: :subdivision1,
+        country_code: "AD",
+        subnational1_code: "AD-02",
+        name: "Canillo"
+      )
+
+      insert(:ebird_location, code: "AD", country_code: "AD", location_id: location.id)
+
+      path = tmp_csv()
+      assert {:ok, 2} = Dump.to_file(:ebird_locations, path)
+
+      [country_row, sub1_row] = decode_csv(path)
+      assert country_row["code"] == "AD"
+      assert country_row["location_type"] == "country"
+      assert country_row["location_id"] == to_string(location.id)
+      assert sub1_row["code"] == "AD-02"
+      assert sub1_row["subnational1_code"] == "AD-02"
+      assert sub1_row["location_id"] == ""
+    end
+
+    test "round-trips the dataset keyed by code" do
+      location = insert(:country, iso_code: "AD")
+
+      insert(:ebird_location,
+        code: "AD",
+        country_code: "AD",
+        location_id: location.id,
+        name: "Andorra"
+      )
+
+      insert(:ebird_location,
+        code: "AD-02",
+        location_type: :subdivision1,
+        country_code: "AD",
+        subnational1_code: "AD-02",
+        name: "Canillo"
+      )
+
+      before_snapshot = ebird_snapshot()
+      path = tmp_csv()
+      assert {:ok, 2} = Dump.to_file(:ebird_locations, path)
+
+      Repo.delete_all(EbirdLocation)
+      assert {:ok, 2} = Restore.from_file(:ebird_locations, path)
+
+      assert ebird_snapshot() == before_snapshot
+    end
+
+    test "refreshes an existing row in place, replacing its match state" do
+      location = insert(:country, iso_code: "AD")
+      row = insert(:ebird_location, code: "AD", country_code: "AD", location_id: location.id)
+
+      path = tmp_csv()
+      assert {:ok, 1} = Dump.to_file(:ebird_locations, path)
+
+      row |> Ecto.Changeset.change(name: "Renamed locally", location_id: nil) |> Repo.update!()
+
+      assert {:ok, 1} = Restore.from_file(:ebird_locations, path)
+
+      restored = Repo.get_by!(EbirdLocation, code: "AD")
+      assert restored.name == row.name
+      assert restored.location_id == location.id
+      assert Repo.aggregate(EbirdLocation, :count) == 1
+    end
+
+    test "restores a link that moved to another row despite the unique index" do
+      location = insert(:country, iso_code: "AD")
+      first = insert(:ebird_location, code: "AA", location_id: location.id)
+      second = insert(:ebird_location, code: "BB")
+
+      path = tmp_csv()
+      assert {:ok, 2} = Dump.to_file(:ebird_locations, path)
+
+      # Move the link to the other row, as curation after the dump could have.
+      Repo.update!(Ecto.Changeset.change(first, location_id: nil))
+      Repo.update!(Ecto.Changeset.change(second, location_id: location.id))
+
+      assert {:ok, 2} = Restore.from_file(:ebird_locations, path)
+
+      assert Repo.get_by!(EbirdLocation, code: "AA").location_id == location.id
+      assert Repo.get_by!(EbirdLocation, code: "BB").location_id == nil
+    end
+  end
+
   describe "run/1 through the configured storage" do
     setup do
       dir = Path.join(System.tmp_dir!(), "datasets_#{System.unique_integer([:positive])}")
@@ -218,6 +317,19 @@ defmodule Kjogvi.Geo.DumpRestoreTest do
 
       assert common_snapshot() == before_snapshot
       assert Repo.get!(Location, country.id).slug == country.slug
+    end
+
+    test "round-trips the eBird dataset under its own snapshot key", %{dir: dir} do
+      insert(:ebird_location, code: "AD", country_code: "AD")
+      before_snapshot = ebird_snapshot()
+
+      assert {:ok, 1} = Dump.run(:ebird_locations)
+      assert File.exists?(Path.join(dir, "geo/ebird_locations.csv"))
+
+      Repo.delete_all(EbirdLocation)
+      assert {:ok, 1} = Restore.run(:ebird_locations)
+
+      assert ebird_snapshot() == before_snapshot
     end
 
     test "restore errors when no snapshot exists" do

@@ -134,6 +134,52 @@ defmodule Kjogvi.Geo.LocationTest do
 
       refute Map.has_key?(changeset.changes, :iso_code)
     end
+
+    test "casts disabled — the owner may set it" do
+      changeset =
+        Location.changeset(
+          %Location{
+            slug: "test-loc",
+            name_en: "Test",
+            location_type: :country,
+            is_private: false
+          },
+          %{"disabled" => "true"}
+        )
+
+      assert changeset.valid?
+      assert Ecto.Changeset.get_change(changeset, :disabled) == true
+    end
+
+    test "ignores hide_flag — it is admin-only and not in the base changeset" do
+      changeset =
+        Location.changeset(
+          %Location{
+            slug: "test-loc",
+            name_en: "Test",
+            location_type: :country,
+            is_private: false
+          },
+          %{"hide_flag" => "true"}
+        )
+
+      assert changeset.valid?
+      refute Map.has_key?(changeset.changes, :hide_flag)
+    end
+
+    test "put_hide_flag/2 casts the admin-only hide_flag" do
+      changeset =
+        %Location{
+          slug: "test-loc",
+          name_en: "Test",
+          location_type: :country,
+          is_private: false
+        }
+        |> Location.changeset(%{})
+        |> Location.put_hide_flag(%{"hide_flag" => "true"})
+
+      assert Ecto.Changeset.get_change(changeset, :hide_flag) == true
+    end
   end
 
   describe "iso_code unique index" do

@@ -1,6 +1,7 @@
 # Common Locations & eBird Regions: Data Management Plan
 
-Status: draft for review · Branch: `ebird-locations-map` · 2026-07-01
+Status: in progress — stages 1–7 done (see §11), next up: stage 8 ·
+Branch: `ebird-locations-map` · 2026-07-01
 
 ## 1. Goal
 
@@ -75,22 +76,22 @@ legal: only *user-owned* locations are restricted from common-only types.
 
 All query logic goes in `Query` submodules per convention.
 
-| Module | Purpose |
-|---|---|
-| `Kjogvi.Geo.Ebird.Import` | One-time JSON → `ebird_locations` (bootstrap, run locally) |
-| `Kjogvi.Geo.Ebird.Matcher` | Per-country matching passes (code, name) — §5 |
-| `Kjogvi.Geo.Ebird.Sub2Import` | Per-country eBird sub2 → common subdivision2 locations — §6 |
-| `Kjogvi.Geo.Dump` | Dump a dataset to CSV via the storage adapter — §7 |
-| `Kjogvi.Geo.Restore` | Restore a dataset from CSV via the storage adapter — §7 |
-| `Kjogvi.Datasets.LocalAdapter` / `.S3Adapter` | Universal dataset storage backends, not geo-specific (local default, S3 in prod) — §7.3 |
-| `Kjogvi.Geo.EbirdLocation.Query` | Composable queries: by country, match status aggregation, unmatched rows… |
+| Module | Purpose | Status |
+|---|---|---|
+| `Kjogvi.Geo.Ebird.Import` | One-time JSON → `ebird_locations` (bootstrap, run locally) | ✅ stage 4 |
+| `Kjogvi.Geo.Ebird.Matcher` | Per-country matching passes (code, name) — §5 | ✅ stage 5 |
+| `Kjogvi.Geo.Ebird.Sub2Import` | Per-country eBird sub2 → common subdivision2 locations — §6 | stage 8 |
+| `Kjogvi.Geo.Dump` | Dump a dataset to CSV via the storage adapter — §7 | ✅ stages 2, 4 |
+| `Kjogvi.Geo.Restore` | Restore a dataset from CSV via the storage adapter — §7 | ✅ stages 2, 4 |
+| `Kjogvi.Datasets.LocalAdapter` / `.S3Adapter` | Universal dataset storage backends, not geo-specific (local default, S3 in prod) — §7.3 | ✅ stage 2 |
+| `Kjogvi.Geo.EbirdLocation.Query` | Composable queries: by country, match status aggregation, unmatched rows… | ✅ stages 4, 5 |
 
 Context entry points on `Kjogvi.Geo` (or a `Kjogvi.Geo.Ebird` context if it gets
 crowded). Telemetry events (`[:kjogvi, :geo, :dump]`, `[:kjogvi, :geo,
 :restore]`, `[:kjogvi, :geo, :ebird, :match]`, …) for logging/observability,
 following the ISO import's `:telemetry.span` pattern.
 
-### 4.1 eBird JSON import (bootstrap)
+### 4.1 eBird JSON import (bootstrap) ✅ implemented (stage 4)
 
 `Kjogvi.Geo.Ebird.Import.from_json(path)`:
 
@@ -101,10 +102,12 @@ following the ISO import's `:telemetry.span` pattern.
   log what was skipped.
 - `Repo.insert_all` in chunks, upsert on `code` (re-runnable against a newer
   eBird dump; refreshes name fields, never touches `location_id`).
-- Run locally once: `mix run -e 'Kjogvi.Geo.Ebird.Import.from_json("…")'`.
-  No web UI for this — it is a bootstrap script by design (per 3b).
+- Like the ISO import, the source JSON lives read-only in the datasets storage
+  under `geo/sources/all_ebird_locs.json` (uploaded out-of-band; S3 in prod):
+  `import/0` reads it from there for the admin imports card, `from_json/1`
+  takes an explicit local path.
 
-## 5. Matching eBird ↔ common locations
+## 5. Matching eBird ↔ common locations ✅ implemented (stages 5–6)
 
 ### 5.1 Row-level links, derived country status
 
@@ -172,7 +175,7 @@ through `ExclusiveTaskProcessor` (key `{:ebird_match, :all}`).
 ISO-only subdivisions need **no action** — they already exist as common
 locations and simply have no eBird counterpart (the Hungary case).
 
-## 6. subdivision2 import (country by country)
+## 6. subdivision2 import (country by country) — not started (stage 8)
 
 `Sub2Import.import_country(country_code)` — enabled only when the country is
 ready (§5.1):
@@ -193,7 +196,7 @@ ready (§5.1):
 Note: GB/ES sub2s may have real ISO 3166-2 codes; we deliberately *don't* try
 to reconcile that now — they enter as eBird-created rows, `iso_code` nil.
 
-## 7. Dump & restore (CSV on S3)
+## 7. Dump & restore (CSV on S3) ✅ implemented (stages 2, 4)
 
 ### 7.1 Format
 
@@ -274,7 +277,7 @@ untouched (it's for the user's own locations). Common locations and eBird
 locations get separate indexes (`/admin/locations`, `/admin/ebird`), not tabs
 of one page. New nav links in the private layout's admin section.
 
-### 8.1 `/admin/imports/locations` — dataset operations page
+### 8.1 `/admin/imports/locations` — dataset operations page ✅ implemented (stages 3–4)
 
 (Other imports will get their own pages under `/admin/imports/…`.)
 
@@ -290,10 +293,20 @@ files in dev — so the page works identically everywhere.
 - **ISO 3166 import** — the existing `Imports.Locations` component, moved here
   from `/my/imports` (it was admin-gated there anyway). Kept as the bootstrap /
   "newer ISO release" tool.
+- **eBird regions import** — bootstrap card mirroring the ISO one, reading its
+  source from the datasets storage (§4.1). Both bootstrap cards sit in an
+  "Initial Imports" section below the dataset cards.
 
 `/my/imports` keeps Legacy and eBird-preload (user-data imports) only.
 
-### 8.2 `/admin/locations` — common locations management
+### 8.2 `/admin/locations` — common locations management ✅ implemented (stages 1–7)
+
+Read-only index (tree + text search) and show page shipped in stages 1/1a,
+including the shared-component extraction described below; stage 7 added the
+eBird match badges + status filter chips on the index, CRUD with the Geo
+authorization change, and the show page's eBird details (code + status badge
+linking to the workbench, which owns *run match*). Still to come: the
+per-country *import sub2s* action (stage 8).
 
 **Separate LiveView, shared rendering.** Reusing `My.Locations.Index` whole
 was considered, but it diverges on too much: data assembly (`Geo.location_tree`
@@ -326,7 +339,7 @@ rather than being rendered verbatim.
   path: `scope.area == :admin` may manage common (`user_id IS NULL`) locations;
   creation in the admin area sets `user_id: nil`.
 
-### 8.3 `/admin/ebird` — eBird locations management
+### 8.3 `/admin/ebird` — eBird locations management ✅ implemented (stage 6)
 
 - **Index**: eBird countries with match status, matched/total counts, filters —
   the eBird-side mirror of 8.2 (may even be the same LiveView behind two
@@ -347,36 +360,36 @@ chips not icon soup, responsive, no truncation.
 Roughly one PR-sized stage each; tests ride with their phase. The common
 locations track comes first; all eBird work is deferred until it's done.
 
-**Track A — common locations**
+**Track A — common locations** ✅ done (stages 1–3, see §11)
 
-1. **Common locations admin UI, read-only** — `/admin/locations` index + show
+1. ✅ **Common locations admin UI, read-only** — `/admin/locations` index + show
    page (no edit/add yet; no eBird badges yet), admin nav links. Works off the
    ISO-imported scaffold already in the DB, and doubles as the inspection tool
    for verifying phase 2's restores.
-2. **Dump/restore core** — `Geo.Dump` / `Geo.Restore` for the common locations
+2. ✅ **Dump/restore core** — `Geo.Dump` / `Geo.Restore` for the common locations
    dataset **only** (the eBird dataset is added in phase 4), CSV round-trip
    tests (incl. id preservation, sequence bump, user-rows untouched). `Kjogvi.Datasets` storage adapters (§7.3): local
    adapter as the default plus the prod-only S3 adapter (S3 calls kept thin;
    tests stay on local files).
-3. **Admin imports page** — `/admin/imports` with the restore/dump cards
+3. ✅ **Admin imports page** — `/admin/imports` with the restore/dump cards
    (ExclusiveTaskProcessor-backed), ISO card moved over from `/my/imports`.
    *Then run locally: ISO import → dump → upload to S3.*
 
-**Track B — eBird (deferred)**
+**Track B — eBird**
 
-4. **eBird bootstrap import** — `Ebird.Import.from_json/1`,
+4. ✅ **eBird bootstrap import** — `Ebird.Import.from_json/1`,
    `EbirdLocation.Query` skeleton (schema already exists on this branch).
    Tests with a small JSON fixture; extend dump/restore + imports page to the
    eBird dataset. *Then run the import locally against the real file.*
-5. **Matcher** — code + name passes, derived country statuses in
+5. ✅ **Matcher** — code + name passes, derived country statuses in
    `EbirdLocation.Query`. Pure-logic tests (normalization, ambiguity,
    idempotence, never-overwrite-manual).
-6. **eBird admin UI** — `/admin/ebird` index + country workbench (run match,
+6. ✅ **eBird admin UI** — `/admin/ebird` index + country workbench (run match,
    link/unlink, create-from-eBird). *Then start actually matching countries,
    dumping to S3 as they land.*
-7. **Common locations admin UI, full** — eBird status badges and filters on
-   the index, CRUD (+ the Geo authorization change).
-8. **sub2 import** — `Sub2Import` + per-country action in the UI.
+7. ✅ **Common locations admin UI, full** — eBird status badges and filters
+   on the index, CRUD (+ the Geo authorization change).
+8. **sub2 import** ← next — `Sub2Import` + per-country action in the UI.
 9. **Cleanup** — the ISO card stays (it reads its source from the datasets
    storage and remains the "newer ISO release" tool; the HTTP-URL import path +
    `LOCATIONS_IMPORT_URL` were already dropped in stage 3); set the
@@ -388,14 +401,12 @@ with 7–8 — that's the "gradual" part, and dumps to S3 checkpoint it.
 
 ## 10. Open questions (confirm before/while implementing)
 
-1. **Status labels** — §5.1 proposes derived statuses replacing "fully matched
-   / code matched / added from iso / smth else"; do the semantics match your
-   intent (esp. `matched_iso_extra` for Hungary)?
-2. **Ignored eBird rows** — is "leave junk regions (XX, ABA-style) unmatched
-   forever" acceptable, or do you want an explicit ignored flag so `partial`
-   filters aren't polluted?
+1. ~~**Status labels**~~ — resolved (stage 5): §5.1 semantics confirmed;
+   `matched_iso_extra` outranks `matched_mixed` in badge precedence.
+2. ~~**Ignored eBird rows**~~ — resolved (stage 5): junk regions stay
+   unmatched, no ignored flag.
 3. **Sub2 slugs** — eBird-code-based (`us_al_001`, stable/unique, proposed) vs
-   name-based (readable, collision-prone)?
+   name-based (readable, collision-prone)? *Still open — decide by stage 8.*
 
 The work is supposed to be performed in stages, with commit after every stage. Do not start work
 on a new stage unless specifically instructed. Ideally after each stage the tests should pass,
@@ -449,3 +460,89 @@ stages, especially if this requires writing code (app or test) just for the sake
   (read-only — uploaded out-of-band), the HTTP-URL path and
   `LOCATIONS_IMPORT_URL` are gone, and `build_iso_3166.exs` defaults its output
   to `priv/datasets/geo/sources/`.
+- **Stage 4** (2026-07-10) — eBird bootstrap import + dataset plumbing:
+  `Geo.Ebird.Import.from_json/1` (chunked upsert on `code`, refreshes name
+  fields, never touches `location_id`, skips and reports no-`countryCode`
+  pseudo-rows; telemetry `[:kjogvi, :geo, :ebird, :import]` + logger handler).
+  `EbirdLocation.Query` skeleton (`order_by_code`, `for_country`, `matched`,
+  `count_by_type_with_matched`) and `Geo.ebird_location_counts_by_type/0`.
+  Dump/Restore extended to the `:ebird_locations` dataset
+  (`geo/ebird_locations.csv`, ordered by `code`; restore upserts on `code`
+  replacing everything incl. `location_id`, clearing existing links first so
+  a link that moved between codes can't hit the unique index). Imports page
+  got Restore/Dump eBird cards (keys `{:geo_restore, :ebird}` /
+  `{:geo_dump, :ebird}`; restore card shows per-type totals + matched counts);
+  restore/dump cards refactored into shared `restore_card`/`dump_card`
+  components, notice ids now card-prefixed. The eBird import also got a web UI
+  card mirroring the ISO one (`Imports.Locations.Ebird`; `Import.import/0`
+  reads the source from the datasets storage under
+  `geo/sources/all_ebird_locs.json`); the two bootstrap import cards sit in
+  their own "Initial Imports" section below the dataset cards. *Ran the real
+  import locally: 8,489 regions (252 countries, 3,557 sub1, 4,680 sub2),
+  skipped `aba`; source JSON placed in `priv/datasets/geo/sources/`.*
+- **Stage 5** (2026-07-10) — Matcher + derived statuses:
+  `Geo.Ebird.Matcher.match_country/2` (country pass, code pass, name pass on
+  leftovers via public `normalize_name/1` — NFD, strip diacritics, downcase,
+  collapse punctuation/whitespace; unambiguous 1:1 only). All passes in one
+  `Repo.transact/1`; never overwrites a link (`is_nil(location_id)` guards) and
+  never takes a common location linked from another eBird row; sub2 rows are
+  invisible to matching and statuses (linked by the stage-8 import). Returns
+  `%{code: n, name: n, left: n}`; telemetry `[:kjogvi, :geo, :ebird, :match]`
+  + logger handlers. `EbirdLocation.Query` grew the link-update queries, the
+  stat aggregations (`country_match_stats`, `sub1_match_stats`,
+  `iso_sub1_stats` — anchored on the linked common country, so manually linked
+  eBird-only countries work) and pure `derive_status/1` (§5.1 statuses,
+  iso_extra outranks mixed per confirmed Q1; Q2 confirmed: junk rows stay
+  unmatched, no ignored flag). `Geo.ebird_country_statuses/0` /
+  `ebird_country_status/1` merge the stats and add `:status`.
+  `ebird_location_factory` now derives `country_code` from a passed `code`;
+  new `ebird_subdivision1_factory`. *Sanity-run on the real data: AD
+  `%{code: 8, name: 0, left: 0}` → `:matched`; CZ (zero code overlap)
+  `%{code: 1, name: 13, left: 1}` → `:partial`; HU `%{code: 43, name: 0,
+  left: 0}` → `:matched_iso_extra` (the Hungary case); re-runs are no-ops.*
+- **Stage 6** (2026-07-12) — eBird admin UI. New `Kjogvi.Geo.Ebird` context:
+  the eBird entry points moved off `Kjogvi.Geo` (`location_counts_by_type/0`,
+  `country_statuses/0`, `country_status/1` — callers/tests updated) plus new
+  `countries_with_statuses/0`, `get_country/1`, `matchable_locations/1`,
+  `unmatched_iso_subdivision1s/1`, a `match_country` delegate, and the manual
+  resolution ops: `link/2` (common locations only; reloads the row so a stale
+  struct can't overwrite; unique-constraint error when the location is taken),
+  `unlink/1`, `create_common_location/1` (slug from the eBird code, name from
+  `name`, `import_source: :ebird_regions`, `iso_code` nil; a subdivision1 goes
+  under the linked common country, else `{:error, :country_not_linked}`; bare
+  `change/1` changeset since country codes make two-letter slugs). Also
+  `EbirdLocation.code_match?/1`, `Query.preload_location/1`,
+  `Location.Filter.for_ebird_link/1` on a new `only_common` filter flag.
+  Web: `/admin/ebird` index (`Live.Admin.Ebird.Index` — status badge, sub1
+  linked counts, ISO-only count, status filter chips via `?status=`) and the
+  workbench `/admin/ebird/:country_code` (`Live.Admin.Ebird.Show` — run match
+  with flash summary, per-row link autocomplete / unlink / create-from-eBird,
+  by-code vs other link indicator, ISO-only subdivisions listed for context);
+  separate LiveViews, not one behind two routes (per the §8.3 open point).
+  `KjogviWeb.EbirdComponents` (status badge + labels), admin menu link
+  "eBird Locations". *Sanity-run on the real data: 252 countries — 1 matched
+  (AD), 1 partial (CZ 13/14), 1 matched_iso_extra (HU, HU-ER listed as
+  ISO-only), 249 unmatched.*
+- **Stage 7** (2026-07-12) — Common locations admin UI, full. Geo
+  authorization: the `:admin` area may manage common (`user_id IS NULL`)
+  locations — `create_location` creates them unowned there, `update_location`
+  / `delete_location` allow owner-or-admin-on-common (`can_manage?/2`); delete
+  also refuses `{:error, :has_ebird_link}` when an eBird region links to the
+  location (the FK would silently nilify curated state — unlink in the
+  workbench first). `Location.validate_common_ancestry/1` (a common location
+  may not hang under a user-owned parent — it would dump dangling FKs),
+  `Location.Filter.for_common_parent_pick/0`, `EbirdLocation.Query.for_location/2`,
+  and `Geo.Ebird.statuses_for_common_countries/1` (status entries keyed by
+  common location id; unlinked eBird countries matched by ISO code so
+  unmatched countries still show). Web: `/admin/locations` index gained eBird
+  status badges on country rows (linking to the workbench; rendered via an
+  `ebird_statuses` attr threaded through `tree_node`/`location_card`/
+  `common_node`), status filter chips (`?status=`, incl. a `no_ebird` pseudo
+  status) and a New Location button; the show page gained Edit / Add
+  sub-location / Delete actions and eBird details (code + status badge).
+  CRUD: `My.Locations.Form` moved to `Live.Locations.Form` serving both areas
+  per the multi-area LV pattern (branches on `scope.area`: paths, type options
+  incl. `country`/`subdivision1` but not `special`, common-only parent
+  autocomplete), mounted at `/admin/locations/new` + `/admin/locations/:slug/edit`.
+  *Sanity-run on the real data: 249 common countries — AD matched, CZ partial,
+  HU matched_iso_extra, 243 unmatched; BQ/CW/SX report no eBird counterpart.*

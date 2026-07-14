@@ -23,11 +23,7 @@ defmodule Kjogvi.Geo.EbirdLocation do
     field :country_code, :string
     field :subnational1_code, :string
     field :subnational2_code, :string
-    field :local_abbrev, :string
     field :name, :string
-    field :name_long, :string
-    field :name_short, :string
-    field :nice_name, :string
 
     belongs_to(:location, Location)
 
@@ -36,17 +32,29 @@ defmodule Kjogvi.Geo.EbirdLocation do
 
   def location_types, do: @location_types
 
+  @doc """
+  Whether the row's link is code-consistent: the linked location's `iso_code`
+  equals the eBird code for the row's own level (§ "matched by code" — derived,
+  never stored). False for unlinked rows; requires `location` to be preloaded
+  on linked ones.
+  """
+  def code_match?(%__MODULE__{location_id: nil}), do: false
+
+  def code_match?(%__MODULE__{location_type: :country} = ebird_location) do
+    ebird_location.location.iso_code == ebird_location.code
+  end
+
+  def code_match?(%__MODULE__{location_type: :subdivision1} = ebird_location) do
+    ebird_location.location.iso_code == ebird_location.subnational1_code
+  end
+
   @castable_fields ~w(
     code
     location_type
     country_code
     subnational1_code
     subnational2_code
-    local_abbrev
     name
-    name_long
-    name_short
-    nice_name
     location_id
   )a
 

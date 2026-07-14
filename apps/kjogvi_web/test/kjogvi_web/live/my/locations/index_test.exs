@@ -25,6 +25,24 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     assert has_element?(index_live, "a", location.name_en)
   end
 
+  test "marks a disabled personal location with the disabled icon", %{conn: conn, user: user} do
+    country = insert(:country, name_en: "Canada")
+    insert(:location, name_en: "Winnipeg", country: country, user_id: user.id, disabled: true)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    assert has_element?(index_live, "span[title='Disabled']")
+  end
+
+  test "does not mark an enabled personal location", %{conn: conn, user: user} do
+    country = insert(:country, name_en: "Canada")
+    insert(:location, name_en: "Winnipeg", country: country, user_id: user.id, disabled: false)
+
+    {:ok, index_live, _html} = live(conn, ~p"/my/locations")
+
+    refute has_element?(index_live, "span[title='Disabled']")
+  end
+
   test "shows the user's own locations under the common scaffold but not another user's",
        %{conn: conn, user: user} do
     country = insert(:country, name_en: "Canada")

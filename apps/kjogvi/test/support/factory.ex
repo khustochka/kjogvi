@@ -38,6 +38,39 @@ defmodule Kjogvi.Factory do
     }
   end
 
+  # A country-level eBird region; `country_code` follows the (possibly passed)
+  # code, as in the real dump. Pass the code fields explicitly for subdivision
+  # rows, or use `ebird_subdivision1_factory`.
+  def ebird_location_factory(attrs) do
+    code = Map.get(attrs, :code, sequence(:ebird_code, &"X#{&1}"))
+
+    base = %Kjogvi.Geo.EbirdLocation{
+      code: code,
+      location_type: :country,
+      country_code: code,
+      name: sequence(:ebird_name, &"eBird Region #{&1}")
+    }
+
+    merge_attributes(base, attrs)
+  end
+
+  # A subdivision1-level eBird region; pass `country_code:` (and usually
+  # `code:`) to place it under a country.
+  def ebird_subdivision1_factory(attrs) do
+    country_code = Map.get(attrs, :country_code, "XX")
+    code = Map.get(attrs, :code, sequence(:ebird_sub1_code, &"#{country_code}-#{&1}"))
+
+    base = %Kjogvi.Geo.EbirdLocation{
+      code: code,
+      location_type: :subdivision1,
+      country_code: country_code,
+      subnational1_code: code,
+      name: sequence(:ebird_name, &"eBird Subdivision #{&1}")
+    }
+
+    merge_attributes(base, attrs)
+  end
+
   def special_factory do
     %Kjogvi.Geo.Location{
       slug: sequence(:slug, &"special#{&1}"),

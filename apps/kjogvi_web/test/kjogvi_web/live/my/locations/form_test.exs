@@ -43,6 +43,35 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       assert has_element?(view, "#location-breadcrumbs a", "Locations")
     end
 
+    test "renders the disabled checkbox but not the admin-only hide_flag", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new")
+
+      assert has_element?(view, "#location_disabled")
+      refute has_element?(view, "#location_hide_flag")
+    end
+
+    test "creates a location with disabled set", %{conn: conn, user: user} do
+      country = insert(:country, name_en: "Canada")
+
+      {:ok, view, _html} = live(conn, ~p"/my/locations/new?parent_id=#{country.id}")
+
+      view
+      |> form("#location-form",
+        location: %{
+          slug: "disabled-city",
+          name_en: "Disabled City",
+          location_type: "city",
+          is_private: "false",
+          disabled: "true"
+        }
+      )
+      |> render_submit()
+
+      saved = Geo.location_by_slug("disabled-city")
+      assert saved.disabled
+      assert saved.user_id == user.id
+    end
+
     test "rejects a country: a user may not create a common-only type", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/my/locations/new")
 

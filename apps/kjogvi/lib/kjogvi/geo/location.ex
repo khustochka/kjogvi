@@ -50,6 +50,8 @@ defmodule Kjogvi.Geo.Location do
     field :location_type, Ecto.Enum, values: @location_types
     field :iso_code, :string
     field :is_private, :boolean, default: false
+    field :disabled, :boolean, default: false
+    field :hide_flag, :boolean, default: false
     field :lat, :decimal
     field :lon, :decimal
     field :public_index, :integer
@@ -91,6 +93,7 @@ defmodule Kjogvi.Geo.Location do
     name_en
     location_type
     is_private
+    disabled
     lat
     lon
     extras
@@ -159,7 +162,8 @@ defmodule Kjogvi.Geo.Location do
         :slug,
         :name_en,
         :location_type,
-        :is_private
+        :is_private,
+        :disabled
       ])
       |> validate_length(:slug, min: 3)
       |> validate_format(:slug, ~r/\A[a-z0-9_-]+\z/,
@@ -483,11 +487,48 @@ defmodule Kjogvi.Geo.Location do
   end
 
   @doc """
+  Casts the admin-only `hide_flag` from `attrs`. `hide_flag` is kept out of
+  `@editable_fields` so the owner-facing form can never set it; the context
+  applies this only in the `:admin` area (`Kjogvi.Geo.create_location/2`,
+  `update_location/3`).
+  """
+  def put_hide_flag(changeset, attrs) do
+    cast(changeset, attrs, [:hide_flag])
+  end
+
+  @doc """
   The `location_type`s a user may pick for their own locations: every type except
   the common-only ones (`country`, `subdivision1`).
   """
   def user_assignable_types do
     @location_types -- @common_only_types
+  end
+
+  @doc """
+  Rejects level FK ancestors that are user-owned when the location itself is
+  common (`user_id` nil): the shared dataset may not hang under anyone's
+  personal location — such a row would export dangling FKs in the dataset dump.
+  Like `validate_user_owned_type/1`, applied by the context once `user_id` is
+  known.
+  """
+  def validate_common_ancestry(changeset) do
+    ancestor_ids =
+      @level_fks
+      |> Enum.map(&get_field(changeset, &1))
+      |> Enum.reject(&is_nil/1)
+
+    with nil <- get_field(changeset, :user_id),
+         [_ | _] <- ancestor_ids,
+         true <- owned_ancestors?(ancestor_ids) do
+      add_error(changeset, :parent_id, "must be a common location")
+    else
+      _ -> changeset
+    end
+  end
+
+  defp owned_ancestors?(ancestor_ids) do
+    from(l in __MODULE__, where: l.id in ^ancestor_ids and not is_nil(l.user_id))
+    |> Repo.exists?()
   end
 
   def show_on_lifelist?(location) do

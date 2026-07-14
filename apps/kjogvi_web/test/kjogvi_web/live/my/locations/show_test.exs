@@ -187,6 +187,24 @@ defmodule KjogviWeb.Live.My.Locations.ShowTest do
     refute has_element?(show_live, "span", "lifelist filter")
   end
 
+  test "marks the header and details when location is disabled", %{conn: conn} do
+    location = insert(:location, name_en: "Closed Spot", disabled: true)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    assert has_element?(show_live, "h1 span[title='Disabled']")
+    assert has_element?(show_live, "#location-details span", "disabled")
+  end
+
+  test "does not mark an enabled location as disabled", %{conn: conn} do
+    location = insert(:location, name_en: "Open Spot", disabled: false)
+
+    {:ok, show_live, _html} = live(conn, ~p"/my/locations/#{location.slug}")
+
+    refute has_element?(show_live, "h1 span[title='Disabled']")
+    refute has_element?(show_live, "#location-details span", "disabled")
+  end
+
   test "delete button enabled for empty location", %{conn: conn, user: user} do
     location = insert(:location, name_en: "Empty", user_id: user.id)
 

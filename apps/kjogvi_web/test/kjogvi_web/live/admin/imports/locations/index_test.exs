@@ -9,6 +9,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
   import Kjogvi.AccountsFixtures
 
   alias Kjogvi.Geo.Dump
+  alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Geo.Location
   alias Kjogvi.Geo.Location.Query
   alias Kjogvi.Repo
@@ -70,7 +71,11 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
       assert has_element?(lv, "h1", "Location Imports")
       assert has_element?(lv, "#restore-common-locations h2", "Restore Common Locations")
       assert has_element?(lv, "#dump-common-locations h2", "Dump Common Locations")
+      assert has_element?(lv, "#restore-ebird-locations h2", "Restore eBird Locations")
+      assert has_element?(lv, "#dump-ebird-locations h2", "Dump eBird Locations")
+      assert has_element?(lv, "h2#initial-imports", "Initial Imports")
       assert has_element?(lv, "#iso-import h2", "ISO 3166 Import")
+      assert has_element?(lv, "#ebird-import h2", "eBird Regions Import")
     end
 
     test "shows common location counts by type", %{conn: conn} do
@@ -91,7 +96,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
 
       {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
 
-      assert has_element?(lv, "#restore-no-snapshot")
+      assert has_element?(lv, "#restore-common-locations-no-snapshot")
       refute has_element?(lv, "#restore-common-locations-form")
       assert has_element?(lv, "#dump-common-locations", "No snapshot yet.")
       assert has_element?(lv, "#dump-common-locations-form button", "Dump")
@@ -100,8 +105,35 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
     test "with no common locations, dump is unavailable", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
 
-      assert has_element?(lv, "#dump-no-locations")
+      assert has_element?(lv, "#dump-common-locations-empty")
       refute has_element?(lv, "#dump-common-locations-form")
+    end
+
+    test "shows eBird counts with matched totals", %{conn: conn} do
+      location = insert(:country)
+      insert(:ebird_location, code: "AD", country_code: "AD", location_id: location.id)
+      insert(:ebird_location, code: "UA", country_code: "UA")
+
+      insert(:ebird_location,
+        code: "AD-02",
+        location_type: :subdivision1,
+        country_code: "AD",
+        subnational1_code: "AD-02"
+      )
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+
+      assert has_element?(lv, "#restore-ebird-locations li", "Country: 2 (1 matched)")
+      assert has_element?(lv, "#restore-ebird-locations li", "Subdivision1: 1 (0 matched)")
+      assert has_element?(lv, "#restore-ebird-locations li", "Matched: 1 of 3")
+    end
+
+    test "with no eBird locations, dump is unavailable", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+
+      assert has_element?(lv, "#restore-ebird-locations li", "No eBird locations yet.")
+      assert has_element?(lv, "#dump-ebird-locations-empty")
+      refute has_element?(lv, "#dump-ebird-locations-form")
     end
   end
 
@@ -112,12 +144,16 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
 
       {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
 
-      assert has_element?(lv, "#restore-storage-not-configured")
-      assert has_element?(lv, "#dump-storage-not-configured")
+      assert has_element?(lv, "#restore-common-locations-storage-not-configured")
+      assert has_element?(lv, "#dump-common-locations-storage-not-configured")
+      assert has_element?(lv, "#restore-ebird-locations-storage-not-configured")
+      assert has_element?(lv, "#dump-ebird-locations-storage-not-configured")
       assert has_element?(lv, "#locations-import-storage-not-configured")
+      assert has_element?(lv, "#ebird-import-storage-not-configured")
       refute has_element?(lv, "#restore-common-locations-form")
       refute has_element?(lv, "#dump-common-locations-form")
       refute has_element?(lv, "#locations-import-form")
+      refute has_element?(lv, "#ebird-import-form")
     end
 
     test "a failed storage check shows a notice and keeps dump available", %{conn: conn} do
@@ -126,7 +162,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
 
       {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
 
-      assert has_element?(lv, "#restore-snapshot-check-failed")
+      assert has_element?(lv, "#restore-common-locations-snapshot-check-failed")
       refute has_element?(lv, "#restore-common-locations-form")
       assert has_element?(lv, "#locations-import-source-check-failed")
 
@@ -144,7 +180,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
 
       {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
 
-      assert has_element?(lv, "#restore-snapshot-check-failed")
+      assert has_element?(lv, "#restore-common-locations-snapshot-check-failed")
       assert has_element?(lv, "#locations-import-source-check-failed")
     end
   end
@@ -211,6 +247,46 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
       assert_receive {:lifecycle, :error, {:geo_restore, :common}, _async_result}, 2_000
 
       assert render(lv) =~ "Restore failed: no snapshot found."
+    end
+  end
+
+  describe "eBird dataset cards" do
+    test "dumping writes the eBird snapshot and reports the row count", %{conn: conn, dir: dir} do
+      insert(:ebird_location, code: "AD", country_code: "AD")
+      subscribe({:geo_dump, :ebird})
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+
+      lv
+      |> element("#dump-ebird-locations-form")
+      |> render_submit()
+
+      assert_receive {:lifecycle, :ok, {:geo_dump, :ebird}, _async_result}, 2_000
+
+      assert has_element?(lv, "#dump-ebird-locations-status", "Dump finished: 1 rows.")
+      assert File.exists?(Path.join(dir, "geo/ebird_locations.csv"))
+      assert has_element?(lv, "#restore-ebird-locations-form button", "Restore")
+    end
+
+    test "restoring loads the eBird snapshot and refreshes the counts", %{conn: conn} do
+      location = insert(:country)
+      insert(:ebird_location, code: "AD", country_code: "AD", location_id: location.id)
+      assert {:ok, 1} = Dump.run(:ebird_locations)
+      Repo.delete_all(EbirdLocation)
+
+      subscribe({:geo_restore, :ebird})
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+
+      lv
+      |> element("#restore-ebird-locations-form")
+      |> render_submit()
+
+      assert_receive {:lifecycle, :ok, {:geo_restore, :ebird}, _async_result}, 2_000
+
+      assert has_element?(lv, "#restore-ebird-locations-status", "Restore finished: 1 rows.")
+      assert has_element?(lv, "#restore-ebird-locations li", "Country: 1 (1 matched)")
+      assert Repo.aggregate(EbirdLocation, :count) == 1
     end
   end
 end

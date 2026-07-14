@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 4scEgAr7dl7npXxdaGnYweId0WulzZvfaWgTKVWUs5sPZ5QhNlbSqfDbCag0Gru
+\restrict uoZkNxMHvC3Mc0ltBwEPRugEbEwoDMLKqcjVJQEGnrnwROzgHqzgoCCASFmb28G
 
 -- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
@@ -233,11 +233,7 @@ CREATE TABLE public.ebird_locations (
     country_code character varying(255),
     subnational1_code character varying(255),
     subnational2_code character varying(255),
-    local_abbrev character varying(255),
     name character varying(255),
-    name_long character varying(255),
-    name_short character varying(255),
-    nice_name character varying(255),
     location_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
@@ -360,7 +356,9 @@ CREATE TABLE public.locations (
     subdivision1_id bigint,
     subdivision2_id bigint,
     city_id bigint,
-    site_id bigint
+    site_id bigint,
+    disabled boolean DEFAULT false NOT NULL,
+    hide_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -1423,7 +1421,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 4scEgAr7dl7npXxdaGnYweId0WulzZvfaWgTKVWUs5sPZ5QhNlbSqfDbCag0Gru
+\unrestrict uoZkNxMHvC3Mc0ltBwEPRugEbEwoDMLKqcjVJQEGnrnwROzgHqzgoCCASFmb28G
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1463,3 +1461,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260707180000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260708000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260708000001);
 INSERT INTO public."schema_migrations" (version) VALUES (20260709000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260713101232);
+INSERT INTO public."schema_migrations" (version) VALUES (20260713120000);

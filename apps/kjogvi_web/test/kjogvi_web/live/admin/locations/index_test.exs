@@ -76,6 +76,44 @@ defmodule KjogviWeb.Live.Admin.Locations.IndexTest do
     assert has_element?(index_live, "p", "No common locations yet")
   end
 
+  test "links to the new location form", %{conn: conn} do
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    assert has_element?(index_live, "#new-location-button[href='/admin/locations/new']")
+  end
+
+  test "marks a disabled country with the disabled icon", %{conn: conn} do
+    insert(:country, name_en: "Nowhere", iso_code: "XX", disabled: true)
+
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    assert has_element?(index_live, "span[title='Disabled']")
+  end
+
+  test "does not mark an enabled country", %{conn: conn} do
+    insert(:country, name_en: "Andorra", iso_code: "AD", disabled: false)
+
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    refute has_element?(index_live, "span[title='Disabled']")
+  end
+
+  test "shows a country's flag by default", %{conn: conn} do
+    insert(:country, name_en: "Andorra", iso_code: "AD", hide_flag: false)
+
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    assert has_element?(index_live, "span[aria-hidden='true']", "🇦🇩")
+  end
+
+  test "hides a country's flag when hide_flag is set", %{conn: conn} do
+    insert(:country, name_en: "Andorra", iso_code: "AD", hide_flag: true)
+
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    refute has_element?(index_live, "span[aria-hidden='true']", "🇦🇩")
+  end
+
   describe "search" do
     test "shows common locations matching the query", %{conn: conn} do
       insert(:country, name_en: "Canada")

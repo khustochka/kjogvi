@@ -949,6 +949,33 @@ defmodule Kjogvi.GeoTest do
       refute special.id in ids
       refute section.id in ids
     end
+
+    test "checklist-input and parent-pick filters exclude disabled locations" do
+      scope = %Kjogvi.Scope{current_user: user_fixture(), area: :admin}
+
+      disabled =
+        insert(:location,
+          slug: "park-disabled",
+          name_en: "Park Disabled",
+          location_type: :city,
+          disabled: true
+        )
+
+      checklist_ids =
+        Geo.search_locations(scope, "Park", filter: Geo.Location.Filter.for_checklist_input())
+        |> Enum.map(& &1.id)
+
+      parent_ids =
+        Geo.search_locations(scope, "Park", filter: Geo.Location.Filter.for_parent_pick())
+        |> Enum.map(& &1.id)
+
+      refute disabled.id in checklist_ids
+      refute disabled.id in parent_ids
+
+      # An already-selected disabled location is still found by an unfiltered
+      # search, so it stays selectable/saveable.
+      assert disabled.id in (Geo.search_locations(scope, "Park") |> Enum.map(& &1.id))
+    end
   end
 
   describe "get_locations/0" do
@@ -1143,6 +1170,85 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
+  describe "create_location/2 and update_location/3 disabled and hide_flag" do
+    test "owner can set disabled" do
+      %{user: user, scope: scope} = scope_fixture()
+      country = insert(:country, name_en: "Canada")
+
+      {:ok, created} =
+        Geo.create_location(scope, %{
+          "slug" => "disabled-city",
+          "name_en" => "Disabled City",
+          "is_private" => "false",
+          "disabled" => "true",
+          "location_type" => "city",
+          "parent_id" => country.id
+        })
+
+      assert created.disabled
+      assert created.user_id == user.id
+    end
+
+    test "private area ignores hide_flag" do
+      %{scope: scope} = scope_fixture()
+      country = insert(:country, name_en: "Canada")
+
+      {:ok, created} =
+        Geo.create_location(scope, %{
+          "slug" => "sneaky-city",
+          "name_en" => "Sneaky City",
+          "is_private" => "false",
+          "hide_flag" => "true",
+          "location_type" => "city",
+          "parent_id" => country.id
+        })
+
+      refute created.hide_flag
+    end
+
+    test "admin area sets hide_flag" do
+      scope = %Kjogvi.Scope{area: :admin}
+
+      {:ok, created} =
+        Geo.create_location(scope, %{
+          "slug" => "hidden-country",
+          "name_en" => "Hidden Country",
+          "is_private" => "false",
+          "hide_flag" => "true",
+          "location_type" => "country"
+        })
+
+      assert created.hide_flag
+    end
+
+    test "admin area can update hide_flag; private area cannot" do
+      user = user_fixture()
+      country = insert(:country, name_en: "Canada")
+
+      location =
+        insert(:location,
+          location_type: :city,
+          country: country,
+          user_id: user.id,
+          slug: "toggle-city"
+        )
+
+      private_scope = %Kjogvi.Scope{current_user: user, area: :private}
+
+      {:ok, unchanged} =
+        Geo.update_location(private_scope, location, %{"hide_flag" => "true"})
+
+      refute unchanged.hide_flag
+
+      admin_scope = %Kjogvi.Scope{area: :admin}
+      common = insert(:country, name_en: "Sweden", slug: "sweden")
+
+      {:ok, hidden} = Geo.update_location(admin_scope, common, %{"hide_flag" => "true"})
+
+      assert hidden.hide_flag
+    end
+  end
+
   describe "create_location/2 slug uniqueness" do
     setup do
       country = insert(:country, name_en: "Canada")
@@ -1231,6 +1337,95 @@ defmodule Kjogvi.GeoTest do
 
     test "another user cannot delete", %{other_scope: scope, location: location} do
       assert {:error, :forbidden} = Geo.delete_location(scope, location)
+    end
+  end
+
+  describe "create_location/2 in the admin area" do
+    setup do
+      %{scope: admin_scope_fixture()}
+    end
+
+    test "creates a common location, common-only types included", %{scope: scope} do
+      assert {:ok, country} =
+               Geo.create_location(scope, %{
+                 "slug" => "greenland",
+                 "name_en" => "Greenland",
+                 "is_private" => "false",
+                 "location_type" => "country"
+               })
+
+      assert country.user_id == nil
+
+      assert {:ok, subdivision1} =
+               Geo.create_location(scope, %{
+                 "slug" => "gl-north",
+                 "name_en" => "North Greenland",
+                 "is_private" => "false",
+                 "location_type" => "subdivision1",
+                 "parent_id" => country.id
+               })
+
+      assert subdivision1.user_id == nil
+      assert subdivision1.country_id == country.id
+    end
+
+    test "rejects a user-owned parent", %{scope: scope} do
+      country = insert(:country)
+
+      personal =
+        insert(:location, location_type: :city, country: country, user_id: user_fixture().id)
+
+      assert {:error, changeset} =
+               Geo.create_location(scope, %{
+                 "slug" => "common-site",
+                 "name_en" => "Common Site",
+                 "is_private" => "false",
+                 "location_type" => "site",
+                 "parent_id" => personal.id
+               })
+
+      assert %{parent_id: ["must be a common location"]} = errors_on(changeset)
+    end
+  end
+
+  describe "update_location/3 and delete_location/2 in the admin area" do
+    setup do
+      %{scope: admin_scope_fixture(), common: insert(:country, name_en: "Canada")}
+    end
+
+    test "can update a common location", %{scope: scope, common: common} do
+      assert {:ok, updated} = Geo.update_location(scope, common, %{"name_en" => "Kanada"})
+      assert updated.name_en == "Kanada"
+    end
+
+    test "can delete a common location", %{scope: scope, common: common} do
+      assert {:ok, _} = Geo.delete_location(scope, common)
+    end
+
+    test "cannot modify a user's location", %{scope: scope, common: common} do
+      personal =
+        insert(:location, location_type: :city, country: common, user_id: user_fixture().id)
+
+      assert {:error, :forbidden} =
+               Geo.update_location(scope, personal, %{"name_en" => "Hijacked"})
+
+      assert {:error, :forbidden} = Geo.delete_location(scope, personal)
+    end
+
+    test "a user's own scope cannot modify a common location", %{common: common} do
+      %{scope: scope} = scope_fixture()
+
+      assert {:error, :forbidden} = Geo.update_location(scope, common, %{"name_en" => "Mine"})
+      assert {:error, :forbidden} = Geo.delete_location(scope, common)
+    end
+
+    test "refuses to delete a location an eBird region links to", %{
+      scope: scope,
+      common: common
+    } do
+      insert(:ebird_location, code: "CA", location_id: common.id)
+
+      assert {:error, :has_ebird_link} = Geo.delete_location(scope, common)
     end
   end
 
@@ -1358,5 +1553,9 @@ defmodule Kjogvi.GeoTest do
   defp scope_fixture do
     user = user_fixture()
     %{user: user, scope: %Kjogvi.Scope{current_user: user, area: :private}}
+  end
+
+  defp admin_scope_fixture do
+    %Kjogvi.Scope{current_user: admin_fixture(), area: :admin}
   end
 end
