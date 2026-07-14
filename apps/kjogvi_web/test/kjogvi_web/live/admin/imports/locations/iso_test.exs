@@ -62,13 +62,31 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IsoTest do
       assert has_element?(lv, "#locations-import-form button", "Import")
     end
 
-    test "offers a re-import when a country already exists", %{conn: conn} do
+    test "blocks the import when a country already exists", %{conn: conn} do
       write_source([country_row("UA", "Ukraine")])
       insert(:country, iso_code: "US")
 
       {:ok, lv, _html} = conn |> login_admin() |> live(~p"/admin/imports/locations")
 
-      assert has_element?(lv, "#locations-import-form button", "Re-import")
+      assert has_element?(lv, "#locations-import-blocked")
+      refute has_element?(lv, "#locations-import-form")
+    end
+
+    test "gates the import behind a confirm when empty but a snapshot exists",
+         %{conn: conn} do
+      write_source([country_row("UA", "Ukraine")])
+
+      assert :ok =
+               Kjogvi.Datasets.write(
+                 Kjogvi.Geo.Dump.storage_key(:common_locations),
+                 "id\n"
+               )
+
+      {:ok, lv, _html} = conn |> login_admin() |> live(~p"/admin/imports/locations")
+
+      assert lv
+             |> element("#locations-import-form button")
+             |> render() =~ "data-confirm"
     end
   end
 
@@ -96,8 +114,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IsoTest do
 
       assert html =~ "Imported 1 countries and 1 subdivisions."
       assert Repo.aggregate(Location, :count) == 2
-      # The import is re-runnable; the button stays, now labelled Re-import.
-      assert has_element?(lv, "#locations-import-form button", "Re-import")
+      # With rows now present, the guard blocks a second raw import.
+      assert has_element?(lv, "#locations-import-blocked")
+      refute has_element?(lv, "#locations-import-form")
     end
   end
 end

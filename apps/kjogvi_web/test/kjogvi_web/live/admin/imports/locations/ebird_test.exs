@@ -63,13 +63,26 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.EbirdTest do
       assert has_element?(lv, "#ebird-import-form button", "Import")
     end
 
-    test "offers a re-import when eBird locations already exist", %{conn: conn} do
+    test "blocks the import when eBird locations already exist", %{conn: conn} do
       write_source(entries())
       insert(:ebird_location)
 
       {:ok, lv, _html} = conn |> login_admin() |> live(~p"/admin/imports/locations")
 
-      assert has_element?(lv, "#ebird-import-form button", "Re-import")
+      assert has_element?(lv, "#ebird-import-blocked")
+      refute has_element?(lv, "#ebird-import-form")
+    end
+
+    test "gates the import behind a confirm when empty but a snapshot exists",
+         %{conn: conn} do
+      write_source(entries())
+      assert :ok = Kjogvi.Datasets.write(Kjogvi.Geo.Dump.storage_key(:ebird_locations), "code\n")
+
+      {:ok, lv, _html} = conn |> login_admin() |> live(~p"/admin/imports/locations")
+
+      assert lv
+             |> element("#ebird-import-form button")
+             |> render() =~ "data-confirm"
     end
   end
 
@@ -90,8 +103,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.EbirdTest do
       assert html =~ "Imported 2 eBird regions."
       assert html =~ "Skipped 1: aba."
       assert Repo.aggregate(EbirdLocation, :count) == 2
-      # The import is re-runnable; the button stays, now labelled Re-import.
-      assert has_element?(lv, "#ebird-import-form button", "Re-import")
+      # With rows now present, the guard blocks a second raw import.
+      assert has_element?(lv, "#ebird-import-blocked")
+      refute has_element?(lv, "#ebird-import-form")
     end
   end
 end

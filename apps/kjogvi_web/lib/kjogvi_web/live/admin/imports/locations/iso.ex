@@ -11,17 +11,22 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Iso do
   `start_async/3` with no progress reporting — the button shows a loading state
   and the result is reported with a flash.
 
-  The import upserts on `iso_code`, so it is re-runnable: with ISO data already
-  present the button re-imports (updates existing rows from a newer release)
-  rather than being disabled. Blocked when no source file exists in the
-  storage, or when the storage is unconfigured or unreachable.
+  The import upserts on `iso_code`, so re-running it refreshes existing rows
+  from a newer release. To protect curated in-DB state from a stray click, the
+  card is guarded (see `Kjogvi.Geo.Import.Guard`): hard-disabled once common
+  locations exist, and gated behind a confirm when the table is empty but a
+  snapshot exists in storage (after a reset the right move is *restore*).
+  Blocked when no source file exists in the storage, or when the storage is
+  unconfigured or unreachable.
   """
 
   use KjogviWeb, :live_component
 
   alias Kjogvi.Datasets
   alias Kjogvi.Geo
+  alias Kjogvi.Geo.Dump
   alias Kjogvi.Geo.Import
+  alias Kjogvi.Geo.Import.Guard
 
   def update(_assigns, socket) do
     {:ok,
@@ -33,10 +38,16 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Iso do
   # Reads the import's preconditions and the current type counts so the template
   # can show what's there and whether this is a fresh import or a re-import.
   defp assign_state(socket) do
+    imported = Import.country_exists?()
+
     socket
     |> assign(:source_state, Datasets.snapshot_status(Import.source_key()))
-    |> assign(:imported, Import.country_exists?())
+    |> assign(:imported, imported)
     |> assign(:counts, Geo.location_counts_by_type())
+    |> assign(
+      :guard,
+      Guard.state(imported, Datasets.snapshot_status(Dump.storage_key(:common_locations)))
+    )
   end
 
   def handle_event("start_import", _params, socket) do
@@ -79,9 +90,16 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Iso do
     put_flash(socket, :error, "Locations import failed: #{inspect(reason)}")
   end
 
-  defp import_button_label(true, _imported), do: "Importing…"
-  defp import_button_label(false, true), do: "Re-import"
-  defp import_button_label(false, false), do: "Import"
+  defp import_button_label(true), do: "Importing…"
+  defp import_button_label(false), do: "Import"
+
+  # The `:confirm` guard's tripwire text; nil for `:free` (no confirm).
+  defp confirm_text(:confirm),
+    do:
+      "A common-locations snapshot exists in storage. The usual way to seed an " <>
+        "empty database is Restore, not this raw import. Import raw ISO data anyway?"
+
+  defp confirm_text(:free), do: nil
 
   def render(assigns) do
     ~H"""
@@ -98,16 +116,24 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Iso do
           <p class="text-sm text-slate-700 mb-4">
             Source file from {Calendar.strftime(modified_at, "%Y-%m-%d %H:%M:%S UTC")}.
           </p>
-          <.form
-            id="locations-import-form"
-            for={nil}
-            phx-submit="start_import"
-            phx-target={@myself}
-          >
-            <.button disabled={@running}>
-              {import_button_label(@running, @imported)}
-            </.button>
-          </.form>
+          <%= if @guard == :blocked do %>
+            <p id="locations-import-blocked" class="text-sm text-amber-700">
+              Common locations already exist. Re-running the raw ISO import would
+              overwrite curated names; it is disabled here. Pull a newer release
+              from the console if you really need to.
+            </p>
+          <% else %>
+            <.form
+              id="locations-import-form"
+              for={nil}
+              phx-submit="start_import"
+              phx-target={@myself}
+            >
+              <.button disabled={@running} data-confirm={confirm_text(@guard)}>
+                {import_button_label(@running)}
+              </.button>
+            </.form>
+          <% end %>
         <% :none -> %>
           <p class="text-sm text-amber-700" id="locations-import-no-source">
             No source file. Upload the ISO 3166 JSONL to the datasets storage

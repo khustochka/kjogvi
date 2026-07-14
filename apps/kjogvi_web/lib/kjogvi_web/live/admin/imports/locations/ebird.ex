@@ -11,18 +11,22 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Ebird do
   `start_async/3` — the button shows a loading state and the result is
   reported with a flash.
 
-  The import upserts on `code` and never touches the curated match state, so
-  it is re-runnable: with eBird data already present the button re-imports
-  rather than being disabled. Blocked when no source file exists in the
-  storage, or when the storage is unconfigured or unreachable.
+  The import upserts on `code` and never touches the curated match state. To
+  protect that curated state from a stray click, the card is guarded (see
+  `Kjogvi.Geo.Import.Guard`): hard-disabled once eBird rows exist, and gated
+  behind a confirm when the table is empty but a snapshot exists in storage
+  (after a reset the right move is *restore*). Blocked when no source file
+  exists in the storage, or when the storage is unconfigured or unreachable.
   """
 
   use KjogviWeb, :live_component
 
   alias Kjogvi.Datasets
   alias Kjogvi.Geo
+  alias Kjogvi.Geo.Dump
   alias Kjogvi.Geo.Ebird.Import
   alias Kjogvi.Geo.EbirdLocation
+  alias Kjogvi.Geo.Import.Guard
 
   def update(_assigns, socket) do
     {:ok,
@@ -35,11 +39,16 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Ebird do
   # can show what's there and whether this is a fresh import or a re-import.
   defp assign_state(socket) do
     counts = Geo.Ebird.location_counts_by_type()
+    imported = counts != %{}
 
     socket
     |> assign(:source_state, Datasets.snapshot_status(Import.source_key()))
-    |> assign(:imported, counts != %{})
+    |> assign(:imported, imported)
     |> assign(:counts, counts)
+    |> assign(
+      :guard,
+      Guard.state(imported, Datasets.snapshot_status(Dump.storage_key(:ebird_locations)))
+    )
   end
 
   def handle_event("start_import", _params, socket) do
@@ -80,9 +89,16 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Ebird do
     put_flash(socket, :error, "eBird regions import failed: #{inspect(reason)}")
   end
 
-  defp import_button_label(true, _imported), do: "Importing…"
-  defp import_button_label(false, true), do: "Re-import"
-  defp import_button_label(false, false), do: "Import"
+  defp import_button_label(true), do: "Importing…"
+  defp import_button_label(false), do: "Import"
+
+  # The `:confirm` guard's tripwire text; nil for `:free` (no confirm).
+  defp confirm_text(:confirm),
+    do:
+      "An eBird-locations snapshot exists in storage. The usual way to seed an " <>
+        "empty database is Restore, not this raw import. Import raw eBird data anyway?"
+
+  defp confirm_text(:free), do: nil
 
   defp total(counts, type), do: get_in(counts, [type, :total]) || 0
 
@@ -102,11 +118,19 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Ebird do
           <p class="text-sm text-slate-700 mb-4">
             Source file from {Calendar.strftime(modified_at, "%Y-%m-%d %H:%M:%S UTC")}.
           </p>
-          <.form id="ebird-import-form" for={nil} phx-submit="start_import" phx-target={@myself}>
-            <.button disabled={@running}>
-              {import_button_label(@running, @imported)}
-            </.button>
-          </.form>
+          <%= if @guard == :blocked do %>
+            <p id="ebird-import-blocked" class="text-sm text-amber-700">
+              eBird locations already exist. Re-running the raw import would
+              overwrite curated names; it is disabled here. Pull a newer dump
+              from the console if you really need to.
+            </p>
+          <% else %>
+            <.form id="ebird-import-form" for={nil} phx-submit="start_import" phx-target={@myself}>
+              <.button disabled={@running} data-confirm={confirm_text(@guard)}>
+                {import_button_label(@running)}
+              </.button>
+            </.form>
+          <% end %>
         <% :none -> %>
           <p class="text-sm text-amber-700" id="ebird-import-no-source">
             No source file. Upload the eBird regions JSON to the datasets storage

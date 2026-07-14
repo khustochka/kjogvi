@@ -44,16 +44,17 @@ Principles the whole workflow rests on:
 | Manual resolution: link (autocomplete) / unlink / create-from-eBird | Workbench `/admin/ebird/:country_code` |
 | Common locations admin CRUD (create/edit/delete, ancestry + eBird-link guards) | `/admin/locations` |
 | Dump / restore of both datasets as CSV through the storage adapter (local in dev, S3 in prod) | `Kjogvi.Geo.Dump` / `Kjogvi.Geo.Restore`, cards on `/admin/imports/locations` |
+| Raw-import guards: bootstrap card disabled once the dataset has rows, confirm when empty but a snapshot exists | `Kjogvi.Geo.Import.Guard`, both cards on `/admin/imports/locations` |
 
-Not yet built: the bulk code pass with its triage hints, the raw-import
-guards, the subdivision2 import (§5).
+Not yet built: the bulk code pass with its triage hints, the subdivision2
+import (§5).
 
 ## 3. The workflow
 
 ### 3.1 Bootstrap (once, into an empty DB, locally)
 
 1. Place the raw sources in the datasets storage
-   (`geo/sources/iso_3166.jsonl`, `geo/sources/all_ebird_locs.json`).
+   (`geo/sources/iso_3166.jsonl`, `geo/sources/ebird_subregions.jsonl`).
 2. Run the **ISO import** — common countries + subdivision1s appear.
 3. Run the **eBird import** — the eBird region tree appears, fully unlinked.
 
@@ -175,11 +176,10 @@ version. (Local dev snapshots are throwaway by definition.)
 Roughly one PR-sized item each, in suggested order:
 
 
-1. **Raw import guards** — on both bootstrap cards: hard-disable (with an
-   explanation) when the dataset already has rows; explicit confirm when the
-   dataset is empty but a snapshot exists in storage (existence check via the
-   adapter's `last_modified/1`, already there). Small — should land before
-   the reset/restore loop is relied on.
+1. **Raw import guards** *(done — `Kjogvi.Geo.Import.Guard`)* — on both
+   bootstrap cards: hard-disable (with an explanation) when the dataset already
+   has rows; explicit confirm when the dataset is empty but a snapshot exists in
+   storage (existence check via `Datasets.snapshot_status/1`).
 2. **Bulk code pass + triage hints** — `Matcher.match_all/1` across all eBird
    countries, through `ExclusiveTaskProcessor` (key `{:ebird_match, :all}`):
    links country rows by code, then links subdivision1s only for countries
