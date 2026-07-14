@@ -44,8 +44,17 @@ fi
 echo "Admin user $email created."
 
 if command -v op >/dev/null 2>&1; then
-  title="Kjógvi admin ($email)"
-  if op item create --category=login --title="$title" --url="$url" \
+  title="Local Kjógvi admin ($email)"
+  if op item get "$title" ${vault:+--vault="$vault"} >/dev/null 2>&1; then
+    # Item already exists: update its username/password in place.
+    if op item edit "$title" ${vault:+--vault="$vault"} \
+      "username=$email" "password=$password" >/dev/null; then
+      echo "Password updated in 1Password item \"$title\"."
+    else
+      echo "Updating the 1Password item failed." >&2
+      echo "Password: $password"
+    fi
+  elif op item create --category=login --title="$title" --url="$url" \
     ${vault:+--vault="$vault"} \
     "username=$email" "password=$password" >/dev/null; then
     echo "Password saved to 1Password as \"$title\"."
