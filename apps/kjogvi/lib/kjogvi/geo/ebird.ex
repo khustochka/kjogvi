@@ -15,6 +15,7 @@ defmodule Kjogvi.Geo.Ebird do
   alias Kjogvi.Repo
 
   defdelegate match_country(country_code, opts \\ []), to: Matcher
+  defdelegate match_all, to: Matcher
 
   @doc """
   A map of `location_type => %{total: n, matched: n}` over the eBird locations
@@ -36,6 +37,16 @@ defmodule Kjogvi.Geo.Ebird do
   """
   def country_statuses do
     statuses_from(EbirdLocation)
+  end
+
+  @doc """
+  The country codes whose derived status is `:matched` — a perfect eBird-vs-ISO
+  subdivision1 code-set match (including no subdivisions on either side). The
+  bulk pass (`Matcher.match_all/0`) links these countries' subdivisions;
+  everything else it leaves for manual review.
+  """
+  def matched_country_codes do
+    for {country_code, %{status: :matched}} <- country_statuses(), do: country_code
   end
 
   @doc """

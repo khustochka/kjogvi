@@ -96,6 +96,21 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   end
 
   @doc """
+  Update query linking every unlinked eBird country row to the common country
+  with `iso_code` equal to the eBird code — the bulk pass's country pass. Skips
+  common locations already linked from another eBird row.
+  """
+  def link_all_countries_by_iso do
+    from e in EbirdLocation,
+      join: l in Location,
+      on: l.iso_code == e.code and l.location_type == :country and is_nil(l.user_id),
+      where: e.location_type == :country,
+      where: is_nil(e.location_id),
+      where: l.id not in subquery(matched_location_ids()),
+      update: [set: [location_id: l.id]]
+  end
+
+  @doc """
   Update query linking the country's unlinked eBird subdivision1 rows to the
   given common country's subdivision1s by `iso_code == subnational1_code`.
   Skips common locations already linked from another eBird row.
@@ -107,6 +122,28 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
         l.iso_code == e.subnational1_code and l.location_type == :subdivision1 and
           is_nil(l.user_id) and l.country_id == ^common_country_id,
       where: e.country_code == ^country_code and e.location_type == :subdivision1,
+      where: is_nil(e.location_id),
+      where: l.id not in subquery(matched_location_ids()),
+      update: [set: [location_id: l.id]]
+  end
+
+  @doc """
+  Update query linking the unlinked eBird subdivision1 rows of the given
+  countries to their common country's subdivision1s by
+  `iso_code == subnational1_code` — the bulk pass's subdivision pass, run only
+  for the perfect-match (`:matched`) countries. The common country is reached
+  through the eBird country row's own link, so the country pass must have run
+  first. Skips common locations already linked from another eBird row.
+  """
+  def link_subdivision1s_by_code_for_countries(country_codes) do
+    from e in EbirdLocation,
+      join: ec in EbirdLocation,
+      on: ec.country_code == e.country_code and ec.location_type == :country,
+      join: l in Location,
+      on:
+        l.iso_code == e.subnational1_code and l.location_type == :subdivision1 and
+          is_nil(l.user_id) and l.country_id == ec.location_id,
+      where: e.location_type == :subdivision1 and e.country_code in ^country_codes,
       where: is_nil(e.location_id),
       where: l.id not in subquery(matched_location_ids()),
       update: [set: [location_id: l.id]]

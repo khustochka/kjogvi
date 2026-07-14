@@ -154,7 +154,7 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 - Keep documentation concise. Don't explain what's obvious from the code (e.g. don't write 'Returns `true` if...'), and don't describe the change you made or how the code used to work.
 - Before committing, run `mix lint.fix` (to auto-fix formatting + linting) and the tests.
 - Follow the LiveView naming pattern: `KjogviWeb.Live.Something` lives in `apps/kjogvi_web/lib/kjogvi_web/live/something.ex` (this contradicts the Phoenix recommended pattern of `KjogviWeb.SmthLive`, but is my preference).
-- Avoid adding utility functions unrelated to a module's topic (whether in a LiveView or elsewhere), especially trivial ones like converting `nil` to an empty string. Put them in `Utils`, or avoid them altogether.
+- Avoid adding utility functions unrelated to a module's topic (whether in a LiveView or elsewhere), especially trivial ones like converting `nil` to an empty string. Put them under `Kjogvi.Util`, or avoid them altogether.
 - For multi-step database writes, use `Repo.transact/1` rather than `Ecto.Multi`.
 - When designing frontend, always make it responsive (check on smaller screen sizes).
 - Be mindful of how it will present on text-based browsers (e.g. lynx) and for screen readers.

@@ -15,6 +15,7 @@ defmodule Kjogvi.Geo.Ebird.Matcher do
   linked by the sub2 import, never here.
   """
 
+  alias Kjogvi.Geo.Ebird
   alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Repo
 
@@ -31,6 +32,43 @@ defmodule Kjogvi.Geo.Ebird.Matcher do
       {:ok, summary} = Repo.transact(fn -> {:ok, run_passes(country_code)} end)
       {summary, Map.merge(%{result: :ok, country_code: country_code}, summary)}
     end)
+  end
+
+  @doc """
+  The bulk code pass over every eBird country, run once after import: links all
+  country rows to their common counterpart by code, then links subdivision1s
+  only for the perfect-match (`:matched`) countries — those whose eBird and ISO
+  subdivision1 code sets are identical (or that have none). A country with any
+  code discrepancy has its subdivisions left entirely untouched, so it arrives
+  at manual review whole. No name pass runs; that stays a per-country decision.
+
+  Stricter than `match_country/2`'s subdivision code pass, which links any code
+  match: here the all-or-nothing set check gates whether a country's
+  subdivisions are touched at all.
+
+  Returns `%{countries: n, subdivisions: n, matched: n}` — country rows linked,
+  subdivision1 rows linked, and the number of `:matched`-shape countries whose
+  subdivisions were eligible. Idempotent and safe to re-run.
+  """
+  def match_all do
+    :telemetry.span([:kjogvi, :geo, :ebird, :match_all], %{}, fn ->
+      {:ok, summary} = Repo.transact(fn -> {:ok, run_all_passes()} end)
+      {summary, Map.merge(%{result: :ok}, summary)}
+    end)
+  end
+
+  defp run_all_passes do
+    matched_codes = Ebird.matched_country_codes()
+
+    {countries_n, _} =
+      EbirdLocation.Query.link_all_countries_by_iso() |> Repo.update_all([])
+
+    {subdivisions_n, _} =
+      matched_codes
+      |> EbirdLocation.Query.link_subdivision1s_by_code_for_countries()
+      |> Repo.update_all([])
+
+    %{countries: countries_n, subdivisions: subdivisions_n, matched: length(matched_codes)}
   end
 
   # Latin letters that NFD does *not* decompose into base + combining mark, so

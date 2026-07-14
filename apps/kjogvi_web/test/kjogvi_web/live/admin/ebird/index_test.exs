@@ -24,6 +24,17 @@ defmodule KjogviWeb.Live.Admin.Ebird.IndexTest do
     assert has_element?(view, "#ebird-countries-count", "2")
   end
 
+  test "shows the total count of all eBird locations, delimited", %{conn: conn} do
+    insert(:ebird_location, code: "AD")
+    insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+    insert(:ebird_subdivision1, country_code: "AD", code: "AD-03")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird")
+
+    assert has_element?(view, "#ebird-countries-count", "1")
+    assert has_element?(view, "#ebird-locations-count", "3")
+  end
+
   test "shows each country with its status and subdivision counts", %{conn: conn} do
     country = insert(:country, iso_code: "AD")
     sub1 = insert(:subdivision1, iso_code: "AD-02", country: country)
@@ -153,5 +164,45 @@ defmodule KjogviWeb.Live.Admin.Ebird.IndexTest do
     {:ok, view, _html} = live(conn, ~p"/admin/ebird")
 
     assert has_element?(view, "p", "No eBird locations yet")
+  end
+
+  test "the bulk match button links clean countries and refreshes statuses", %{conn: conn} do
+    clean = insert(:country, iso_code: "AD", name_en: "Andorra")
+    clean_sub1 = insert(:subdivision1, iso_code: "AD-02", country: clean)
+    ebird_clean = insert(:ebird_location, code: "AD", name: "Andorra")
+    ebird_clean_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird")
+
+    refute has_element?(view, "#ebird-country-AD a[href='/admin/locations/#{clean.slug}']")
+
+    render_click(element(view, "#run-bulk-match-button"))
+    render_async(view)
+
+    assert has_element?(view, "#ebird-country-AD a[href='/admin/locations/#{clean.slug}']")
+    assert has_element?(view, "#ebird-country-AD", "1/1 subdivisions linked")
+
+    assert Kjogvi.Repo.reload!(ebird_clean).location_id == clean.id
+    assert Kjogvi.Repo.reload!(ebird_clean_sub1).location_id == clean_sub1.id
+  end
+
+  test "highlights fully-linked countries with a green background", %{conn: conn} do
+    done = insert(:country, iso_code: "AD", name_en: "Andorra")
+    sub1 = insert(:subdivision1, iso_code: "AD-02", country: done)
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: done.id)
+    insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", location_id: sub1.id)
+
+    insert(:ebird_location, code: "CZ", name: "Czechia")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird")
+
+    assert has_element?(view, "#ebird-country-AD.bg-forest-50")
+    refute has_element?(view, "#ebird-country-CZ.bg-forest-50")
+  end
+
+  test "the bulk match button is hidden when the dataset is empty", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird")
+
+    refute has_element?(view, "#run-bulk-match-button")
   end
 end

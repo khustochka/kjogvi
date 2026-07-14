@@ -4,43 +4,93 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
   derived match status, subdivision link counts, and status filter chips —
   the "which countries are ready" dashboard. Each country links to its
   matching workbench (`Live.Admin.Ebird.Show`).
+
+  Carries the bulk code pass (`Geo.Ebird.match_all/0`, run via `start_async`):
+  one button links every country by code and every perfect-match country's
+  subdivisions, then reloads the statuses.
   """
 
   use KjogviWeb, :live_view
 
   alias Kjogvi.Geo
   alias Kjogvi.Geo.Location
+  alias Kjogvi.Util.Number
 
   @statuses [:matched, :iso_extra, :name_candidate, :ebird_only, :mixed]
 
   @impl true
   def mount(_params, _session, socket) do
-    countries = Geo.Ebird.countries_with_statuses()
-
     {:ok,
      socket
      |> assign(:page_title, "eBird Locations")
-     |> assign(:countries, countries)
      |> assign(:statuses, @statuses)
-     |> assign(:status_counts, Enum.frequencies_by(countries, & &1.stats.status))
-     |> assign(:incomplete_count, Enum.count(countries, &(not fully_linked?(&1.stats))))}
+     |> assign(:running_bulk, false)
+     |> load_countries()}
+  end
+
+  defp load_countries(socket) do
+    countries = Geo.Ebird.countries_with_statuses()
+
+    total_locations =
+      Geo.Ebird.location_counts_by_type()
+      |> Map.values()
+      |> Enum.reduce(0, &(&1.total + &2))
+
+    socket
+    |> assign(:countries, countries)
+    |> assign(:total_locations, total_locations)
+    |> assign(:status_counts, Enum.frequencies_by(countries, & &1.stats.status))
+    |> assign(:incomplete_count, Enum.count(countries, &(not fully_linked?(&1.stats))))
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    status = parse_status(params["status"])
-    only_incomplete = params["work"] == "incomplete"
-
-    filtered =
-      socket.assigns.countries
-      |> filter_by_status(status)
-      |> filter_by_completeness(only_incomplete)
-
     {:noreply,
      socket
-     |> assign(:status, status)
-     |> assign(:only_incomplete, only_incomplete)
-     |> assign(:filtered_countries, filtered)}
+     |> assign(:status, parse_status(params["status"]))
+     |> assign(:only_incomplete, params["work"] == "incomplete")
+     |> apply_filters()}
+  end
+
+  # Recomputes `@filtered_countries` from `@countries` and the current filter
+  # assigns — used both on `handle_params` and after the bulk pass reloads.
+  defp apply_filters(socket) do
+    filtered =
+      socket.assigns.countries
+      |> filter_by_status(socket.assigns.status)
+      |> filter_by_completeness(socket.assigns.only_incomplete)
+
+    assign(socket, :filtered_countries, filtered)
+  end
+
+  @impl true
+  def handle_event("run_bulk_match", _params, socket) do
+    {:noreply,
+     socket
+     |> clear_flash()
+     |> assign(:running_bulk, true)
+     |> start_async(:bulk_match, fn -> Geo.Ebird.match_all() end)}
+  end
+
+  @impl true
+  def handle_async(:bulk_match, {:ok, summary}, socket) do
+    {:noreply,
+     socket
+     |> assign(:running_bulk, false)
+     |> load_countries()
+     |> apply_filters()
+     |> put_flash(
+       :info,
+       "Linked #{summary.countries} countries and #{summary.subdivisions} subdivisions " <>
+         "across #{summary.matched} fully-matched countries."
+     )}
+  end
+
+  def handle_async(:bulk_match, {:exit, reason}, socket) do
+    {:noreply,
+     socket
+     |> assign(:running_bulk, false)
+     |> put_flash(:error, "Bulk match crashed: #{inspect(reason)}")}
   end
 
   defp filter_by_status(countries, nil), do: countries
@@ -79,6 +129,9 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
   defp maybe_put(params, _key, false), do: params
   defp maybe_put(params, key, value), do: params ++ [{key, value}]
 
+  defp bulk_match_label(true), do: "Matching…"
+  defp bulk_match_label(false), do: "Run bulk match"
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -87,11 +140,29 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         <.h1 class="mb-0!">
           eBird Locations
         </.h1>
-        <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg mb-1">
-          <span id="ebird-countries-count" class="text-lg font-header font-bold tracking-tight">
-            {length(@countries)}
-          </span>
-          <span class="text-forest-100 text-sm font-medium">countries</span>
+        <div class="flex flex-wrap items-stretch gap-3 mb-1">
+          <.button
+            :if={@countries != []}
+            id="run-bulk-match-button"
+            phx-click="run_bulk_match"
+            disabled={@running_bulk}
+            data-confirm="Link every eBird country by code and every perfectly-matched country's subdivisions? Existing links are left untouched."
+            class="flex items-center"
+          >
+            {bulk_match_label(@running_bulk)}
+          </.button>
+          <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
+            <span id="ebird-countries-count" class="text-lg font-header font-bold tracking-tight">
+              {length(@countries)}
+            </span>
+            <span class="text-forest-100 text-sm font-medium">countries</span>
+          </div>
+          <div class="inline-flex items-baseline gap-2 bg-stone-700 text-white px-3 py-2 rounded-lg">
+            <span id="ebird-locations-count" class="text-lg font-header font-bold tracking-tight">
+              {Number.delimit(@total_locations)}
+            </span>
+            <span class="text-stone-300 text-sm font-medium">locations</span>
+          </div>
         </div>
       </div>
 
@@ -140,7 +211,10 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         <li
           :for={%{ebird_location: country, stats: stats} <- @filtered_countries}
           id={"ebird-country-#{country.code}"}
-          class="px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1"
+          class={[
+            "px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1",
+            fully_linked?(stats) && "bg-forest-50"
+          ]}
         >
           <span class="font-mono text-sm text-stone-500 w-10 shrink-0">{country.code}</span>
           <.link

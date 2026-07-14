@@ -46,9 +46,10 @@ Principles the whole workflow rests on:
 | Dump / restore of both datasets as CSV through the storage adapter (local in dev, S3 in prod) | `Kjogvi.Geo.Dump` / `Kjogvi.Geo.Restore`, cards on `/admin/imports/locations` |
 | Raw-import guards: bootstrap card disabled once the dataset has rows, confirm when empty but a snapshot exists | `Kjogvi.Geo.Import.Guard`, both cards on `/admin/imports/locations` |
 
-Not yet built: the bulk code pass (`match_all`) that links every clean country
-in one action, the subdivision2 import (§5). The derived statuses that classify
-each country by mismatch shape already exist.
+| Bulk code pass: links every eBird country by code and every perfect-match country's subdivisions in one action (`start_async` button on `/admin/ebird`) | `Kjogvi.Geo.Ebird.Matcher.match_all/0` |
+
+Not yet built: the subdivision2 import (§5). The bulk code pass and the derived
+statuses that classify each country by mismatch shape already exist.
 
 ## 3. The workflow
 
@@ -210,17 +211,18 @@ Roughly one PR-sized item each, in suggested order:
    linked" work filter on the eBird index; the eBird index shows each linked
    country's common location.
 
-3. **Bulk code pass** — `Matcher.match_all/0` across all eBird countries: links
-   country rows by code, then links subdivision1s only for countries whose
-   eBird and ISO subdivision1 code sets match exactly (or that have none); any
-   discrepancy leaves the country's subdivisions untouched (§3.2). No name pass.
-   Run via `start_async` from a button on `/admin/ebird` (the pass is a handful
-   of `UPDATE`s in one transaction, sub-second — same pattern as the eBird
-   import card; the `is_nil` link guards make concurrent/repeat runs safe, so
-   no exclusive-task machinery). A run summary flash; the status badges refresh
-   to show the newly-`matched` countries. Note it is *stricter* than
-   `match_country/2`'s code pass, which links any code match: the all-or-nothing
-   set check is new logic, not just composition.
+3. **Bulk code pass** *(done — `Kjogvi.Geo.Ebird.Matcher.match_all/0`)* — across
+   all eBird countries: links country rows by code, then links subdivision1s only
+   for countries whose eBird and ISO subdivision1 code sets match exactly (or that
+   have none); any discrepancy leaves the country's subdivisions untouched (§3.2).
+   No name pass. Run via `start_async` from a button on `/admin/ebird` (the pass
+   is a handful of `UPDATE`s in one transaction, sub-second — same pattern as the
+   eBird import card; the `is_nil` link guards make concurrent/repeat runs safe,
+   so no exclusive-task machinery). A run summary flash; the status badges refresh
+   to show the newly-linked countries. Eligibility is the `:matched` status set
+   (`Ebird.matched_country_codes/0`), so it is *stricter* than `match_country/2`'s
+   code pass, which links any code match: the all-or-nothing set check gates
+   whether a country's subdivisions are touched at all.
 4. **subdivision2 import** — `Sub2Import.import_country/1` per the existing
    spec (plan doc §6): enabled only for ready countries, creates linked common
    subdivision2s (slug from the eBird code), exclusive task per country,
