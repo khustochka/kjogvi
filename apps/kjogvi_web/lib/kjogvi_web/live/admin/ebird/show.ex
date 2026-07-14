@@ -8,9 +8,11 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   act on the eBird side and occupy the row's third column, after eBird and ISO;
   the ISO column is read-only context.
 
-  Create-from-eBird is offered only where the row has no ISO counterpart at all:
-  a linked or merely suggested row already has the location the button would
-  make.
+  A row the match passes would pair — same ISO code, or matching names — shows
+  the ISO location it pairs with, so Link commits that pair outright rather than
+  opening the autocomplete to search for what is already on screen. The
+  autocomplete remains for rows with nothing to suggest, as does
+  create-from-eBird: those are the rows where no location exists to link.
   """
 
   use KjogviWeb, :live_view
@@ -62,6 +64,16 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
     {:noreply, assign(socket, :linking_id, String.to_integer(id))}
   end
 
+  def handle_event("link_suggested", %{"id" => id}, socket) do
+    ebird_id = String.to_integer(id)
+    row = Enum.find(socket.assigns.comparison, &(&1.ebird && &1.ebird.id == ebird_id))
+
+    {:noreply,
+     socket
+     |> link_region(row.ebird, suggested_location(row))
+     |> load_country()}
+  end
+
   def handle_event("cancel_link", _params, socket) do
     {:noreply, assign(socket, :linking_id, nil)}
   end
@@ -102,36 +114,40 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
     %{"result" => location, "ebird_id" => ebird_id} = params
     region = find_region(socket, ebird_id)
 
-    socket =
-      case Geo.Ebird.link(region, location.id) do
-        {:ok, _} ->
-          put_flash(socket, :info, "Linked #{region.code} to #{location.name_en}.")
-
-        {:error, :already_linked} ->
-          put_flash(socket, :error, "#{region.code} is already linked.")
-
-        {:error, :not_common} ->
-          put_flash(socket, :error, "Only common locations can be linked.")
-
-        {:error, :not_found} ->
-          put_flash(socket, :error, "Location not found.")
-
-        {:error, %Ecto.Changeset{}} ->
-          put_flash(
-            socket,
-            :error,
-            "#{location.name_en} is already linked to another eBird region."
-          )
-      end
-
     {:noreply,
      socket
+     |> link_region(region, location)
      |> assign(:linking_id, nil)
      |> load_country()}
   end
 
   def handle_info(_message, socket) do
     {:noreply, socket}
+  end
+
+  # Links via the autocomplete pick or the suggested-pair button; the outcome
+  # reads the same either way.
+  defp link_region(socket, region, location) do
+    case Geo.Ebird.link(region, location.id) do
+      {:ok, _} ->
+        put_flash(socket, :info, "Linked #{region.code} to #{location.name_en}.")
+
+      {:error, :already_linked} ->
+        put_flash(socket, :error, "#{region.code} is already linked.")
+
+      {:error, :not_common} ->
+        put_flash(socket, :error, "Only common locations can be linked.")
+
+      {:error, :not_found} ->
+        put_flash(socket, :error, "Location not found.")
+
+      {:error, %Ecto.Changeset{}} ->
+        put_flash(
+          socket,
+          :error,
+          "#{location.name_en} is already linked to another eBird region."
+        )
+    end
   end
 
   defp load_country(socket) do
@@ -254,7 +270,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
                   :if={row.ebird}
                   region={row.ebird}
                   country={@country}
-                  creatable={row.location == nil}
+                  suggested={suggested_location(row)}
                 />
               </div>
             </div>
@@ -333,9 +349,13 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   attr :region, EbirdLocation, required: true
   attr :country, EbirdLocation, required: true
 
-  attr :creatable, :boolean,
-    default: true,
-    doc: "false hides create-from-eBird: an ISO counterpart exists, so link it instead"
+  attr :suggested, Location,
+    default: nil,
+    doc: """
+    The ISO location this row pairs with but is not yet linked to. Present, Link
+    commits it outright and create-from-eBird is withheld — that location is the
+    one the button would duplicate. Absent, Link opens the autocomplete.
+    """
 
   defp region_actions(assigns) do
     ~H"""
@@ -352,14 +372,15 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
     <% else %>
       <button
         type="button"
-        phx-click="start_link"
+        phx-click={if @suggested, do: "link_suggested", else: "start_link"}
         phx-value-id={@region.id}
+        data-confirm={@suggested && "Link #{@region.code} to #{@suggested.name_en}?"}
         class="px-2.5 py-1 text-xs sm:text-sm font-medium text-forest-700 bg-forest-50 hover:bg-forest-100 border border-forest-300 rounded"
       >
         Link
       </button>
       <button
-        :if={@creatable and (@region.location_type == :country or @country.location != nil)}
+        :if={is_nil(@suggested) and (@region.location_type == :country or @country.location != nil)}
         type="button"
         phx-click="create_location"
         phx-value-id={@region.id}
@@ -400,6 +421,15 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
     </div>
     """
   end
+
+  # The location a row pairs with but has not committed to. Only the suggestion
+  # pairings qualify: a :linked row carries a location too, but it is the link
+  # itself, not a proposal.
+  defp suggested_location(%{location: %Location{} = location, pairing: pairing})
+       when pairing in [:code_suggestion, :name_suggestion],
+       do: location
+
+  defp suggested_location(_row), do: nil
 
   defp comparison_row_id(%{ebird: %EbirdLocation{id: id}}), do: "ebird-region-#{id}"
   defp comparison_row_id(%{location: %Location{id: id}}), do: "iso-leftover-#{id}"

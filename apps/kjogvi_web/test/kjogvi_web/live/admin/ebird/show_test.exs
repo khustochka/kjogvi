@@ -65,6 +65,47 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     end
   end
 
+  test "links a suggested pair outright, without the autocomplete", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+    location = insert(:subdivision1, country: country, iso_code: "AD-02", name_en: "Canillo")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
+
+    assert reload(ebird_sub1).location_id == location.id
+    assert has_element?(view, "#flash-group-info", "Linked AD-02 to Canillo.")
+    refute has_element?(view, "#link-autocomplete-#{ebird_sub1.id}")
+  end
+
+  test "links by name when the codes differ", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-99", name: "Encamp")
+    location = insert(:subdivision1, country: country, iso_code: "AD-03", name_en: "Encamp")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
+
+    assert reload(ebird_sub1).location_id == location.id
+  end
+
+  test "opens the autocomplete for a region with nothing to suggest", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
+
+    assert has_element?(view, "#link-autocomplete-#{ebird_sub1.id}")
+    assert reload(ebird_sub1).location_id == nil
+  end
+
   test "marks a non-code-consistent link", %{conn: conn} do
     country = insert(:country, iso_code: "RS", name_en: "Serbia")
     ebird_country = insert(:ebird_location, code: "XK", name: "Kosovo", location_id: country.id)
@@ -110,9 +151,6 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
 
     {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
-
-    view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
-    assert has_element?(view, "#link-autocomplete-#{ebird_sub1.id}")
 
     send(
       view.pid,
