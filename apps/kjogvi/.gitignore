@@ -29,3 +29,6 @@ kjogvi-*.tar
 # Hosted out-of-band (e.g. a GitHub release asset) and fetched at import time,
 # not committed.
 /priv/geo/iso_3166.jsonl
+
+# Datasets
+/priv/datasets

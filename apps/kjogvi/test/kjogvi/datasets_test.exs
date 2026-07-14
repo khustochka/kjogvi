@@ -58,6 +58,23 @@ defmodule Kjogvi.DatasetsTest do
     assert {:ok, "a,b\n1,2\n"} = Datasets.read("geo/test.csv")
   end
 
+  test "with :otp_app, resolves :path under the app's priv, independent of cwd" do
+    rel = "datasets_test_#{System.unique_integer([:positive])}"
+    abs = Application.app_dir(:kjogvi, Path.join("priv", rel))
+    on_exit(fn -> File.rm_rf(abs) end)
+
+    Application.put_env(:kjogvi, Kjogvi.Datasets,
+      adapter: Kjogvi.Datasets.LocalAdapter,
+      otp_app: :kjogvi,
+      path: Path.join("priv", rel)
+    )
+
+    assert :ok = Datasets.write("geo/test.csv", "content")
+    # Written under the app's priv (absolute), not the cwd-relative "priv/...".
+    assert File.exists?(Path.join(abs, "geo/test.csv"))
+    assert {:ok, "content"} = Datasets.read("geo/test.csv")
+  end
+
   test "read returns enoent for a missing snapshot" do
     assert {:error, :enoent} = Datasets.read("geo/missing.csv")
   end

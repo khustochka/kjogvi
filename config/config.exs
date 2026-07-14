@@ -147,6 +147,7 @@ config :kjogvi, :cache, enabled: false
 # and test cannot touch the prod snapshots; prod switches to S3 in runtime.exs.
 config :kjogvi, Kjogvi.Datasets,
   adapter: Kjogvi.Datasets.LocalAdapter,
+  otp_app: :kjogvi,
   path: "priv/datasets"
 
 config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@kjogvi.local"}
