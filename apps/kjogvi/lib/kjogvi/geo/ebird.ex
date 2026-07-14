@@ -13,6 +13,7 @@ defmodule Kjogvi.Geo.Ebird do
   alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
+  alias Kjogvi.Util
 
   defdelegate match_country(country_code, opts \\ []), to: Matcher
   defdelegate match_all, to: Matcher
@@ -361,13 +362,13 @@ defmodule Kjogvi.Geo.Ebird do
 
   # `%{country_code => {MapSet(code), MapSet(normalized_name)}}` from a
   # `{country_code, code, name}` list. Codes are compared exactly; names are run
-  # through the name pass's `normalize_name/1` (strip diacritics, downcase, …) so
-  # the name-set comparison agrees with what the name pass would actually link
+  # through `Util.String.normalize_for_match/1` (strip diacritics, downcase, …)
+  # so the name-set comparison agrees with what the name pass would actually link
   # (the Poland case: "Dolnośląskie" vs "Dolnoslaskie"). Blank codes/names are
   # dropped so an all-blank side never counts toward a match.
   defp group_by_country(rows) do
     Enum.reduce(rows, %{}, fn {country_code, code, name}, acc ->
-      normalized_name = Matcher.normalize_name(name)
+      normalized_name = Util.String.normalize_for_match(name)
 
       Map.update(
         acc,

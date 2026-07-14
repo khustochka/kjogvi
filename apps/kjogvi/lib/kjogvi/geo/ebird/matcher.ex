@@ -18,6 +18,7 @@ defmodule Kjogvi.Geo.Ebird.Matcher do
   alias Kjogvi.Geo.Ebird
   alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Repo
+  alias Kjogvi.Util
 
   @doc """
   Runs the match passes for one eBird country. `opts` is reserved.
@@ -69,47 +70,6 @@ defmodule Kjogvi.Geo.Ebird.Matcher do
       |> Repo.update_all([])
 
     %{countries: countries_n, subdivisions: subdivisions_n, matched: length(matched_codes)}
-  end
-
-  # Latin letters that NFD does *not* decompose into base + combining mark, so
-  # the `\p{Mn}` strip leaves them intact. eBird tends to flatten these to their
-  # base letter while ISO keeps them (e.g. Polish "Łódzkie" → eBird "Lodzkie"),
-  # so folding them here lets the name pass match. Keyed on the downcased form.
-  @special_letters %{
-    "ł" => "l",
-    "ø" => "o",
-    "đ" => "d",
-    "ð" => "d",
-    "þ" => "th",
-    "ß" => "ss",
-    "ı" => "i",
-    "æ" => "ae",
-    "œ" => "oe",
-    "ħ" => "h",
-    "ŋ" => "n",
-    "ĸ" => "k"
-  }
-
-  @doc """
-  Normalizes a region name for the name pass: NFD-decompose and strip
-  diacritics, downcase, fold non-decomposing Latin letters (ł, ø, ß, …) to
-  their base form, and collapse punctuation/whitespace runs to single spaces.
-  `nil` becomes `""` (which never matches).
-  """
-  def normalize_name(nil), do: ""
-
-  def normalize_name(name) do
-    name
-    |> String.normalize(:nfd)
-    |> String.replace(~r/\p{Mn}/u, "")
-    |> String.downcase()
-    |> fold_special_letters()
-    |> String.replace(~r/[^\p{L}\p{N}]+/u, " ")
-    |> String.trim()
-  end
-
-  defp fold_special_letters(string) do
-    String.replace(string, Map.keys(@special_letters), &Map.fetch!(@special_letters, &1))
   end
 
   defp run_passes(country_code) do
@@ -190,8 +150,8 @@ defmodule Kjogvi.Geo.Ebird.Matcher do
   # 1:1 matches only: the normalized name occurs exactly once among the
   # leftovers and exactly once among the candidates.
   defp unambiguous_pairs(leftovers, candidates) do
-    ebird = Enum.group_by(leftovers, &normalize_name(&1.name), & &1.id)
-    common = Enum.group_by(candidates, &normalize_name(&1.name_en), & &1.id)
+    ebird = Enum.group_by(leftovers, &Util.String.normalize_for_match(&1.name), & &1.id)
+    common = Enum.group_by(candidates, &Util.String.normalize_for_match(&1.name_en), & &1.id)
 
     for {name, [ebird_id]} <- ebird,
         name != "",
