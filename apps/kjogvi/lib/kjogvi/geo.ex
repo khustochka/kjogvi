@@ -6,6 +6,7 @@ defmodule Kjogvi.Geo do
   import Ecto.Query
 
   alias Kjogvi.Accounts.User
+  alias Kjogvi.Util
   alias Kjogvi.Repo
   alias __MODULE__.Location
 
@@ -203,7 +204,7 @@ defmodule Kjogvi.Geo do
 
   defp build_nodes(locations, by_parent) do
     locations
-    |> Enum.sort_by(&{Map.get(@level_rank, &1.location_type, 99), &1.name_en})
+    |> Enum.sort_by(&{Map.get(@level_rank, &1.location_type, 99), Util.String.strip_diacritics(&1.name_en)})
     |> Enum.map(fn location ->
       children = Map.get(by_parent, location.id, [])
       %{location: location, children: build_nodes(children, by_parent)}
