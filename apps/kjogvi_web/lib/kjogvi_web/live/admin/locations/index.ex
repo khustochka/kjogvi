@@ -10,6 +10,7 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Geo
+  alias Kjogvi.Util.Number
   alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
   @statuses [:matched, :iso_extra, :name_candidate, :ebird_only, :mixed]
@@ -113,7 +114,7 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
         <.h1 class="mb-0!">
           Common Locations
         </.h1>
-        <div class="flex flex-wrap items-center gap-2 mb-1">
+        <div class="flex flex-wrap items-stretch gap-2 mb-1">
           <.action_button
             id="new-location-button"
             navigate={~p"/admin/locations/new"}
@@ -124,7 +125,7 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
           </.action_button>
           <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
             <span id="common-locations-count" class="text-lg font-header font-bold tracking-tight">
-              {@locations_count}
+            {Number.delimit(@locations_count)}
             </span>
             <span class="text-forest-100 text-sm font-medium">locations</span>
           </div>

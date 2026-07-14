@@ -5,6 +5,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
 
   alias Kjogvi.Accounts.User
   alias Kjogvi.Geo
+  alias Kjogvi.Util.Number
   alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
   @impl true
@@ -112,7 +113,7 @@ defmodule KjogviWeb.Live.My.Locations.Index do
           </.action_button>
           <div class="inline-flex items-baseline gap-2 bg-forest-600 text-white px-3 py-2 rounded-lg">
             <span id="own-locations-count" class="text-lg font-header font-bold tracking-tight">
-              {@own_locations_count}
+              {Number.delimit(@own_locations_count)}
             </span>
             <span class="text-forest-100 text-sm font-medium">mine</span>
           </div>
