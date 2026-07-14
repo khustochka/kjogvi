@@ -18,6 +18,15 @@ defmodule Kjogvi.Geo.Ebird.MatcherTest do
       assert Matcher.normalize_name("Baden-Württemberg") == "baden wurttemberg"
     end
 
+    test "folds non-decomposing Latin letters to their base form" do
+      # These do not decompose under NFD, so the diacritic strip alone leaves
+      # them; eBird flattens them while ISO keeps them.
+      assert Matcher.normalize_name("Łódzkie") == "lodzkie"
+      assert Matcher.normalize_name("Malopolskie") == Matcher.normalize_name("Małopolskie")
+      assert Matcher.normalize_name("Sør-Trøndelag") == "sor trondelag"
+      assert Matcher.normalize_name("Þingeyjarsýsla") == "thingeyjarsysla"
+    end
+
     test "nil and empty names normalize to the empty string" do
       assert Matcher.normalize_name(nil) == ""
       assert Matcher.normalize_name("") == ""

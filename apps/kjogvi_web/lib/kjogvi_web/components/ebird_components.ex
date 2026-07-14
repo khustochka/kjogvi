@@ -7,18 +7,18 @@ defmodule KjogviWeb.EbirdComponents do
 
   @status_labels %{
     matched: "matched",
-    matched_mixed: "matched (mixed)",
-    matched_iso_extra: "matched (ISO extra)",
-    partial: "partial",
-    unmatched: "unmatched"
+    iso_extra: "ISO extra",
+    name_candidate: "name-pass candidate",
+    ebird_only: "eBird only",
+    mixed: "mixed"
   }
 
   @status_classes %{
     matched: "bg-forest-100 text-forest-700",
-    matched_mixed: "bg-teal-100 text-teal-700",
-    matched_iso_extra: "bg-sky-100 text-sky-700",
-    partial: "bg-amber-100 text-amber-700",
-    unmatched: "bg-stone-100 text-stone-600"
+    iso_extra: "bg-sky-100 text-sky-700",
+    name_candidate: "bg-teal-100 text-teal-700",
+    ebird_only: "bg-violet-100 text-violet-700",
+    mixed: "bg-stone-100 text-stone-600"
   }
 
   def ebird_status_label(status), do: Map.fetch!(@status_labels, status)

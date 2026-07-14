@@ -34,7 +34,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
 
     assert has_element?(view, "h1", "Andorra")
-    assert has_element?(view, "#ebird-country-status", "partial")
+    assert has_element?(view, "#ebird-country-status", "mixed")
     assert has_element?(view, "#ebird-sub1-counts", "0/1 subdivisions linked")
 
     assert has_element?(view, "#ebird-region-#{ebird_country.id}", "Andorra")
@@ -81,7 +81,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     view |> element("#ebird-region-#{ebird_country.id} button", "Unlink") |> render_click()
 
     assert has_element?(view, "#flash-group-info", "Unlinked AD.")
-    assert has_element?(view, "#ebird-country-status", "unmatched")
+    assert has_element?(view, "#ebird-region-#{ebird_country.id}", "unmatched")
     assert reload(ebird_country).location_id == nil
   end
 
@@ -133,7 +133,8 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     |> render_click()
 
     assert has_element?(view, "#flash-group-info", "Created Kosovo and linked XK.")
-    assert has_element?(view, "#ebird-country-status", "matched (mixed)")
+    # XK has no ISO counterpart, so its shape stays :ebird_only after linking.
+    assert has_element?(view, "#ebird-country-status", "eBird only")
 
     location = Repo.preload(reload(ebird_country), :location).location
     assert location.slug == "xk"

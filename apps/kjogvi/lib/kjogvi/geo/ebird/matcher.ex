@@ -33,9 +33,29 @@ defmodule Kjogvi.Geo.Ebird.Matcher do
     end)
   end
 
+  # Latin letters that NFD does *not* decompose into base + combining mark, so
+  # the `\p{Mn}` strip leaves them intact. eBird tends to flatten these to their
+  # base letter while ISO keeps them (e.g. Polish "Łódzkie" → eBird "Lodzkie"),
+  # so folding them here lets the name pass match. Keyed on the downcased form.
+  @special_letters %{
+    "ł" => "l",
+    "ø" => "o",
+    "đ" => "d",
+    "ð" => "d",
+    "þ" => "th",
+    "ß" => "ss",
+    "ı" => "i",
+    "æ" => "ae",
+    "œ" => "oe",
+    "ħ" => "h",
+    "ŋ" => "n",
+    "ĸ" => "k"
+  }
+
   @doc """
   Normalizes a region name for the name pass: NFD-decompose and strip
-  diacritics, downcase, collapse punctuation/whitespace runs to single spaces.
+  diacritics, downcase, fold non-decomposing Latin letters (ł, ø, ß, …) to
+  their base form, and collapse punctuation/whitespace runs to single spaces.
   `nil` becomes `""` (which never matches).
   """
   def normalize_name(nil), do: ""
@@ -45,8 +65,13 @@ defmodule Kjogvi.Geo.Ebird.Matcher do
     |> String.normalize(:nfd)
     |> String.replace(~r/\p{Mn}/u, "")
     |> String.downcase()
+    |> fold_special_letters()
     |> String.replace(~r/[^\p{L}\p{N}]+/u, " ")
     |> String.trim()
+  end
+
+  defp fold_special_letters(string) do
+    String.replace(string, Map.keys(@special_letters), &Map.fetch!(@special_letters, &1))
   end
 
   defp run_passes(country_code) do

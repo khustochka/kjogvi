@@ -9,11 +9,12 @@ defmodule Kjogvi.Geo.Ebird do
   `Kjogvi.Geo.Ebird.Import`.
   """
 
+  alias Kjogvi.Geo.Ebird.Matcher
   alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Geo.Location
   alias Kjogvi.Repo
 
-  defdelegate match_country(country_code, opts \\ []), to: Kjogvi.Geo.Ebird.Matcher
+  defdelegate match_country(country_code, opts \\ []), to: Matcher
 
   @doc """
   A map of `location_type => %{total: n, matched: n}` over the eBird locations
@@ -29,8 +30,9 @@ defmodule Kjogvi.Geo.Ebird do
   Match stats and derived status for every eBird country, keyed by country
   code. Each entry carries `:status` (see
   `Kjogvi.Geo.EbirdLocation.Query.derive_status/1`) plus the underlying
-  counts: `country_linked`, `country_code_match`, `sub1_total`, `sub1_linked`,
-  `sub1_code_matched`, `iso_sub1_total`, `iso_extra`.
+  counts and signals: `country_linked`, `sub1_total`, `sub1_linked`,
+  `iso_sub1_total`, `iso_extra`, `has_iso_country`, `code_set_equal`,
+  `code_subset`, and `name_set_match`.
   """
   def country_statuses do
     statuses_from(EbirdLocation)
@@ -50,7 +52,8 @@ defmodule Kjogvi.Geo.Ebird do
   @doc """
   Every eBird country row ordered by code, each as
   `%{ebird_location: row, stats: stats}` with its `country_statuses/0` entry —
-  the admin index data.
+  the admin index data. The linked common location (with its level associations)
+  is preloaded for display names.
   """
   def countries_with_statuses do
     statuses = country_statuses()
@@ -58,6 +61,7 @@ defmodule Kjogvi.Geo.Ebird do
     EbirdLocation
     |> EbirdLocation.Query.countries()
     |> EbirdLocation.Query.order_by_code()
+    |> EbirdLocation.Query.preload_location()
     |> Repo.all()
     |> Enum.map(&%{ebird_location: &1, stats: Map.fetch!(statuses, &1.country_code)})
   end
@@ -67,10 +71,9 @@ defmodule Kjogvi.Geo.Ebird do
   location id: `%{location_id => %{code: ebird_code, status: status}}`.
 
   A country's entry comes from the eBird country row linked to it, or — while
-  none is linked — from the row whose code equals the location's ISO code (the
-  code pass's would-be match, so unmatched countries still show as
-  `:unmatched`). Countries with no eBird counterpart (and non-country
-  locations) have no entry.
+  none is linked — from the row whose code equals the location's ISO code (so an
+  unlinked country still shows its would-be shape status). Countries with no
+  eBird counterpart (and non-country locations) have no entry.
   """
   def statuses_for_common_countries(locations) do
     countries = countries_with_statuses()
@@ -261,6 +264,8 @@ defmodule Kjogvi.Geo.Ebird do
       |> Repo.all()
       |> Map.new(&{&1.country_code, &1})
 
+    shapes = mismatch_shapes(base)
+
     base
     |> EbirdLocation.Query.country_match_stats()
     |> Repo.all()
@@ -275,8 +280,99 @@ defmodule Kjogvi.Geo.Ebird do
           })
         )
         |> Map.merge(Map.get(iso, country.country_code, %{iso_sub1_total: 0, iso_extra: 0}))
+        |> Map.merge(
+          Map.get(shapes, country.country_code, %{
+            has_iso_country: false,
+            code_set_equal: false,
+            code_subset: false,
+            name_set_match: false
+          })
+        )
 
       {country.country_code, Map.put(stats, :status, EbirdLocation.Query.derive_status(stats))}
     end)
   end
+
+  # The subdivision1 mismatch signals per country, over the *full* eBird and ISO
+  # sub1 sets (a country is linked all-or-nothing, so its shape is a property of
+  # the sets, not of link state):
+  #
+  #   * `has_iso_country` — an ISO common country matches the eBird code at all
+  #     (separates `:ebird_only` from the linkable shapes)
+  #   * `code_set_equal` — the eBird and ISO sub1 code sets are identical: a
+  #     perfect match (`:matched`, the bulk pass links every row, no leftovers)
+  #   * `code_subset` — every eBird sub1 code is among the ISO codes; with
+  #     `code_set_equal` false this is a *strict* subset, so ISO has extras
+  #     eBird doesn't cover (`:iso_extra`)
+  #   * `name_set_match` — the eBird and ISO sub1 name sets are equal though
+  #     codes differ (`:name_candidate`, the Poland case)
+  #
+  # The set comparisons are computed in Elixir off flat
+  # `{country_code, code, name}` lists (eBird side and ISO side).
+  defp mismatch_shapes(base) do
+    with_iso_country =
+      base
+      |> EbirdLocation.Query.country_codes_with_iso_match()
+      |> Repo.all()
+      |> MapSet.new()
+
+    ebird =
+      base
+      |> EbirdLocation.Query.sub1_codes_and_names()
+      |> Repo.all()
+      |> group_by_country()
+
+    iso =
+      base
+      |> EbirdLocation.Query.common_sub1_codes_and_names_by_country()
+      |> Repo.all()
+      |> group_by_country()
+
+    for country_code <- MapSet.union(with_iso_country, MapSet.new(Map.keys(ebird))), into: %{} do
+      {ebird_codes, ebird_names} = Map.get(ebird, country_code, {MapSet.new(), MapSet.new()})
+      {iso_codes, iso_names} = Map.get(iso, country_code, {MapSet.new(), MapSet.new()})
+
+      {country_code,
+       %{
+         has_iso_country: MapSet.member?(with_iso_country, country_code),
+         # Empty sets compare cleanly here (equal when both empty, subset when
+         # eBird is empty), and `derive_status` gates these on `has_iso_country`
+         # first — so a country with no subdivisions on either side reads as an
+         # (empty) perfect match, and one where only ISO has subdivisions as
+         # `:iso_extra`. Names keep the non-empty guard so blank sets never
+         # trigger `:name_candidate`.
+         code_set_equal: MapSet.equal?(ebird_codes, iso_codes),
+         code_subset: MapSet.subset?(ebird_codes, iso_codes),
+         name_set_match: MapSet.size(ebird_names) > 0 and MapSet.equal?(ebird_names, iso_names)
+       }}
+    end
+  end
+
+  # `%{country_code => {MapSet(code), MapSet(normalized_name)}}` from a
+  # `{country_code, code, name}` list. Codes are compared exactly; names are run
+  # through the name pass's `normalize_name/1` (strip diacritics, downcase, …) so
+  # the name-set comparison agrees with what the name pass would actually link
+  # (the Poland case: "Dolnośląskie" vs "Dolnoslaskie"). Blank codes/names are
+  # dropped so an all-blank side never counts toward a match.
+  defp group_by_country(rows) do
+    Enum.reduce(rows, %{}, fn {country_code, code, name}, acc ->
+      normalized_name = Matcher.normalize_name(name)
+
+      Map.update(
+        acc,
+        country_code,
+        {code_set(code), code_set(normalized_name)},
+        fn {codes, names} -> {put_nonblank(codes, code), put_nonblank(names, normalized_name)} end
+      )
+    end)
+  end
+
+  # A one-element set for a present, non-blank value, else an empty set.
+  defp code_set(nil), do: MapSet.new()
+  defp code_set(""), do: MapSet.new()
+  defp code_set(value), do: MapSet.new([value])
+
+  defp put_nonblank(set, nil), do: set
+  defp put_nonblank(set, ""), do: set
+  defp put_nonblank(set, value), do: MapSet.put(set, value)
 end

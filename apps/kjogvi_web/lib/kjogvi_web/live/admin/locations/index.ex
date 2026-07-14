@@ -12,7 +12,7 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
   alias Kjogvi.Geo
   alias KjogviWeb.Live.Components.Autocomplete.SearchInput
 
-  @statuses [:matched, :matched_mixed, :matched_iso_extra, :partial, :unmatched]
+  @statuses [:matched, :iso_extra, :name_candidate, :ebird_only, :mixed]
 
   @impl true
   def mount(_params, _session, socket) do

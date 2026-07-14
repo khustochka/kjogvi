@@ -16,8 +16,8 @@ defmodule Kjogvi.Geo.EbirdTest do
       insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
 
       assert [
-               %{ebird_location: %EbirdLocation{code: "AD"}, stats: %{status: :partial}},
-               %{ebird_location: %EbirdLocation{code: "CZ"}, stats: %{status: :unmatched}}
+               %{ebird_location: %EbirdLocation{code: "AD"}, stats: %{status: :mixed}},
+               %{ebird_location: %EbirdLocation{code: "CZ"}, stats: %{status: :ebird_only}}
              ] = Ebird.countries_with_statuses()
     end
   end
@@ -34,9 +34,12 @@ defmodule Kjogvi.Geo.EbirdTest do
     test "falls back to the ISO code while the eBird country is unlinked" do
       country = insert(:country, iso_code: "CZ")
       insert(:ebird_location, code: "CZ")
+      # A mismatched eBird subdivision keeps CZ's shape :mixed; without any
+      # subdivisions it would be a trivially matched empty set.
+      insert(:ebird_subdivision1, country_code: "CZ", code: "CZ-99", name: "No Match")
 
       assert Ebird.statuses_for_common_countries([country]) ==
-               %{country.id => %{code: "CZ", status: :unmatched}}
+               %{country.id => %{code: "CZ", status: :mixed}}
     end
 
     test "no ISO-code fallback to an eBird country linked elsewhere" do

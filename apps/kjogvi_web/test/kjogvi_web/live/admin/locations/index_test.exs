@@ -124,13 +124,17 @@ defmodule KjogviWeb.Live.Admin.Locations.IndexTest do
       assert has_element?(index_live, "a[href='/admin/ebird/AD']", "matched")
     end
 
-    test "an unmatched eBird country shows on its ISO counterpart", %{conn: conn} do
+    test "an unlinked eBird country shows its shape status on its ISO counterpart",
+         %{conn: conn} do
       insert(:country, name_en: "Czechia", iso_code: "CZ")
       insert(:ebird_location, code: "CZ")
+      # An eBird subdivision with no ISO counterpart gives the country a :mixed
+      # shape (a 0-subdivision country would be a trivially matched empty set).
+      insert(:ebird_subdivision1, country_code: "CZ", code: "CZ-99", name: "No Match")
 
       {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
 
-      assert has_element?(index_live, "a[href='/admin/ebird/CZ']", "unmatched")
+      assert has_element?(index_live, "a[href='/admin/ebird/CZ']", "mixed")
     end
 
     test "status chips filter the tree to matching countries", %{conn: conn} do
@@ -138,13 +142,14 @@ defmodule KjogviWeb.Live.Admin.Locations.IndexTest do
       insert(:ebird_location, code: "AD", location_id: matched.id)
       insert(:country, name_en: "Czechia", iso_code: "CZ")
       insert(:ebird_location, code: "CZ")
+      insert(:ebird_subdivision1, country_code: "CZ", code: "CZ-99", name: "No Match")
 
       {:ok, index_live, _html} = live(conn, ~p"/admin/locations?status=matched")
 
       assert has_element?(index_live, "a", "Andorra")
       refute has_element?(index_live, "a", "Czechia")
       assert has_element?(index_live, "#ebird-status-filter", "matched (1)")
-      assert has_element?(index_live, "#ebird-status-filter", "unmatched (1)")
+      assert has_element?(index_live, "#ebird-status-filter", "mixed (1)")
     end
 
     test "the no-eBird chip finds countries without an eBird counterpart", %{conn: conn} do

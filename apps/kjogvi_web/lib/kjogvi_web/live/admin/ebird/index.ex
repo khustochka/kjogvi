@@ -9,8 +9,9 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Geo
+  alias Kjogvi.Geo.Location
 
-  @statuses [:matched, :matched_mixed, :matched_iso_extra, :partial, :unmatched]
+  @statuses [:matched, :iso_extra, :name_candidate, :ebird_only, :mixed]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -21,23 +22,37 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
      |> assign(:page_title, "eBird Locations")
      |> assign(:countries, countries)
      |> assign(:statuses, @statuses)
-     |> assign(:status_counts, Enum.frequencies_by(countries, & &1.stats.status))}
+     |> assign(:status_counts, Enum.frequencies_by(countries, & &1.stats.status))
+     |> assign(:incomplete_count, Enum.count(countries, &(not fully_linked?(&1.stats))))}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
     status = parse_status(params["status"])
+    only_incomplete = params["work"] == "incomplete"
 
     filtered =
-      case status do
-        nil -> socket.assigns.countries
-        status -> Enum.filter(socket.assigns.countries, &(&1.stats.status == status))
-      end
+      socket.assigns.countries
+      |> filter_by_status(status)
+      |> filter_by_completeness(only_incomplete)
 
     {:noreply,
      socket
      |> assign(:status, status)
+     |> assign(:only_incomplete, only_incomplete)
      |> assign(:filtered_countries, filtered)}
+  end
+
+  defp filter_by_status(countries, nil), do: countries
+
+  defp filter_by_status(countries, status) do
+    Enum.filter(countries, &(&1.stats.status == status))
+  end
+
+  defp filter_by_completeness(countries, false), do: countries
+
+  defp filter_by_completeness(countries, true) do
+    Enum.filter(countries, &(not fully_linked?(&1.stats)))
   end
 
   defp parse_status(nil), do: nil
@@ -45,6 +60,24 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
   defp parse_status(param) do
     Enum.find(@statuses, &(Atom.to_string(&1) == param))
   end
+
+  # Mirrors `EbirdLocation.Query.fully_linked?/1`: every eBird row linked. The
+  # complement is the "still has subdivisions to link" work queue.
+  defp fully_linked?(stats) do
+    stats.sub1_linked == stats.sub1_total and (stats.country_linked or stats.sub1_total > 0)
+  end
+
+  # Query string preserving the other filter dimension, so the two chip rows
+  # compose instead of resetting each other.
+  defp filter_params(status, only_incomplete) do
+    []
+    |> maybe_put(:status, status && Atom.to_string(status))
+    |> maybe_put(:work, only_incomplete && "incomplete")
+  end
+
+  defp maybe_put(params, _key, nil), do: params
+  defp maybe_put(params, _key, false), do: params
+  defp maybe_put(params, key, value), do: params ++ [{key, value}]
 
   @impl true
   def render(assigns) do
@@ -62,16 +95,38 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         </div>
       </div>
 
+      <%!-- Completeness filter: the "what still needs linking" work queue --%>
+      <ul id="ebird-work-filter" class="flex flex-wrap items-baseline gap-2">
+        <li class="text-sm font-medium text-stone-500 mr-1">Show</li>
+        <.inline_filter_pill
+          selected={not @only_incomplete}
+          href={~p"/admin/ebird?#{filter_params(@status, false)}"}
+        >
+          All ({length(@countries)})
+        </.inline_filter_pill>
+        <.inline_filter_pill
+          selected={@only_incomplete}
+          active={@incomplete_count > 0}
+          href={~p"/admin/ebird?#{filter_params(@status, true)}"}
+        >
+          Not fully linked ({@incomplete_count})
+        </.inline_filter_pill>
+      </ul>
+
       <%!-- Status filter --%>
-      <ul id="ebird-status-filter" class="flex flex-wrap gap-2">
-        <.inline_filter_pill selected={@status == nil} href={~p"/admin/ebird"}>
+      <ul id="ebird-status-filter" class="flex flex-wrap items-baseline gap-2">
+        <li class="text-sm font-medium text-stone-500 mr-1">Status</li>
+        <.inline_filter_pill
+          selected={@status == nil}
+          href={~p"/admin/ebird?#{filter_params(nil, @only_incomplete)}"}
+        >
           All ({length(@countries)})
         </.inline_filter_pill>
         <.inline_filter_pill
           :for={status <- @statuses}
           selected={@status == status}
           active={Map.get(@status_counts, status, 0) > 0}
-          href={~p"/admin/ebird?status=#{status}"}
+          href={~p"/admin/ebird?#{filter_params(status, @only_incomplete)}"}
         >
           {ebird_status_label(status)} ({Map.get(@status_counts, status, 0)})
         </.inline_filter_pill>
@@ -104,6 +159,14 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
           >
             {stats.iso_extra} ISO-only
           </span>
+          <span :if={country.location} class="ml-auto flex items-center gap-1 text-sm">
+            <span class="text-stone-400">&rarr;</span>
+            <.link
+              navigate={~p"/admin/locations/#{country.location.slug}"}
+              class="text-forest-700"
+              phx-no-format
+            >{Location.long_name(:private, country.location)}</.link>
+          </span>
         </li>
       </ul>
 
@@ -113,7 +176,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
           Run the eBird regions import to seed the dataset.
         </p>
         <p :if={@countries != []} class="text-lg font-medium">
-          No countries with this status
+          No countries match these filters
         </p>
       </div>
     </div>
