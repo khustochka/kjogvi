@@ -19,7 +19,7 @@
 # Every top-level ISO 3166-2 entry is emitted, including those denoting a place
 # that is also an ISO 3166-1 country (`FR-BL` / `BL`, `NL-AW` / `AW`, …). Such
 # rows are resolved downstream via the locations changelog
-# (`priv/datasets/geo/iso_locations_changelog.jsonl`), which disables the
+# (`priv/datasets/geo/sources/iso_locations_changelog.jsonl`), which disables the
 # subdivision in favour of the country, rather than being dropped at build time.
 #
 # The iso-codes source directory is auto-detected (Linux system path or
