@@ -40,9 +40,16 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 config :logger, level: if(System.get_env("DEBUG"), do: :debug, else: :warning)
 
 # Keep dataset snapshots out of the repo tree (the default path is
-# priv/datasets); tests that exercise the storage loop override the path
-# per-test anyway.
-config :kjogvi, Kjogvi.Datasets, path: Path.join(System.tmp_dir!(), "kjogvi_test_datasets")
+# priv/datasets, which holds the real curated sources); tests that exercise the
+# storage loop override the path per-test anyway.
+#
+# `otp_app: nil` is load-bearing: config deep-merges keyword lists, so without
+# it the base config's `otp_app: :kjogvi` survives and `LocalAdapter` re-roots
+# `:path` under the app's priv dir via `Application.app_dir/2` — pointing the
+# storage back at the very files this override exists to avoid.
+config :kjogvi, Kjogvi.Datasets,
+  otp_app: nil,
+  path: Path.join(System.tmp_dir!(), "kjogvi_test_datasets")
 
 # In test we don't send emails
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Test
