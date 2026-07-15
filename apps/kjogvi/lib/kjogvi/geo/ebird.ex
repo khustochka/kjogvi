@@ -161,9 +161,9 @@ defmodule Kjogvi.Geo.Ebird do
 
   The two suggestion shapes are proposals, not state: nothing is linked until a
   pass or a manual action runs. They pair in the passes' own order — code first,
-  then names over what code left — so the view previews what *Run match* would do
-  (a same-code pair whose names differ slightly, like Bosnia's `BA-BIH`, shows as
-  one row rather than two unmatched ones).
+  then names over what code left — so the view previews what *Link all matched*
+  would do (a same-code pair whose names differ slightly, like Bosnia's
+  `BA-BIH`, shows as one row rather than two unmatched ones).
 
   Ordered by whichever code the row has — the eBird one, else the ISO one — so
   the two sides interleave by code rather than stacking one column after the
@@ -313,20 +313,61 @@ defmodule Kjogvi.Geo.Ebird do
   Creates a common location from an unlinked eBird region and links the region
   to it — how eBird-only regions enter the common dataset.
 
-  Name from the region's `name`; slug from the eBird code (downcased,
-  `-` → `_`, the ISO import's scheme); `import_source: :ebird_regions`;
-  `iso_code` stays nil (an eBird code is not an ISO code). A subdivision1 is
-  placed under the common country its eBird country row is linked to —
-  `{:error, :country_not_linked}` when there is none yet.
+  Name from the region's `name`; slug and `iso_code` from the eBird code (the
+  slug downcased with `-` → `_`, the ISO import's scheme; the code stored
+  verbatim, as the matcher's passes join on it); `import_source: :ebird_regions`.
+  A subdivision1 is placed under the common country its eBird country row is
+  linked to — `{:error, :country_not_linked}` when there is none yet.
+
+  Note the ISO import upserts on `iso_code`, so a code eBird invented that ISO
+  later adopts would upsert into the row created here rather than making its own.
 
   Returns the created location, `{:error, :already_linked}` when the region is
-  already linked, or `{:error, changeset}` on a slug collision.
+  already linked, or `{:error, changeset}` on a slug or `iso_code` collision.
   """
   def create_common_location(%EbirdLocation{} = ebird_location) do
     case Repo.reload!(ebird_location) do
       %EbirdLocation{location_id: nil} = fresh -> do_create_common_location(fresh)
       _linked -> {:error, :already_linked}
     end
+  end
+
+  @doc """
+  Creates and links a common location for every still-unlinked subdivision1 of
+  one eBird country — `create_common_location/1` over the rows that have no ISO
+  counterpart to match against.
+
+  Meant for the `:ebird_only_subregions` shape, where ISO has no subdivisions at
+  all and every eBird row can only enter the dataset this way. Callers are
+  responsible for that check: run on a country with an ISO side and this creates
+  duplicates of locations that should have been linked instead.
+
+  Each row is created independently rather than in one transaction, so a row
+  that cannot be created (a slug or `iso_code` collision) leaves the rest done.
+  Returns `%{created: n, failed: n}`.
+  """
+  def create_all_common_locations(country_code) do
+    :telemetry.span(
+      [:kjogvi, :geo, :ebird, :create_all],
+      %{country_code: country_code},
+      fn ->
+        summary =
+          EbirdLocation
+          |> EbirdLocation.Query.for_country(country_code)
+          |> EbirdLocation.Query.subdivision1s()
+          |> EbirdLocation.Query.unmatched()
+          |> EbirdLocation.Query.order_by_code()
+          |> Repo.all()
+          |> Enum.reduce(%{created: 0, failed: 0}, fn region, acc ->
+            case create_common_location(region) do
+              {:ok, _location} -> Map.update!(acc, :created, &(&1 + 1))
+              {:error, _reason} -> Map.update!(acc, :failed, &(&1 + 1))
+            end
+          end)
+
+        {summary, Map.merge(%{result: :ok, country_code: country_code}, summary)}
+      end
+    )
   end
 
   defp do_create_common_location(%EbirdLocation{location_type: :country} = ebird_location) do
@@ -361,12 +402,14 @@ defmodule Kjogvi.Geo.Ebird do
     |> Ecto.Changeset.change(
       slug: slug_from_code(ebird_location.code),
       name_en: ebird_location.name,
+      iso_code: ebird_location.code,
       location_type: ebird_location.location_type,
       is_private: false,
       import_source: :ebird_regions
     )
     |> Ecto.Changeset.change(parent_level_fks(parent))
     |> Ecto.Changeset.unique_constraint(:slug, name: :locations_common_slug_index)
+    |> Ecto.Changeset.unique_constraint(:iso_code, name: :locations_iso_code_index)
     |> Repo.insert()
   end
 

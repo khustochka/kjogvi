@@ -289,7 +289,7 @@ defmodule Kjogvi.Geo.EbirdTest do
       assert location.name_en == "Kosovo"
       assert location.location_type == :country
       assert location.user_id == nil
-      assert location.iso_code == nil
+      assert location.iso_code == "XK"
       assert location.import_source == :ebird_regions
       assert reload(ebird_country).location_id == location.id
     end
@@ -304,9 +304,21 @@ defmodule Kjogvi.Geo.EbirdTest do
       assert {:ok, %Location{} = location} = Ebird.create_common_location(ebird_sub1)
 
       assert location.slug == "az_kal"
+      assert location.iso_code == "AZ-KAL"
       assert location.location_type == :subdivision1
       assert location.country_id == country.id
       assert reload(ebird_sub1).location_id == location.id
+    end
+
+    test "an iso_code collision returns the changeset and links nothing" do
+      insert(:country, slug: "other", iso_code: "XK")
+      ebird_country = insert(:ebird_location, code: "XK")
+
+      assert {:error, %Ecto.Changeset{errors: errors}} =
+               Ebird.create_common_location(ebird_country)
+
+      assert Keyword.has_key?(errors, :iso_code)
+      assert reload(ebird_country).location_id == nil
     end
 
     test "refuses a subdivision1 whose eBird country row is not linked" do
@@ -332,6 +344,61 @@ defmodule Kjogvi.Geo.EbirdTest do
 
       assert Keyword.has_key?(errors, :slug)
       assert reload(ebird_country).location_id == nil
+    end
+  end
+
+  describe "create_all_common_locations/1" do
+    test "creates and links every unlinked subdivision1" do
+      country = insert(:country, iso_code: "PR", name_en: "Puerto Rico")
+      insert(:ebird_location, code: "PR", location_id: country.id)
+      adjuntas = insert(:ebird_subdivision1, country_code: "PR", code: "PR-001", name: "Adjuntas")
+      aguada = insert(:ebird_subdivision1, country_code: "PR", code: "PR-003", name: "Aguada")
+
+      assert Ebird.create_all_common_locations("PR") == %{created: 2, failed: 0}
+
+      for region <- [adjuntas, aguada] do
+        location = Repo.get!(Location, reload(region).location_id)
+        assert location.location_type == :subdivision1
+        assert location.country_id == country.id
+        assert location.import_source == :ebird_regions
+      end
+    end
+
+    test "leaves already linked rows alone and skips other countries" do
+      country = insert(:country, iso_code: "PR")
+      insert(:ebird_location, code: "PR", location_id: country.id)
+      existing = insert(:subdivision1, country: country, name_en: "Adjuntas")
+
+      linked =
+        insert(:ebird_subdivision1, country_code: "PR", code: "PR-001", location_id: existing.id)
+
+      other = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+
+      assert Ebird.create_all_common_locations("PR") == %{created: 0, failed: 0}
+
+      assert reload(linked).location_id == existing.id
+      assert reload(other).location_id == nil
+    end
+
+    test "a slug collision fails only its own row" do
+      country = insert(:country, iso_code: "PR")
+      insert(:ebird_location, code: "PR", location_id: country.id)
+      insert(:country, slug: "pr_001", iso_code: "XY")
+      colliding = insert(:ebird_subdivision1, country_code: "PR", code: "PR-001")
+      ok = insert(:ebird_subdivision1, country_code: "PR", code: "PR-003")
+
+      assert Ebird.create_all_common_locations("PR") == %{created: 1, failed: 1}
+
+      assert reload(colliding).location_id == nil
+      assert reload(ok).location_id != nil
+    end
+
+    test "reports nothing to do when the country row is unlinked" do
+      insert(:ebird_location, code: "PR")
+      region = insert(:ebird_subdivision1, country_code: "PR", code: "PR-001")
+
+      assert Ebird.create_all_common_locations("PR") == %{created: 0, failed: 1}
+      assert reload(region).location_id == nil
     end
   end
 end
