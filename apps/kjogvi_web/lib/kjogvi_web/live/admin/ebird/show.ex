@@ -3,16 +3,24 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   Matching workbench for one eBird country: the country row, then its
   subdivision1s as a side-by-side eBird-vs-ISO comparison
   (`Kjogvi.Geo.Ebird.subdivision1_comparison/1`) — paired rows on one line,
-  each side's leftovers against an empty cell. The match passes button and the
-  manual resolution actions (link via autocomplete, unlink, create-from-eBird)
-  act on the eBird side and occupy the row's third column, after eBird and ISO;
-  the ISO column is read-only context.
+  each side's leftovers against an empty cell. The manual resolution actions
+  (link via autocomplete, unlink, create-from-eBird) act on the eBird side and
+  occupy the row's third column, after eBird and ISO; the ISO column is
+  read-only context.
 
   A row the match passes would pair — same ISO code, or matching names — shows
   the ISO location it pairs with, so Link commits that pair outright rather than
   opening the autocomplete to search for what is already on screen. The
   autocomplete remains for rows with nothing to suggest, as does
   create-from-eBird: those are the rows where no location exists to link.
+
+  "Link all matched" (`Kjogvi.Geo.Ebird.match_country/2`) is that same per-row
+  Link over every suggested row at once: the passes it runs are the ones the
+  comparison previews, so it links what the table proposes and leaves the rest.
+  Its counterpart "Create all from eBird" appears only on the
+  `:ebird_only_subregions` shape, where ISO has no subdivisions at all and so
+  every row can only be created — the one shape where bulk creation cannot
+  duplicate a location that should have been linked.
   """
 
   use KjogviWeb, :live_view
@@ -48,15 +56,24 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   end
 
   @impl true
-  def handle_event("run_match", _params, socket) do
+  def handle_event("link_all_matched", _params, socket) do
     summary = Geo.Ebird.match_country(socket.assigns.country_code)
 
     {:noreply,
      socket
      |> put_flash(
        :info,
-       "Matched #{summary.code} by code and #{summary.name} by name; #{summary.left} left unmatched."
+       "Linked #{summary.code} by code and #{summary.name} by name; #{summary.left} left unmatched."
      )
+     |> load_country()}
+  end
+
+  def handle_event("create_all", _params, socket) do
+    summary = Geo.Ebird.create_all_common_locations(socket.assigns.country_code)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, create_all_message(summary))
      |> load_country()}
   end
 
@@ -125,6 +142,14 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
     {:noreply, socket}
   end
 
+  defp create_all_message(%{created: created, failed: 0}) do
+    "Created and linked #{created} locations."
+  end
+
+  defp create_all_message(%{created: created, failed: failed}) do
+    "Created and linked #{created} locations; #{failed} could not be created."
+  end
+
   # Links via the autocomplete pick or the suggested-pair button; the outcome
   # reads the same either way.
   defp link_region(socket, region, location) do
@@ -190,9 +215,25 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
             </span>
           </p>
         </div>
-        <.button id="run-match-button" phx-click="run_match" class="mb-1">
-          Run match
-        </.button>
+        <div class="mb-1 flex flex-wrap gap-2">
+          <%!-- ISO has no subdivisions to match against, so creating is the only
+          way these rows enter the dataset — offered in bulk on this shape alone. --%>
+          <.button
+            :if={@stats.status == :ebird_only_subregions and @country.location}
+            id="create-all-button"
+            phx-click="create_all"
+            data-confirm={"Create a common location from each of #{@stats.sub1_total - @stats.sub1_linked} unlinked eBird subdivisions and link them?"}
+          >
+            Create all from eBird
+          </.button>
+          <.button
+            id="link-all-matched-button"
+            phx-click="link_all_matched"
+            data-confirm="Link every eBird row that matches a common location by code or name?"
+          >
+            Link all matched
+          </.button>
+        </div>
       </div>
 
       <%!-- The eBird country row --%>
@@ -328,14 +369,14 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
       <span
         :if={@pairing == :code_suggestion}
         class="text-stone-400"
-        title="Same ISO code, not linked yet — Run match links this"
+        title="Same ISO code, not linked yet — Link all matched links this"
       >
         &rarr;
       </span>
       <span
         :if={@pairing == :name_suggestion}
         class="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700"
-        title="Codes differ but the names match — Run match links this"
+        title="Codes differ but the names match — Link all matched links this"
       >
         by name
       </span>
