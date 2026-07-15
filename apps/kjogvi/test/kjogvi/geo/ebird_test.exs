@@ -24,6 +24,25 @@ defmodule Kjogvi.Geo.EbirdTest do
                %{ebird_location: %EbirdLocation{code: "CZ"}, stats: %{status: :ebird_only}}
              ] = Ebird.countries_with_statuses()
     end
+
+    test "a disabled ISO country is no counterpart: the eBird row reads :ebird_only" do
+      insert(:country, iso_code: "PR", disabled: true)
+      insert(:ebird_location, code: "PR")
+
+      assert [%{ebird_location: %EbirdLocation{code: "PR"}, stats: %{status: :ebird_only}}] =
+               Ebird.countries_with_statuses()
+    end
+
+    test "disabled subdivisions drop out of the ISO side of the shape" do
+      country = insert(:country, iso_code: "AD")
+      insert(:subdivision1, iso_code: "AD-02", country: country)
+      insert(:subdivision1, iso_code: "AD-03", country: country, disabled: true)
+      insert(:ebird_location, code: "AD", location_id: country.id)
+      insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+
+      # Without the disabled AD-03 the code sets are equal — :matched, not :iso_extra.
+      assert [%{stats: %{status: :matched, iso_extra: 0}}] = Ebird.countries_with_statuses()
+    end
   end
 
   describe "statuses_for_common_countries/1" do
@@ -210,6 +229,24 @@ defmodule Kjogvi.Geo.EbirdTest do
       assert [row] = Ebird.subdivision1_comparison("AD")
       assert %{ebird: nil, pairing: :iso_only} = row
       assert row.location.id == sub1.id
+    end
+
+    test "omits a disabled subdivision from the ISO side, leaving its eBird row alone" do
+      country = insert(:country, iso_code: "AD")
+
+      insert(:subdivision1,
+        iso_code: "AD-02",
+        name_en: "Canillo",
+        country: country,
+        disabled: true
+      )
+
+      insert(:ebird_location, code: "AD", location_id: country.id)
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+
+      # No :code_suggestion — the pass would not link it, so the view must not offer it.
+      assert [%{location: nil, pairing: :ebird_only} = row] = Ebird.subdivision1_comparison("AD")
+      assert row.ebird.id == ebird_sub1.id
     end
 
     test "reaches the ISO side through the link for an eBird-only country" do

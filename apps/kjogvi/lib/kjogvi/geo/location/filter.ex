@@ -87,10 +87,17 @@ defmodule Kjogvi.Geo.Location.Filter do
 
   @doc """
   Filter for the eBird workbench link picker: common locations only, specials
-  excluded. When the eBird country row is already linked, pass its common
-  `country` to restrict candidates to that country's descendants.
+  excluded, and `disabled` locations too — retired entries the matching passes
+  never claim either, so the picker offers nothing a pass wouldn't. When the
+  eBird country row is already linked, pass its common `country` to restrict
+  candidates to that country's descendants.
   """
   def for_ebird_link(country \\ nil) do
-    %__MODULE__{only_common: true, exclude_specials: true, within: country}
+    %__MODULE__{
+      only_common: true,
+      exclude_specials: true,
+      exclude_disabled: true,
+      within: country
+    }
   end
 end

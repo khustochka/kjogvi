@@ -2,6 +2,13 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   @moduledoc """
   Queries for eBird locations, including the matching passes' link updates and
   the per-country match status aggregation.
+
+  Every join onto the common side excludes `disabled` locations: a disabled
+  location is retired (an ISO entry superseded by another, like `US-PR` against
+  the `PR` country), so it is neither a link candidate nor part of the ISO side
+  a country's status shape is derived from. The two must agree — were the shape
+  arithmetic to count a disabled subdivision the passes won't link, its country
+  could never read `:matched` and the bulk pass would skip it for good.
   """
 
   import Ecto.Query
@@ -83,12 +90,14 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   @doc """
   Update query linking the country's unlinked eBird country row to the common
   country with `iso_code` equal to the eBird code. Skips common locations
-  already linked from another eBird row.
+  already linked from another eBird row, and disabled ones.
   """
   def link_country_by_iso(country_code) do
     from e in EbirdLocation,
       join: l in Location,
-      on: l.iso_code == e.code and l.location_type == :country and is_nil(l.user_id),
+      on:
+        l.iso_code == e.code and l.location_type == :country and is_nil(l.user_id) and
+          not l.disabled,
       where: e.location_type == :country and e.code == ^country_code,
       where: is_nil(e.location_id),
       where: l.id not in subquery(matched_location_ids()),
@@ -98,12 +107,14 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   @doc """
   Update query linking every unlinked eBird country row to the common country
   with `iso_code` equal to the eBird code — the bulk pass's country pass. Skips
-  common locations already linked from another eBird row.
+  common locations already linked from another eBird row, and disabled ones.
   """
   def link_all_countries_by_iso do
     from e in EbirdLocation,
       join: l in Location,
-      on: l.iso_code == e.code and l.location_type == :country and is_nil(l.user_id),
+      on:
+        l.iso_code == e.code and l.location_type == :country and is_nil(l.user_id) and
+          not l.disabled,
       where: e.location_type == :country,
       where: is_nil(e.location_id),
       where: l.id not in subquery(matched_location_ids()),
@@ -113,14 +124,14 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   @doc """
   Update query linking the country's unlinked eBird subdivision1 rows to the
   given common country's subdivision1s by `iso_code == subnational1_code`.
-  Skips common locations already linked from another eBird row.
+  Skips common locations already linked from another eBird row, and disabled ones.
   """
   def link_subdivision1s_by_code(country_code, common_country_id) do
     from e in EbirdLocation,
       join: l in Location,
       on:
         l.iso_code == e.subnational1_code and l.location_type == :subdivision1 and
-          is_nil(l.user_id) and l.country_id == ^common_country_id,
+          is_nil(l.user_id) and not l.disabled and l.country_id == ^common_country_id,
       where: e.country_code == ^country_code and e.location_type == :subdivision1,
       where: is_nil(e.location_id),
       where: l.id not in subquery(matched_location_ids()),
@@ -133,7 +144,8 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   `iso_code == subnational1_code` — the bulk pass's subdivision pass, run only
   for the perfect-match (`:matched`) countries. The common country is reached
   through the eBird country row's own link, so the country pass must have run
-  first. Skips common locations already linked from another eBird row.
+  first. Skips common locations already linked from another eBird row, and
+  disabled ones.
   """
   def link_subdivision1s_by_code_for_countries(country_codes) do
     from e in EbirdLocation,
@@ -142,7 +154,7 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
       join: l in Location,
       on:
         l.iso_code == e.subnational1_code and l.location_type == :subdivision1 and
-          is_nil(l.user_id) and l.country_id == ec.location_id,
+          is_nil(l.user_id) and not l.disabled and l.country_id == ec.location_id,
       where: e.location_type == :subdivision1 and e.country_code in ^country_codes,
       where: is_nil(e.location_id),
       where: l.id not in subquery(matched_location_ids()),
@@ -156,7 +168,7 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   def unlinked_common_subdivision1s(common_country_id) do
     from l in Location,
       where:
-        l.location_type == :subdivision1 and is_nil(l.user_id) and
+        l.location_type == :subdivision1 and is_nil(l.user_id) and not l.disabled and
           l.country_id == ^common_country_id,
       where: l.id not in subquery(matched_location_ids())
   end
@@ -172,13 +184,13 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   """
   def common_subdivision1s_for_country(country_code) do
     from l in Location,
-      where: l.location_type == :subdivision1 and is_nil(l.user_id),
+      where: l.location_type == :subdivision1 and is_nil(l.user_id) and not l.disabled,
       where:
         l.country_id in subquery(
           from(c in Location,
             left_join: e in EbirdLocation,
             on: e.location_id == c.id and e.location_type == :country,
-            where: c.location_type == :country and is_nil(c.user_id),
+            where: c.location_type == :country and is_nil(c.user_id) and not c.disabled,
             where: e.code == ^country_code or c.iso_code == ^country_code,
             select: c.id
           )
@@ -230,12 +242,16 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   @doc """
   eBird country codes that have a matching ISO common country (by
   `iso_code == code`) — whether an unlinked eBird country has an ISO counterpart
-  at all, separating the `:ebird_only` shape from the linkable ones.
+  at all, separating the `:ebird_only` shape from the linkable ones. A disabled
+  ISO country is no counterpart: nothing can link to it, so its eBird row is
+  `:ebird_only` and creates its own common location.
   """
   def country_codes_with_iso_match(query \\ EbirdLocation) do
     from e in query,
       join: c in Location,
-      on: c.iso_code == e.code and c.location_type == :country and is_nil(c.user_id),
+      on:
+        c.iso_code == e.code and c.location_type == :country and is_nil(c.user_id) and
+          not c.disabled,
       where: e.location_type == :country,
       select: e.country_code
   end
@@ -266,9 +282,11 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
       join: c in Location,
       on:
         (c.id == e.location_id or c.iso_code == e.code) and c.location_type == :country and
-          is_nil(c.user_id),
+          is_nil(c.user_id) and not c.disabled,
       join: s in Location,
-      on: s.country_id == c.id and s.location_type == :subdivision1 and is_nil(s.user_id),
+      on:
+        s.country_id == c.id and s.location_type == :subdivision1 and is_nil(s.user_id) and
+          not s.disabled,
       where: e.location_type == :country,
       select: {e.country_code, s.iso_code, s.name_en}
   end
