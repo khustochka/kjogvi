@@ -16,19 +16,18 @@
 # (council areas, departments, …) — are NOT emitted; only the subdivisions that
 # hang directly off the country are imported.
 #
-# Dual-entity rule (eBird-style): an ISO 3166-2 entry `XX-YY` denotes the same
-# place as ISO 3166-1 code `YY` only when (1) `YY` is a valid alpha-2 code AND
-# (2) the names match after normalization. Such entries are NOT emitted as
-# subdivisions — the place is already present as a standalone country (`YY`).
+# Every top-level ISO 3166-2 entry is emitted, including those denoting a place
+# that is also an ISO 3166-1 country (`FR-BL` / `BL`, `NL-AW` / `AW`, …). Such
+# rows are resolved downstream via the locations changelog
+# (`priv/datasets/geo/iso_locations_changelog.jsonl`), which disables the
+# subdivision in favour of the country, rather than being dropped at build time.
 #
 # The iso-codes source directory is auto-detected (Linux system path or
 # Homebrew prefix on macOS); pass it explicitly to override.
 #
 # Usage:
-#   elixir apps/kjogvi/priv/geo/build_iso_3166.exs \
-#     [<iso-codes/json dir>] [priv/datasets/geo/sources/iso_3166.jsonl]
-
-Mix.install([{:jason, "~> 1.4"}])
+#   mix run apps/kjogvi/scripts/geo/build_iso_3166.exs \
+#     [<iso-codes/json dir>] [<output path>]
 
 defmodule BuildIso3166 do
   # Known locations of the iso-codes JSON, in priority order.
@@ -38,9 +37,9 @@ defmodule BuildIso3166 do
     "/opt/homebrew/opt/iso-codes/share/iso-codes/json"
   ]
 
-  # The umbrella-root local datasets storage (see `config :kjogvi,
-  # Kjogvi.Datasets`), under the key `Kjogvi.Geo.Import.source_key/0`.
-  @default_out Path.expand("../../../../priv/datasets/geo/sources/iso_3166.jsonl", __DIR__)
+  # The local datasets storage (see `config :kjogvi, Kjogvi.Datasets`), under
+  # the key `Kjogvi.Geo.Import.source_key/0`.
+  @default_out Path.join(:code.priv_dir(:kjogvi), "datasets/geo/sources/iso_3166.jsonl")
 
   def default_out, do: @default_out
 
@@ -95,10 +94,6 @@ defmodule BuildIso3166 do
     countries = read(Path.join(src_dir, "iso_3166-1.json"))["3166-1"]
     subdivisions = read(Path.join(src_dir, "iso_3166-2.json"))["3166-2"]
 
-    # alpha_2 (upcased) => normalized English name
-    by_alpha_2 =
-      Map.new(countries, fn c -> {String.upcase(c["alpha_2"]), normalize(c["name"])} end)
-
     country_lines =
       Enum.map(countries, fn c ->
         "country"
@@ -109,7 +104,6 @@ defmodule BuildIso3166 do
 
     subdivision_lines =
       subdivisions
-      |> Enum.reject(&dual_entity?(&1, by_alpha_2))
       # Only the top-level subdivisions (directly under the country) are imported.
       # ISO 3166-2 entries with a `parent` are lower-level (council areas,
       # departments, …); they are skipped rather than flattened to subdivision1.
@@ -144,21 +138,6 @@ defmodule BuildIso3166 do
     end
   end
 
-  defp dual_entity?(%{"code" => code, "name" => name}, by_alpha_2) do
-    case String.split(code, "-", parts: 2) do
-      [_parent, sub] ->
-        upper = String.upcase(sub)
-
-        case Map.fetch(by_alpha_2, upper) do
-          {:ok, country_name} -> normalize(name) == country_name
-          :error -> false
-        end
-
-      _ ->
-        false
-    end
-  end
-
   defp base_row(type, iso_code, name, parent_iso) do
     %{
       type: type,
@@ -166,17 +145,6 @@ defmodule BuildIso3166 do
       name_en: name,
       parent_iso: parent_iso
     }
-  end
-
-  # Case-fold, strip diacritics, drop punctuation, trim a trailing "(the)".
-  defp normalize(name) do
-    name
-    |> String.downcase()
-    |> :unicode.characters_to_nfd_binary()
-    |> String.replace(~r/[\x{0300}-\x{036f}]/u, "")
-    |> String.replace(~r/\(the\)\s*$/u, "")
-    |> String.replace(~r/[^\p{L}\p{N}]+/u, " ")
-    |> String.trim()
   end
 
   defp read(path) do
