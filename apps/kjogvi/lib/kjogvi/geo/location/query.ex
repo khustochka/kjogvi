@@ -96,6 +96,11 @@ defmodule Kjogvi.Geo.Location.Query do
       where: l.location_type == @country_location_type
   end
 
+  def by_iso_code(query, iso_code) do
+    from [..., l] in query,
+      where: l.iso_code == ^iso_code
+  end
+
   def specials(query) do
     from [..., l] in query,
       where: l.location_type == @special_location_type

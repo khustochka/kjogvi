@@ -138,8 +138,9 @@ defmodule KjogviWeb.Live.Admin.Locations.ShowTest do
     test "an unlinked country still shows its would-be status", %{conn: conn} do
       country = insert(:country, name_en: "Czechia", slug: "czechia", iso_code: "CZ")
       insert(:ebird_location, code: "CZ")
-      # A mismatched eBird subdivision keeps CZ's shape :mixed; without any
-      # subdivisions it would be a trivially matched empty set.
+      # Both sides subdivide but agree on neither code nor name, so CZ's shape is
+      # :mixed; without any subdivisions it would be a trivially matched empty set.
+      insert(:subdivision1, iso_code: "CZ-10", name_en: "Praha", country: country)
       insert(:ebird_subdivision1, country_code: "CZ", code: "CZ-99", name: "No Match")
 
       {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")

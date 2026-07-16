@@ -2,8 +2,8 @@ defmodule Kjogvi.Geo.Ebird do
   @moduledoc """
   The eBird regions reference dataset (`Kjogvi.Geo.EbirdLocation`): match
   status aggregation and the manual resolution operations — linking eBird
-  regions to common locations, unlinking, and creating a common location from
-  an eBird region.
+  regions to common locations, unlinking, creating a common location from
+  an eBird region, and the bulk subdivision2 import.
 
   Matching passes live in `Kjogvi.Geo.Ebird.Matcher`; the bootstrap import in
   `Kjogvi.Geo.Ebird.Import`.
@@ -33,8 +33,15 @@ defmodule Kjogvi.Geo.Ebird do
   code. Each entry carries `:status` (see
   `Kjogvi.Geo.EbirdLocation.Query.derive_status/1`) plus the underlying
   counts and signals: `country_linked`, `sub1_total`, `sub1_linked`,
-  `iso_sub1_total`, `iso_extra`, `has_iso_country`, `code_set_equal`,
-  `code_subset`, and `name_set_match`.
+  `iso_extra`, `has_iso_country`, `code_set_equal`, `code_subset`, and
+  `name_set_match` — plus `sub2_total` / `sub2_linked`, the subdivision2
+  import progress (not part of the status shape, which only compares
+  subdivision1 sets).
+
+  Only `sub1_linked` (and `country_linked`) track link progress. The rest —
+  `iso_extra` included — are set arithmetic over the full eBird-vs-ISO code
+  sets, so they read the same before and after the passes run: a subdivision
+  whose code eBird also has is never an "extra", linked or not.
   """
   def country_statuses do
     statuses_from(EbirdLocation)
@@ -136,22 +143,136 @@ defmodule Kjogvi.Geo.Ebird do
   end
 
   @doc """
-  The linked common country's subdivision1s that no eBird row points at —
-  ISO-only subdivisions (the Hungary case), listed in the workbench for
-  context. Empty when the eBird country row is not linked.
-  """
-  def unmatched_iso_subdivision1s(country_code) do
-    case get_country(country_code) do
-      %EbirdLocation{location_id: location_id} when not is_nil(location_id) ->
-        location_id
-        |> EbirdLocation.Query.unlinked_common_subdivision1s()
-        |> Location.Query.order_by_name()
-        |> Repo.all()
+  The country's eBird subdivision1s and common (ISO) subdivision1s zipped into
+  one ordered list of comparison rows — the workbench's side-by-side view.
 
-      _ ->
-        []
+  Each row is `%{ebird: row | nil, location: location | nil, pairing: pairing}`,
+  with at least one side present:
+
+    * `:linked` — the eBird row's `location_id` points at the common location:
+      an established pair, whatever the pass that made it.
+    * `:code_suggestion` — both sides are still unlinked but the eBird
+      `subnational1_code` equals the location's `iso_code`: what the code pass
+      would link.
+    * `:name_suggestion` — still unlinked, codes don't pair, but the normalized
+      names match 1:1 (`Kjogvi.Util.String.normalize_for_match/1`, so "Łódzkie"
+      pairs with "Lodzkie"): what the name pass would link. Ambiguous names (the
+      same name twice on a side) are left unpaired, mirroring the pass's 1:1 rule.
+    * `:ebird_only` / `:iso_only` — a leftover with no counterpart: the other
+      side is nil.
+
+  The two suggestion shapes are proposals, not state: nothing is linked until a
+  pass or a manual action runs. They pair in the passes' own order — code first,
+  then names over what code left — so the view previews what *Link all matched*
+  would do (a same-code pair whose names differ slightly, like Bosnia's
+  `BA-BIH`, shows as one row rather than two unmatched ones).
+
+  Ordered by whichever code the row has — the eBird one, else the ISO one — so
+  the two sides interleave by code rather than stacking one column after the
+  other (`HU-BA`'s ISO-only row lands between its eBird neighbours).
+  """
+  def subdivision1_comparison(country_code) do
+    ebird_rows =
+      EbirdLocation
+      |> EbirdLocation.Query.for_country(country_code)
+      |> EbirdLocation.Query.subdivision1s()
+      |> EbirdLocation.Query.order_by_code()
+      |> EbirdLocation.Query.preload_location()
+      |> Repo.all()
+
+    # Only the unclaimed ISO side needs loading: a claimed subdivision reaches
+    # the view preloaded on the eBird row that links it.
+    unlinked_locations =
+      country_code
+      |> EbirdLocation.Query.common_subdivision1s_for_country()
+      |> EbirdLocation.Query.unclaimed()
+      |> Location.Query.order_by_name()
+      |> Repo.all()
+
+    suggestions = suggestions(ebird_rows, unlinked_locations)
+    suggested_ids = MapSet.new(Map.values(suggestions), fn {location, _} -> location.id end)
+
+    iso_only_rows =
+      for location <- unlinked_locations, not MapSet.member?(suggested_ids, location.id) do
+        %{ebird: nil, location: location, pairing: :iso_only}
+      end
+
+    (Enum.map(ebird_rows, &comparison_row(&1, suggestions)) ++ iso_only_rows)
+    |> Enum.sort_by(&comparison_order/1)
+  end
+
+  defp comparison_row(%EbirdLocation{location: %Location{} = location} = ebird, _suggestions) do
+    %{ebird: ebird, location: location, pairing: :linked}
+  end
+
+  defp comparison_row(%EbirdLocation{} = ebird, suggestions) do
+    case Map.fetch(suggestions, ebird.id) do
+      {:ok, {location, pairing}} -> %{ebird: ebird, location: location, pairing: pairing}
+      :error -> %{ebird: ebird, location: nil, pairing: :ebird_only}
     end
   end
+
+  # `%{ebird_id => {location, pairing}}` for the still-unlinked rows, in the
+  # passes' order: by code, then by name over what code left unpaired.
+  defp suggestions(ebird_rows, unlinked_locations) do
+    unlinked_ebird = Enum.filter(ebird_rows, &is_nil(&1.location_id))
+
+    by_code =
+      pair_up(unlinked_ebird, unlinked_locations, & &1.subnational1_code, & &1.iso_code, :upcase)
+
+    paired_ebird_ids = MapSet.new(Map.keys(by_code))
+    paired_location_ids = MapSet.new(Map.values(by_code), & &1.id)
+
+    by_name =
+      pair_up(
+        Enum.reject(unlinked_ebird, &MapSet.member?(paired_ebird_ids, &1.id)),
+        Enum.reject(unlinked_locations, &MapSet.member?(paired_location_ids, &1.id)),
+        & &1.name,
+        & &1.name_en,
+        :normalize
+      )
+
+    Map.merge(
+      Map.new(by_code, fn {id, location} -> {id, {location, :code_suggestion}} end),
+      Map.new(by_name, fn {id, location} -> {id, {location, :name_suggestion}} end)
+    )
+  end
+
+  # `%{ebird_id => location}` for keys held by exactly one row on each side — the
+  # 1:1 rule both passes apply.
+  defp pair_up(ebird_rows, locations, ebird_key, location_key, mode) do
+    ebird = unique_by_key(ebird_rows, ebird_key, mode)
+    common = unique_by_key(locations, location_key, mode)
+
+    for {key, ebird_row} <- ebird, location = common[key], into: %{} do
+      {ebird_row.id, location}
+    end
+  end
+
+  # `%{key => row}` keeping only keys held by exactly one row, so an ambiguous
+  # key yields no suggestion. Blank keys are dropped — they would otherwise all
+  # collide on "". Codes are compared case-insensitively (eBird upcases, the ISO
+  # import stores them as given); names go through the match normalization.
+  defp unique_by_key(rows, key_fun, mode) do
+    rows
+    |> Enum.group_by(&normalize_key(key_fun.(&1), mode))
+    |> Map.drop([""])
+    |> Map.filter(fn {_key, rows} -> match?([_], rows) end)
+    |> Map.new(fn {key, [row]} -> {key, row} end)
+  end
+
+  defp normalize_key(nil, _mode), do: ""
+  defp normalize_key(value, :upcase), do: String.upcase(value)
+  defp normalize_key(value, :normalize), do: Util.String.normalize_for_match(value)
+
+  # Sort key: the eBird code when there is one, else the ISO code. Rows with
+  # neither (an ISO subdivision with no code) sort last, by name.
+  defp comparison_order(%{ebird: %EbirdLocation{code: code}}) when is_binary(code), do: {0, code}
+
+  defp comparison_order(%{location: %Location{iso_code: iso_code}}) when is_binary(iso_code),
+    do: {0, String.upcase(iso_code)}
+
+  defp comparison_order(%{location: %Location{name_en: name_en}}), do: {1, name_en}
 
   @doc """
   Links an unlinked eBird region to the common location with `location_id`.
@@ -194,20 +315,132 @@ defmodule Kjogvi.Geo.Ebird do
   Creates a common location from an unlinked eBird region and links the region
   to it — how eBird-only regions enter the common dataset.
 
-  Name from the region's `name`; slug from the eBird code (downcased,
-  `-` → `_`, the ISO import's scheme); `import_source: :ebird_regions`;
-  `iso_code` stays nil (an eBird code is not an ISO code). A subdivision1 is
-  placed under the common country its eBird country row is linked to —
-  `{:error, :country_not_linked}` when there is none yet.
+  Name from the region's `name`; slug and `iso_code` from the eBird code (the
+  slug downcased with `-` → `_`, the ISO import's scheme; the code stored
+  verbatim, as the matcher's passes join on it); `import_source: :ebird_regions`.
+  A subdivision1 is placed under the common country its eBird country row is
+  linked to — `{:error, :country_not_linked}` when there is none yet.
+
+  Note the ISO import upserts on `iso_code`, so a code eBird invented that ISO
+  later adopts would upsert into the row created here rather than making its own.
 
   Returns the created location, `{:error, :already_linked}` when the region is
-  already linked, or `{:error, changeset}` on a slug collision.
+  already linked, or `{:error, changeset}` on a slug or `iso_code` collision.
   """
   def create_common_location(%EbirdLocation{} = ebird_location) do
     case Repo.reload!(ebird_location) do
       %EbirdLocation{location_id: nil} = fresh -> do_create_common_location(fresh)
       _linked -> {:error, :already_linked}
     end
+  end
+
+  @doc """
+  Creates and links a common location for every still-unlinked subdivision1 of
+  one eBird country — `create_common_location/1` over the rows that have no ISO
+  counterpart to match against.
+
+  Meant for the `:ebird_only_subregions` shape, where ISO has no subdivisions at
+  all and every eBird row can only enter the dataset this way. Callers are
+  responsible for that check: run on a country with an ISO side and this creates
+  duplicates of locations that should have been linked instead.
+
+  Each row is created independently rather than in one transaction, so a row
+  that cannot be created (a slug or `iso_code` collision) leaves the rest done.
+  Returns `%{created: n, failed: n}`.
+  """
+  def create_all_common_locations(country_code) do
+    :telemetry.span(
+      [:kjogvi, :geo, :ebird, :create_all],
+      %{country_code: country_code},
+      fn ->
+        summary =
+          EbirdLocation
+          |> EbirdLocation.Query.for_country(country_code)
+          |> EbirdLocation.Query.subdivision1s()
+          |> EbirdLocation.Query.unmatched()
+          |> EbirdLocation.Query.order_by_code()
+          |> Repo.all()
+          |> Enum.reduce(%{created: 0, failed: 0}, fn region, acc ->
+            case create_common_location(region) do
+              {:ok, _location} -> Map.update!(acc, :created, &(&1 + 1))
+              {:error, _reason} -> Map.update!(acc, :failed, &(&1 + 1))
+            end
+          end)
+
+        {summary, Map.merge(%{result: :ok, country_code: country_code}, summary)}
+      end
+    )
+  end
+
+  @doc """
+  Subdivision2 import progress per subdivision1 of one eBird country:
+  `%{subnational1_code => %{total: n, linked: n}}`, with an entry only for
+  subdivision1s that have subdivision2 rows.
+  """
+  def sub2_stats_by_sub1(country_code) do
+    EbirdLocation
+    |> EbirdLocation.Query.for_country(country_code)
+    |> EbirdLocation.Query.sub2_stats_by_sub1()
+    |> Repo.all()
+    |> Map.new(&{&1.subnational1_code, %{total: &1.total, linked: &1.linked}})
+  end
+
+  @doc """
+  Creates and links a common location for every not-yet-imported eBird
+  subdivision2 of one country — the subdivision2 import. ISO has no second
+  level, so eBird is these locations' only source and there is nothing to
+  match against: every row is created, never linked to an existing location.
+
+  Each subdivision2 is placed under the common location its eBird
+  subdivision1 row is linked to; rows whose subdivision1 is not linked yet
+  count as failed, as do slug or `iso_code` collisions. Like
+  `create_all_common_locations/1`, rows are created independently, so a
+  failure leaves the rest done and the import is re-runnable.
+  Returns `%{created: n, failed: n}`.
+  """
+  def import_subdivision2s(country_code) do
+    :telemetry.span(
+      [:kjogvi, :geo, :ebird, :import_sub2],
+      %{country_code: country_code},
+      fn ->
+        parents = linked_subdivision1_locations(country_code)
+
+        summary =
+          EbirdLocation
+          |> EbirdLocation.Query.for_country(country_code)
+          |> EbirdLocation.Query.subdivision2s()
+          |> EbirdLocation.Query.unmatched()
+          |> EbirdLocation.Query.order_by_code()
+          |> Repo.all()
+          |> Enum.reduce(%{created: 0, failed: 0}, fn region, acc ->
+            case import_subdivision2(region, parents) do
+              {:ok, _location} -> Map.update!(acc, :created, &(&1 + 1))
+              {:error, _reason} -> Map.update!(acc, :failed, &(&1 + 1))
+            end
+          end)
+
+        {summary, Map.merge(%{result: :ok, country_code: country_code}, summary)}
+      end
+    )
+  end
+
+  defp import_subdivision2(region, parents) do
+    case Map.fetch(parents, region.subnational1_code) do
+      {:ok, parent} -> insert_and_link(region, parent)
+      :error -> {:error, :subdivision1_not_linked}
+    end
+  end
+
+  # `%{ebird_sub1_code => linked_common_location}` — the parents subdivision2s
+  # are created under.
+  defp linked_subdivision1_locations(country_code) do
+    EbirdLocation
+    |> EbirdLocation.Query.for_country(country_code)
+    |> EbirdLocation.Query.subdivision1s()
+    |> EbirdLocation.Query.matched()
+    |> Repo.all()
+    |> Repo.preload(:location)
+    |> Map.new(&{&1.code, &1.location})
   end
 
   defp do_create_common_location(%EbirdLocation{location_type: :country} = ebird_location) do
@@ -242,12 +475,14 @@ defmodule Kjogvi.Geo.Ebird do
     |> Ecto.Changeset.change(
       slug: slug_from_code(ebird_location.code),
       name_en: ebird_location.name,
+      iso_code: ebird_location.code,
       location_type: ebird_location.location_type,
       is_private: false,
       import_source: :ebird_regions
     )
     |> Ecto.Changeset.change(parent_level_fks(parent))
     |> Ecto.Changeset.unique_constraint(:slug, name: :locations_common_slug_index)
+    |> Ecto.Changeset.unique_constraint(:iso_code, name: :locations_iso_code_index)
     |> Repo.insert()
   end
 
@@ -270,9 +505,9 @@ defmodule Kjogvi.Geo.Ebird do
       |> Repo.all()
       |> Map.new(&{&1.country_code, &1})
 
-    iso =
+    sub2 =
       base
-      |> EbirdLocation.Query.iso_sub1_stats()
+      |> EbirdLocation.Query.sub2_match_stats()
       |> Repo.all()
       |> Map.new(&{&1.country_code, &1})
 
@@ -291,13 +526,15 @@ defmodule Kjogvi.Geo.Ebird do
             sub1_code_matched: 0
           })
         )
-        |> Map.merge(Map.get(iso, country.country_code, %{iso_sub1_total: 0, iso_extra: 0}))
+        |> Map.merge(Map.get(sub2, country.country_code, %{sub2_total: 0, sub2_linked: 0}))
         |> Map.merge(
           Map.get(shapes, country.country_code, %{
             has_iso_country: false,
             code_set_equal: false,
             code_subset: false,
-            name_set_match: false
+            name_set_match: false,
+            iso_extra: 0,
+            iso_sub1_total: 0
           })
         )
 
@@ -318,6 +555,13 @@ defmodule Kjogvi.Geo.Ebird do
   #     eBird doesn't cover (`:iso_extra`)
   #   * `name_set_match` — the eBird and ISO sub1 name sets are equal though
   #     codes differ (`:name_candidate`, the Poland case)
+  #   * `iso_extra` — how many ISO sub1 codes eBird has none for
+  #     (`iso_codes − ebird_codes`). Like the shape itself this is set
+  #     arithmetic, not link state: a subdivision eBird *does* cover is never an
+  #     extra, whether or not the passes have linked it yet.
+  #   * `iso_sub1_total` — how many sub1s the ISO country has at all; at 0 with
+  #     eBird holding some, the subregions exist only in eBird
+  #     (`:ebird_only_subregions`)
   #
   # The set comparisons are computed in Elixir off flat
   # `{country_code, code, name}` lists (eBird side and ISO side).
@@ -334,11 +578,17 @@ defmodule Kjogvi.Geo.Ebird do
       |> Repo.all()
       |> group_by_country()
 
-    iso =
+    iso_rows =
       base
       |> EbirdLocation.Query.common_sub1_codes_and_names_by_country()
       |> Repo.all()
-      |> group_by_country()
+
+    iso = group_by_country(iso_rows)
+
+    # Counted off the rows, not the code set: a subdivision with a blank
+    # iso_code is still a subdivision, and `:ebird_only_subregions` turns on ISO
+    # having none at all.
+    iso_sub1_totals = Enum.frequencies_by(iso_rows, fn {country_code, _, _} -> country_code end)
 
     for country_code <- MapSet.union(with_iso_country, MapSet.new(Map.keys(ebird))), into: %{} do
       {ebird_codes, ebird_names} = Map.get(ebird, country_code, {MapSet.new(), MapSet.new()})
@@ -355,7 +605,9 @@ defmodule Kjogvi.Geo.Ebird do
          # trigger `:name_candidate`.
          code_set_equal: MapSet.equal?(ebird_codes, iso_codes),
          code_subset: MapSet.subset?(ebird_codes, iso_codes),
-         name_set_match: MapSet.size(ebird_names) > 0 and MapSet.equal?(ebird_names, iso_names)
+         name_set_match: MapSet.size(ebird_names) > 0 and MapSet.equal?(ebird_names, iso_names),
+         iso_extra: MapSet.size(MapSet.difference(iso_codes, ebird_codes)),
+         iso_sub1_total: Map.get(iso_sub1_totals, country_code, 0)
        }}
     end
   end

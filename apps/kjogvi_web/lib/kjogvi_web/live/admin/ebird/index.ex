@@ -16,7 +16,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
   alias Kjogvi.Geo.Location
   alias Kjogvi.Util.Number
 
-  @statuses [:matched, :iso_extra, :name_candidate, :ebird_only, :mixed]
+  @statuses [:matched, :iso_extra, :ebird_only_subregions, :name_candidate, :ebird_only, :mixed]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -41,6 +41,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
     |> assign(:total_locations, total_locations)
     |> assign(:status_counts, Enum.frequencies_by(countries, & &1.stats.status))
     |> assign(:incomplete_count, Enum.count(countries, &(not fully_linked?(&1.stats))))
+    |> assign(:sub2_count, Enum.count(countries, &(&1.stats.sub2_total > 0)))
   end
 
   @impl true
@@ -49,6 +50,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
      socket
      |> assign(:status, parse_status(params["status"]))
      |> assign(:only_incomplete, params["work"] == "incomplete")
+     |> assign(:only_sub2, params["sub2"] == "present")
      |> apply_filters()}
   end
 
@@ -59,6 +61,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
       socket.assigns.countries
       |> filter_by_status(socket.assigns.status)
       |> filter_by_completeness(socket.assigns.only_incomplete)
+      |> filter_by_sub2(socket.assigns.only_sub2)
 
     assign(socket, :filtered_countries, filtered)
   end
@@ -105,6 +108,12 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
     Enum.filter(countries, &(not fully_linked?(&1.stats)))
   end
 
+  defp filter_by_sub2(countries, false), do: countries
+
+  defp filter_by_sub2(countries, true) do
+    Enum.filter(countries, &(&1.stats.sub2_total > 0))
+  end
+
   defp parse_status(nil), do: nil
 
   defp parse_status(param) do
@@ -117,12 +126,13 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
     stats.sub1_linked == stats.sub1_total and (stats.country_linked or stats.sub1_total > 0)
   end
 
-  # Query string preserving the other filter dimension, so the two chip rows
+  # Query string preserving the other filter dimensions, so the chip rows
   # compose instead of resetting each other.
-  defp filter_params(status, only_incomplete) do
+  defp filter_params(status, only_incomplete, only_sub2) do
     []
     |> maybe_put(:status, status && Atom.to_string(status))
     |> maybe_put(:work, only_incomplete && "incomplete")
+    |> maybe_put(:sub2, only_sub2 && "present")
   end
 
   defp maybe_put(params, _key, nil), do: params
@@ -171,14 +181,14 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         <li class="text-sm font-medium text-stone-500 mr-1">Show</li>
         <.inline_filter_pill
           selected={not @only_incomplete}
-          href={~p"/admin/ebird?#{filter_params(@status, false)}"}
+          href={~p"/admin/ebird?#{filter_params(@status, false, @only_sub2)}"}
         >
           All ({length(@countries)})
         </.inline_filter_pill>
         <.inline_filter_pill
           selected={@only_incomplete}
           active={@incomplete_count > 0}
-          href={~p"/admin/ebird?#{filter_params(@status, true)}"}
+          href={~p"/admin/ebird?#{filter_params(@status, true, @only_sub2)}"}
         >
           Not fully linked ({@incomplete_count})
         </.inline_filter_pill>
@@ -189,7 +199,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         <li class="text-sm font-medium text-stone-500 mr-1">Status</li>
         <.inline_filter_pill
           selected={@status == nil}
-          href={~p"/admin/ebird?#{filter_params(nil, @only_incomplete)}"}
+          href={~p"/admin/ebird?#{filter_params(nil, @only_incomplete, @only_sub2)}"}
         >
           All ({length(@countries)})
         </.inline_filter_pill>
@@ -197,9 +207,27 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
           :for={status <- @statuses}
           selected={@status == status}
           active={Map.get(@status_counts, status, 0) > 0}
-          href={~p"/admin/ebird?#{filter_params(status, @only_incomplete)}"}
+          href={~p"/admin/ebird?#{filter_params(status, @only_incomplete, @only_sub2)}"}
         >
           {ebird_status_label(status)} ({Map.get(@status_counts, status, 0)})
+        </.inline_filter_pill>
+      </ul>
+
+      <%!-- Subdivision2 filter --%>
+      <ul id="ebird-sub2-filter" class="flex flex-wrap items-baseline gap-2">
+        <li class="text-sm font-medium text-stone-500 mr-1">Subdivision2</li>
+        <.inline_filter_pill
+          selected={not @only_sub2}
+          href={~p"/admin/ebird?#{filter_params(@status, @only_incomplete, false)}"}
+        >
+          All ({length(@countries)})
+        </.inline_filter_pill>
+        <.inline_filter_pill
+          selected={@only_sub2}
+          active={@sub2_count > 0}
+          href={~p"/admin/ebird?#{filter_params(@status, @only_incomplete, true)}"}
+        >
+          With subdivision2 ({@sub2_count})
         </.inline_filter_pill>
       </ul>
 
@@ -227,11 +255,30 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
             {stats.sub1_linked}/{stats.sub1_total} subdivisions linked
           </span>
           <span
-            :if={stats.iso_extra > 0}
+            :if={stats.sub2_total > 0}
+            class={[
+              "text-sm",
+              (stats.sub2_linked == stats.sub2_total && "text-forest-600") || "text-stone-500"
+            ]}
+            title="eBird subdivision2 regions imported as common locations"
+          >
+            {Number.delimit(stats.sub2_linked)}/{Number.delimit(stats.sub2_total)} sub2 imported
+          </span>
+          <span
+            :if={stats.iso_extra > 0 and stats.sub1_total > 0}
             class="text-sm text-stone-500"
             title="ISO subdivisions with no eBird counterpart"
           >
             {stats.iso_extra} ISO-only
+          </span>
+          <%!-- eBird models the country as one unit: its ISO subdivisions are
+          context, not work left over. --%>
+          <span
+            :if={stats.iso_extra > 0 and stats.sub1_total == 0}
+            class="text-sm text-stone-400"
+            title="eBird has no subdivisions for this country; ISO does"
+          >
+            {stats.iso_extra} in ISO only
           </span>
           <span :if={country.location} class="ml-auto flex items-center gap-1 text-sm">
             <span class="text-stone-400">&rarr;</span>

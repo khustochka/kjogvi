@@ -34,16 +34,76 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
 
     assert has_element?(view, "h1", "Andorra")
-    assert has_element?(view, "#ebird-country-status", "mixed")
+    # ISO has no subdivisions here while eBird has AD-02.
+    assert has_element?(view, "#ebird-country-status", "eBird-only subregions")
     assert has_element?(view, "#ebird-sub1-counts", "0/1 subdivisions linked")
 
     assert has_element?(view, "#ebird-region-#{ebird_country.id}", "Andorra")
-    assert has_element?(view, "#ebird-region-#{ebird_country.id}", "by code")
+    # A code-consistent link is the norm and carries no badge.
+    refute has_element?(view, "#ebird-region-#{ebird_country.id}", "other")
     assert has_element?(view, "#ebird-region-#{ebird_country.id} button", "Unlink")
 
-    assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "unmatched")
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "Canillo")
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Link")
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Create from eBird")
+  end
+
+  test "hides create for a subdivision an ISO one can be linked to", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    by_code = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+    insert(:subdivision1, country: country, iso_code: "AD-02", name_en: "Canillo")
+    # Codes differ, so only the name pass pairs this one.
+    by_name = insert(:ebird_subdivision1, country_code: "AD", code: "AD-99", name: "Encamp")
+    insert(:subdivision1, country: country, iso_code: "AD-03", name_en: "Encamp")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    for region <- [by_code, by_name] do
+      assert has_element?(view, "#ebird-region-#{region.id} button", "Link")
+      refute has_element?(view, "#ebird-region-#{region.id} button", "Create from eBird")
+    end
+  end
+
+  test "links a suggested pair outright, without the autocomplete", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+    location = insert(:subdivision1, country: country, iso_code: "AD-02", name_en: "Canillo")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
+
+    assert reload(ebird_sub1).location_id == location.id
+    assert has_element?(view, "#flash-group-info", "Linked AD-02 to Canillo.")
+    refute has_element?(view, "#link-autocomplete-#{ebird_sub1.id}")
+  end
+
+  test "links by name when the codes differ", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-99", name: "Encamp")
+    location = insert(:subdivision1, country: country, iso_code: "AD-03", name_en: "Encamp")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
+
+    assert reload(ebird_sub1).location_id == location.id
+  end
+
+  test "opens the autocomplete for a region with nothing to suggest", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
+
+    assert has_element?(view, "#link-autocomplete-#{ebird_sub1.id}")
+    assert reload(ebird_sub1).location_id == nil
   end
 
   test "marks a non-code-consistent link", %{conn: conn} do
@@ -53,10 +113,9 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     {:ok, view, _html} = live(conn, ~p"/admin/ebird/XK")
 
     assert has_element?(view, "#ebird-region-#{ebird_country.id}", "other")
-    refute has_element?(view, "#ebird-region-#{ebird_country.id}", "by code")
   end
 
-  test "run match links regions by code", %{conn: conn} do
+  test "link all matched links regions by code", %{conn: conn} do
     country = insert(:country, iso_code: "AD")
     sub1 = insert(:subdivision1, iso_code: "AD-02", country: country)
     ebird_country = insert(:ebird_location, code: "AD")
@@ -64,12 +123,54 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
 
-    view |> element("#run-match-button") |> render_click()
+    view |> element("#link-all-matched-button") |> render_click()
 
-    assert has_element?(view, "#flash-group-info", "Matched 2 by code")
+    assert has_element?(view, "#flash-group-info", "Linked 2 by code")
     assert has_element?(view, "#ebird-country-status", "matched")
     assert reload(ebird_country).location_id == country.id
     assert reload(ebird_sub1).location_id == sub1.id
+  end
+
+  test "create all from eBird creates every unlinked subdivision", %{conn: conn} do
+    country = insert(:country, iso_code: "PR", name_en: "Puerto Rico")
+    insert(:ebird_location, code: "PR", name: "Puerto Rico", location_id: country.id)
+    adjuntas = insert(:ebird_subdivision1, country_code: "PR", code: "PR-001", name: "Adjuntas")
+    aguada = insert(:ebird_subdivision1, country_code: "PR", code: "PR-003", name: "Aguada")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/PR")
+
+    assert has_element?(view, "#ebird-country-status", "eBird-only subregions")
+    view |> element("#create-all-button") |> render_click()
+
+    assert has_element?(view, "#flash-group-info", "Created and linked 2 locations.")
+    assert reload(adjuntas).location_id != nil
+    assert reload(aguada).location_id != nil
+  end
+
+  test "create all is offered only for the eBird-only subregions shape", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
+    insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+    # An ISO subdivision exists, so these rows are matchable, not creatable.
+    insert(:subdivision1, country: country, iso_code: "AD-03", name_en: "Encamp")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    refute has_element?(view, "#create-all-button")
+  end
+
+  test "create all is withheld until the country row is linked", %{conn: conn} do
+    # The ISO country exists (so the shape is still eBird-only subregions) but
+    # the eBird country row is not linked to it, leaving the subdivisions no
+    # parent to hang off.
+    insert(:country, iso_code: "PR", name_en: "Puerto Rico")
+    insert(:ebird_location, code: "PR", name: "Puerto Rico")
+    insert(:ebird_subdivision1, country_code: "PR", code: "PR-001", name: "Adjuntas")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/PR")
+
+    assert has_element?(view, "#ebird-country-status", "eBird-only subregions")
+    refute has_element?(view, "#create-all-button")
   end
 
   test "unlink clears the link", %{conn: conn} do
@@ -92,9 +193,6 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
 
     {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
-
-    view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
-    assert has_element?(view, "#link-autocomplete-#{ebird_sub1.id}")
 
     send(
       view.pid,
@@ -133,8 +231,9 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     |> render_click()
 
     assert has_element?(view, "#flash-group-info", "Created Kosovo and linked XK.")
-    # XK has no ISO counterpart, so its shape stays :ebird_only after linking.
-    assert has_element?(view, "#ebird-country-status", "eBird only")
+    # The created location carries the eBird code as its iso_code, so XK now has
+    # a common counterpart and nothing left to link.
+    assert has_element?(view, "#ebird-country-status", "matched")
 
     location = Repo.preload(reload(ebird_country), :location).location
     assert location.slug == "xk"
@@ -151,7 +250,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     refute has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Create from eBird")
   end
 
-  test "lists ISO subdivisions without an eBird counterpart", %{conn: conn} do
+  test "shows ISO subdivisions without an eBird counterpart in the comparison", %{conn: conn} do
     country = insert(:country, iso_code: "HU", name_en: "Hungary")
     extra = insert(:subdivision1, iso_code: "HU-BA", name_en: "Baranya", country: country)
     insert(:ebird_location, code: "HU", location_id: country.id)
@@ -159,6 +258,151 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     {:ok, view, _html} = live(conn, ~p"/admin/ebird/HU")
 
     assert has_element?(view, "#iso-leftover-#{extra.id}", "Baranya")
-    assert has_element?(view, "#iso-leftovers", "need no action")
+    assert has_element?(view, "#iso-leftover-#{extra.id}", "no eBird region")
+    refute has_element?(view, "#iso-leftover-#{extra.id} button")
+  end
+
+  test "pairs a linked subdivision with its ISO counterpart", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    sub1 = insert(:subdivision1, iso_code: "AD-02", name_en: "Canillo", country: country)
+    insert(:ebird_location, code: "AD", location_id: country.id)
+
+    ebird_sub1 =
+      insert(:ebird_subdivision1,
+        country_code: "AD",
+        code: "AD-02",
+        name: "Canillo",
+        location_id: sub1.id
+      )
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "Canillo")
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Unlink")
+    refute has_element?(view, "#ebird-region-#{ebird_sub1.id}", "no ISO subdivision")
+  end
+
+  test "pairs an unlinked same-code row with its ISO counterpart", %{conn: conn} do
+    country = insert(:country, iso_code: "BA", name_en: "Bosnia and Herzegovina")
+
+    insert(:subdivision1,
+      iso_code: "BA-BIH",
+      name_en: "Federacija Bosne i Hercegovine",
+      country: country
+    )
+
+    insert(:ebird_location, code: "BA", location_id: country.id)
+
+    ebird_sub1 =
+      insert(:ebird_subdivision1,
+        country_code: "BA",
+        code: "BA-BIH",
+        name: "Federacija Bosna i Hercegovina"
+      )
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/BA")
+
+    # Both spellings land on one row: the code pairs them though the names differ.
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "Federacija Bosna i Hercegovina")
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "Federacija Bosne i Hercegovine")
+    refute has_element?(view, "#ebird-region-#{ebird_sub1.id}", "no ISO subdivision")
+    refute has_element?(view, "#ebird-region-#{ebird_sub1.id}", "by name")
+  end
+
+  test "marks an unlinked name match as a suggestion", %{conn: conn} do
+    country = insert(:country, iso_code: "PL", name_en: "Poland")
+    insert(:subdivision1, iso_code: "PL-LD", name_en: "Łódzkie", country: country)
+    insert(:ebird_location, code: "PL", location_id: country.id)
+    ebird_sub1 = insert(:ebird_subdivision1, country_code: "PL", code: "PL-91", name: "Lodzkie")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/PL")
+
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "by name")
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "Łódzkie")
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Link")
+  end
+
+  test "shows an eBird subdivision with no ISO counterpart", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", location_id: country.id)
+    ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-ZZ", name: "High Seas")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "no ISO subdivision")
+  end
+
+  test "marks subdivision1s that have subdivision2 regions", %{conn: conn} do
+    country = insert(:country, iso_code: "US", name_en: "United States")
+    california = insert(:subdivision1, iso_code: "US-CA", name_en: "California", country: country)
+    insert(:ebird_location, code: "US", location_id: country.id)
+
+    with_sub2 =
+      insert(:ebird_subdivision1, country_code: "US", code: "US-CA", location_id: california.id)
+
+    without_sub2 = insert(:ebird_subdivision1, country_code: "US", code: "US-NY")
+
+    imported = insert(:location, country: country, location_type: :subdivision2)
+    insert(:ebird_subdivision2, subnational1_code: "US-CA", location_id: imported.id)
+    insert(:ebird_subdivision2, subnational1_code: "US-CA")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+
+    assert has_element?(view, "#ebird-sub2-counts", "1/2 subdivision2 imported")
+    assert has_element?(view, "#sub2-mark-#{with_sub2.id}", "1/2 sub2 imported")
+    refute has_element?(view, "#sub2-mark-#{without_sub2.id}")
+  end
+
+  test "imports the country's subdivision2 regions", %{conn: conn} do
+    country = insert(:country, iso_code: "US", name_en: "United States")
+    california = insert(:subdivision1, iso_code: "US-CA", name_en: "California", country: country)
+    insert(:ebird_location, code: "US", location_id: country.id)
+    insert(:ebird_subdivision1, country_code: "US", code: "US-CA", location_id: california.id)
+
+    alameda =
+      insert(:ebird_subdivision2, subnational1_code: "US-CA", code: "US-CA-001", name: "Alameda")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+
+    view |> element("#import-sub2-button") |> render_click()
+    render_async(view)
+
+    assert has_element?(view, "#flash-group-info", "Imported 1 subdivision2 locations.")
+    assert has_element?(view, "#ebird-sub2-counts", "1/1 subdivision2 imported")
+    refute has_element?(view, "#import-sub2-button")
+
+    location = Repo.preload(reload(alameda), :location).location
+    assert location.location_type == :subdivision2
+    assert location.subdivision1_id == california.id
+  end
+
+  test "reports subdivision2 rows that could not be imported", %{conn: conn} do
+    country = insert(:country, iso_code: "US", name_en: "United States")
+    insert(:ebird_location, code: "US", location_id: country.id)
+    insert(:ebird_subdivision1, country_code: "US", code: "US-NY")
+    orphan = insert(:ebird_subdivision2, subnational1_code: "US-NY", code: "US-NY-001")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+
+    view |> element("#import-sub2-button") |> render_click()
+    render_async(view)
+
+    assert has_element?(
+             view,
+             "#flash-group-info",
+             "Imported 0 subdivision2 locations; 1 could not be imported"
+           )
+
+    assert reload(orphan).location_id == nil
+  end
+
+  test "the subdivision2 import is not offered without unimported rows", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", location_id: country.id)
+    insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    refute has_element?(view, "#import-sub2-button")
   end
 end

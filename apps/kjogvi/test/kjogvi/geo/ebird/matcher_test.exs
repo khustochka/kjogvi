@@ -110,6 +110,62 @@ defmodule Kjogvi.Geo.Ebird.MatcherTest do
     end
   end
 
+  describe "match_country/2 disabled locations" do
+    test "the code pass skips a disabled subdivision1" do
+      country = insert(:country, iso_code: "AD")
+      insert(:subdivision1, iso_code: "AD-02", country: country, disabled: true)
+
+      insert(:ebird_location, code: "AD")
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+
+      assert Matcher.match_country("AD") == %{code: 1, name: 0, left: 1}
+      assert reload(ebird_sub1).location_id == nil
+    end
+
+    test "the name pass skips a disabled subdivision1" do
+      country = insert(:country, iso_code: "AD")
+
+      insert(:subdivision1,
+        iso_code: "AD-99",
+        name_en: "Canillo",
+        country: country,
+        disabled: true
+      )
+
+      insert(:ebird_location, code: "AD")
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
+
+      assert Matcher.match_country("AD") == %{code: 1, name: 0, left: 1}
+      assert reload(ebird_sub1).location_id == nil
+    end
+
+    test "a disabled country is no anchor, so no subdivision pass runs" do
+      country = insert(:country, iso_code: "AD", disabled: true)
+      insert(:subdivision1, iso_code: "AD-02", country: country)
+
+      ebird_country = insert(:ebird_location, code: "AD")
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+
+      assert Matcher.match_country("AD") == %{code: 0, name: 0, left: 2}
+      assert reload(ebird_country).location_id == nil
+      assert reload(ebird_sub1).location_id == nil
+    end
+
+    test "an enabled sibling still matches alongside a disabled one" do
+      country = insert(:country, iso_code: "AD")
+      insert(:subdivision1, iso_code: "AD-02", country: country, disabled: true)
+      live = insert(:subdivision1, iso_code: "AD-03", country: country)
+
+      insert(:ebird_location, code: "AD")
+      disabled_row = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+      live_row = insert(:ebird_subdivision1, country_code: "AD", code: "AD-03")
+
+      assert Matcher.match_country("AD") == %{code: 2, name: 0, left: 1}
+      assert reload(disabled_row).location_id == nil
+      assert reload(live_row).location_id == live.id
+    end
+  end
+
   describe "match_country/2 safety" do
     test "never overwrites an existing link" do
       country = insert(:country, iso_code: "AD")
@@ -199,6 +255,29 @@ defmodule Kjogvi.Geo.Ebird.MatcherTest do
 
       assert Matcher.match_all() == %{countries: 1, subdivisions: 0, matched: 1}
       assert reload(ebird_country).location_id == country.id
+    end
+
+    test "a disabled ISO subdivision is no extra: the country stays :matched and links" do
+      # The enabled sets line up; the disabled row drops out of the shape
+      # arithmetic, so this reads :matched rather than :iso_extra.
+      country = insert(:country, iso_code: "HU")
+      hu_bu = insert(:subdivision1, iso_code: "HU-BU", country: country)
+      insert(:subdivision1, iso_code: "HU-BK", country: country, disabled: true)
+
+      ebird_country = insert(:ebird_location, code: "HU")
+      ebird_sub1 = insert(:ebird_subdivision1, country_code: "HU", code: "HU-BU")
+
+      assert Matcher.match_all() == %{countries: 1, subdivisions: 1, matched: 1}
+      assert reload(ebird_country).location_id == country.id
+      assert reload(ebird_sub1).location_id == hu_bu.id
+    end
+
+    test "never links a country row to a disabled common country" do
+      insert(:country, iso_code: "PR", disabled: true)
+      ebird_country = insert(:ebird_location, code: "PR")
+
+      assert Matcher.match_all() == %{countries: 0, subdivisions: 0, matched: 0}
+      assert reload(ebird_country).location_id == nil
     end
 
     test "links the country but leaves subdivisions of a code-mismatched country untouched" do

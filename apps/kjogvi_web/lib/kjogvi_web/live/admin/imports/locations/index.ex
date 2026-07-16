@@ -385,6 +385,11 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
         <.h2 class="mb-4!">eBird Regions Import</.h2>
         <.live_component module={Imports.Locations.Ebird} id="ebird-regions-import" />
       </section>
+
+      <section id="changelog-apply" class="border border-slate-300 rounded-lg p-6 mb-8 lg:mb-0">
+        <.h2 class="mb-4!">Common Locations Changelog</.h2>
+        <.live_component module={Imports.Locations.Changelog} id="locations-changelog-apply" />
+      </section>
     </div>
     """
   end

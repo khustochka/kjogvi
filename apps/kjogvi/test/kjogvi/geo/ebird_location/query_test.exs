@@ -8,13 +8,17 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
     # The status is the shape of the eBird-vs-ISO subdivision sets only; link
     # progress is a separate axis (the "not fully linked" work queue) and does
     # not enter the shape, so these fixtures leave the link fields out.
+    # `sub1_total` is the one count the shape reads: at 0 eBird has no
+    # subdivisions to link and the country is complete whatever ISO holds.
     defp stats(overrides) do
       Map.merge(
         %{
           has_iso_country: true,
           code_set_equal: false,
           code_subset: false,
-          name_set_match: false
+          name_set_match: false,
+          sub1_total: 1,
+          iso_sub1_total: 1
         },
         Map.new(overrides)
       )
@@ -36,6 +40,25 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
 
     test "iso_extra when eBird sub1 codes are a strict subset of the ISO codes" do
       assert EbirdLocation.Query.derive_status(stats(code_subset: true)) == :iso_extra
+    end
+
+    test "matched when eBird has no subdivisions at all, whatever ISO holds (Monaco)" do
+      # The empty eBird set is a subset of ISO's, but there is nothing to link:
+      # the country row alone completes it, so this is not :iso_extra.
+      assert EbirdLocation.Query.derive_status(stats(sub1_total: 0, code_subset: true)) ==
+               :matched
+    end
+
+    test "ebird_only_subregions when ISO has no subdivisions but eBird does (Puerto Rico)" do
+      assert EbirdLocation.Query.derive_status(stats(iso_sub1_total: 0)) ==
+               :ebird_only_subregions
+    end
+
+    test "matched wins over ebird_only_subregions when neither side subdivides" do
+      # Both empty: an (empty) perfect match, not a one-sided shape.
+      assert EbirdLocation.Query.derive_status(
+               stats(sub1_total: 0, iso_sub1_total: 0, code_set_equal: true)
+             ) == :matched
     end
 
     test "name_candidate when the name sets match but codes differ" do
@@ -60,7 +83,6 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
                country_linked: true,
                sub1_total: 1,
                sub1_linked: 1,
-               iso_sub1_total: 1,
                iso_extra: 0
              } = Geo.Ebird.country_statuses()["AD"]
     end
@@ -85,8 +107,33 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       insert(:ebird_location, code: "HU", location: country)
       insert(:ebird_subdivision1, country_code: "HU", code: "HU-BU", location: sub1)
 
-      assert %{status: :iso_extra, iso_sub1_total: 2, iso_extra: 1} =
+      assert %{status: :iso_extra, iso_extra: 1} =
                Geo.Ebird.country_statuses()["HU"]
+    end
+
+    test "matched: eBird models the country as one unit though ISO subdivides it (Monaco)" do
+      country = insert(:country, iso_code: "MC")
+      insert(:subdivision1, iso_code: "MC-FO", country: country)
+      insert(:subdivision1, iso_code: "MC-CO", country: country)
+
+      insert(:ebird_location, code: "MC", location: country)
+
+      # Fully linked: the ISO subdivisions are context, not leftover work.
+      assert %{status: :matched, sub1_total: 0, iso_extra: 2} =
+               Geo.Ebird.country_statuses()["MC"]
+    end
+
+    test "ebird_only_subregions: ISO treats the country as one unit, eBird subdivides it (PR)" do
+      country = insert(:country, iso_code: "PR")
+
+      insert(:ebird_location, code: "PR", location: country)
+      insert(:ebird_subdivision1, country_code: "PR", code: "PR-001", name: "Adjuntas")
+      insert(:ebird_subdivision1, country_code: "PR", code: "PR-003", name: "Aguada")
+
+      # No ISO side to match against: every row needs create-from-eBird, so this
+      # is not :mixed (which means both sides subdivide and merely disagree).
+      assert %{status: :ebird_only_subregions, sub1_total: 2, iso_extra: 0} =
+               Geo.Ebird.country_statuses()["PR"]
     end
 
     test "matched: identical code sets, still unlinked (the bulk pass will link them)" do
@@ -112,11 +159,16 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       insert(:ebird_subdivision1, country_code: "PT", code: "PT-01")
       insert(:ebird_subdivision1, country_code: "PT", code: "PT-02")
 
+      # Nothing is linked yet, but only PT-03 is a genuine extra: the codes eBird
+      # shares are not extras just because the passes haven't run (the Botswana
+      # case — 9 shared + 7 ISO-only reads 7, not 16).
       assert %{
                status: :iso_extra,
                has_iso_country: true,
                code_set_equal: false,
-               code_subset: true
+               code_subset: true,
+               sub1_linked: 0,
+               iso_extra: 1
              } =
                Geo.Ebird.country_statuses()["PT"]
     end
@@ -180,7 +232,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       insert(:ebird_location, code: "XK", location: country)
       insert(:ebird_subdivision1, country_code: "XK", code: "XK-01", location: sub1)
 
-      assert %{status: :ebird_only, iso_sub1_total: 1, iso_extra: 0} =
+      assert %{status: :ebird_only, iso_extra: 0} =
                Geo.Ebird.country_statuses()["XK"]
     end
 
@@ -188,7 +240,7 @@ defmodule Kjogvi.Geo.EbirdLocation.QueryTest do
       country = insert(:country, iso_code: "GI")
       insert(:ebird_location, code: "GI", location: country)
 
-      assert %{status: :matched, sub1_total: 0, iso_sub1_total: 0} =
+      assert %{status: :matched, sub1_total: 0, iso_extra: 0} =
                Geo.Ebird.country_statuses()["GI"]
     end
 
