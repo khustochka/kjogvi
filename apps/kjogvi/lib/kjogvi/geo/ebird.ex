@@ -2,8 +2,8 @@ defmodule Kjogvi.Geo.Ebird do
   @moduledoc """
   The eBird regions reference dataset (`Kjogvi.Geo.EbirdLocation`): match
   status aggregation and the manual resolution operations — linking eBird
-  regions to common locations, unlinking, and creating a common location from
-  an eBird region.
+  regions to common locations, unlinking, creating a common location from
+  an eBird region, and the bulk subdivision2 import.
 
   Matching passes live in `Kjogvi.Geo.Ebird.Matcher`; the bootstrap import in
   `Kjogvi.Geo.Ebird.Import`.
@@ -34,7 +34,9 @@ defmodule Kjogvi.Geo.Ebird do
   `Kjogvi.Geo.EbirdLocation.Query.derive_status/1`) plus the underlying
   counts and signals: `country_linked`, `sub1_total`, `sub1_linked`,
   `iso_extra`, `has_iso_country`, `code_set_equal`, `code_subset`, and
-  `name_set_match`.
+  `name_set_match` — plus `sub2_total` / `sub2_linked`, the subdivision2
+  import progress (not part of the status shape, which only compares
+  subdivision1 sets).
 
   Only `sub1_linked` (and `country_linked`) track link progress. The rest —
   `iso_extra` included — are set arithmetic over the full eBird-vs-ISO code
@@ -370,6 +372,77 @@ defmodule Kjogvi.Geo.Ebird do
     )
   end
 
+  @doc """
+  Subdivision2 import progress per subdivision1 of one eBird country:
+  `%{subnational1_code => %{total: n, linked: n}}`, with an entry only for
+  subdivision1s that have subdivision2 rows.
+  """
+  def sub2_stats_by_sub1(country_code) do
+    EbirdLocation
+    |> EbirdLocation.Query.for_country(country_code)
+    |> EbirdLocation.Query.sub2_stats_by_sub1()
+    |> Repo.all()
+    |> Map.new(&{&1.subnational1_code, %{total: &1.total, linked: &1.linked}})
+  end
+
+  @doc """
+  Creates and links a common location for every not-yet-imported eBird
+  subdivision2 of one country — the subdivision2 import. ISO has no second
+  level, so eBird is these locations' only source and there is nothing to
+  match against: every row is created, never linked to an existing location.
+
+  Each subdivision2 is placed under the common location its eBird
+  subdivision1 row is linked to; rows whose subdivision1 is not linked yet
+  count as failed, as do slug or `iso_code` collisions. Like
+  `create_all_common_locations/1`, rows are created independently, so a
+  failure leaves the rest done and the import is re-runnable.
+  Returns `%{created: n, failed: n}`.
+  """
+  def import_subdivision2s(country_code) do
+    :telemetry.span(
+      [:kjogvi, :geo, :ebird, :import_sub2],
+      %{country_code: country_code},
+      fn ->
+        parents = linked_subdivision1_locations(country_code)
+
+        summary =
+          EbirdLocation
+          |> EbirdLocation.Query.for_country(country_code)
+          |> EbirdLocation.Query.subdivision2s()
+          |> EbirdLocation.Query.unmatched()
+          |> EbirdLocation.Query.order_by_code()
+          |> Repo.all()
+          |> Enum.reduce(%{created: 0, failed: 0}, fn region, acc ->
+            case import_subdivision2(region, parents) do
+              {:ok, _location} -> Map.update!(acc, :created, &(&1 + 1))
+              {:error, _reason} -> Map.update!(acc, :failed, &(&1 + 1))
+            end
+          end)
+
+        {summary, Map.merge(%{result: :ok, country_code: country_code}, summary)}
+      end
+    )
+  end
+
+  defp import_subdivision2(region, parents) do
+    case Map.fetch(parents, region.subnational1_code) do
+      {:ok, parent} -> insert_and_link(region, parent)
+      :error -> {:error, :subdivision1_not_linked}
+    end
+  end
+
+  # `%{ebird_sub1_code => linked_common_location}` — the parents subdivision2s
+  # are created under.
+  defp linked_subdivision1_locations(country_code) do
+    EbirdLocation
+    |> EbirdLocation.Query.for_country(country_code)
+    |> EbirdLocation.Query.subdivision1s()
+    |> EbirdLocation.Query.matched()
+    |> Repo.all()
+    |> Repo.preload(:location)
+    |> Map.new(&{&1.code, &1.location})
+  end
+
   defp do_create_common_location(%EbirdLocation{location_type: :country} = ebird_location) do
     insert_and_link(ebird_location, nil)
   end
@@ -432,6 +505,12 @@ defmodule Kjogvi.Geo.Ebird do
       |> Repo.all()
       |> Map.new(&{&1.country_code, &1})
 
+    sub2 =
+      base
+      |> EbirdLocation.Query.sub2_match_stats()
+      |> Repo.all()
+      |> Map.new(&{&1.country_code, &1})
+
     shapes = mismatch_shapes(base)
 
     base
@@ -447,6 +526,7 @@ defmodule Kjogvi.Geo.Ebird do
             sub1_code_matched: 0
           })
         )
+        |> Map.merge(Map.get(sub2, country.country_code, %{sub2_total: 0, sub2_linked: 0}))
         |> Map.merge(
           Map.get(shapes, country.country_code, %{
             has_iso_country: false,

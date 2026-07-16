@@ -438,4 +438,141 @@ defmodule Kjogvi.Geo.EbirdTest do
       assert reload(region).location_id == nil
     end
   end
+
+  describe "country_statuses/0 subdivision2 counts" do
+    test "carries the country's sub2 totals and imported counts" do
+      country = insert(:country, iso_code: "US")
+      subdivision = insert(:subdivision1, iso_code: "US-CA", country: country)
+      insert(:ebird_location, code: "US", location_id: country.id)
+      insert(:ebird_subdivision1, country_code: "US", code: "US-CA", location_id: subdivision.id)
+
+      imported = insert(:location, country: country, location_type: :subdivision2)
+      insert(:ebird_subdivision2, subnational1_code: "US-CA", location_id: imported.id)
+      insert(:ebird_subdivision2, subnational1_code: "US-CA")
+
+      assert %{"US" => %{sub2_total: 2, sub2_linked: 1}} = Ebird.country_statuses()
+    end
+
+    test "defaults to zero for countries without subdivision2 rows" do
+      insert(:ebird_location, code: "AD")
+
+      assert %{"AD" => %{sub2_total: 0, sub2_linked: 0}} = Ebird.country_statuses()
+    end
+  end
+
+  describe "sub2_stats_by_sub1/1" do
+    test "groups the country's sub2 progress by subdivision1 code" do
+      country = insert(:country, iso_code: "US")
+      imported = insert(:location, country: country, location_type: :subdivision2)
+      insert(:ebird_subdivision2, subnational1_code: "US-CA", location_id: imported.id)
+      insert(:ebird_subdivision2, subnational1_code: "US-CA")
+      insert(:ebird_subdivision2, subnational1_code: "US-NY")
+      insert(:ebird_subdivision2, subnational1_code: "CA-AB")
+
+      assert Ebird.sub2_stats_by_sub1("US") == %{
+               "US-CA" => %{total: 2, linked: 1},
+               "US-NY" => %{total: 1, linked: 0}
+             }
+    end
+  end
+
+  describe "import_subdivision2s/1" do
+    test "creates each sub2 under its linked subdivision1" do
+      country = insert(:country, iso_code: "US")
+      california = insert(:subdivision1, iso_code: "US-CA", country: country)
+      insert(:ebird_location, code: "US", location_id: country.id)
+
+      insert(:ebird_subdivision1,
+        country_code: "US",
+        code: "US-CA",
+        location_id: california.id
+      )
+
+      alameda =
+        insert(:ebird_subdivision2,
+          subnational1_code: "US-CA",
+          code: "US-CA-001",
+          name: "Alameda"
+        )
+
+      assert Ebird.import_subdivision2s("US") == %{created: 1, failed: 0}
+
+      location = Repo.get!(Location, reload(alameda).location_id)
+      assert location.location_type == :subdivision2
+      assert location.name_en == "Alameda"
+      assert location.slug == "us_ca_001"
+      assert location.iso_code == "US-CA-001"
+      assert location.import_source == :ebird_regions
+      assert location.country_id == country.id
+      assert location.subdivision1_id == california.id
+      assert location.user_id == nil
+    end
+
+    test "fails rows whose subdivision1 is not linked, leaving the rest done" do
+      country = insert(:country, iso_code: "US")
+      california = insert(:subdivision1, iso_code: "US-CA", country: country)
+
+      insert(:ebird_subdivision1,
+        country_code: "US",
+        code: "US-CA",
+        location_id: california.id
+      )
+
+      insert(:ebird_subdivision1, country_code: "US", code: "US-NY")
+      ok = insert(:ebird_subdivision2, subnational1_code: "US-CA", code: "US-CA-001")
+      orphan = insert(:ebird_subdivision2, subnational1_code: "US-NY", code: "US-NY-001")
+
+      assert Ebird.import_subdivision2s("US") == %{created: 1, failed: 1}
+
+      assert reload(ok).location_id != nil
+      assert reload(orphan).location_id == nil
+    end
+
+    test "leaves already imported rows alone and skips other countries" do
+      country = insert(:country, iso_code: "US")
+      california = insert(:subdivision1, iso_code: "US-CA", country: country)
+
+      insert(:ebird_subdivision1,
+        country_code: "US",
+        code: "US-CA",
+        location_id: california.id
+      )
+
+      existing = insert(:location, country: country, location_type: :subdivision2)
+
+      imported =
+        insert(:ebird_subdivision2,
+          subnational1_code: "US-CA",
+          code: "US-CA-001",
+          location_id: existing.id
+        )
+
+      other = insert(:ebird_subdivision2, subnational1_code: "CA-AB", code: "CA-AB-EI")
+
+      assert Ebird.import_subdivision2s("US") == %{created: 0, failed: 0}
+
+      assert reload(imported).location_id == existing.id
+      assert reload(other).location_id == nil
+    end
+
+    test "a slug collision fails only its own row" do
+      country = insert(:country, iso_code: "US")
+      california = insert(:subdivision1, iso_code: "US-CA", country: country)
+
+      insert(:ebird_subdivision1,
+        country_code: "US",
+        code: "US-CA",
+        location_id: california.id
+      )
+
+      insert(:country, slug: "us_ca_001", iso_code: "XY")
+      colliding = insert(:ebird_subdivision2, subnational1_code: "US-CA", code: "US-CA-001")
+      ok = insert(:ebird_subdivision2, subnational1_code: "US-CA", code: "US-CA-003")
+
+      assert Ebird.import_subdivision2s("US") == %{created: 1, failed: 1}
+
+      assert reload(colliding).location_id == nil
+      assert reload(ok).location_id != nil
+    end
+  end
 end

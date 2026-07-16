@@ -331,4 +331,78 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
 
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "no ISO subdivision")
   end
+
+  test "marks subdivision1s that have subdivision2 regions", %{conn: conn} do
+    country = insert(:country, iso_code: "US", name_en: "United States")
+    california = insert(:subdivision1, iso_code: "US-CA", name_en: "California", country: country)
+    insert(:ebird_location, code: "US", location_id: country.id)
+
+    with_sub2 =
+      insert(:ebird_subdivision1, country_code: "US", code: "US-CA", location_id: california.id)
+
+    without_sub2 = insert(:ebird_subdivision1, country_code: "US", code: "US-NY")
+
+    imported = insert(:location, country: country, location_type: :subdivision2)
+    insert(:ebird_subdivision2, subnational1_code: "US-CA", location_id: imported.id)
+    insert(:ebird_subdivision2, subnational1_code: "US-CA")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+
+    assert has_element?(view, "#ebird-sub2-counts", "1/2 subdivision2 imported")
+    assert has_element?(view, "#sub2-mark-#{with_sub2.id}", "1/2 sub2 imported")
+    refute has_element?(view, "#sub2-mark-#{without_sub2.id}")
+  end
+
+  test "imports the country's subdivision2 regions", %{conn: conn} do
+    country = insert(:country, iso_code: "US", name_en: "United States")
+    california = insert(:subdivision1, iso_code: "US-CA", name_en: "California", country: country)
+    insert(:ebird_location, code: "US", location_id: country.id)
+    insert(:ebird_subdivision1, country_code: "US", code: "US-CA", location_id: california.id)
+
+    alameda =
+      insert(:ebird_subdivision2, subnational1_code: "US-CA", code: "US-CA-001", name: "Alameda")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+
+    view |> element("#import-sub2-button") |> render_click()
+    render_async(view)
+
+    assert has_element?(view, "#flash-group-info", "Imported 1 subdivision2 locations.")
+    assert has_element?(view, "#ebird-sub2-counts", "1/1 subdivision2 imported")
+    refute has_element?(view, "#import-sub2-button")
+
+    location = Repo.preload(reload(alameda), :location).location
+    assert location.location_type == :subdivision2
+    assert location.subdivision1_id == california.id
+  end
+
+  test "reports subdivision2 rows that could not be imported", %{conn: conn} do
+    country = insert(:country, iso_code: "US", name_en: "United States")
+    insert(:ebird_location, code: "US", location_id: country.id)
+    insert(:ebird_subdivision1, country_code: "US", code: "US-NY")
+    orphan = insert(:ebird_subdivision2, subnational1_code: "US-NY", code: "US-NY-001")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+
+    view |> element("#import-sub2-button") |> render_click()
+    render_async(view)
+
+    assert has_element?(
+             view,
+             "#flash-group-info",
+             "Imported 0 subdivision2 locations; 1 could not be imported"
+           )
+
+    assert reload(orphan).location_id == nil
+  end
+
+  test "the subdivision2 import is not offered without unimported rows", %{conn: conn} do
+    country = insert(:country, iso_code: "AD", name_en: "Andorra")
+    insert(:ebird_location, code: "AD", location_id: country.id)
+    insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+
+    refute has_element?(view, "#import-sub2-button")
+  end
 end

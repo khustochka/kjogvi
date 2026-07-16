@@ -71,6 +71,24 @@ defmodule Kjogvi.Factory do
     merge_attributes(base, attrs)
   end
 
+  # A subdivision2-level eBird region; pass `subnational1_code:` (and usually
+  # `code:`) to place it under a subdivision1.
+  def ebird_subdivision2_factory(attrs) do
+    subnational1_code = Map.get(attrs, :subnational1_code, "XX-01")
+    code = Map.get(attrs, :code, sequence(:ebird_sub2_code, &"#{subnational1_code}-#{&1}"))
+
+    base = %Kjogvi.Geo.EbirdLocation{
+      code: code,
+      location_type: :subdivision2,
+      country_code: subnational1_code |> String.split("-") |> hd(),
+      subnational1_code: subnational1_code,
+      subnational2_code: code,
+      name: sequence(:ebird_name, &"eBird Subdivision2 #{&1}")
+    }
+
+    merge_attributes(base, attrs)
+  end
+
   def special_factory do
     %Kjogvi.Geo.Location{
       slug: sequence(:slug, &"special#{&1}"),

@@ -49,6 +49,21 @@ defmodule KjogviWeb.Live.Admin.Ebird.IndexTest do
     assert has_element?(view, "#ebird-country-AD", "1/2 subdivisions linked")
   end
 
+  test "marks countries that have subdivision2 regions with import progress", %{conn: conn} do
+    country = insert(:country, iso_code: "US")
+    insert(:ebird_location, code: "US", name: "United States", location_id: country.id)
+    insert(:ebird_location, code: "AD", name: "Andorra")
+
+    imported = insert(:location, country: country, location_type: :subdivision2)
+    insert(:ebird_subdivision2, subnational1_code: "US-CA", location_id: imported.id)
+    insert(:ebird_subdivision2, subnational1_code: "US-CA")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird")
+
+    assert has_element?(view, "#ebird-country-US", "1/2 sub2 imported")
+    refute has_element?(view, "#ebird-country-AD", "sub2 imported")
+  end
+
   test "shows the linked common location for a linked country, nothing for an unlinked one",
        %{conn: conn} do
     linked = insert(:country, iso_code: "AD", name_en: "Andorra")
@@ -158,6 +173,29 @@ defmodule KjogviWeb.Live.Admin.Ebird.IndexTest do
     assert view
            |> element("#ebird-status-filter a", "matched")
            |> render() =~ "work=incomplete"
+  end
+
+  test "the subdivision2 filter keeps only countries with sub2 regions", %{conn: conn} do
+    insert(:ebird_location, code: "US", name: "United States")
+    insert(:ebird_subdivision2, subnational1_code: "US-CA")
+    insert(:ebird_location, code: "AD", name: "Andorra")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird")
+
+    assert has_element?(view, "#ebird-country-US")
+    assert has_element?(view, "#ebird-country-AD")
+
+    view
+    |> element("#ebird-sub2-filter a", "With subdivision2 (1)")
+    |> render_click()
+
+    assert has_element?(view, "#ebird-country-US")
+    refute has_element?(view, "#ebird-country-AD")
+
+    # The other chip rows carry the sub2 filter along.
+    assert view
+           |> element("#ebird-work-filter a", "Not fully linked")
+           |> render() =~ "sub2=present"
   end
 
   test "shows an empty state when the dataset is empty", %{conn: conn} do

@@ -43,6 +43,10 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
     from e in query, where: e.location_type == :subdivision1
   end
 
+  def subdivision2s(query \\ EbirdLocation) do
+    from e in query, where: e.location_type == :subdivision2
+  end
+
   @doc """
   Country and subdivision1 rows — what matching and the derived statuses
   operate on. Subdivision2 rows belong to the sub2 import.
@@ -289,6 +293,36 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
           not s.disabled,
       where: e.location_type == :country,
       select: {e.country_code, s.iso_code, s.name_en}
+  end
+
+  @doc """
+  Subdivision2 totals per country: total rows and how many are imported
+  (linked to a common location).
+  """
+  def sub2_match_stats(query \\ EbirdLocation) do
+    from e in query,
+      where: e.location_type == :subdivision2,
+      group_by: e.country_code,
+      select: %{
+        country_code: e.country_code,
+        sub2_total: count(e.id),
+        sub2_linked: count(e.location_id)
+      }
+  end
+
+  @doc """
+  Subdivision2 totals per subdivision1: total rows and how many are imported,
+  keyed by `subnational1_code`. Scope with `for_country/2`.
+  """
+  def sub2_stats_by_sub1(query \\ EbirdLocation) do
+    from e in query,
+      where: e.location_type == :subdivision2,
+      group_by: e.subnational1_code,
+      select: %{
+        subnational1_code: e.subnational1_code,
+        total: count(e.id),
+        linked: count(e.location_id)
+      }
   end
 
   @doc """

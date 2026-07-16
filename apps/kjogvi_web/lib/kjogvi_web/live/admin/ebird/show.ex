@@ -21,6 +21,12 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   `:ebird_only_subregions` shape, where ISO has no subdivisions at all and so
   every row can only be created — the one shape where bulk creation cannot
   duplicate a location that should have been linked.
+
+  Countries with eBird subdivision2 regions additionally get the subdivision2
+  import (`Kjogvi.Geo.Ebird.import_subdivision2s/1`, run via `start_async` —
+  it can create thousands of rows): each subdivision1 comparison row is marked
+  with how many of its subdivision2s are imported, and the header button
+  creates the rest under their linked subdivision1s.
   """
 
   use KjogviWeb, :live_view
@@ -36,6 +42,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
       socket
       |> assign(:country_code, country_code)
       |> assign(:linking_id, nil)
+      |> assign(:importing_sub2, false)
       |> load_country()
 
     case socket.assigns[:country] do
@@ -66,6 +73,16 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
        "Linked #{summary.code} by code and #{summary.name} by name; #{summary.left} left unmatched."
      )
      |> load_country()}
+  end
+
+  def handle_event("import_subdivision2s", _params, socket) do
+    country_code = socket.assigns.country_code
+
+    {:noreply,
+     socket
+     |> clear_flash()
+     |> assign(:importing_sub2, true)
+     |> start_async(:import_sub2, fn -> Geo.Ebird.import_subdivision2s(country_code) end)}
   end
 
   def handle_event("create_all", _params, socket) do
@@ -127,6 +144,22 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   end
 
   @impl true
+  def handle_async(:import_sub2, {:ok, summary}, socket) do
+    {:noreply,
+     socket
+     |> assign(:importing_sub2, false)
+     |> put_flash(:info, import_sub2_message(summary))
+     |> load_country()}
+  end
+
+  def handle_async(:import_sub2, {:exit, reason}, socket) do
+    {:noreply,
+     socket
+     |> assign(:importing_sub2, false)
+     |> put_flash(:error, "Subdivision2 import crashed: #{inspect(reason)}")}
+  end
+
+  @impl true
   def handle_info({:autocomplete_select, "link_selected", params}, socket) do
     %{"result" => location, "ebird_id" => ebird_id} = params
     region = find_region(socket, ebird_id)
@@ -149,6 +182,18 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
   defp create_all_message(%{created: created, failed: failed}) do
     "Created and linked #{created} locations; #{failed} could not be created."
   end
+
+  defp import_sub2_message(%{created: created, failed: 0}) do
+    "Imported #{created} subdivision2 locations."
+  end
+
+  defp import_sub2_message(%{created: created, failed: failed}) do
+    "Imported #{created} subdivision2 locations; #{failed} could not be imported " <>
+      "(unlinked subdivision1 or a name collision)."
+  end
+
+  defp import_sub2_label(true), do: "Importing…"
+  defp import_sub2_label(false), do: "Import subdivision2"
 
   # Links via the autocomplete pick or the suggested-pair button; the outcome
   # reads the same either way.
@@ -184,6 +229,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
     |> assign(:regions, regions)
     |> assign(:comparison, Geo.Ebird.subdivision1_comparison(country_code))
     |> assign(:stats, Geo.Ebird.country_status(country_code))
+    |> assign(:sub2_by_sub1, Geo.Ebird.sub2_stats_by_sub1(country_code))
   end
 
   defp find_region(socket, id) do
@@ -213,9 +259,23 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
             <span :if={@stats.sub1_total > 0} id="ebird-sub1-counts">
               {@stats.sub1_linked}/{@stats.sub1_total} subdivisions linked
             </span>
+            <span :if={@stats.sub2_total > 0} id="ebird-sub2-counts">
+              {@stats.sub2_linked}/{@stats.sub2_total} subdivision2 imported
+            </span>
           </p>
         </div>
         <div class="mb-1 flex flex-wrap gap-2">
+          <%!-- ISO has no second level, so subdivision2s are only ever created
+          from eBird, under their linked subdivision1s. --%>
+          <.button
+            :if={@stats.sub2_total > @stats.sub2_linked}
+            id="import-sub2-button"
+            phx-click="import_subdivision2s"
+            disabled={@importing_sub2}
+            data-confirm={"Create a common location from each of #{@stats.sub2_total - @stats.sub2_linked} unimported eBird subdivision2 regions? Regions whose subdivision1 is not linked are skipped."}
+          >
+            {import_sub2_label(@importing_sub2)}
+          </.button>
           <%!-- ISO has no subdivisions to match against, so creating is the only
           way these rows enter the dataset — offered in bulk on this shape alone. --%>
           <.button
@@ -283,6 +343,11 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
                   {row.ebird.code}
                 </span>
                 <span :if={row.ebird} class="font-medium">{row.ebird.name}</span>
+                <.sub2_mark
+                  :if={row.ebird}
+                  id={"sub2-mark-#{row.ebird.id}"}
+                  stats={@sub2_by_sub1[row.ebird.code]}
+                />
                 <span :if={!row.ebird} class="col-span-2 text-sm text-stone-400">
                   no eBird region
                 </span>
@@ -356,6 +421,31 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
       </span>
     <% end %>
     <span :if={!@region.location} class="text-sm text-stone-400">unmatched</span>
+    """
+  end
+
+  attr :id, :string, required: true
+
+  attr :stats, :map,
+    default: nil,
+    doc:
+      "This subdivision1's sub2 import progress (`%{total: n, linked: n}`); nil renders nothing."
+
+  # Marks a subdivision1 that has eBird subdivision2 regions, with how many are
+  # imported. Sits on the second grid line of the eBird cell, under the name.
+  defp sub2_mark(assigns) do
+    ~H"""
+    <span
+      :if={@stats}
+      id={@id}
+      class={[
+        "col-start-2 text-xs",
+        (@stats.linked == @stats.total && "text-forest-600") || "text-stone-500"
+      ]}
+      title="eBird subdivision2 regions imported as common locations"
+    >
+      {@stats.linked}/{@stats.total} sub2 imported
+    </span>
     """
   end
 
