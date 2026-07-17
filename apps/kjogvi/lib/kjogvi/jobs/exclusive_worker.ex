@@ -10,11 +10,11 @@ defmodule Kjogvi.Jobs.ExclusiveWorker do
 
     * `max_attempts: 1` — no retries: a silent retry would double-run an
       import, so a failed or crashed job goes straight to `discarded`.
-    * `unique` across `[:available, :scheduled, :executing]` with
-      `period: :infinity` — inserting while a run is in flight returns the
-      existing job (`conflict?: true`) instead of enqueuing a second one, and
-      a finished run frees the slot. Pass `unique_keys: [:user_id]` to key
-      the slot on specific args; without it the whole args map identifies it.
+    * `unique` across the `:incomplete` states with `period: :infinity` —
+      inserting while a run is in flight returns the existing job
+      (`conflict?: true`) instead of enqueuing a second one, and a finished
+      run frees the slot. Pass `unique_keys: [:user_id]` to key the slot on
+      specific args; without it the whole args map identifies it.
     * `queue: :imports` — override with `queue:`.
     * a 5-minute `timeout/1` — override the function for longer tasks.
 
@@ -55,7 +55,7 @@ defmodule Kjogvi.Jobs.ExclusiveWorker do
   defmacro __using__(opts) do
     {unique_keys, opts} = Keyword.pop(opts, :unique_keys, [])
 
-    unique = [period: :infinity, states: [:available, :scheduled, :executing]]
+    unique = [period: :infinity, states: :incomplete]
     unique = if unique_keys == [], do: unique, else: Keyword.put(unique, :keys, unique_keys)
 
     opts =

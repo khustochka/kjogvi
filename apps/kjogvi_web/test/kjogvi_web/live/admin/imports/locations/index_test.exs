@@ -1,6 +1,6 @@
 defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
-  # Not async: restore/dump run as ExclusiveTaskProcessor tasks in separate
-  # processes, which need the shared (non-async) sandbox connection.
+  # Not async: the tests swap the global Kjogvi.Datasets storage config, and
+  # the LiveView process needs the shared (non-async) sandbox connection.
   use KjogviWeb.ConnCase, async: false
 
   @moduletag :capture_log
@@ -52,10 +52,17 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
     %{conn: login_user(conn, admin_fixture()), dir: dir}
   end
 
-  # The processor broadcasts lifecycle events on the key's topic; subscribing
-  # lets the test wait for a task deterministically instead of polling.
+  # The bridge broadcasts lifecycle events on the key's topic; subscribing
+  # verifies them end-to-end alongside what the page renders.
   defp subscribe(key) do
     Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
+  end
+
+  # Oban runs in manual testing mode: submitting a form only enqueues the job,
+  # and draining executes it (and fires the lifecycle broadcasts) right here
+  # in the test process.
+  defp drain_geo_queue do
+    Oban.drain_queue(queue: :geo)
   end
 
   test "returns 404 for a non-admin user" do
@@ -196,13 +203,42 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
       |> element("#dump-common-locations-form")
       |> render_submit()
 
-      assert_receive {:lifecycle, :ok, {:geo_dump, :common}, _async_result}, 2_000
+      assert has_element?(lv, "#dump-common-locations-form button[disabled]", "Dumping…")
+
+      drain_geo_queue()
+
+      assert_receive {:lifecycle, :ok, {:geo_dump, :common}, _async_result}
 
       assert render(lv) =~ "Dump finished: 1 rows."
       assert File.exists?(Path.join(dir, "geo/common_locations.csv"))
       # The fresh snapshot's timestamp now shows and restore becomes available.
       assert has_element?(lv, "#dump-common-locations", "Current snapshot from")
       assert has_element?(lv, "#restore-common-locations-form button", "Restore")
+    end
+
+    test "a second start while a run is pending does not enqueue another job", %{conn: conn} do
+      insert(:country, iso_code: "UA")
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+
+      lv |> element("#dump-common-locations-form") |> render_submit()
+      # The button is disabled once a run is pending; fire the event directly
+      # to simulate a second session racing it.
+      render_submit(lv, "start_dump", %{"dataset" => "common_locations"})
+
+      assert %{success: 1} = drain_geo_queue()
+    end
+
+    test "a pending run is visible to a freshly mounted page", %{conn: conn} do
+      insert(:country, iso_code: "UA")
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/imports/locations")
+      lv |> element("#dump-common-locations-form") |> render_submit()
+
+      {:ok, lv2, _html} = live(conn, ~p"/admin/imports/locations")
+
+      assert has_element?(lv2, "#dump-common-locations-form button[disabled]", "Dumping…")
+      assert has_element?(lv2, "#dump-common-locations-status", "Dumping common locations...")
     end
   end
 
@@ -221,7 +257,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
       |> element("#restore-common-locations-form")
       |> render_submit()
 
-      assert_receive {:lifecycle, :ok, {:geo_restore, :common}, _async_result}, 2_000
+      drain_geo_queue()
+
+      assert_receive {:lifecycle, :ok, {:geo_restore, :common}, _async_result}
 
       assert render(lv) =~ "Restore finished: 2 rows."
       assert has_element?(lv, "#restore-common-locations li", "Country: 1")
@@ -244,7 +282,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
       |> element("#restore-common-locations-form")
       |> render_submit()
 
-      assert_receive {:lifecycle, :error, {:geo_restore, :common}, _async_result}, 2_000
+      drain_geo_queue()
+
+      assert_receive {:lifecycle, :error, {:geo_restore, :common}, _async_result}
 
       assert render(lv) =~ "Restore failed: no snapshot found."
     end
@@ -261,7 +301,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
       |> element("#dump-ebird-locations-form")
       |> render_submit()
 
-      assert_receive {:lifecycle, :ok, {:geo_dump, :ebird}, _async_result}, 2_000
+      drain_geo_queue()
+
+      assert_receive {:lifecycle, :ok, {:geo_dump, :ebird}, _async_result}
 
       assert has_element?(lv, "#dump-ebird-locations-status", "Dump finished: 1 rows.")
       assert File.exists?(Path.join(dir, "geo/ebird_locations.csv"))
@@ -282,7 +324,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
       |> element("#restore-ebird-locations-form")
       |> render_submit()
 
-      assert_receive {:lifecycle, :ok, {:geo_restore, :ebird}, _async_result}, 2_000
+      drain_geo_queue()
+
+      assert_receive {:lifecycle, :ok, {:geo_restore, :ebird}, _async_result}
 
       assert has_element?(lv, "#restore-ebird-locations-status", "Restore finished: 1 rows.")
       assert has_element?(lv, "#restore-ebird-locations li", "Country: 1 (1 matched)")

@@ -4,11 +4,12 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   restore from and dump to the configured `Kjogvi.Datasets` snapshot storage,
   plus the ISO 3166 bootstrap import card.
 
-  Restore and dump run through `Kjogvi.Server.ExclusiveTaskProcessor` (keys
-  `{:geo_restore, :common | :ebird}` / `{:geo_dump, :common | :ebird}`), so a
-  run cannot start twice and its status is shared across sessions: the page
-  subscribes to every key's PubSub topic, seeds from `get_status/1` on mount,
-  and follows the lifecycle events live.
+  Restore and dump run as exclusive Oban jobs (`Kjogvi.Jobs.GeoRestore` /
+  `Kjogvi.Jobs.GeoDump`, task keys `{:geo_restore, :common | :ebird}` /
+  `{:geo_dump, :common | :ebird}`), so a run cannot start twice and its
+  status is shared across sessions: the page subscribes to every key's PubSub
+  topic, seeds from `Kjogvi.Jobs.status/2` on mount, and follows the
+  lifecycle events broadcast by `Kjogvi.Jobs.Bridge` live.
   """
 
   use KjogviWeb, :live_view
@@ -18,10 +19,12 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   alias Kjogvi.Geo.Dump
   alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Geo.Location
-  alias Kjogvi.Server.ExclusiveTaskProcessor
+  alias Kjogvi.Jobs
   alias Kjogvi.Util.AsyncResult
   alias Kjogvi.Util.PubSubTopic
   alias KjogviWeb.Live.Admin.Imports
+
+  @task_workers %{restore: Jobs.GeoRestore, dump: Jobs.GeoDump}
 
   @task_keys %{
     restore: %{
@@ -61,46 +64,28 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
      |> assign_dataset_state()}
   end
 
+  # Inserting while a run is in flight returns the existing job instead of
+  # enqueuing a second one, so re-reading the status afterwards keeps the
+  # button state honest either way.
   @impl true
   def handle_event("start_restore", %{"dataset" => dataset}, socket) do
     dataset = parse_dataset(dataset)
-    message = "Restoring #{dataset_label(dataset)}..."
-
-    ExclusiveTaskProcessor.start_task(
-      @task_keys.restore[dataset],
-      fn _key -> Kjogvi.Geo.Restore.run(dataset) end,
-      message: message
-    )
+    {:ok, _job} = Oban.insert(Jobs.GeoRestore.new(%{dataset: dataset}))
 
     {:noreply,
-     update(
-       socket,
-       :restore_results,
-       &Map.put(&1, dataset, AsyncResult.loading(%{message: message}))
-     )}
+     update(socket, :restore_results, &Map.put(&1, dataset, task_status(:restore, dataset)))}
   end
 
   def handle_event("start_dump", %{"dataset" => dataset}, socket) do
     dataset = parse_dataset(dataset)
-    message = "Dumping #{dataset_label(dataset)}..."
+    {:ok, _job} = Oban.insert(Jobs.GeoDump.new(%{dataset: dataset}))
 
-    ExclusiveTaskProcessor.start_task(
-      @task_keys.dump[dataset],
-      fn _key -> Dump.run(dataset) end,
-      message: message
-    )
-
-    {:noreply,
-     update(
-       socket,
-       :dump_results,
-       &Map.put(&1, dataset, AsyncResult.loading(%{message: message}))
-     )}
+    {:noreply, update(socket, :dump_results, &Map.put(&1, dataset, task_status(:dump, dataset)))}
   end
 
-  # Lifecycle events carry the AsyncResult exactly as the processor stores it.
-  # A finished run changes what the cards report (counts, snapshot age), so a
-  # terminal `:ok` refreshes the dataset state.
+  # Lifecycle events carry the AsyncResult ready to assign. A finished run
+  # changes what the cards report (counts, snapshot age), so a terminal `:ok`
+  # refreshes the dataset state.
   @impl true
   def handle_info({:lifecycle, event, key, async_result}, socket) do
     socket =
@@ -124,17 +109,16 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   defp maybe_refresh_dataset_state(socket, :ok), do: assign_dataset_state(socket)
   defp maybe_refresh_dataset_state(socket, _event), do: socket
 
+  defp task_status(op, dataset) do
+    Jobs.status(@task_workers[op], %{dataset: dataset})
+  end
+
   defp task_statuses(op) do
-    Map.new(@task_keys[op], fn {dataset, key} ->
-      {dataset, ExclusiveTaskProcessor.get_status(key)}
-    end)
+    Map.new(@datasets, &{&1, task_status(op, &1)})
   end
 
   defp parse_dataset("common_locations"), do: :common_locations
   defp parse_dataset("ebird_locations"), do: :ebird_locations
-
-  defp dataset_label(:common_locations), do: "common locations"
-  defp dataset_label(:ebird_locations), do: "eBird locations"
 
   defp assign_dataset_state(socket) do
     socket
