@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Admin.Ebird.Show do
+defmodule KjogviWeb.Live.Admin.Ebird.Locations.Show do
   @moduledoc """
   Matching workbench for one eBird country: the country row, then its
   subdivision1s as a side-by-side eBird-vs-ISO comparison
@@ -50,7 +50,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
         {:ok,
          socket
          |> put_flash(:error, "eBird country not found")
-         |> redirect(to: ~p"/admin/ebird")}
+         |> redirect(to: ~p"/admin/ebird/locations")}
 
       country ->
         {:ok, assign(socket, :page_title, "eBird: #{country.name}")}
@@ -242,7 +242,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Show do
     <div class="space-y-6">
       <%!-- Breadcrumbs --%>
       <nav id="ebird-breadcrumbs" class="text-sm text-stone-500">
-        <.breadcrumb_link href={~p"/admin/ebird"}>eBird Locations</.breadcrumb_link>
+        <.breadcrumb_link href={~p"/admin/ebird/locations"}>eBird Locations</.breadcrumb_link>
         <span class="mx-1 text-stone-400">/</span>
         <span class="text-stone-700">{@country.name}</span>
       </nav>

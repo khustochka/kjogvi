@@ -1,4 +1,4 @@
-defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
+defmodule KjogviWeb.Live.Admin.Ebird.Locations.ShowTest do
   use KjogviWeb.ConnCase, async: true
 
   @moduletag :capture_log
@@ -17,13 +17,14 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
 
   test "returns 404 for a non-admin user", %{conn: _conn} do
     insert(:ebird_location, code: "AD")
-    conn = build_conn() |> login_user(user_fixture()) |> get(~p"/admin/ebird/AD")
+    conn = build_conn() |> login_user(user_fixture()) |> get(~p"/admin/ebird/locations/AD")
 
     assert response(conn, 404)
   end
 
   test "redirects to the index for an unknown country code", %{conn: conn} do
-    assert {:error, {:redirect, %{to: "/admin/ebird"}}} = live(conn, ~p"/admin/ebird/ZZ")
+    assert {:error, {:redirect, %{to: "/admin/ebird/locations"}}} =
+             live(conn, ~p"/admin/ebird/locations/ZZ")
   end
 
   test "renders the country header with status and regions", %{conn: conn} do
@@ -31,7 +32,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     ebird_country = insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     assert has_element?(view, "h1", "Andorra")
     # ISO has no subdivisions here while eBird has AD-02.
@@ -57,7 +58,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     by_name = insert(:ebird_subdivision1, country_code: "AD", code: "AD-99", name: "Encamp")
     insert(:subdivision1, country: country, iso_code: "AD-03", name_en: "Encamp")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     for region <- [by_code, by_name] do
       assert has_element?(view, "#ebird-region-#{region.id} button", "Link")
@@ -71,7 +72,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
     location = insert(:subdivision1, country: country, iso_code: "AD-02", name_en: "Canillo")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
 
@@ -86,7 +87,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-99", name: "Encamp")
     location = insert(:subdivision1, country: country, iso_code: "AD-03", name_en: "Encamp")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
 
@@ -98,7 +99,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_location, code: "AD", name: "Andorra", location_id: country.id)
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02", name: "Canillo")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     view |> element("#ebird-region-#{ebird_sub1.id} button", "Link") |> render_click()
 
@@ -110,7 +111,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     country = insert(:country, iso_code: "RS", name_en: "Serbia")
     ebird_country = insert(:ebird_location, code: "XK", name: "Kosovo", location_id: country.id)
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/XK")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/XK")
 
     assert has_element?(view, "#ebird-region-#{ebird_country.id}", "other")
   end
@@ -121,7 +122,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     ebird_country = insert(:ebird_location, code: "AD")
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     view |> element("#link-all-matched-button") |> render_click()
 
@@ -137,7 +138,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     adjuntas = insert(:ebird_subdivision1, country_code: "PR", code: "PR-001", name: "Adjuntas")
     aguada = insert(:ebird_subdivision1, country_code: "PR", code: "PR-003", name: "Aguada")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/PR")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/PR")
 
     assert has_element?(view, "#ebird-country-status", "eBird-only subregions")
     view |> element("#create-all-button") |> render_click()
@@ -154,7 +155,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     # An ISO subdivision exists, so these rows are matchable, not creatable.
     insert(:subdivision1, country: country, iso_code: "AD-03", name_en: "Encamp")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     refute has_element?(view, "#create-all-button")
   end
@@ -167,7 +168,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_location, code: "PR", name: "Puerto Rico")
     insert(:ebird_subdivision1, country_code: "PR", code: "PR-001", name: "Adjuntas")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/PR")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/PR")
 
     assert has_element?(view, "#ebird-country-status", "eBird-only subregions")
     refute has_element?(view, "#create-all-button")
@@ -177,7 +178,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     country = insert(:country, iso_code: "AD")
     ebird_country = insert(:ebird_location, code: "AD", location_id: country.id)
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     view |> element("#ebird-region-#{ebird_country.id} button", "Unlink") |> render_click()
 
@@ -192,7 +193,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_location, code: "AD", location_id: country.id)
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     send(
       view.pid,
@@ -209,7 +210,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_location, code: "AD", location_id: country.id)
     ebird_other = insert(:ebird_location, code: "XY")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/XY")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/XY")
 
     send(
       view.pid,
@@ -224,7 +225,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
   test "creates a common location from an eBird-only country", %{conn: conn} do
     ebird_country = insert(:ebird_location, code: "XK", name: "Kosovo")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/XK")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/XK")
 
     view
     |> element("#ebird-region-#{ebird_country.id} button", "Create from eBird")
@@ -244,7 +245,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_location, code: "XK", name: "Kosovo")
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "XK", code: "XK-01")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/XK")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/XK")
 
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Link")
     refute has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Create from eBird")
@@ -255,7 +256,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     extra = insert(:subdivision1, iso_code: "HU-BA", name_en: "Baranya", country: country)
     insert(:ebird_location, code: "HU", location_id: country.id)
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/HU")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/HU")
 
     assert has_element?(view, "#iso-leftover-#{extra.id}", "Baranya")
     assert has_element?(view, "#iso-leftover-#{extra.id}", "no eBird region")
@@ -275,7 +276,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
         location_id: sub1.id
       )
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "Canillo")
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id} button", "Unlink")
@@ -300,7 +301,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
         name: "Federacija Bosna i Hercegovina"
       )
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/BA")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/BA")
 
     # Both spellings land on one row: the code pairs them though the names differ.
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "Federacija Bosna i Hercegovina")
@@ -315,7 +316,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_location, code: "PL", location_id: country.id)
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "PL", code: "PL-91", name: "Lodzkie")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/PL")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/PL")
 
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "by name")
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "Łódzkie")
@@ -327,7 +328,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_location, code: "AD", location_id: country.id)
     ebird_sub1 = insert(:ebird_subdivision1, country_code: "AD", code: "AD-ZZ", name: "High Seas")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     assert has_element?(view, "#ebird-region-#{ebird_sub1.id}", "no ISO subdivision")
   end
@@ -346,7 +347,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_subdivision2, subnational1_code: "US-CA", location_id: imported.id)
     insert(:ebird_subdivision2, subnational1_code: "US-CA")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/US")
 
     assert has_element?(view, "#ebird-sub2-counts", "1/2 subdivision2 imported")
     assert has_element?(view, "#sub2-mark-#{with_sub2.id}", "1/2 sub2 imported")
@@ -362,7 +363,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     alameda =
       insert(:ebird_subdivision2, subnational1_code: "US-CA", code: "US-CA-001", name: "Alameda")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/US")
 
     view |> element("#import-sub2-button") |> render_click()
     render_async(view)
@@ -382,7 +383,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_subdivision1, country_code: "US", code: "US-NY")
     orphan = insert(:ebird_subdivision2, subnational1_code: "US-NY", code: "US-NY-001")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/US")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/US")
 
     view |> element("#import-sub2-button") |> render_click()
     render_async(view)
@@ -401,7 +402,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.ShowTest do
     insert(:ebird_location, code: "AD", location_id: country.id)
     insert(:ebird_subdivision1, country_code: "AD", code: "AD-02")
 
-    {:ok, view, _html} = live(conn, ~p"/admin/ebird/AD")
+    {:ok, view, _html} = live(conn, ~p"/admin/ebird/locations/AD")
 
     refute has_element?(view, "#import-sub2-button")
   end

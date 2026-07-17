@@ -314,6 +314,12 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   @impl true
   def render(assigns) do
     ~H"""
+    <.section_nav class="mb-6">
+      <:item href={~p"/admin/locations"}>Common</:item>
+      <:item href={~p"/admin/ebird/locations"}>eBird</:item>
+      <:item href={~p"/admin/imports/locations"} current>Imports</:item>
+    </.section_nav>
+
     <.h1>Location Imports</.h1>
 
     <div class="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">

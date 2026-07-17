@@ -108,6 +108,49 @@ defmodule KjogviWeb.NavigationComponents do
     """
   end
 
+  @doc """
+  Pill-style sub-navigation linking the sibling pages of a section.
+
+  The `current` item renders as a non-link highlighted pill; the others as
+  links. Used to switch between the Locations, eBird, and Imports admin pages.
+
+  ## Examples
+
+      <.section_nav>
+        <:item href={~p"/admin/locations"} current>Common</:item>
+        <:item href={~p"/admin/ebird/locations"}>eBird</:item>
+        <:item href={~p"/admin/imports"}>Imports</:item>
+      </.section_nav>
+  """
+  attr :class, :any, default: nil
+
+  slot :item, required: true do
+    attr :href, :string, required: true
+    attr :current, :boolean
+  end
+
+  def section_nav(assigns) do
+    ~H"""
+    <nav class={@class}>
+      <ul class="flex flex-wrap items-baseline gap-2">
+        <li :for={item <- @item} class="inline">
+          <span
+            :if={item[:current]}
+            aria-current="page"
+            class="inline-block px-3 py-1.5 text-base lg:text-sm leading-snug font-bold text-forest-800 bg-forest-100 border border-forest-300 rounded"
+          >{render_slot(item)}</span>
+          <.link
+            :if={!item[:current]}
+            navigate={item.href}
+            class="inline-block px-3 py-1.5 text-base lg:text-sm leading-snug text-forest-600 bg-white border border-stone-400 rounded hover:bg-forest-50 no-underline"
+            phx-no-format
+          >{render_slot(item)}</.link>
+        </li>
+      </ul>
+    </nav>
+    """
+  end
+
   attr :id, :string
   attr :action, :string, required: true
   attr :method, :string, default: "post"

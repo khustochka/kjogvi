@@ -1,9 +1,9 @@
-defmodule KjogviWeb.Live.Admin.Ebird.Index do
+defmodule KjogviWeb.Live.Admin.Ebird.Locations.Index do
   @moduledoc """
   Admin index of the eBird regions dataset: every eBird country with its
   derived match status, subdivision link counts, and status filter chips —
   the "which countries are ready" dashboard. Each country links to its
-  matching workbench (`Live.Admin.Ebird.Show`).
+  matching workbench (`Live.Admin.Ebird.Locations.Show`).
 
   Carries the bulk code pass (`Geo.Ebird.match_all/0`, run via `start_async`):
   one button links every country by code and every perfect-match country's
@@ -146,6 +146,12 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
+      <.section_nav>
+        <:item href={~p"/admin/locations"}>Common</:item>
+        <:item href={~p"/admin/ebird/locations"} current>eBird</:item>
+        <:item href={~p"/admin/imports/locations"}>Imports</:item>
+      </.section_nav>
+
       <div class="flex flex-wrap items-end justify-between gap-4">
         <.h1 class="mb-0!">
           eBird Locations
@@ -181,14 +187,14 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         <li class="text-sm font-medium text-stone-500 mr-1">Show</li>
         <.inline_filter_pill
           selected={not @only_incomplete}
-          href={~p"/admin/ebird?#{filter_params(@status, false, @only_sub2)}"}
+          href={~p"/admin/ebird/locations?#{filter_params(@status, false, @only_sub2)}"}
         >
           All ({length(@countries)})
         </.inline_filter_pill>
         <.inline_filter_pill
           selected={@only_incomplete}
           active={@incomplete_count > 0}
-          href={~p"/admin/ebird?#{filter_params(@status, true, @only_sub2)}"}
+          href={~p"/admin/ebird/locations?#{filter_params(@status, true, @only_sub2)}"}
         >
           Not fully linked ({@incomplete_count})
         </.inline_filter_pill>
@@ -199,7 +205,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         <li class="text-sm font-medium text-stone-500 mr-1">Status</li>
         <.inline_filter_pill
           selected={@status == nil}
-          href={~p"/admin/ebird?#{filter_params(nil, @only_incomplete, @only_sub2)}"}
+          href={~p"/admin/ebird/locations?#{filter_params(nil, @only_incomplete, @only_sub2)}"}
         >
           All ({length(@countries)})
         </.inline_filter_pill>
@@ -207,7 +213,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
           :for={status <- @statuses}
           selected={@status == status}
           active={Map.get(@status_counts, status, 0) > 0}
-          href={~p"/admin/ebird?#{filter_params(status, @only_incomplete, @only_sub2)}"}
+          href={~p"/admin/ebird/locations?#{filter_params(status, @only_incomplete, @only_sub2)}"}
         >
           {ebird_status_label(status)} ({Map.get(@status_counts, status, 0)})
         </.inline_filter_pill>
@@ -218,14 +224,14 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         <li class="text-sm font-medium text-stone-500 mr-1">Subdivision2</li>
         <.inline_filter_pill
           selected={not @only_sub2}
-          href={~p"/admin/ebird?#{filter_params(@status, @only_incomplete, false)}"}
+          href={~p"/admin/ebird/locations?#{filter_params(@status, @only_incomplete, false)}"}
         >
           All ({length(@countries)})
         </.inline_filter_pill>
         <.inline_filter_pill
           selected={@only_sub2}
           active={@sub2_count > 0}
-          href={~p"/admin/ebird?#{filter_params(@status, @only_incomplete, true)}"}
+          href={~p"/admin/ebird/locations?#{filter_params(@status, @only_incomplete, true)}"}
         >
           With subdivision2 ({@sub2_count})
         </.inline_filter_pill>
@@ -246,7 +252,7 @@ defmodule KjogviWeb.Live.Admin.Ebird.Index do
         >
           <span class="font-mono text-sm text-stone-500 w-10 shrink-0">{country.code}</span>
           <.link
-            navigate={~p"/admin/ebird/#{country.code}"}
+            navigate={~p"/admin/ebird/locations/#{country.code}"}
             class="font-medium text-forest-700"
             phx-no-format
           >{country.name}</.link>

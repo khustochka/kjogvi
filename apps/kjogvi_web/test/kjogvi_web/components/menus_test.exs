@@ -36,7 +36,8 @@ defmodule KjogviWeb.MenusTest do
 
       {:ok, live, _html} = live(conn, ~p"/my/locations")
 
-      assert has_element?(live, "#admin-menu a[href='/admin/locations']", "Common Locations")
+      assert has_element?(live, "#admin-menu a[href='/admin/locations']", "Locations")
+      assert has_element?(live, "#admin-menu a[href='/admin/imports']", "Imports")
       assert has_element?(live, "#admin-menu a[href='/admin/taxonomy']", "Taxonomy")
       assert has_element?(live, "#admin-menu a[href='/admin/exclusive-tasks']", "Exclusive Tasks")
       assert has_element?(live, "#admin-menu a[href='/admin/dashboard']", "Live Dashboard")

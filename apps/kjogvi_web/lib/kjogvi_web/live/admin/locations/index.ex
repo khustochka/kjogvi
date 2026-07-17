@@ -70,6 +70,12 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
+      <.section_nav>
+        <:item href={~p"/admin/locations"} current>Common</:item>
+        <:item href={~p"/admin/ebird/locations"}>eBird</:item>
+        <:item href={~p"/admin/imports/locations"}>Imports</:item>
+      </.section_nav>
+
       <div class="flex flex-wrap items-end justify-between gap-4">
         <.h1 class="mb-0!">
           Common Locations

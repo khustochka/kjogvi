@@ -236,7 +236,7 @@ defmodule KjogviWeb.Live.Admin.Locations.Show do
             <dt class="text-xs font-medium text-stone-400 uppercase tracking-wider">eBird</dt>
             <dd class="mt-0.5 text-sm font-mono">
               <.link
-                href={~p"/admin/ebird/#{@location.ebird_location.country_code}"}
+                href={~p"/admin/ebird/locations/#{@location.ebird_location.country_code}"}
                 phx-no-format
               >{@location.ebird_location.code}</.link>
             </dd>
@@ -245,7 +245,7 @@ defmodule KjogviWeb.Live.Admin.Locations.Show do
           <.link
             :if={@ebird_entry}
             id="location-ebird-status"
-            navigate={~p"/admin/ebird/#{@ebird_entry.code}"}
+            navigate={~p"/admin/ebird/locations/#{@ebird_entry.code}"}
             title="eBird matching workbench"
             class="no-underline"
           >

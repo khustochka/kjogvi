@@ -131,7 +131,12 @@ defmodule KjogviWeb.Live.Admin.Locations.ShowTest do
 
       {:ok, show_live, _html} = live(conn, ~p"/admin/locations/#{country.slug}")
 
-      assert has_element?(show_live, "#location-ebird-code a[href='/admin/ebird/AD']", "AD")
+      assert has_element?(
+               show_live,
+               "#location-ebird-code a[href='/admin/ebird/locations/AD']",
+               "AD"
+             )
+
       assert has_element?(show_live, "#location-ebird-status", "matched")
     end
 
