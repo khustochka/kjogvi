@@ -5,6 +5,7 @@ defmodule KjogviWeb.Router do
 
   import OrnithoWeb.Router
   import Phoenix.LiveDashboard.Router
+  import Oban.Web.Router
 
   import KjogviWeb.Plug
 
@@ -187,6 +188,12 @@ defmodule KjogviWeb.Router do
     ornitho_web "/taxonomy",
       root_layout: {KjogviWeb.Layouts, :root},
       app_layout: {KjogviWeb.Layouts, :private},
+      on_mount: [
+        {KjogviWeb.UserAuth, :ensure_admin},
+        {KjogviWeb.UserAuth, :mount_area_admin}
+      ]
+
+    oban_dashboard "/oban",
       on_mount: [
         {KjogviWeb.UserAuth, :ensure_admin},
         {KjogviWeb.UserAuth, :mount_area_admin}

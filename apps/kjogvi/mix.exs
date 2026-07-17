@@ -62,6 +62,7 @@ defmodule Kjogvi.MixProject do
       {:postgrex, "~> 0.22"},
       {:cachex, "~> 4.0"},
       {:csv, "~> 3.0"},
+      {:oban, "~> 2.23"},
       # Fork of waffle that makes hackney optional.
       {:waffle, github: "khustochka/waffle", branch: "hackney-optional", override: true},
       {:waffle_ecto, "~> 0.0.12"},

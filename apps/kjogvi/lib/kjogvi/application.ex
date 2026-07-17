@@ -15,6 +15,7 @@ defmodule Kjogvi.Application do
       {Kjogvi.Store.ChecklistPreload, name: Kjogvi.Store.ChecklistPreload},
       {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Kjogvi.PubSub},
+      {Oban, Application.fetch_env!(:kjogvi, Oban)},
       {Task.Supervisor, name: Kjogvi.TaskSupervisor},
       Kjogvi.Server.ExclusiveTaskProcessor
       # Start a worker by calling: Kjogvi.Worker.start_link(arg)

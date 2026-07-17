@@ -51,6 +51,10 @@ config :kjogvi, Kjogvi.Datasets,
   otp_app: nil,
   path: Path.join(System.tmp_dir!(), "kjogvi_test_datasets")
 
+# Don't run queues or plugins in tests; jobs are asserted with `Oban.Testing`
+# and driven explicitly via `Oban.drain_queue/2`.
+config :kjogvi, Oban, testing: :manual
+
 # In test we don't send emails
 config :kjogvi, Kjogvi.Mailer, adapter: Swoosh.Adapters.Test
 
