@@ -125,6 +125,21 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
       assert Repo.get!(Location, iso_ak.id).country_id == 42
     end
 
+    test "repoints a linked eBird region to the renumbered country's new id",
+         %{opts: opts} do
+      iso_us = insert(:country, iso_code: "US", slug: "us")
+      ebird = insert(:ebird_location, code: "US", location: iso_us)
+
+      run(
+        [
+          row(%{"id" => 42, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"})
+        ],
+        opts
+      )
+
+      assert Repo.reload!(ebird).location_id == 42
+    end
+
     test "resolves the country ancestor past a special continent above the country",
          %{opts: opts} do
       insert(:country, iso_code: "US", slug: "us")
