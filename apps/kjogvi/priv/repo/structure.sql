@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict TgnsI7egdZ1Dsr7FhjsU56tyxHjqaYzDB4Klftrmqcma4jvB8eaatxM1tJnIQm6
+\restrict hetJHZ3yHxxiyIY2uu3bOFrUetWu0Q8GJcHcuj2DfM7K8FN1kZ00l6zyyua1hPT
 
 -- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
@@ -1600,7 +1600,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict TgnsI7egdZ1Dsr7FhjsU56tyxHjqaYzDB4Klftrmqcma4jvB8eaatxM1tJnIQm6
+\unrestrict hetJHZ3yHxxiyIY2uu3bOFrUetWu0Q8GJcHcuj2DfM7K8FN1kZ00l6zyyua1hPT
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1642,4 +1642,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260708000001);
 INSERT INTO public."schema_migrations" (version) VALUES (20260709000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260713101232);
 INSERT INTO public."schema_migrations" (version) VALUES (20260713120000);
-INSERT INTO public."schema_migrations" (version) VALUES (20260716120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260716232748);
