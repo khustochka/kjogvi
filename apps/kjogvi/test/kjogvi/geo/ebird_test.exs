@@ -508,6 +508,28 @@ defmodule Kjogvi.Geo.EbirdTest do
       assert location.user_id == nil
     end
 
+    test "links each created location back to its own eBird row across parents" do
+      country = insert(:country, iso_code: "US")
+      california = insert(:subdivision1, iso_code: "US-CA", country: country)
+      new_york = insert(:subdivision1, iso_code: "US-NY", country: country)
+
+      insert(:ebird_subdivision1, country_code: "US", code: "US-CA", location_id: california.id)
+      insert(:ebird_subdivision1, country_code: "US", code: "US-NY", location_id: new_york.id)
+
+      alameda = insert(:ebird_subdivision2, subnational1_code: "US-CA", code: "US-CA-001")
+      butte = insert(:ebird_subdivision2, subnational1_code: "US-CA", code: "US-CA-007")
+      albany = insert(:ebird_subdivision2, subnational1_code: "US-NY", code: "US-NY-001")
+
+      assert Ebird.import_subdivision2s("US") == %{created: 3, failed: 0}
+
+      for {region, parent} <- [{alameda, california}, {butte, california}, {albany, new_york}] do
+        location = Repo.get!(Location, reload(region).location_id)
+        assert location.iso_code == region.code
+        assert location.subdivision1_id == parent.id
+        assert location.country_id == country.id
+      end
+    end
+
     test "fails rows whose subdivision1 is not linked, leaving the rest done" do
       country = insert(:country, iso_code: "US")
       california = insert(:subdivision1, iso_code: "US-CA", country: country)

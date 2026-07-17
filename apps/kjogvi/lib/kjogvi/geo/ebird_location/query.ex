@@ -166,6 +166,21 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   end
 
   @doc """
+  Update query linking unmatched eBird subdivision2 rows to the given common
+  locations by `iso_code == code` — the subdivision2 import's link step, run
+  over the ids of the locations it just created.
+  """
+  def link_subdivision2s_to_locations(location_ids) do
+    from e in EbirdLocation,
+      join: l in Location,
+      on: l.iso_code == e.code,
+      where: l.id in ^location_ids,
+      where: e.location_type == :subdivision2,
+      where: is_nil(e.location_id),
+      update: [set: [location_id: l.id]]
+  end
+
+  @doc """
   The given common country's subdivision1s not linked from any eBird row —
   the name pass's candidates.
   """

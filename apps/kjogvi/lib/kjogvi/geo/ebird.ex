@@ -15,6 +15,10 @@ defmodule Kjogvi.Geo.Ebird do
   alias Kjogvi.Repo
   alias Kjogvi.Util
 
+  # ~11 bind parameters per row; keeps a batch well under Postgres's 65535
+  # bind-parameter limit.
+  @sub2_chunk_size 3000
+
   defdelegate match_country(country_code, opts \\ []), to: Matcher
   defdelegate match_all, to: Matcher
 
@@ -393,10 +397,10 @@ defmodule Kjogvi.Geo.Ebird do
 
   Each subdivision2 is placed under the common location its eBird
   subdivision1 row is linked to; rows whose subdivision1 is not linked yet
-  count as failed, as do slug or `iso_code` collisions. Like
-  `create_all_common_locations/1`, rows are created independently, so a
-  failure leaves the rest done and the import is re-runnable.
-  Returns `%{created: n, failed: n}`.
+  count as failed, as do slug or `iso_code` collisions. Rows are
+  bulk-inserted (`Repo.insert_all` in chunks, one transaction) with
+  `on_conflict: :nothing`, so a collision skips only its own row and the
+  import is re-runnable. Returns `%{created: n, failed: n}`.
   """
   def import_subdivision2s(country_code) do
     :telemetry.span(
@@ -405,30 +409,72 @@ defmodule Kjogvi.Geo.Ebird do
       fn ->
         parents = linked_subdivision1_locations(country_code)
 
-        summary =
+        regions =
           EbirdLocation
           |> EbirdLocation.Query.for_country(country_code)
           |> EbirdLocation.Query.subdivision2s()
           |> EbirdLocation.Query.unmatched()
           |> EbirdLocation.Query.order_by_code()
           |> Repo.all()
-          |> Enum.reduce(%{created: 0, failed: 0}, fn region, acc ->
-            case import_subdivision2(region, parents) do
-              {:ok, _location} -> Map.update!(acc, :created, &(&1 + 1))
-              {:error, _reason} -> Map.update!(acc, :failed, &(&1 + 1))
-            end
-          end)
+
+        importable = Enum.filter(regions, &Map.has_key?(parents, &1.subnational1_code))
+        created = insert_subdivision2s(importable, parents)
+        summary = %{created: created, failed: length(regions) - created}
 
         {summary, Map.merge(%{result: :ok, country_code: country_code}, summary)}
       end
     )
   end
 
-  defp import_subdivision2(region, parents) do
-    case Map.fetch(parents, region.subnational1_code) do
-      {:ok, parent} -> insert_and_link(region, parent)
-      :error -> {:error, :subdivision1_not_linked}
-    end
+  defp insert_subdivision2s([], _parents), do: 0
+
+  defp insert_subdivision2s(regions, parents) do
+    now = DateTime.utc_now()
+
+    {:ok, created} =
+      Repo.transact(fn ->
+        created =
+          regions
+          |> Enum.chunk_every(@sub2_chunk_size)
+          |> Enum.map(&insert_subdivision2_chunk(&1, parents, now))
+          |> Enum.sum()
+
+        {:ok, created}
+      end)
+
+    created
+  end
+
+  # `on_conflict: :nothing` skips rows colliding on slug or `iso_code`; only
+  # actually inserted rows come back, so they alone are linked and counted.
+  defp insert_subdivision2_chunk(regions, parents, now) do
+    rows =
+      Enum.map(regions, &subdivision2_row(&1, Map.fetch!(parents, &1.subnational1_code), now))
+
+    {_, inserted} = Repo.insert_all(Location, rows, on_conflict: :nothing, returning: [:id])
+
+    ids = Enum.map(inserted, & &1.id)
+    Repo.update_all(EbirdLocation.Query.link_subdivision2s_to_locations(ids), [])
+
+    length(ids)
+  end
+
+  # Mirrors `insert_common_location/2`'s fields and shares its changeset-bypass
+  # rationale; `insert_all` also skips timestamps, so both are set here.
+  defp subdivision2_row(region, parent, now) do
+    Map.merge(
+      Map.new(parent_level_fks(parent)),
+      %{
+        slug: slug_from_code(region.code),
+        name_en: region.name,
+        iso_code: region.code,
+        location_type: :subdivision2,
+        is_private: false,
+        import_source: :ebird_regions,
+        inserted_at: now,
+        updated_at: now
+      }
+    )
   end
 
   # `%{ebird_sub1_code => linked_common_location}` — the parents subdivision2s
