@@ -26,16 +26,16 @@ defmodule Kjogvi.Jobs.EbirdPreload do
   # The checklists are persisted right here in the job, so they are stored
   # even if every subscribed LiveView is gone before the run finishes. The
   # store is the source of truth for the list; the result only carries the
-  # completion message subscribers display.
+  # completion message subscribers display. Passing the job itself as the
+  # broadcast key makes the progress reports durable on the job row (see
+  # `Kjogvi.Jobs.progress/2`).
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"user_id" => user_id}} = job) do
     user = Accounts.get_user!(user_id)
 
     with {:ok, credentials} <- Ebird.Web.ebird_credentials(user),
          {:ok, checklists} <-
-           Ebird.Web.preload_new_checklists_for_user(user, credentials,
-             broadcast_key: pubsub_key(job)
-           ) do
+           Ebird.Web.preload_new_checklists_for_user(user, credentials, broadcast_key: job) do
       Store.ChecklistPreload.store_checklists(user, checklists)
       {:ok, %{message: "eBird preload done: #{length(checklists)} new checklists."}}
     end

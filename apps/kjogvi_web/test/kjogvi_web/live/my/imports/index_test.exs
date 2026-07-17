@@ -163,6 +163,24 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       assert has_element?(lv2, "#legacy-import-form button[disabled]")
       assert render(lv2) =~ "Legacy import in progress..."
     end
+
+    # Progress recorded on the job row (Kjogvi.Jobs.progress/2) seeds a fresh
+    # mount, so a mid-run page load shows where the run is, not just that it
+    # is in progress.
+    test "a freshly mounted page shows the run's recorded progress", %{user: user} do
+      # Read the job back so it has the JSON string-keyed args of the real flow.
+      job = Oban.insert!(Jobs.LegacyImport.new(%{user_id: user.id}))
+      job = Kjogvi.Repo.get!(Oban.Job, job.id, prefix: Oban.config().prefix)
+      Jobs.progress(job, %{message: "Importing observations... 4200"})
+
+      {:ok, lv2, _html} =
+        build_conn()
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      assert has_element?(lv2, "#legacy-import-form button[disabled]")
+      assert render(lv2) =~ "Importing observations... 4200"
+    end
   end
 
   describe "starting the eBird preload" do

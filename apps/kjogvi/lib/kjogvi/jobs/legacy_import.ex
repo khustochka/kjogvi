@@ -14,10 +14,12 @@ defmodule Kjogvi.Jobs.LegacyImport do
   @impl Kjogvi.Jobs.ExclusiveWorker
   def start_message(_job), do: "Legacy import in progress..."
 
+  # Passing the job itself as the broadcast key makes the progress reports
+  # durable on the job row (see `Kjogvi.Jobs.progress/2`).
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"user_id" => user_id}} = job) do
     user = Accounts.get_user!(user_id)
 
-    Kjogvi.Legacy.Import.run(user, broadcast_key: pubsub_key(job))
+    Kjogvi.Legacy.Import.run(user, broadcast_key: job)
   end
 end

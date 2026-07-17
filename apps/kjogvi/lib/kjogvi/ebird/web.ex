@@ -47,15 +47,16 @@ defmodule Kjogvi.Ebird.Web do
     end
   end
 
-  def broadcast_progress(nil, _message) do
+  @doc """
+  Reports preload progress via `Kjogvi.Jobs.progress/2`: `broadcast_key` is an
+  `%Oban.Job{}` when the preload runs as a job (durable + live report) or a
+  bare task key (live only); `nil` reports nowhere.
+  """
+  def broadcast_progress(nil, _data) do
     :ok
   end
 
   def broadcast_progress(broadcast_key, data) do
-    Phoenix.PubSub.broadcast(
-      Kjogvi.PubSub,
-      Kjogvi.Util.PubSubTopic.for_key(broadcast_key),
-      {:progress, broadcast_key, data}
-    )
+    Kjogvi.Jobs.progress(broadcast_key, data)
   end
 end

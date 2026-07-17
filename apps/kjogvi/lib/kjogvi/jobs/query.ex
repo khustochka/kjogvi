@@ -24,4 +24,14 @@ defmodule Kjogvi.Jobs.Query do
       order_by: [desc: j.state in ^@in_flight_states, desc: j.id],
       limit: 1
   end
+
+  @doc """
+  Update query recording `progress` on the job's row under `meta["progress"]`,
+  replacing the previous report.
+  """
+  def set_progress(job_id, progress) do
+    from j in Oban.Job,
+      where: j.id == ^job_id,
+      update: [set: [meta: fragment("? || ?", j.meta, type(^%{progress: progress}, j.meta))]]
+  end
 end

@@ -18,8 +18,9 @@ defmodule Kjogvi.Jobs.ExclusiveWorker do
     * `queue: :imports` — override with `queue:`.
     * a 5-minute `timeout/1` — override the function for longer tasks.
 
-  A mid-run `progress/2` helper will be added here later (Stage 5 of the Oban
-  migration).
+  Report mid-run progress from `perform/1` with `Kjogvi.Jobs.progress/2`,
+  passing the job itself so the report lands on the job row as well as on
+  the key's PubSub topic.
 
   ## Example
 
