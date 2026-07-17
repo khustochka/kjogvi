@@ -150,6 +150,9 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       lv |> element("#legacy-import-form") |> render_submit()
 
       assert %{discard: 1} = Oban.drain_queue(queue: :imports)
+      # Sync with the LiveView so it finishes handling the completion
+      # broadcast before the test process exits and kills it mid-query.
+      render(lv)
     end
 
     test "a pending run is visible to a freshly mounted page", %{lv: lv, user: user} do

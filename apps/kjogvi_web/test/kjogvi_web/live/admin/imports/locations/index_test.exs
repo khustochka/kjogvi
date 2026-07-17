@@ -227,6 +227,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.IndexTest do
       render_submit(lv, "start_dump", %{"dataset" => "common_locations"})
 
       assert %{success: 1} = drain_geo_queue()
+      # Sync with the LiveView so it finishes handling the completion
+      # broadcast before the test process exits and kills it mid-query.
+      render(lv)
     end
 
     test "a pending run is visible to a freshly mounted page", %{conn: conn} do
