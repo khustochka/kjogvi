@@ -281,17 +281,19 @@ defmodule KjogviWeb.LocationComponents do
   @doc """
   Renders one node of a locations tree, recursively.
 
-  `node` is a `%{location: location, children: [node]}` map as built by
-  `Kjogvi.Geo.location_tree/1` / `common_location_tree/0`. The location body is
-  delegated to `location_card` (the `:tree` variant adds the type-keyed tint
-  without its own horizontal padding, which the branch wrapper here supplies). A
-  node with children gets a chevron that toggles them.
+  `node` is a `%{location: location, children_count: n, children: [node] | nil}`
+  map as built by `Kjogvi.Geo.location_tree/1` / `common_location_roots/0`. The
+  location body is delegated to `location_card` (the `:tree` variant adds the
+  type-keyed tint without its own horizontal padding, which the branch wrapper
+  here supplies).
 
-  Only countries start expanded, so the common scaffold — countries and their
-  subdivisions — is what shows initially; everything below a subdivision stays
-  collapsed until expanded. In the `admin` variant every branch starts collapsed
-  instead: the full scaffold's ~250 countries are the index, their subdivisions
-  open on demand.
+  A node with children gets a chevron. When the children are loaded it's a
+  client-side show/hide toggle (`tree_toggle/1`); only countries start expanded
+  in the personal tree. `children: nil` marks a lazy branch: its chevron sends
+  the `expand` event with the location id instead (`tree_expand/1`), the
+  LiveView grafts the loaded children in — rendered expanded — and toggling
+  from there on is client-side. The admin tree starts as unloaded countries,
+  so its branches all open on demand.
   """
   attr :node, :map, required: true
   attr :current_user, :any, default: nil
@@ -301,13 +303,15 @@ defmodule KjogviWeb.LocationComponents do
   def tree_node(assigns) do
     location = assigns.node.location
     body_id = "tree-body-#{location.id}"
-    has_children = assigns.node.children != []
-    expanded = !assigns.admin and location.location_type == :country
+    has_children = assigns.node.children_count > 0
+    loaded = assigns.node.children != nil
+    expanded = if assigns.admin, do: loaded, else: location.location_type == :country
 
     assigns =
       assign(assigns,
         body_id: body_id,
         has_children: has_children,
+        loaded: loaded,
         expanded: expanded
       )
 
@@ -318,10 +322,15 @@ defmodule KjogviWeb.LocationComponents do
       @node.location.disabled && "bg-stone-100!"
     ]}>
       <.tree_toggle
-        :if={@has_children}
+        :if={@has_children and @loaded}
         target={@body_id}
         label={"Toggle #{@node.location.name_en}"}
         expanded={@expanded}
+      />
+      <.tree_expand
+        :if={@has_children and not @loaded}
+        location_id={@node.location.id}
+        label={"Toggle #{@node.location.name_en}"}
       />
       <span :if={!@has_children} class="w-5 shrink-0" aria-hidden="true"></span>
       <div class="flex-1 min-w-0">
@@ -336,7 +345,7 @@ defmodule KjogviWeb.LocationComponents do
     </div>
 
     <ul
-      :if={@has_children}
+      :if={@has_children and @loaded}
       id={@body_id}
       class={["border-l border-stone-200 ml-3", !@expanded && "hidden"]}
     >
@@ -393,6 +402,29 @@ defmodule KjogviWeb.LocationComponents do
   defp toggle_branch(target) do
     Phoenix.LiveView.JS.toggle(to: "##{target}")
     |> Phoenix.LiveView.JS.toggle_class("rotate-90", to: "##{target}-chevron")
+  end
+
+  @doc """
+  Chevron for a lazy tree branch whose children aren't loaded yet: sends the
+  `expand` event with the location id. No `aria-controls` — the branch body it
+  will reveal isn't in the DOM until the LiveView grafts the children in.
+  """
+  attr :location_id, :integer, required: true
+  attr :label, :string, required: true
+
+  def tree_expand(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click="expand"
+      phx-value-id={@location_id}
+      aria-expanded="false"
+      aria-label={@label}
+      class="shrink-0 p-0.5 text-stone-400 hover:text-stone-700 rounded"
+    >
+      <span class="inline-flex"><.icon name="hero-chevron-right" class="w-4 h-4" /></span>
+    </button>
+    """
   end
 
   # Countries read largest, subdivisions a step down; deeper commons stay modest.

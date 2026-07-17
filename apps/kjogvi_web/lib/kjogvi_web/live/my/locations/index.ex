@@ -89,13 +89,20 @@ defmodule KjogviWeb.Live.My.Locations.Index do
   end
 
   defp assign_locations(socket, scope) do
-    own_count =
-      Geo.list_locations(scope)
-      |> Enum.count(&User.owns?(scope.current_user, &1))
+    tree = Geo.location_tree(scope)
 
     socket
-    |> assign(:location_tree, Geo.location_tree(scope))
-    |> assign(:own_locations_count, own_count)
+    |> assign(:location_tree, tree)
+    |> assign(:own_locations_count, count_own(tree, scope.current_user))
+  end
+
+  # The tree holds every own location (commons are only pulled in as their
+  # ancestors), so counting owned nodes counts the user's locations.
+  defp count_own(nodes, user) do
+    Enum.reduce(nodes, 0, fn node, acc ->
+      owned = if User.owns?(user, node.location), do: 1, else: 0
+      acc + owned + count_own(node.children, user)
+    end)
   end
 
   @impl true

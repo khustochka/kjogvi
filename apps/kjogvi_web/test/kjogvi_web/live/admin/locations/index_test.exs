@@ -52,14 +52,71 @@ defmodule KjogviWeb.Live.Admin.Locations.IndexTest do
     assert has_element?(index_live, "a[href='/admin/locations/#{country.slug}']", "Canada")
   end
 
-  test "countries start collapsed with a toggle for their subdivisions", %{conn: conn} do
+  test "countries start unloaded with an expand chevron; children are not in the DOM", %{
+    conn: conn
+  } do
     country = insert(:country, name_en: "Canada")
     insert(:subdivision1, name_en: "Manitoba", country: country)
 
     {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
 
-    assert has_element?(index_live, "#tree-body-#{country.id}.hidden")
+    refute has_element?(index_live, "#tree-body-#{country.id}")
+    refute has_element?(index_live, "a", "Manitoba")
+
+    assert has_element?(
+             index_live,
+             "button[phx-click='expand'][phx-value-id='#{country.id}'][aria-expanded='false']"
+           )
+  end
+
+  test "a country with nothing under it gets no expand chevron", %{conn: conn} do
+    insert(:country, name_en: "Mongolia")
+
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    refute has_element?(index_live, "button[phx-click='expand']")
+  end
+
+  test "expanding a country loads its children, shown with a client-side toggle", %{conn: conn} do
+    country = insert(:country, name_en: "Canada")
+    insert(:subdivision1, name_en: "Manitoba", country: country)
+
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    index_live
+    |> element("button[phx-click='expand'][phx-value-id='#{country.id}']")
+    |> render_click()
+
+    assert has_element?(index_live, "a", "Manitoba")
+    assert has_element?(index_live, "#tree-body-#{country.id}")
+    refute has_element?(index_live, "#tree-body-#{country.id}.hidden")
     assert has_element?(index_live, "button[aria-controls='tree-body-#{country.id}']")
+  end
+
+  test "expanding a loaded child loads the level below it", %{conn: conn} do
+    country = insert(:country, name_en: "Canada")
+    subdivision = insert(:subdivision1, name_en: "Manitoba", country: country)
+
+    insert(:location,
+      name_en: "Brokenhead",
+      location_type: "subdivision2",
+      country: country,
+      subdivision1: subdivision
+    )
+
+    {:ok, index_live, _html} = live(conn, ~p"/admin/locations")
+
+    index_live
+    |> element("button[phx-click='expand'][phx-value-id='#{country.id}']")
+    |> render_click()
+
+    refute has_element?(index_live, "a", "Brokenhead")
+
+    index_live
+    |> element("button[phx-click='expand'][phx-value-id='#{subdivision.id}']")
+    |> render_click()
+
+    assert has_element?(index_live, "a", "Brokenhead")
   end
 
   test "rows carry no lifelist links", %{conn: conn} do

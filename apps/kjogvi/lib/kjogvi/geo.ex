@@ -121,56 +121,96 @@ defmodule Kjogvi.Geo do
   end
 
   @doc """
-  Returns scoped non-special locations as a flat list ordered by name, each with
-  its `checklists_count` loaded and level FK associations preloaded for display names.
+  Builds the full location tree for the private locations index: the
+  `current_user`'s own locations plus the common ancestors they hang under.
 
-  Restricted to the locations `scope` may see (own + common).
-  """
-  def list_locations(scope) do
-    scoped_locations(scope)
-    |> where([l], l.location_type != :special or is_nil(l.location_type))
-    |> order_by([l], asc: l.name_en)
-    |> Location.Query.load_checklists_count()
-    |> Repo.all()
-    |> Location.Query.put_levels()
-  end
-
-  @doc """
-  Builds the full location tree for `scope`'s locations index.
-
-  Every location is placed under its direct parent — the deepest ancestor named
-  by its level FKs (`Location.parent_id_from_levels/1`) — so the tree follows the
-  real hierarchy to any depth, with skipped levels handled (a site with no city
-  hangs off its subdivision). The common `country` / `subdivision1` scaffold is
-  included only where the user has locations under it; the untouched shared
-  scaffold is omitted. Specials are excluded (they render separately). Each level
-  is ordered by name.
+  Own locations are fetched first; only the common rows their level FKs name are
+  then loaded, so the untouched shared scaffold is never read. Every location is
+  placed under its direct parent — the deepest ancestor named by its level FKs
+  (`Location.parent_id_from_levels/1`) — so the tree follows the real hierarchy
+  to any depth, with skipped levels handled (a site with no city hangs off its
+  subdivision). Specials are excluded (they render separately). Siblings are
+  ordered hierarchy level first, then name. Level FK associations are preloaded
+  for display names.
 
   Returns a list of uniform nodes, recursively:
 
-      [%{location: %Location{}, children: [%{location: ..., children: [...]}]}]
+      [%{location: %Location{}, children_count: 1, children: [%{location: ..., ...}]}]
 
   A node's `children` are the locations whose direct parent is that node; a leaf
   has an empty `children` list.
   """
-  def location_tree(scope) do
-    list_locations(scope)
-    |> reject_orphan_common()
+  def location_tree(%{current_user: %User{} = user}) do
+    own =
+      Location
+      |> Location.Query.owned_by(user)
+      |> Location.Query.exclude_specials()
+      |> Repo.all()
+
+    ancestor_ids =
+      own
+      |> Enum.flat_map(&Location.ancestor_ids/1)
+      |> Enum.uniq()
+
+    commons =
+      Location
+      |> Location.Query.by_ids(ancestor_ids)
+      |> Location.Query.only_common()
+      |> Repo.all()
+
+    (own ++ commons)
+    |> Location.Query.put_levels()
     |> build_tree()
   end
 
   @doc """
-  Builds the tree of the entire common (unowned) scaffold, specials excluded —
-  every country and subdivision regardless of whether anything hangs under it.
+  Returns the countries of the common (unowned) scaffold as unloaded tree nodes —
+  `%{location: location, children_count: n, children: nil}`, ordered by name.
 
-  Same node shape as `location_tree/1`; used by the admin common-locations index.
+  `children_count` counts each country's direct common children (specials
+  excluded), so the tree knows whether to offer expansion; the children
+  themselves are fetched on demand with `common_location_children/1`. Used by
+  the admin common-locations index.
   """
-  def common_location_tree do
+  def common_location_roots do
     Location
+    |> Location.Query.only_common()
+    |> Location.Query.countries()
+    |> Repo.all()
+    |> unloaded_nodes()
+  end
+
+  @doc """
+  Loads the direct common children of location `parent_id` as unloaded tree
+  nodes (same shape as `common_location_roots/0`), specials excluded, ordered
+  hierarchy level first, then name.
+  """
+  def common_location_children(parent_id) do
+    Repo.get!(Location, parent_id)
+    |> Location.Query.direct_children()
     |> Location.Query.only_common()
     |> Location.Query.exclude_specials()
     |> Repo.all()
-    |> build_tree()
+    |> unloaded_nodes()
+  end
+
+  def common_locations_count do
+    common_scaffold()
+    |> Repo.aggregate(:count)
+  end
+
+  defp unloaded_nodes(locations) do
+    counts = Location.Query.direct_children_counts(common_scaffold(), locations)
+
+    locations
+    |> sort_siblings()
+    |> Enum.map(&%{location: &1, children_count: Map.get(counts, &1.id, 0), children: nil})
+  end
+
+  defp common_scaffold do
+    Location
+    |> Location.Query.only_common()
+    |> Location.Query.exclude_specials()
   end
 
   defp build_tree(locations) do
@@ -187,30 +227,20 @@ defmodule Kjogvi.Geo do
     build_nodes(roots, by_parent)
   end
 
-  # `list_locations` returns the user's own locations plus the *entire* common
-  # scaffold (every country and subdivision). Keep only common locations that are
-  # an ancestor of some personal location, so the untouched scaffold is dropped.
-  defp reject_orphan_common(locations) do
-    needed_common_ids =
-      locations
-      |> Enum.reject(&is_nil(&1.user_id))
-      |> Enum.flat_map(&Location.ancestor_ids/1)
-      |> MapSet.new()
-
-    Enum.filter(locations, fn loc ->
-      not is_nil(loc.user_id) or MapSet.member?(needed_common_ids, loc.id)
+  defp build_nodes(locations, by_parent) do
+    locations
+    |> sort_siblings()
+    |> Enum.map(fn location ->
+      children = build_nodes(Map.get(by_parent, location.id, []), by_parent)
+      %{location: location, children_count: length(children), children: children}
     end)
   end
 
-  defp build_nodes(locations, by_parent) do
-    locations
-    |> Enum.sort_by(
+  defp sort_siblings(locations) do
+    Enum.sort_by(
+      locations,
       &{Map.get(@level_rank, &1.location_type, 99), Util.String.strip_diacritics(&1.name_en)}
     )
-    |> Enum.map(fn location ->
-      children = Map.get(by_parent, location.id, [])
-      %{location: location, children: build_nodes(children, by_parent)}
-    end)
   end
 
   def get_child_locations(parent_id) do

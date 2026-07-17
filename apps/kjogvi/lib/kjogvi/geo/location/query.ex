@@ -79,6 +79,13 @@ defmodule Kjogvi.Geo.Location.Query do
     from l in query, where: not is_nil(l.user_id)
   end
 
+  @doc """
+  Restricts to locations owned by `user`.
+  """
+  def owned_by(query, user) do
+    from l in query, where: l.user_id == ^user.id
+  end
+
   def by_ids(query, ids) do
     from l in query, where: l.id in ^ids
   end
@@ -255,6 +262,36 @@ defmodule Kjogvi.Geo.Location.Query do
     @level_fks
     |> Enum.drop_while(&(&1 != fk))
     |> Enum.drop(1)
+  end
+
+  @doc """
+  Counts each parent's direct children within `query` (see `direct_children/1`),
+  as a `%{parent_id => count}` map — one grouped query per parent level.
+
+  Parents whose level has no descendant column (`section`, `special`) and
+  parents with no matching children are absent from the map.
+  """
+  def direct_children_counts(query \\ Location, parents) do
+    parents
+    |> Enum.group_by(& &1.location_type)
+    |> Enum.reduce(%{}, fn {location_type, group}, acc ->
+      case descendant_fk(location_type) do
+        nil -> acc
+        fk -> Enum.into(count_direct_children_at(query, fk, Enum.map(group, & &1.id)), acc)
+      end
+    end)
+  end
+
+  defp count_direct_children_at(query, fk, parent_ids) do
+    base = from l in query, where: field(l, ^fk) in ^parent_ids
+
+    below_level_fks(fk)
+    |> Enum.reduce(base, fn lower_fk, q ->
+      from l in q, where: is_nil(field(l, ^lower_fk))
+    end)
+    |> group_by([l], field(l, ^fk))
+    |> select([l], {field(l, ^fk), count(l.id)})
+    |> Repo.all()
   end
 
   @doc """

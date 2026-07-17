@@ -534,6 +534,7 @@ defmodule Kjogvi.GeoTest do
 
       [country_node] = Geo.location_tree(scope)
       assert country_node.location.id == country.id
+      assert country_node.children_count == 1
 
       subdivision_node = child_node(country_node.children, subdivision)
       assert subdivision_node
@@ -541,6 +542,7 @@ defmodule Kjogvi.GeoTest do
       site_node = child_node(subdivision_node.children, site)
       assert site_node
       assert site_node.children == []
+      assert site_node.children_count == 0
     end
 
     test "builds the full hierarchy to any depth, each node holding only its direct children",
@@ -718,33 +720,96 @@ defmodule Kjogvi.GeoTest do
     end
   end
 
-  describe "common_location_tree/0" do
-    test "includes every common location, even with nothing under it" do
+  describe "common_location_roots/0" do
+    test "includes every common country as an unloaded node, even with nothing under it" do
       country = insert(:country, name_en: "Mongolia")
 
-      [country_node] = Geo.common_location_tree()
+      [country_node] = Geo.common_location_roots()
       assert country_node.location.id == country.id
-      assert country_node.children == []
+      assert country_node.children_count == 0
+      assert country_node.children == nil
     end
 
-    test "nests common subdivisions under their country" do
+    test "counts only direct children, ordered by name" do
+      canada = insert(:country, name_en: "Canada")
+      argentina = insert(:country, name_en: "Argentina")
+      subdivision = insert(:subdivision1, name_en: "Manitoba", country: canada)
+
+      # A deeper location is not a direct child of the country.
+      insert(:location,
+        location_type: "subdivision2",
+        country: canada,
+        subdivision1: subdivision
+      )
+
+      [argentina_node, canada_node] = Geo.common_location_roots()
+      assert argentina_node.location.id == argentina.id
+      assert canada_node.location.id == canada.id
+      assert canada_node.children_count == 1
+    end
+
+    test "does not count personal locations or specials as children" do
+      country = insert(:country, name_en: "Canada")
+      insert(:location, name_en: "My Patch", country: country, user_id: user_fixture().id)
+      insert(:special, name_en: "Common Special", country: country)
+
+      [country_node] = Geo.common_location_roots()
+      assert country_node.children_count == 0
+    end
+  end
+
+  describe "common_location_children/1" do
+    test "returns direct common children as unloaded nodes with their own counts" do
       country = insert(:country, name_en: "Canada")
       subdivision = insert(:subdivision1, name_en: "Manitoba", country: country)
 
-      [country_node] = Geo.common_location_tree()
-      assert country_node.location.id == country.id
-      assert [%{location: %{id: sub_id}}] = country_node.children
-      assert sub_id == subdivision.id
+      county =
+        insert(:location,
+          name_en: "Brokenhead",
+          location_type: "subdivision2",
+          country: country,
+          subdivision1: subdivision
+        )
+
+      [subdivision_node] = Geo.common_location_children(country.id)
+      assert subdivision_node.location.id == subdivision.id
+      assert subdivision_node.children_count == 1
+      assert subdivision_node.children == nil
+
+      [county_node] = Geo.common_location_children(subdivision.id)
+      assert county_node.location.id == county.id
+      assert county_node.children_count == 0
     end
 
-    test "excludes personal locations and specials" do
+    test "excludes personal children and specials" do
       country = insert(:country, name_en: "Canada")
+      insert(:location, name_en: "My Patch", country: country, user_id: user_fixture().id)
+      insert(:special, name_en: "Common Special", country: country)
+
+      assert Geo.common_location_children(country.id) == []
+    end
+
+    test "orders children hierarchy level first, then name" do
+      country = insert(:country, name_en: "Canada")
+
+      site =
+        insert(:location, name_en: "Aaa Site", location_type: "site", country: country)
+
+      subdivision = insert(:subdivision1, name_en: "Zzz Subdivision", country: country)
+
+      assert Enum.map(Geo.common_location_children(country.id), & &1.location.id) ==
+               [subdivision.id, site.id]
+    end
+  end
+
+  describe "common_locations_count/0" do
+    test "counts common locations, excluding personal ones and specials" do
+      country = insert(:country, name_en: "Canada")
+      insert(:subdivision1, name_en: "Manitoba", country: country)
       insert(:location, name_en: "My Patch", country: country, user_id: user_fixture().id)
       insert(:special, name_en: "Common Special")
 
-      [country_node] = Geo.common_location_tree()
-      assert country_node.location.id == country.id
-      assert country_node.children == []
+      assert Geo.common_locations_count() == 2
     end
   end
 
@@ -987,52 +1052,6 @@ defmodule Kjogvi.GeoTest do
       results = Geo.get_locations()
       loc = Enum.find(results, &(&1.id == location.id))
       assert loc.checklists_count == 2
-    end
-  end
-
-  describe "list_locations/1" do
-    test "returns scoped non-special locations ordered by name with checklist counts" do
-      scope = %Kjogvi.Scope{area: :admin}
-      country = shared_country()
-      insert(:location, name_en: "Zürich", location_type: "city", country: country)
-
-      with_checklists =
-        insert(:location, name_en: "Aarau", location_type: "city", country: country)
-
-      insert(:checklist, location: with_checklists)
-
-      result = Geo.list_locations(scope)
-
-      # The two cities (the shared country they hang off is also listed),
-      # ordered by name; the one with a checklist carries its count.
-      cities = Enum.reject(result, &(&1.id == country.id))
-      assert Enum.map(cities, & &1.name_en) == ["Aarau", "Zürich"]
-      assert hd(cities).checklists_count == 1
-    end
-
-    test "excludes special locations" do
-      scope = %Kjogvi.Scope{area: :admin}
-      insert(:special)
-      country = insert(:country)
-
-      ids = Geo.list_locations(scope) |> Enum.map(& &1.id)
-
-      assert ids == [country.id]
-    end
-
-    test "with a private scope, excludes another user's locations" do
-      user = user_fixture()
-      scope = %Kjogvi.Scope{current_user: user, area: :private}
-
-      own = insert(:location, location_type: "city", user_id: user.id)
-      common = insert(:location, location_type: "city")
-      other = insert(:location, location_type: "city", user_id: user_fixture().id)
-
-      ids = Geo.list_locations(scope) |> Enum.map(& &1.id)
-
-      assert own.id in ids
-      assert common.id in ids
-      refute other.id in ids
     end
   end
 

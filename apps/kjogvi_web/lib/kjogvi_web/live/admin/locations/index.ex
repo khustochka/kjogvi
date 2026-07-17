@@ -1,10 +1,10 @@
 defmodule KjogviWeb.Live.Admin.Locations.Index do
   @moduledoc """
-  Admin index of the common locations dataset: the entire shared scaffold as a
-  collapsible tree with text search, country rows carrying their eBird match
-  status badge, and status filter chips — the "which countries are ready"
-  dashboard. Unlike `Live.My.Locations.Index` it shows every common location —
-  including countries nothing hangs under yet — and no personal locations.
+  Admin index of the common locations dataset: the shared scaffold as a
+  lazily loaded collapsible tree with text search. Only the countries load up
+  front; a branch's children are fetched on first expand. Unlike
+  `Live.My.Locations.Index` it shows every common location — including
+  countries nothing hangs under yet — and no personal locations.
   """
 
   use KjogviWeb, :live_view
@@ -15,30 +15,23 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    tree = Geo.common_location_tree()
-
-    countries = for %{location: %{location_type: :country} = location} <- tree, do: location
-
     {:ok,
      socket
      |> assign(:page_title, "Common Locations")
-     |> assign(:location_tree, tree)
-     |> assign(:locations_count, count_nodes(tree))
-     |> assign(:countries_count, length(countries))
+     |> assign(:location_tree, Geo.common_location_roots())
+     |> assign(:locations_count, Geo.common_locations_count())
      |> assign(:search_term, "")
      |> assign(:search_results, [])}
   end
 
   @impl true
-  def handle_params(_params, _url, socket) do
-    filtered = socket.assigns.location_tree
+  def handle_event("expand", %{"id" => id_str}, socket) do
+    id = String.to_integer(id_str)
+    children = Geo.common_location_children(id)
 
-    {:noreply,
-     socket
-     |> assign(:filtered_tree, filtered)}
+    {:noreply, assign(socket, :location_tree, graft(socket.assigns.location_tree, id, children))}
   end
 
-  @impl true
   def handle_event("filter_locations", %{"value" => search_term}, socket) do
     search_term = String.trim(search_term)
 
@@ -62,8 +55,14 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
      |> assign(:search_results, [])}
   end
 
-  defp count_nodes(nodes) do
-    Enum.reduce(nodes, 0, fn node, acc -> acc + 1 + count_nodes(node.children) end)
+  # Sets the loaded children on node `id`, wherever it sits among the loaded
+  # branches.
+  defp graft(nodes, id, children) do
+    Enum.map(nodes, fn
+      %{location: %{id: ^id}} = node -> %{node | children: children}
+      %{children: nil} = node -> node
+      node -> %{node | children: graft(node.children, id, children)}
+    end)
   end
 
   @impl true
@@ -143,25 +142,22 @@ defmodule KjogviWeb.Live.Admin.Locations.Index do
         </div>
       </div>
 
-      <%!-- eBird status filter + location tree (hidden when searching) --%>
+      <%!-- Location tree (hidden when searching) --%>
       <div :if={@search_term == ""} class="space-y-6">
-        <ul :if={length(@filtered_tree) > 0} class="space-y-4">
+        <ul :if={length(@location_tree) > 0} class="space-y-4">
           <li
-            :for={node <- @filtered_tree}
+            :for={node <- @location_tree}
             class="border border-stone-200 rounded-lg overflow-hidden"
           >
             <.tree_node node={node} admin={true} />
           </li>
         </ul>
 
-        <div :if={length(@filtered_tree) == 0} class="text-center py-8 text-stone-500">
+        <div :if={length(@location_tree) == 0} class="text-center py-8 text-stone-500">
           <.icon name="hero-map-pin" class="w-12 h-12 mx-auto mb-4 text-stone-300" />
-          <p :if={@location_tree == []} class="text-lg font-medium">No common locations yet</p>
-          <p :if={@location_tree == []} class="text-sm">
+          <p class="text-lg font-medium">No common locations yet</p>
+          <p class="text-sm">
             Run the ISO 3166 import to seed the scaffold.
-          </p>
-          <p :if={@location_tree != []} class="text-lg font-medium">
-            No countries with this status
           </p>
         </div>
       </div>
