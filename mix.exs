@@ -74,6 +74,10 @@ defmodule Kjogvi.Umbrella.MixProject do
       "assets.deploy": ["do --app kjogvi_web assets.deploy"],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"],
       "ecto.setup": ["ecto.create --quiet", "ecto.migrate --quiet"],
+      # The root task doesn't pick up kjogvi's aliases, so mirror its dump here
+      # to keep structure.sql in sync in dev.
+      "ecto.migrate": ["ecto.migrate", &dump_dev_structure/1],
+      "ecto.rollback": ["ecto.rollback", &dump_dev_structure/1],
       lint: [
         "compile --warnings-as-errors",
         "run --no-start -e 'IO.puts(\"Checking formatting...\")'",
@@ -106,6 +110,10 @@ defmodule Kjogvi.Umbrella.MixProject do
         "xref graph --format cycles --label compile-connected --fail-above 0"
       ]
     ]
+  end
+
+  defp dump_dev_structure(_args) do
+    if Mix.env() == :dev, do: Mix.Task.run("ecto.dump")
   end
 
   defp dialyzer do
