@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hetJHZ3yHxxiyIY2uu3bOFrUetWu0Q8GJcHcuj2DfM7K8FN1kZ00l6zyyua1hPT
+\restrict LJq1XNfWjbBoKNogiZOMtmSvb3mSebfjFE8U04HzPs0QIxSubi9i3OXSj8iYKv0
 
 -- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
@@ -1465,7 +1465,7 @@ ALTER TABLE ONLY public.checklists
 --
 
 ALTER TABLE ONLY public.ebird_locations
-    ADD CONSTRAINT ebird_locations_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(id) ON DELETE SET NULL;
+    ADD CONSTRAINT ebird_locations_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(id) ON DELETE SET NULL DEFERRABLE;
 
 
 --
@@ -1600,7 +1600,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hetJHZ3yHxxiyIY2uu3bOFrUetWu0Q8GJcHcuj2DfM7K8FN1kZ00l6zyyua1hPT
+\unrestrict LJq1XNfWjbBoKNogiZOMtmSvb3mSebfjFE8U04HzPs0QIxSubi9i3OXSj8iYKv0
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1642,4 +1642,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260708000001);
 INSERT INTO public."schema_migrations" (version) VALUES (20260709000000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260713101232);
 INSERT INTO public."schema_migrations" (version) VALUES (20260713120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260716120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260716232748);
