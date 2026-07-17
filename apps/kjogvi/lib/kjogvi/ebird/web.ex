@@ -14,9 +14,6 @@ defmodule Kjogvi.Ebird.Web do
   @doc """
   The user's eBird login credentials from their preferences, or an error tuple
   when async eBird sync is not configured.
-
-  Resolve this in a DB-connected process (e.g. the LiveView) before spawning the
-  background preload task, so the task itself receives ready credentials.
   """
   @spec ebird_credentials(User.t()) ::
           {:ok, Client.Login.credentials()} | {:error, %{message: String.t()}}
@@ -44,8 +41,8 @@ defmodule Kjogvi.Ebird.Web do
     with {:ok, checklists} <- Client.preload_checklists(credentials, opts) do
       broadcast_progress(broadcast_key, %{message: "Finding new checklists..."})
 
-      # The "done" message is surfaced by the processor's :ok lifecycle event,
-      # which carries the result list, so no completion progress is broadcast here.
+      # The "done" message is surfaced by the job's :ok lifecycle event, so no
+      # completion progress is broadcast here.
       {:ok, Birding.find_new_checklists(user, checklists)}
     end
   end
