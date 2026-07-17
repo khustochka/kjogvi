@@ -15,7 +15,7 @@ Every request runs in an **area**, carried by `Kjogvi.Scope` (`apps/kjogvi/lib/k
 - `:community` — aggregate public data across all users (the default). Routes under `/community`.
 - `:user` — public data of a specific `subject_user`. Routes under `/users/:username`.
 - `:private` — all data (incl. private) of the logged-in `current_user`. Routes under `/my`.
-- `:admin` — administrative area. Routes under `/admin` (taxonomy, dashboard, exclusive tasks).
+- `:admin` — administrative area. Routes under `/admin` (taxonomy, dashboard, Oban).
 
 The browser pipeline calls `fetch_current_scope`; each scoped route group sets its area via `put_area_*` plugs and `mount_area_*` on_mounts (`KjogviWeb.UserAuth`). The scope struct holds `current_user`, `subject_user`, and `area`.
 

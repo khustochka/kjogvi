@@ -181,8 +181,6 @@ defmodule KjogviWeb.Router do
       live "/ebird/:country_code", Live.Admin.Ebird.Show, :show
 
       live "/imports/locations", Live.Admin.Imports.Locations.Index, :index
-
-      live "/exclusive-tasks", Live.Admin.ExclusiveTasks.Index, :index
     end
 
     ornitho_web "/taxonomy",

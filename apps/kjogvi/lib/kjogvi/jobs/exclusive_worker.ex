@@ -3,8 +3,7 @@ defmodule Kjogvi.Jobs.ExclusiveWorker do
   `use` this instead of `Oban.Worker` for background tasks that must hold an
   exclusive slot: at most one run per worker + identifying args at a time,
   observable through `Kjogvi.Jobs.status/2` and the `Kjogvi.Jobs.Bridge`
-  lifecycle broadcasts. Reproduces the semantics of
-  `Kjogvi.Server.ExclusiveTaskProcessor`, which it replaces.
+  lifecycle broadcasts.
 
   Baked-in Oban config:
 
