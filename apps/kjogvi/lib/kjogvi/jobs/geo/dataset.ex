@@ -1,7 +1,7 @@
-defmodule Kjogvi.Jobs.GeoDataset do
+defmodule Kjogvi.Jobs.Geo.Dataset do
   @moduledoc """
   Shared `"dataset"` arg handling for the geo dataset jobs
-  (`Kjogvi.Jobs.GeoRestore`, `Kjogvi.Jobs.GeoDump`).
+  (`Kjogvi.Jobs.Geo.Restore`, `Kjogvi.Jobs.Geo.Dump`).
   """
 
   @key_parts %{"common_locations" => :common, "ebird_locations" => :ebird}

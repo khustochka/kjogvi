@@ -7,6 +7,6 @@ defmodule Kjogvi.Telemetry do
 
     Kjogvi.Telemetry.LegacyBroadcast.setup()
 
-    Kjogvi.Jobs.Bridge.setup()
+    Kjogvi.Jobs.Runtime.Bridge.setup()
   end
 end

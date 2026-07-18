@@ -4,12 +4,12 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   restore from and dump to the configured `Kjogvi.Datasets` snapshot storage,
   plus the ISO 3166 bootstrap import card.
 
-  Restore and dump run as exclusive Oban jobs (`Kjogvi.Jobs.GeoRestore` /
-  `Kjogvi.Jobs.GeoDump`, task keys `{:geo_restore, :common | :ebird}` /
+  Restore and dump run as exclusive Oban jobs (`Kjogvi.Jobs.Geo.Restore` /
+  `Kjogvi.Jobs.Geo.Dump`, task keys `{:geo_restore, :common | :ebird}` /
   `{:geo_dump, :common | :ebird}`), so a run cannot start twice and its
   status is shared across sessions: the page subscribes to every key's PubSub
   topic, seeds from `Kjogvi.Jobs.status/2` on mount, and follows the
-  lifecycle events broadcast by `Kjogvi.Jobs.Bridge` live.
+  lifecycle events broadcast by `Kjogvi.Jobs.Runtime.Bridge` live.
   """
 
   use KjogviWeb, :live_view
@@ -24,7 +24,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   alias Kjogvi.Util.PubSubTopic
   alias KjogviWeb.Live.Admin.Imports
 
-  @task_workers %{restore: Jobs.GeoRestore, dump: Jobs.GeoDump}
+  @task_workers %{restore: Jobs.Geo.Restore, dump: Jobs.Geo.Dump}
 
   @task_keys %{
     restore: %{
@@ -70,7 +70,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
   @impl true
   def handle_event("start_restore", %{"dataset" => dataset}, socket) do
     dataset = parse_dataset(dataset)
-    {:ok, _job} = Oban.insert(Jobs.GeoRestore.new(%{dataset: dataset}))
+    {:ok, _job} = Oban.insert(Jobs.Geo.Restore.new(%{dataset: dataset}))
 
     {:noreply,
      update(socket, :restore_results, &Map.put(&1, dataset, task_status(:restore, dataset)))}
@@ -78,7 +78,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Index do
 
   def handle_event("start_dump", %{"dataset" => dataset}, socket) do
     dataset = parse_dataset(dataset)
-    {:ok, _job} = Oban.insert(Jobs.GeoDump.new(%{dataset: dataset}))
+    {:ok, _job} = Oban.insert(Jobs.Geo.Dump.new(%{dataset: dataset}))
 
     {:noreply, update(socket, :dump_results, &Map.put(&1, dataset, task_status(:dump, dataset)))}
   end

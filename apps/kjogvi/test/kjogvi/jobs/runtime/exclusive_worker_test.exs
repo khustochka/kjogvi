@@ -1,4 +1,4 @@
-defmodule Kjogvi.Jobs.ExclusiveWorkerTest do
+defmodule Kjogvi.Jobs.Runtime.ExclusiveWorkerTest do
   use Kjogvi.DataCase, async: true
 
   alias Kjogvi.TestJobs.SingletonWorker

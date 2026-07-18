@@ -2,9 +2,10 @@ defmodule Kjogvi.Jobs do
   @moduledoc """
   Observable exclusive background jobs, on top of Oban.
 
-  Workers built with `Kjogvi.Jobs.ExclusiveWorker` run at most one job per
-  slot (worker + identifying args) at a time, and `Kjogvi.Jobs.Bridge`
-  rebroadcasts their Oban telemetry as PubSub lifecycle events. This context
+  Workers built with `Kjogvi.Jobs.Runtime.ExclusiveWorker` run at most one job
+  per slot (worker + identifying args) at a time, and
+  `Kjogvi.Jobs.Runtime.Bridge` rebroadcasts their Oban telemetry as PubSub
+  lifecycle events. This context
   answers "what is the slot's current status" from the `oban_jobs` table, so
   a freshly mounted LiveView can seed itself before following the live
   broadcasts, and carries mid-run progress reports (`progress/2`).
@@ -25,7 +26,7 @@ defmodule Kjogvi.Jobs do
   """
   def status(worker, args \\ %{}) do
     worker
-    |> Kjogvi.Jobs.Query.latest_for_slot(args)
+    |> Kjogvi.Jobs.Runtime.Query.latest_for_slot(args)
     |> Repo.one(prefix: Oban.config().prefix)
     |> to_status(worker)
   end
@@ -44,7 +45,7 @@ defmodule Kjogvi.Jobs do
     {:ok, worker} = Oban.Worker.from_string(job.worker)
 
     job.id
-    |> Kjogvi.Jobs.Query.set_progress(progress)
+    |> Kjogvi.Jobs.Runtime.Query.set_progress(progress)
     |> Repo.update_all([], prefix: Oban.config().prefix)
 
     progress(worker.pubsub_key(job), progress)

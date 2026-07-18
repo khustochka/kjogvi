@@ -3,9 +3,9 @@ defmodule Kjogvi.TestJobs.SlotWorker do
   Exclusive test worker with a per-user slot, steerable through its args.
   """
 
-  use Kjogvi.Jobs.ExclusiveWorker, unique_keys: [:user_id]
+  use Kjogvi.Jobs.Runtime.ExclusiveWorker, unique_keys: [:user_id]
 
-  @impl Kjogvi.Jobs.ExclusiveWorker
+  @impl Kjogvi.Jobs.Runtime.ExclusiveWorker
   def pubsub_key(%Oban.Job{args: %{"user_id" => user_id}}), do: {:test_slot, user_id}
 
   @impl Oban.Worker
@@ -21,12 +21,12 @@ defmodule Kjogvi.TestJobs.SingletonWorker do
   queue and start message.
   """
 
-  use Kjogvi.Jobs.ExclusiveWorker, queue: :geo
+  use Kjogvi.Jobs.Runtime.ExclusiveWorker, queue: :geo
 
-  @impl Kjogvi.Jobs.ExclusiveWorker
+  @impl Kjogvi.Jobs.Runtime.ExclusiveWorker
   def pubsub_key(_job), do: {:test_singleton, :common}
 
-  @impl Kjogvi.Jobs.ExclusiveWorker
+  @impl Kjogvi.Jobs.Runtime.ExclusiveWorker
   def start_message(_job), do: "Testing the singleton..."
 
   @impl Oban.Worker

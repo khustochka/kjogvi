@@ -4,14 +4,14 @@ defmodule Kjogvi.Jobs.LegacyImport do
   run per user at a time.
   """
 
-  use Kjogvi.Jobs.ExclusiveWorker, unique_keys: [:user_id]
+  use Kjogvi.Jobs.Runtime.ExclusiveWorker, unique_keys: [:user_id]
 
   alias Kjogvi.Accounts
 
-  @impl Kjogvi.Jobs.ExclusiveWorker
+  @impl Kjogvi.Jobs.Runtime.ExclusiveWorker
   def pubsub_key(%Oban.Job{args: %{"user_id" => user_id}}), do: {:legacy_import, user_id}
 
-  @impl Kjogvi.Jobs.ExclusiveWorker
+  @impl Kjogvi.Jobs.Runtime.ExclusiveWorker
   def start_message(_job), do: "Legacy import in progress..."
 
   # Passing the job itself as the broadcast key makes the progress reports

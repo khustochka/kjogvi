@@ -1,9 +1,9 @@
 # Not async: the assertions on the shared global lifecycle topic (and the
 # refute_receive) would race with job drains from concurrently running tests.
-defmodule Kjogvi.Jobs.BridgeTest do
+defmodule Kjogvi.Jobs.Runtime.BridgeTest do
   use Kjogvi.DataCase, async: false
 
-  alias Kjogvi.Jobs.Bridge
+  alias Kjogvi.Jobs.Runtime.Bridge
   alias Kjogvi.TestJobs.PlainWorker
   alias Kjogvi.TestJobs.SingletonWorker
   alias Kjogvi.TestJobs.SlotWorker

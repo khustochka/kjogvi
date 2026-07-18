@@ -60,7 +60,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     )
   end
 
-  # When a job finishes, Kjogvi.Jobs.Bridge broadcasts a lifecycle event
+  # When a job finishes, Kjogvi.Jobs.Runtime.Bridge broadcasts a lifecycle event
   # carrying the outcome as an AsyncResult. The eBird component reacts to `:ok`
   # by refreshing its display from the store (which the job itself populated)
   # and surfacing a count flash.

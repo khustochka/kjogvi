@@ -1,9 +1,9 @@
-defmodule Kjogvi.Jobs.ExclusiveWorker do
+defmodule Kjogvi.Jobs.Runtime.ExclusiveWorker do
   @moduledoc """
   `use` this instead of `Oban.Worker` for background tasks that must hold an
   exclusive slot: at most one run per worker + identifying args at a time,
-  observable through `Kjogvi.Jobs.status/2` and the `Kjogvi.Jobs.Bridge`
-  lifecycle broadcasts.
+  observable through `Kjogvi.Jobs.status/2` and the
+  `Kjogvi.Jobs.Runtime.Bridge` lifecycle broadcasts.
 
   Baked-in Oban config:
 
@@ -24,9 +24,9 @@ defmodule Kjogvi.Jobs.ExclusiveWorker do
   ## Example
 
       defmodule Kjogvi.Jobs.LegacyImport do
-        use Kjogvi.Jobs.ExclusiveWorker, unique_keys: [:user_id]
+        use Kjogvi.Jobs.Runtime.ExclusiveWorker, unique_keys: [:user_id]
 
-        @impl Kjogvi.Jobs.ExclusiveWorker
+        @impl Kjogvi.Jobs.Runtime.ExclusiveWorker
         def pubsub_key(%Oban.Job{args: %{"user_id" => user_id}}) do
           {:legacy_import, user_id}
         end
@@ -67,12 +67,12 @@ defmodule Kjogvi.Jobs.ExclusiveWorker do
     quote do
       use Oban.Worker, unquote(opts)
 
-      @behaviour Kjogvi.Jobs.ExclusiveWorker
+      @behaviour Kjogvi.Jobs.Runtime.ExclusiveWorker
 
       @impl Oban.Worker
       def timeout(_job), do: :timer.minutes(5)
 
-      @impl Kjogvi.Jobs.ExclusiveWorker
+      @impl Kjogvi.Jobs.Runtime.ExclusiveWorker
       def start_message(_job), do: "In progress..."
 
       defoverridable timeout: 1, start_message: 1

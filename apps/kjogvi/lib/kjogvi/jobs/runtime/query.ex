@@ -1,4 +1,4 @@
-defmodule Kjogvi.Jobs.Query do
+defmodule Kjogvi.Jobs.Runtime.Query do
   @moduledoc """
   Queries over `oban_jobs` rows (`Oban.Job`).
 

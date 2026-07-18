@@ -1,9 +1,10 @@
-defmodule Kjogvi.Jobs.Bridge do
+defmodule Kjogvi.Jobs.Runtime.Bridge do
   @moduledoc """
   Bridges Oban job telemetry to the PubSub lifecycle broadcasts the task
   LiveViews follow.
 
-  For every job whose worker is a `Kjogvi.Jobs.ExclusiveWorker` (implements
+  For every job whose worker is a `Kjogvi.Jobs.Runtime.ExclusiveWorker`
+  (implements
   `pubsub_key/1`), the `[:oban, :job, :start | :stop | :exception]` telemetry
   events are rebroadcast as
 
