@@ -15,7 +15,7 @@ Every request runs in an **area**, carried by `Kjogvi.Scope` (`apps/kjogvi/lib/k
 - `:community` — aggregate public data across all users (the default). Routes under `/community`.
 - `:user` — public data of a specific `subject_user`. Routes under `/users/:username`.
 - `:private` — all data (incl. private) of the logged-in `current_user`. Routes under `/my`.
-- `:admin` — administrative area. Routes under `/admin` (taxonomy, dashboard, exclusive tasks).
+- `:admin` — administrative area. Routes under `/admin` (taxonomy, dashboard, Oban).
 
 The browser pipeline calls `fetch_current_scope`; each scoped route group sets its area via `put_area_*` plugs and `mount_area_*` on_mounts (`KjogviWeb.UserAuth`). The scope struct holds `current_user`, `subject_user`, and `area`.
 
@@ -75,6 +75,8 @@ Heroicons via the `<.icon>` component (e.g. `name="hero-star-solid"`); the bicyc
 
 ### Database / Ecto
 One repo, `Kjogvi.Repo`. Taxonomy tables live in the same database under the `ornithologue` Postgres schema: `config :ornithologue, repo: Kjogvi.Repo, prefix: "ornithologue"` — the [Ornithologue](./apps/ornithologue/) library applies the prefix to all its operations via its `Ornitho.Repo` facade. Never query the taxonomy tables through `Kjogvi.Repo` directly; go through the Ornitho API (`Ornitho.Finder.*`, `Ornitho.Ops.*`), which handles the prefix. The `ornithologue` schema is installed by a regular main-repo migration calling `Ornitho.Migrations.up/1`.
+
+**Migrations**: never hand-write a migration filename with a made-up timestamp (e.g. a round `...120000`). Generate it with `mix ecto.gen.migration <name>` (run inside `apps/kjogvi`), or if creating the file manually, take the version from the real current UTC time: `date -u +%Y%m%d%H%M%S`.
 
 ### Queries vs. context logic
 Keep query-building out of context modules. Each schema has a dedicated `<Schema>.Query` submodule (e.g. [`Kjogvi.Geo.Location.Query`](./apps/kjogvi/lib/kjogvi/geo/location/query.ex), `Birding.Checklist.Query`, `Birding.Lifelist.Query`) that owns `import Ecto.Query` and exposes composable functions returning queries. Contexts call those functions and run the result; prefer **not** to `import Ecto.Query` in a context. Some older contexts still import it directly — that's the pattern being migrated away from, so new/changed code should add or extend a `Query` module instead.

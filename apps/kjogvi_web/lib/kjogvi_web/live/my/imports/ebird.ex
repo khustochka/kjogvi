@@ -1,13 +1,18 @@
 defmodule KjogviWeb.Live.My.Imports.Ebird do
   @moduledoc """
   eBird preload live component.
+
+  The preload runs as an exclusive Oban job (`Kjogvi.Jobs.EbirdPreload`, task
+  key `{:ebird_preload, user_id}`): the component seeds from
+  `Kjogvi.Jobs.status/2` and follows the progress/lifecycle events broadcast
+  on the key's PubSub topic.
   """
 
   use KjogviWeb, :live_component
 
+  alias Kjogvi.Jobs
   alias Kjogvi.Util.AsyncResult
   alias Kjogvi.Util.PubSubTopic
-  alias Kjogvi.Server.ExclusiveTaskProcessor
 
   alias Kjogvi.Ebird
   alias Kjogvi.Store
@@ -27,9 +32,9 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     {:halt, socket}
   end
 
-  # Lifecycle events (:start / :ok / :error) carry the AsyncResult exactly as the
-  # processor stores it, so it can be assigned as-is. The tagged event lets the
-  # component refresh its display once the task succeeds.
+  # Lifecycle events (:start / :ok / :error) carry the AsyncResult ready to be
+  # assigned as-is. The tagged event lets the component refresh its display
+  # once the job succeeds.
   defp handle_progress({:lifecycle, event, {:ebird_preload, _user_id}, async_result}, socket) do
     send_update(__MODULE__,
       id: @component_id,
@@ -52,7 +57,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     }
   end
 
-  # On success the task has already persisted the checklists to the store and its
+  # On success the job has already persisted the checklists to the store and its
   # result carries the completion message. Refresh the displayed preload data
   # from the store and surface that message in the flash.
   def update(%{lifecycle: :ok, async_result: async_result}, socket) do
@@ -72,24 +77,23 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
   end
 
   def handle_event("start_preload", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(:ebird_checklists, [])
-     |> start_ebird_preload()}
+    {:noreply, start_ebird_preload(socket)}
   end
 
+  # The job resolves its own credentials; checking them here too surfaces a
+  # missing eBird configuration immediately instead of enqueuing a job doomed
+  # to fail in the background. Inserting while a run is in flight returns the
+  # existing job instead of enqueuing a second one, so re-reading the status
+  # afterwards keeps the button state honest either way.
   defp start_ebird_preload(%{assigns: %{user: user}} = socket) do
-    # Resolve eBird credentials here (in the DB-connected LiveView) so the
-    # background task receives ready credentials and, when unconfigured, we
-    # surface the error immediately instead of spawning a task.
     case Ebird.Web.ebird_credentials(user) do
-      {:ok, credentials} ->
+      {:ok, _credentials} ->
         Store.ChecklistPreload.reset_preloads(user)
-        start_ebird_preload_task(user, credentials)
+        {:ok, _job} = Oban.insert(Jobs.EbirdPreload.new(%{user_id: user.id}))
 
         socket
         |> clear_flash()
-        |> assign(:async_result, AsyncResult.loading(%{message: "eBird preload in progress..."}))
+        |> assign(:async_result, Jobs.status(Jobs.EbirdPreload, %{user_id: user.id}))
         |> derive_flash()
         |> assign_preloads_data()
 
@@ -99,27 +103,6 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
         |> assign(:async_result, AsyncResult.failed(AsyncResult.loading(%{}), error))
         |> derive_flash()
     end
-  end
-
-  defp start_ebird_preload_task(user, credentials) do
-    Kjogvi.Server.ExclusiveTaskProcessor.start_task(
-      {:ebird_preload, user.id},
-      fn key ->
-        # Persist the checklists inside the task itself, so they are stored even
-        # if this LiveView is closed before the task finishes (the :ok lifecycle
-        # callback below only runs while a subscriber is alive). The store is the
-        # source of truth for the list, so the result only needs to carry the
-        # completion message that subscribers (this component, the admin
-        # dashboard) display.
-        with {:ok, checklists} <-
-               Ebird.Web.preload_new_checklists_for_user(user, credentials, broadcast_key: key) do
-          Store.ChecklistPreload.store_checklists(user, checklists)
-          {:ok, %{message: "eBird preload done: #{length(checklists)} new checklists."}}
-        end
-      end,
-      message: "eBird preload in progress...",
-      timeout: 2 * 60 * 1000
-    )
   end
 
   def render(assigns) do
@@ -182,7 +165,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     socket
     |> assign_new(:async_result, fn ->
       Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
-      ExclusiveTaskProcessor.get_status(key)
+      Jobs.status(Jobs.EbirdPreload, %{user_id: user.id})
     end)
     |> derive_flash()
   end

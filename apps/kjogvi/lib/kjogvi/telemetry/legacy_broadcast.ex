@@ -84,15 +84,13 @@ defmodule Kjogvi.Telemetry.LegacyBroadcast do
     )
   end
 
-  defp broadcast(nil, _message) do
+  defp broadcast(nil, _data) do
     :ok
   end
 
+  # The key is an %Oban.Job{} when the import runs as a job — the report is
+  # then also recorded on the job row — or a bare task key otherwise.
   defp broadcast(broadcast_key, data) do
-    Phoenix.PubSub.broadcast(
-      Kjogvi.PubSub,
-      Kjogvi.Util.PubSubTopic.for_key(broadcast_key),
-      {:progress, broadcast_key, data}
-    )
+    Kjogvi.Jobs.progress(broadcast_key, data)
   end
 end

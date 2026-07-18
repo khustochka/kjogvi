@@ -1,14 +1,19 @@
 defmodule KjogviWeb.Live.My.Imports.Legacy do
   @moduledoc """
   Legacy import live component.
+
+  The import runs as an exclusive Oban job (`Kjogvi.Jobs.LegacyImport`, task
+  key `{:legacy_import, user_id}`): the component seeds from
+  `Kjogvi.Jobs.status/2` and follows the progress/lifecycle events broadcast
+  on the key's PubSub topic.
   """
 
   alias Kjogvi.Accounts
   use KjogviWeb, :live_component
 
+  alias Kjogvi.Jobs
   alias Kjogvi.Util.AsyncResult
   alias Kjogvi.Util.PubSubTopic
-  alias Kjogvi.Server.ExclusiveTaskProcessor
 
   @component_id "legacy-import"
 
@@ -30,8 +35,8 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     {:halt, socket}
   end
 
-  # Lifecycle events (:start / :ok / :error) carry the AsyncResult exactly as the
-  # processor stores it, so it can be assigned as-is.
+  # Lifecycle events (:start / :ok / :error) carry the AsyncResult ready to
+  # be assigned as-is.
   defp handle_progress({:lifecycle, _event, {:legacy_import, _user_id}, async_result}, socket) do
     send_update(__MODULE__,
       id: @component_id,
@@ -66,7 +71,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     socket
     |> assign_new(:async_result, fn ->
       Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
-      ExclusiveTaskProcessor.get_status(key)
+      Jobs.status(Jobs.LegacyImport, %{user_id: user.id})
     end)
     |> derive_flash()
   end
@@ -77,19 +82,15 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
      |> start_import()}
   end
 
+  # Inserting while a run is in flight returns the existing job instead of
+  # enqueuing a second one, so re-reading the status afterwards keeps the
+  # button state honest either way.
   defp start_import(%{assigns: %{user: user}} = socket) do
-    Kjogvi.Server.ExclusiveTaskProcessor.start_task(
-      {:legacy_import, user.id},
-      fn key ->
-        Kjogvi.Legacy.Import.run(user, broadcast_key: key)
-      end,
-      message: "Legacy import in progress...",
-      timeout: 5 * 60 * 1000
-    )
+    {:ok, _job} = Oban.insert(Jobs.LegacyImport.new(%{user_id: user.id}))
 
     socket
     |> clear_flash()
-    |> assign(:async_result, AsyncResult.loading(%{message: "Legacy import in progress..."}))
+    |> assign(:async_result, Jobs.status(Jobs.LegacyImport, %{user_id: user.id}))
     |> derive_flash()
   end
 

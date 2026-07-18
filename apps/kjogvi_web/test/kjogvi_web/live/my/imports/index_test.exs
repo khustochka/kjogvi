@@ -1,8 +1,11 @@
 defmodule KjogviWeb.Live.My.Imports.IndexTest do
   use KjogviWeb.ConnCase, async: true
 
+  @moduletag :capture_log
+
   import Phoenix.LiveViewTest
 
+  alias Kjogvi.Jobs
   alias Kjogvi.Store
   alias Kjogvi.Util.AsyncResult
   alias Kjogvi.Util.PubSubTopic
@@ -44,7 +47,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     end
   end
 
-  # Both imports use the ExclusiveTaskProcessor: a running task broadcasts
+  # Both imports run as exclusive Oban jobs: a running job broadcasts
   # `{:progress, key, %{message: ...}}` on the key's PubSub topic, and the
   # matching component (subscribed on mount) renders the latest status as a
   # loading info flash. The key tags the broadcast so it reaches the right
@@ -57,10 +60,10 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     )
   end
 
-  # When a task finishes, the ExclusiveTaskProcessor broadcasts a lifecycle event
-  # carrying the AsyncResult as stored. The eBird component reacts to `:ok` by
-  # refreshing its display from the store (which the task itself populated) and
-  # surfacing a count flash.
+  # When a job finishes, Kjogvi.Jobs.Runtime.Bridge broadcasts a lifecycle event
+  # carrying the outcome as an AsyncResult. The eBird component reacts to `:ok`
+  # by refreshing its display from the store (which the job itself populated)
+  # and surfacing a count flash.
   defp broadcast_lifecycle(key, event, async_result) do
     Phoenix.PubSub.broadcast(
       Kjogvi.PubSub,
@@ -104,6 +107,119 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       broadcast_progress({:legacy_import, user.id}, %{message: "Importing locations... 42"})
 
       refute flush_render(lv) =~ "Importing locations... 42"
+    end
+  end
+
+  describe "starting the legacy import" do
+    setup %{conn: conn} do
+      user = Kjogvi.AccountsFixtures.admin_fixture()
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      %{lv: lv, user: user}
+    end
+
+    test "enqueues the job and disables the button", %{lv: lv, user: user} do
+      lv |> element("#legacy-import-form") |> render_submit()
+
+      assert has_element?(lv, "#legacy-import-form button[disabled]")
+      assert render(lv) =~ "Legacy import in progress..."
+
+      assert %AsyncResult{loading: %{message: _}} =
+               Jobs.status(Jobs.LegacyImport, %{user_id: user.id})
+    end
+
+    # The admin fixture has no default taxonomy, so the run fails; the error
+    # travels job -> bridge -> PubSub -> component flash.
+    test "a failed run surfaces the error", %{lv: lv} do
+      lv |> element("#legacy-import-form") |> render_submit()
+
+      assert %{discard: 1} = Oban.drain_queue(queue: :imports)
+
+      assert flush_render(lv) =~
+               "Legacy import failed: Legacy import requires a default taxonomy."
+    end
+
+    test "a second start while a run is pending does not enqueue another job", %{lv: lv} do
+      lv |> element("#legacy-import-form") |> render_submit()
+      # The button is disabled once a run is pending; fire the submit again
+      # directly to simulate a second session racing it.
+      lv |> element("#legacy-import-form") |> render_submit()
+
+      assert %{discard: 1} = Oban.drain_queue(queue: :imports)
+      # Sync with the LiveView so it finishes handling the completion
+      # broadcast before the test process exits and kills it mid-query.
+      render(lv)
+    end
+
+    test "a pending run is visible to a freshly mounted page", %{lv: lv, user: user} do
+      lv |> element("#legacy-import-form") |> render_submit()
+
+      {:ok, lv2, _html} =
+        build_conn()
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      assert has_element?(lv2, "#legacy-import-form button[disabled]")
+      assert render(lv2) =~ "Legacy import in progress..."
+    end
+
+    # Progress recorded on the job row (Kjogvi.Jobs.progress/2) seeds a fresh
+    # mount, so a mid-run page load shows where the run is, not just that it
+    # is in progress.
+    test "a freshly mounted page shows the run's recorded progress", %{user: user} do
+      # Read the job back so it has the JSON string-keyed args of the real flow.
+      job = Oban.insert!(Jobs.LegacyImport.new(%{user_id: user.id}))
+      job = Kjogvi.Repo.get!(Oban.Job, job.id, prefix: Oban.config().prefix)
+      Jobs.progress(job, %{message: "Importing observations... 4200"})
+
+      {:ok, lv2, _html} =
+        build_conn()
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      assert has_element?(lv2, "#legacy-import-form button[disabled]")
+      assert render(lv2) =~ "Importing observations... 4200"
+    end
+  end
+
+  describe "starting the eBird preload" do
+    setup %{conn: conn} do
+      user = Kjogvi.AccountsFixtures.user_fixture()
+
+      {:ok, _user} =
+        Kjogvi.Accounts.update_user_preferences(user, %{
+          preferences: %{ebird: %{username: "birder", password: "secret"}}
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      %{lv: lv, user: user}
+    end
+
+    # The run itself would hit the eBird site, so it is never drained here —
+    # these tests stop at the enqueued job.
+    test "enqueues the job, resets stored preloads, and disables the button",
+         %{lv: lv, user: user} do
+      Store.ChecklistPreload.store_checklists(user, [
+        %{ebird_id: "S1", date: ~D[2026-06-01], time: ~T[07:30:00], location: "Central Park"}
+      ])
+
+      lv |> element("#ebird-preload-form") |> render_submit()
+
+      assert has_element?(lv, "#ebird-preload-form button[disabled]")
+      assert render(lv) =~ "eBird preload in progress..."
+
+      assert %AsyncResult{loading: %{message: _}} =
+               Jobs.status(Jobs.EbirdPreload, %{user_id: user.id})
+
+      assert Store.ChecklistPreload.get_preloads(user).checklists == []
     end
   end
 
@@ -156,9 +272,9 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       assert html =~ "Prospect Park"
     end
 
-    # Failure path: a user without eBird credentials never starts the background
-    # task — the error is surfaced immediately and nothing is stored.
-    test "on missing eBird configuration nothing is stored and an error flash is shown",
+    # Failure path: a user without eBird credentials never enqueues the job —
+    # the error is surfaced immediately and nothing is stored.
+    test "on missing eBird configuration nothing is enqueued or stored and an error flash is shown",
          %{conn: conn} do
       # A bare fixture has no eBird username/password configured.
       user = Kjogvi.AccountsFixtures.user_fixture()
@@ -175,6 +291,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       assert html =~ "eBird preload failed: User does not have eBird configuration."
       assert Store.ChecklistPreload.get_preloads(user).checklists == []
+      assert Jobs.status(Jobs.EbirdPreload, %{user_id: user.id}) == %AsyncResult{}
     end
   end
 end

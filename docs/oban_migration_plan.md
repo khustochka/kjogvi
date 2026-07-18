@@ -78,7 +78,8 @@ grouping — the very things we're adopting Oban for.)
 - **`max_attempts: 1` — no retries** (see below);
 - default `queue:` and a `unique:` spec keyed on the args that identify the
   slot (`[:user_id]` for per-user tasks; the singleton tasks are unique on an
-  empty/constant key), across states `[:available, :scheduled, :executing]`;
+  empty/constant key), across the `:incomplete` state group (Oban warns when
+  incomplete states are listed only partially);
 - a `timeout/1` default (overridable);
 - a `progress/2` helper (Stage 5) and a way to derive the **PubSub key** from a
   job, so the bridge and workers agree on topics.
@@ -89,8 +90,8 @@ These are one-shot exclusive tasks (imports, geo restore/dump). A silent Oban
 retry would **double-run** the work, so the wrapper hard-codes
 `max_attempts: 1`: a failed or crashed job goes straight to `discarded`
 (→ `:error` lifecycle), never `retryable`. This matches today's single-shot
-`ExclusiveTaskProcessor` behaviour. Consequently `retryable` is **omitted**
-from the `unique` states — there is no retry state to guard against. (If a
+`ExclusiveTaskProcessor` behaviour. The `unique` states use the `:incomplete`
+group; `retryable` is in it but unreachable with `max_attempts: 1`. (If a
 future task ever wants retries, it can override `max_attempts` in its own
 module rather than changing the shared default.)
 

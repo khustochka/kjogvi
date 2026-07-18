@@ -139,6 +139,16 @@ config :ornithologue, Ornitho.Importer,
 
 config :ornithologue, Ornitho.StreamImporter, adapter: Ornitho.StreamImporter.LocalAdapter
 
+# OBAN
+
+# Jobs live in the `oban` Postgres schema, installed by a main-repo migration
+# calling `Oban.Migration.up/1` with the same prefix.
+config :kjogvi, Oban,
+  repo: Kjogvi.Repo,
+  prefix: "oban",
+  queues: [imports: 2, geo: 1],
+  plugins: [Oban.Plugins.Pruner]
+
 # KJOGVI
 
 config :kjogvi, :cache, enabled: false
