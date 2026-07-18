@@ -1,6 +1,6 @@
 services:
   database:
-    image: postgres:18.1-trixie
+    image: postgres:18.3-trixie
     environment:
       POSTGRES_USER: kjogvi
       POSTGRES_PASSWORD: kjogvi
