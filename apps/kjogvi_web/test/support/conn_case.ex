@@ -24,6 +24,10 @@ defmodule KjogviWeb.ConnCase do
 
       use KjogviWeb, :verified_routes
 
+      # Jobs live in the `oban` Postgres schema; the prefix has to match or the
+      # assertions silently query the wrong table.
+      use Oban.Testing, repo: Kjogvi.Repo, prefix: "oban"
+
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest

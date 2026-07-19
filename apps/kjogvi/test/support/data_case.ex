@@ -18,6 +18,10 @@ defmodule Kjogvi.DataCase do
 
   using do
     quote do
+      # Jobs live in the `oban` Postgres schema; the prefix has to match or the
+      # assertions silently query the wrong table.
+      use Oban.Testing, repo: Kjogvi.Repo, prefix: "oban"
+
       alias Kjogvi.Repo
 
       import Ecto
