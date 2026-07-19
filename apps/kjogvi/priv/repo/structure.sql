@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict p2fYJSZIbhBtzJwNQ4N5D4C37IZIMXBGcxhaxaNMpdyykYopFFwbBLquJomvYDa
+\restrict Canfs3tk5lDphDhlw4V0QUM8VXRcZZWflWu3KAmrI4wqX1rPmeVVzbLyNUwltuj
 
 -- Dumped from database version 18.3 (Debian 18.3-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -282,6 +282,38 @@ CREATE SEQUENCE ornithologue.taxa_id_seq
 --
 
 ALTER SEQUENCE ornithologue.taxa_id_seq OWNED BY ornithologue.taxa.id;
+
+
+--
+-- Name: admin_site_settings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.admin_site_settings (
+    id bigint NOT NULL,
+    key character varying(255) NOT NULL,
+    value jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: admin_site_settings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.admin_site_settings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: admin_site_settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.admin_site_settings_id_seq OWNED BY public.admin_site_settings.id;
 
 
 --
@@ -814,6 +846,13 @@ ALTER TABLE ONLY ornithologue.taxa ALTER COLUMN id SET DEFAULT nextval('ornithol
 
 
 --
+-- Name: admin_site_settings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_site_settings ALTER COLUMN id SET DEFAULT nextval('public.admin_site_settings_id_seq'::regclass);
+
+
+--
 -- Name: checklists id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -950,6 +989,14 @@ ALTER TABLE ONLY ornithologue.ornitho_migrations
 
 ALTER TABLE ONLY ornithologue.taxa
     ADD CONSTRAINT taxa_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: admin_site_settings admin_site_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_site_settings
+    ADD CONSTRAINT admin_site_settings_pkey PRIMARY KEY (id);
 
 
 --
@@ -1153,6 +1200,13 @@ CREATE INDEX taxa_codes_index ON ornithologue.taxa USING gin (codes);
 --
 
 CREATE INDEX taxa_parent_species_id_index ON ornithologue.taxa USING btree (parent_species_id) WHERE (parent_species_id IS NOT NULL);
+
+
+--
+-- Name: admin_site_settings_key_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX admin_site_settings_key_index ON public.admin_site_settings USING btree (key);
 
 
 --
@@ -1600,7 +1654,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict p2fYJSZIbhBtzJwNQ4N5D4C37IZIMXBGcxhaxaNMpdyykYopFFwbBLquJomvYDa
+\unrestrict Canfs3tk5lDphDhlw4V0QUM8VXRcZZWflWu3KAmrI4wqX1rPmeVVzbLyNUwltuj
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1644,3 +1698,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260713101232);
 INSERT INTO public."schema_migrations" (version) VALUES (20260713120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260716120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260716232748);
+INSERT INTO public."schema_migrations" (version) VALUES (20260719043002);

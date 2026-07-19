@@ -94,7 +94,9 @@ defmodule KjogviWeb.Live.Admin.Imports.Index do
           Seeds a fresh installation in one run, in order:
         </p>
         <ol class="text-sm text-slate-700 mb-4 space-y-1 list-decimal list-inside">
-          <li>Import the <strong>{@importer.name()}</strong> taxonomy (skipped if already imported).</li>
+          <li>
+            Import the <strong>{@importer.name()}</strong> taxonomy (skipped if already imported).
+          </li>
           <li>Restore common locations from the snapshot.</li>
           <li>Restore eBird locations from the snapshot.</li>
         </ol>
