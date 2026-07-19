@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hV6oYooQHaa2Ih1egzAZBEtDvHMieaCOS06aAcXm6NTZyEJck7CMgRQ6ngIYA9j
+\restrict uAk56HG0jUAyY1b8NafvDvI1Xs0lP274q9Qc92HgqlhnIvxSLvT6iC8Tu4E797I
 
 -- Dumped from database version 18.3 (Debian 18.3-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -314,6 +314,39 @@ CREATE SEQUENCE public.admin_site_settings_id_seq
 --
 
 ALTER SEQUENCE public.admin_site_settings_id_seq OWNED BY public.admin_site_settings.id;
+
+
+--
+-- Name: admin_user_settings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.admin_user_settings (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    key character varying(255) NOT NULL,
+    value jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: admin_user_settings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.admin_user_settings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: admin_user_settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.admin_user_settings_id_seq OWNED BY public.admin_user_settings.id;
 
 
 --
@@ -853,6 +886,13 @@ ALTER TABLE ONLY public.admin_site_settings ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: admin_user_settings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_user_settings ALTER COLUMN id SET DEFAULT nextval('public.admin_user_settings_id_seq'::regclass);
+
+
+--
 -- Name: checklists id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -997,6 +1037,14 @@ ALTER TABLE ONLY ornithologue.taxa
 
 ALTER TABLE ONLY public.admin_site_settings
     ADD CONSTRAINT admin_site_settings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: admin_user_settings admin_user_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_user_settings
+    ADD CONSTRAINT admin_user_settings_pkey PRIMARY KEY (id);
 
 
 --
@@ -1207,6 +1255,13 @@ CREATE INDEX taxa_parent_species_id_index ON ornithologue.taxa USING btree (pare
 --
 
 CREATE UNIQUE INDEX admin_site_settings_key_index ON public.admin_site_settings USING btree (key);
+
+
+--
+-- Name: admin_user_settings_user_id_key_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX admin_user_settings_user_id_key_index ON public.admin_user_settings USING btree (user_id, key);
 
 
 --
@@ -1499,6 +1554,14 @@ ALTER TABLE ONLY ornithologue.taxa
 
 
 --
+-- Name: admin_user_settings admin_user_settings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_user_settings
+    ADD CONSTRAINT admin_user_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: checklists checklists_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1654,7 +1717,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hV6oYooQHaa2Ih1egzAZBEtDvHMieaCOS06aAcXm6NTZyEJck7CMgRQ6ngIYA9j
+\unrestrict uAk56HG0jUAyY1b8NafvDvI1Xs0lP274q9Qc92HgqlhnIvxSLvT6iC8Tu4E797I
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1700,3 +1763,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260716120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260716232748);
 INSERT INTO public."schema_migrations" (version) VALUES (20260719043002);
 INSERT INTO public."schema_migrations" (version) VALUES (20260719044909);
+INSERT INTO public."schema_migrations" (version) VALUES (20260719191706);
