@@ -183,6 +183,10 @@ defmodule KjogviWeb.Router do
       live "/imports", Live.Admin.Imports.Index, :index
       live "/imports/locations", Live.Admin.Imports.Locations.Index, :index
 
+      live "/users", Live.Admin.Users.Index, :index
+      live "/users/page/:page", Live.Admin.Users.Index, :index
+      live "/users/:id/settings", Live.Admin.Users.Settings, :edit
+
       live "/settings", Live.Admin.Settings.Index, :index
     end
 

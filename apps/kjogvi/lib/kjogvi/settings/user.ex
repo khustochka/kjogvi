@@ -65,6 +65,23 @@ defmodule Kjogvi.Settings.User do
   end
 
   @doc """
+  The IDs of users among `user_ids` whose login is disabled, as a `MapSet`.
+
+  A single query (bypassing the per-user cache) for marking a listing, so the
+  page doesn't fan out into one lookup per row.
+  """
+  def login_disabled_ids(user_ids) do
+    import Ecto.Query
+
+    from(s in UserSetting,
+      where: s.user_id in ^user_ids and s.key == "login_disabled" and s.value == ^true,
+      select: s.user_id
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  @doc """
   Stores a per-user override (upsert by user and key) and invalidates its cache
   entry.
   """

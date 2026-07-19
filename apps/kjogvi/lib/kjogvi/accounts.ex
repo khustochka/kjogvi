@@ -71,9 +71,34 @@ defmodule Kjogvi.Accounts do
   Lists all users, ordered by nickname, for the public user directory.
   """
   def list_users do
-    User
-    |> order_by([u], asc: u.nickname)
+    User.Query.order_by_nickname()
     |> Repo.all()
+  end
+
+  @doc """
+  A paginated page of users for the admin index, ordered by nickname. When
+  `term` is a non-blank string, only users whose nickname or display name
+  contains it are returned.
+  """
+  def list_users_for_admin(term \\ "", pagination \\ %{}) do
+    User.Query.search(term)
+    |> User.Query.order_by_nickname()
+    |> Repo.paginate(pagination)
+  end
+
+  @doc """
+  The total number of registered users.
+  """
+  def count_users do
+    Repo.aggregate(User, :count)
+  end
+
+  @doc """
+  The IDs (as a `MapSet`) of `users` whose login an administrator has disabled,
+  resolved in a single query for marking a listing.
+  """
+  def login_disabled_ids(users) do
+    Kjogvi.Settings.User.login_disabled_ids(Enum.map(users, & &1.id))
   end
 
   @doc """

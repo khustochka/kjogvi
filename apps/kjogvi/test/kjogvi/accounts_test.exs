@@ -212,6 +212,72 @@ defmodule Kjogvi.UsersTest do
     end
   end
 
+  describe "list_users_for_admin/2" do
+    defp admin_nicknames(page), do: page.entries |> Enum.map(& &1.nickname)
+
+    test "lists all users ordered by nickname when no term is given" do
+      user_fixture(nickname: "charlie")
+      user_fixture(nickname: "alice")
+      user_fixture(nickname: "bob")
+
+      assert ["alice", "bob", "charlie"] =
+               Accounts.list_users_for_admin() |> admin_nicknames()
+    end
+
+    test "filters by nickname substring, case-insensitively" do
+      user_fixture(nickname: "alice")
+      user_fixture(nickname: "bob")
+
+      assert ["alice"] = Accounts.list_users_for_admin("ALI") |> admin_nicknames()
+    end
+
+    test "filters by display name substring" do
+      user_fixture(nickname: "alice", display_name: "Wonderland")
+      user_fixture(nickname: "bob", display_name: "Builder")
+
+      assert ["alice"] = Accounts.list_users_for_admin("wonder") |> admin_nicknames()
+    end
+
+    test "a blank term lists everyone" do
+      user_fixture(nickname: "alice")
+      user_fixture(nickname: "bob")
+
+      assert length(Accounts.list_users_for_admin("   ").entries) == 2
+    end
+
+    test "paginates" do
+      for n <- 1..3, do: user_fixture(nickname: "birder#{n}")
+
+      page = Accounts.list_users_for_admin("", %{page: 1, page_size: 2})
+
+      assert length(page.entries) == 2
+      assert page.total_entries == 3
+      assert page.total_pages == 2
+    end
+  end
+
+  describe "count_users/0" do
+    test "counts all registered users" do
+      assert Accounts.count_users() == 0
+      user_fixture()
+      user_fixture()
+      assert Accounts.count_users() == 2
+    end
+  end
+
+  describe "login_disabled_ids/1" do
+    test "returns the ids of users whose login is disabled" do
+      disabled = user_fixture()
+      active = user_fixture()
+      Accounts.disable_user_login(disabled)
+
+      ids = Accounts.login_disabled_ids([disabled, active])
+
+      assert MapSet.member?(ids, disabled.id)
+      refute MapSet.member?(ids, active.id)
+    end
+  end
+
   describe "register_user/1" do
     test "requires email, password and nickname to be set" do
       {:error, changeset} = Accounts.register_user(%{})
