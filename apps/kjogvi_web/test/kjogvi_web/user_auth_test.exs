@@ -90,6 +90,20 @@ defmodule KjogviWeb.UserAuthTest do
       assert conn.assigns.current_scope.current_user.id == user.id
     end
 
+    test "logs out a user whose login was disabled", %{conn: conn, user: user} do
+      user_token = Accounts.generate_user_session_token(user)
+      # Set the flag directly: disable_user_login/1 also drops the session
+      # tokens, which would make the token invalid for reasons other than
+      # the check under test.
+      {:ok, _} = Kjogvi.Settings.User.put(user, :login_disabled, true)
+
+      conn = conn |> put_session(:user_token, user_token) |> UserAuth.fetch_current_scope([])
+
+      assert conn.halted
+      assert redirected_to(conn) == ~p"/"
+      refute get_session(conn, :user_token)
+    end
+
     test "authenticates user from cookies", %{conn: conn, user: user} do
       logged_in_conn =
         conn |> fetch_cookies() |> UserAuth.login_user(user, %{"remember_me" => "true"})

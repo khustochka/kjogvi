@@ -91,12 +91,22 @@ defmodule KjogviWeb.UserAuth do
   @doc """
   Authenticates the current user and finds the main user.
   Sets the scope.
+
+  A user whose login an administrator has disabled is logged out here rather
+  than entering the scope, so the block applies to every authenticated path
+  (including LiveView mounts) and not only to the login form.
   """
   def fetch_current_scope(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
 
-    assign(conn, :current_scope, %Kjogvi.Scope{current_user: user})
+    if user && Accounts.login_disabled?(user) do
+      conn
+      |> logout_user()
+      |> halt()
+    else
+      assign(conn, :current_scope, %Kjogvi.Scope{current_user: user})
+    end
   end
 
   defp ensure_user_token(conn) do

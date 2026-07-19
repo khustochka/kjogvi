@@ -119,11 +119,17 @@ defmodule Kjogvi.Accounts do
       iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
       nil
 
+  Users whose login an administrator has disabled are rejected as if the
+  password were wrong. The password is verified first either way, so a disabled
+  account is not distinguishable from a wrong one.
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
     user = Repo.get_by(User, email: email)
-    if User.valid_password?(user, password), do: user
+
+    if User.valid_password?(user, password) and not login_disabled?(user) do
+      user
+    end
   end
 
   @doc """
@@ -426,6 +432,48 @@ defmodule Kjogvi.Accounts do
   """
   def delete_user_session_token(token) do
     Repo.delete_all(UserToken.by_token_and_context_query(token, "session"))
+    :ok
+  end
+
+  @doc """
+  Deletes every session token of `user`, ending all their active sessions.
+
+  Session cookies are only lookup keys — `get_user_by_session_token/1` resolves
+  them against `user_tokens` on each request — so removing the rows logs the
+  user out everywhere at their next request.
+  """
+  def delete_all_user_session_tokens(%User{} = user) do
+    Repo.delete_all(UserToken.by_user_and_contexts_query(user, ["session"]))
+    :ok
+  end
+
+  ## Administrative user settings
+
+  @doc """
+  Whether an administrator has barred `user` from logging in.
+  """
+  def login_disabled?(%User{} = user) do
+    Kjogvi.Settings.User.login_disabled?(user)
+  end
+
+  def login_disabled?(nil), do: false
+
+  @doc """
+  Bars `user` from logging in and ends their active sessions, so the block takes
+  effect immediately rather than at the next session expiry.
+  """
+  def disable_user_login(%User{} = user) do
+    Kjogvi.Settings.User.put(user, :login_disabled, true)
+    delete_all_user_session_tokens(user)
+    :ok
+  end
+
+  @doc """
+  Restores `user`'s ability to log in. Sessions ended by
+  `disable_user_login/1` are not restored — the user logs in again.
+  """
+  def enable_user_login(%User{} = user) do
+    Kjogvi.Settings.User.put(user, :login_disabled, false)
     :ok
   end
 

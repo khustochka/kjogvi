@@ -74,6 +74,62 @@ defmodule Kjogvi.UsersTest do
       assert %User{id: ^id} =
                Accounts.get_user_by_email_and_password(user.email, valid_user_password())
     end
+
+    test "does not return the user if login is disabled" do
+      user = user_fixture()
+      :ok = Accounts.disable_user_login(user)
+
+      refute Accounts.get_user_by_email_and_password(user.email, valid_user_password())
+    end
+
+    test "returns the user again once login is re-enabled" do
+      %{id: id} = user = user_fixture()
+      :ok = Accounts.disable_user_login(user)
+      :ok = Accounts.enable_user_login(user)
+
+      assert %User{id: ^id} =
+               Accounts.get_user_by_email_and_password(user.email, valid_user_password())
+    end
+  end
+
+  describe "disable_user_login/1" do
+    test "marks login as disabled" do
+      user = user_fixture()
+
+      :ok = Accounts.disable_user_login(user)
+
+      assert Accounts.login_disabled?(user)
+    end
+
+    test "ends the user's active sessions" do
+      user = user_fixture()
+      token = Accounts.generate_user_session_token(user)
+
+      :ok = Accounts.disable_user_login(user)
+
+      refute Accounts.get_user_by_session_token(token)
+    end
+
+    test "leaves other users' sessions alone" do
+      user = user_fixture()
+      other = user_fixture()
+      other_token = Accounts.generate_user_session_token(other)
+
+      :ok = Accounts.disable_user_login(user)
+
+      assert Accounts.get_user_by_session_token(other_token)
+    end
+  end
+
+  describe "enable_user_login/1" do
+    test "clears the disabled flag" do
+      user = user_fixture()
+      :ok = Accounts.disable_user_login(user)
+
+      :ok = Accounts.enable_user_login(user)
+
+      refute Accounts.login_disabled?(user)
+    end
   end
 
   describe "get_user!/1" do
