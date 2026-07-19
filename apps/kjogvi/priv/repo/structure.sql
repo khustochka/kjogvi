@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Canfs3tk5lDphDhlw4V0QUM8VXRcZZWflWu3KAmrI4wqX1rPmeVVzbLyNUwltuj
+\restrict hV6oYooQHaa2Ih1egzAZBEtDvHMieaCOS06aAcXm6NTZyEJck7CMgRQ6ngIYA9j
 
 -- Dumped from database version 18.3 (Debian 18.3-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -1503,7 +1503,7 @@ ALTER TABLE ONLY ornithologue.taxa
 --
 
 ALTER TABLE ONLY public.checklists
-    ADD CONSTRAINT checklists_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT checklists_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(id) ON DELETE RESTRICT DEFERRABLE;
 
 
 --
@@ -1607,7 +1607,7 @@ ALTER TABLE ONLY public.observations
 --
 
 ALTER TABLE ONLY public.special_locations
-    ADD CONSTRAINT special_locations_child_location_id_fkey FOREIGN KEY (child_location_id) REFERENCES public.locations(id) ON DELETE CASCADE;
+    ADD CONSTRAINT special_locations_child_location_id_fkey FOREIGN KEY (child_location_id) REFERENCES public.locations(id) ON DELETE CASCADE DEFERRABLE;
 
 
 --
@@ -1654,7 +1654,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Canfs3tk5lDphDhlw4V0QUM8VXRcZZWflWu3KAmrI4wqX1rPmeVVzbLyNUwltuj
+\unrestrict hV6oYooQHaa2Ih1egzAZBEtDvHMieaCOS06aAcXm6NTZyEJck7CMgRQ6ngIYA9j
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1699,3 +1699,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260713120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260716120000);
 INSERT INTO public."schema_migrations" (version) VALUES (20260716232748);
 INSERT INTO public."schema_migrations" (version) VALUES (20260719043002);
+INSERT INTO public."schema_migrations" (version) VALUES (20260719044909);

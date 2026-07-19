@@ -51,6 +51,7 @@ defmodule Kjogvi.Legacy.Import.Locations do
 
   import Ecto.Query
 
+  alias Kjogvi.Birding.Checklist
   alias Kjogvi.Geo.EbirdLocation
   alias Kjogvi.Geo.Location
   alias Kjogvi.Legacy.Import.Utils
@@ -201,8 +202,9 @@ defmodule Kjogvi.Legacy.Import.Locations do
   # referenced it through the level FK for its own level (e.g. the ISO
   # subdivisions of a country that aren't in the legacy data) is repointed to the
   # new id, so no FK dangles at commit. The deferred constraints make this safe.
-  # An eBird region linked to the row follows it too — it is still the same
-  # country/subdivision, just renumbered.
+  # Everything else referencing the row follows it too — it is still the same
+  # country/subdivision, just renumbered: linked eBird regions, non-legacy
+  # checklists at the location, and special memberships listing it.
   defp repoint_children(old_id, %{id: new_id, location_type: type}) do
     fk = Map.fetch!(@level_fk_by_type, type)
 
@@ -211,6 +213,12 @@ defmodule Kjogvi.Legacy.Import.Locations do
 
     from(e in EbirdLocation, where: e.location_id == ^old_id)
     |> Repo.update_all(set: [location_id: new_id])
+
+    from(c in Checklist, where: c.location_id == ^old_id)
+    |> Repo.update_all(set: [location_id: new_id])
+
+    from(s in "special_locations", where: s.child_location_id == ^old_id)
+    |> Repo.update_all(set: [child_location_id: new_id])
   end
 
   # A country matches on its own alpha-2 code; a subdivision matches on the full

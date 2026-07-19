@@ -140,6 +140,45 @@ defmodule Kjogvi.Legacy.Import.LocationsTest do
       assert Repo.reload!(ebird).location_id == 42
     end
 
+    test "repoints a non-legacy checklist to the renumbered country's new id",
+         %{opts: opts} do
+      iso_us = insert(:country, iso_code: "US", slug: "us")
+      checklist = insert(:checklist, location: iso_us)
+
+      run(
+        [
+          row(%{"id" => 42, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"})
+        ],
+        opts
+      )
+
+      assert Repo.reload!(checklist).location_id == 42
+    end
+
+    test "repoints a special membership to the renumbered country's new id",
+         %{opts: opts} do
+      iso_us = insert(:country, iso_code: "US", slug: "us")
+
+      special =
+        insert(:special)
+        |> Repo.preload(:special_child_locations)
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.put_assoc(:special_child_locations, [iso_us])
+        |> Repo.update!()
+
+      run(
+        [
+          row(%{"id" => 42, "slug" => "usa", "loc_type" => "country", "iso_code" => "US"})
+        ],
+        opts
+      )
+
+      members =
+        Repo.reload!(special) |> Repo.preload(:special_child_locations)
+
+      assert Enum.map(members.special_child_locations, & &1.id) == [42]
+    end
+
     test "resolves the country ancestor past a special continent above the country",
          %{opts: opts} do
       insert(:country, iso_code: "US", slug: "us")
