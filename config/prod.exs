@@ -26,7 +26,7 @@ config :logger, level: :info
 config :kjogvi, Kjogvi.Settings,
   registration_disabled: true,
   forgot_reset_password_disabled: true,
-  confirmation_disabled: true
+  email_confirmation_disabled: true
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

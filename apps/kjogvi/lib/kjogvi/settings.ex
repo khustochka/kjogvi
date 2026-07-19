@@ -2,11 +2,18 @@ defmodule Kjogvi.Settings do
   @moduledoc """
   Site-wide settings, feature flags, and kill switches.
 
-  Each setting is exposed as its own intention-revealing function
+  The known settings are declared once in a `NimbleOptions` schema carrying each
+  one's type, default, and display label. That roster backs both the readers here
+  and the admin UI, which enumerates it (`keys/0`, `flag_keys/0`, `label/1`,
+  `fetch/1`) rather than restating the settings; `key!/1` casts
+  a client-supplied string to a known key, and `put_setting/2` validates against
+  the schema, so an unknown key or a wrongly-typed value can't be stored.
+
+  Each setting is also exposed as its own intention-revealing function
   (e.g. `registration_disabled?/0`) so call sites read clearly and never depend
   on how the value is stored. Values are resolved through the private `get/2`:
   a row in the `admin_site_settings` table wins, then application config, then
-  a hardcoded default:
+  the schema default:
 
       config :kjogvi, Kjogvi.Settings, registration_disabled: true
 
@@ -21,25 +28,75 @@ defmodule Kjogvi.Settings do
   # invalidate locally); bounds how long a stale value can live.
   @cache_ttl :timer.minutes(5)
 
+  # The setting roster. Flags are stored negatively (`<feature>_disabled`); the
+  # `:doc` is the positive feature name the admin UI speaks in.
+  @schema NimbleOptions.new!(
+            registration_disabled: [type: :boolean, default: false, doc: "Registration"],
+            forgot_reset_password_disabled: [
+              type: :boolean,
+              default: false,
+              doc: "Password reset"
+            ],
+            email_confirmation_disabled: [
+              type: :boolean,
+              default: false,
+              doc: "Email confirmation"
+            ],
+            default_taxonomy: [type: {:or, [:string, nil]}, default: nil, doc: "Default taxonomy"]
+          )
+
+  @flag_keys for {key, opts} <- @schema.schema, opts[:type] == :boolean, do: key
+
+  @doc """
+  The known setting keys.
+  """
+  def keys, do: Keyword.keys(@schema.schema)
+
+  @doc """
+  The boolean kill-switch keys, in roster order.
+  """
+  def flag_keys, do: @flag_keys
+
+  @doc """
+  Casts a client-supplied string to a known setting key, raising otherwise.
+  """
+  def key!(key) when is_binary(key) do
+    Enum.find(keys(), &(to_string(&1) == key)) ||
+      raise ArgumentError, "unknown setting #{inspect(key)}"
+  end
+
+  @doc """
+  The display name of `key`: for a flag, the positive feature it switches
+  (`:forgot_reset_password_disabled` -> `"Password reset"`).
+  """
+  def label(key), do: @schema.schema[key][:doc]
+
+  @doc """
+  The current value of any setting by key, resolved override → config → default.
+  """
+  def fetch(key) do
+    get(key, @schema.schema[key][:default])
+  end
+
   @doc """
   Whether new user registration is closed.
   """
   def registration_disabled? do
-    get(:registration_disabled, false)
+    fetch(:registration_disabled)
   end
 
   @doc """
   Whether the forgot/reset password flow is closed.
   """
   def forgot_reset_password_disabled? do
-    get(:forgot_reset_password_disabled, false)
+    fetch(:forgot_reset_password_disabled)
   end
 
   @doc """
   Whether the email/account confirmation flow is closed.
   """
-  def confirmation_disabled? do
-    get(:confirmation_disabled, false)
+  def email_confirmation_disabled? do
+    fetch(:email_confirmation_disabled)
   end
 
   @doc """
@@ -76,6 +133,8 @@ defmodule Kjogvi.Settings do
   it suppresses the config fallback rather than restoring it.
   """
   def put_setting(key, value) do
+    NimbleOptions.validate!([{key, value}], @schema)
+
     result =
       %Setting{}
       |> Setting.changeset(%{key: to_string(key), value: value})

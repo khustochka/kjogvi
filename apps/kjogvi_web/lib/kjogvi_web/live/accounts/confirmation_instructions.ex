@@ -64,7 +64,7 @@ defmodule KjogviWeb.Live.Accounts.ConfirmationInstructions do
   end
 
   def mount(_params, _session, socket) do
-    if Kjogvi.Settings.confirmation_disabled?() do
+    if Kjogvi.Settings.email_confirmation_disabled?() do
       {:ok, assign(socket, confirmation_disabled: true, form: nil)}
     else
       {:ok, assign(socket, confirmation_disabled: false, form: to_form(%{}, as: "user"))}

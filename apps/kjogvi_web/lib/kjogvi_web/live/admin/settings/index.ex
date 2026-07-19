@@ -8,6 +8,9 @@ defmodule KjogviWeb.Live.Admin.Settings.Index do
   can be reset back to the config value, while a flag stays on whatever it was
   last toggled to.
 
+  The flag roster and feature names come from `Kjogvi.Settings` — this page
+  enumerates them rather than restating them.
+
   Settings are stored negatively (`registration_disabled`) but presented
   positively: the page states whether the *feature* is enabled and labels the
   button with the action it performs, so the reader never inverts a flag name.
@@ -16,27 +19,6 @@ defmodule KjogviWeb.Live.Admin.Settings.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Settings
-
-  # Each flag is stored as `<feature>_disabled`, but the UI speaks about the
-  # feature, never the switch: `feature` names it, and status/action are always
-  # phrased as what the feature is and what the click does to it.
-  @flags [
-    registration_disabled: %{
-      feature: "Registration",
-      description: "New user sign-up. Existing users can always log in.",
-      reader: &Settings.registration_disabled?/0
-    },
-    forgot_reset_password_disabled: %{
-      feature: "Password reset",
-      description: "The forgot/reset password flow.",
-      reader: &Settings.forgot_reset_password_disabled?/0
-    },
-    confirmation_disabled: %{
-      feature: "Confirmation",
-      description: "The email/account confirmation flow.",
-      reader: &Settings.confirmation_disabled?/0
-    }
-  ]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -74,29 +56,23 @@ defmodule KjogviWeb.Live.Admin.Settings.Index do
   # `disabled` is the value to store, not the current state: the button sends
   # what the click should make true.
   def handle_event("save_flag", %{"key" => key, "disabled" => disabled}, socket) do
-    flag = flag_key!(key)
+    # The key comes from the client; key!/1 rejects anything off the roster.
+    flag = Settings.key!(key)
     disabled = disabled == "true"
     {:ok, _} = Settings.put_setting(flag, disabled)
 
-    feature = @flags[flag].feature
     verb = if disabled, do: "disabled", else: "enabled"
 
     {:noreply,
      socket
-     |> put_flash(:info, "#{feature} #{verb}.")
+     |> put_flash(:info, "#{Settings.label(flag)} #{verb}.")
      |> assign_flags()}
-  end
-
-  # Only known flag names may reach put_setting/2 — the key comes from the client.
-  defp flag_key!(key) do
-    Enum.find(Keyword.keys(@flags), &(to_string(&1) == key)) ||
-      raise ArgumentError, "unknown setting #{inspect(key)}"
   end
 
   defp assign_flags(socket) do
     flags =
-      Enum.map(@flags, fn {key, meta} ->
-        Map.merge(meta, %{key: key, enabled: not meta.reader.()})
+      Enum.map(Settings.flag_keys(), fn key ->
+        %{key: key, feature: Settings.label(key), enabled: not Settings.fetch(key)}
       end)
 
     assign(socket, :flags, flags)
@@ -176,18 +152,15 @@ defmodule KjogviWeb.Live.Admin.Settings.Index do
         <ul class="divide-y divide-slate-200">
           <li :for={flag <- @flags} id={"flag-#{flag.key}"} class="py-4 first:pt-0 last:pb-0">
             <div class="flex items-center justify-between gap-4">
-              <div>
-                <.h3
-                  id={"flag-#{flag.key}-state"}
-                  class={[
-                    "mb-1!",
-                    if(flag.enabled, do: "text-emerald-700!", else: "text-rose-700!")
-                  ]}
-                >
-                  {flag.feature} {if flag.enabled, do: "enabled", else: "disabled"}
-                </.h3>
-                <p class="text-sm text-slate-700">{flag.description}</p>
-              </div>
+              <.h3
+                id={"flag-#{flag.key}-state"}
+                class={[
+                  "mb-0!",
+                  if(flag.enabled, do: "text-emerald-700!", else: "text-rose-700!")
+                ]}
+              >
+                {flag.feature} {if flag.enabled, do: "enabled", else: "disabled"}
+              </.h3>
 
               <.button
                 id={"toggle-#{flag.key}"}

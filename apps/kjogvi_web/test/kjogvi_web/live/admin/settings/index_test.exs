@@ -80,7 +80,8 @@ defmodule KjogviWeb.Live.Admin.Settings.IndexTest do
     test "shows each feature as enabled when no override is stored", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/admin/settings")
 
-      for key <- ~w(registration_disabled forgot_reset_password_disabled confirmation_disabled) do
+      for key <-
+            ~w(registration_disabled forgot_reset_password_disabled email_confirmation_disabled) do
         assert has_element?(lv, "#flag-#{key}-state", "enabled")
         assert has_element?(lv, "#toggle-#{key}", "Disable")
       end
@@ -125,9 +126,9 @@ defmodule KjogviWeb.Live.Admin.Settings.IndexTest do
     test "toggling one flag leaves the others alone", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/admin/settings")
 
-      lv |> element("#toggle-confirmation_disabled") |> render_click()
+      lv |> element("#toggle-email_confirmation_disabled") |> render_click()
 
-      assert Settings.confirmation_disabled?()
+      assert Settings.email_confirmation_disabled?()
       refute Settings.registration_disabled?()
       assert Settings.get_override(:forgot_reset_password_disabled) == :error
     end

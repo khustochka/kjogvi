@@ -18,7 +18,7 @@ defmodule KjogviWeb.Accounts.UserRegistrationController do
   defp register(conn, user_params) do
     case Accounts.register_user(user_params) do
       {:ok, user} ->
-        unless Kjogvi.Settings.confirmation_disabled?() do
+        unless Kjogvi.Settings.email_confirmation_disabled?() do
           {:ok, _} =
             Accounts.deliver_user_confirmation_instructions(
               user,
