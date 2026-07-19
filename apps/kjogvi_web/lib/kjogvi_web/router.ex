@@ -182,6 +182,8 @@ defmodule KjogviWeb.Router do
 
       live "/imports", Live.Admin.Imports.Index, :index
       live "/imports/locations", Live.Admin.Imports.Locations.Index, :index
+
+      live "/settings", Live.Admin.Settings.Index, :index
     end
 
     ornitho_web "/taxonomy",

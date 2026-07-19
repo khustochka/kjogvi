@@ -35,6 +35,36 @@ defmodule Kjogvi.SettingsTest do
     end
   end
 
+  describe "get_override/1" do
+    test "returns :error when no row exists" do
+      assert Settings.get_override(:default_taxonomy) == :error
+    end
+
+    test "returns the stored value, including an explicit nil" do
+      {:ok, _} = Settings.put_setting(:default_taxonomy, "ebird/v2026")
+      assert Settings.get_override(:default_taxonomy) == {:ok, "ebird/v2026"}
+
+      {:ok, _} = Settings.put_setting(:default_taxonomy, nil)
+      assert Settings.get_override(:default_taxonomy) == {:ok, nil}
+    end
+  end
+
+  describe "delete_setting/1" do
+    test "removes the override, restoring the config fallback" do
+      {:ok, _} = Settings.put_setting(:default_taxonomy, "ebird/v2026")
+      assert Settings.default_taxonomy() == "ebird/v2026"
+
+      :ok = Settings.delete_setting(:default_taxonomy)
+
+      assert Settings.get_override(:default_taxonomy) == :error
+      assert Settings.default_taxonomy() == "ebird/v2025"
+    end
+
+    test "is a no-op when no row exists" do
+      assert Settings.delete_setting(:default_taxonomy) == :ok
+    end
+  end
+
   describe "put_setting/2" do
     test "upserts by key" do
       {:ok, first} = Settings.put_setting(:registration_disabled, true)

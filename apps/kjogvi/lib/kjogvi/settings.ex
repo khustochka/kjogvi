@@ -63,6 +63,14 @@ defmodule Kjogvi.Settings do
   end
 
   @doc """
+  The stored override for `key`: `{:ok, value}` when a row exists (even one
+  holding `nil`), `:error` when the setting falls through to config.
+  """
+  def get_override(key) do
+    db_get(key)
+  end
+
+  @doc """
   Stores a setting override in `admin_site_settings` (upsert by key) and
   invalidates its cache entry. An explicit `nil` value is an override too —
   it suppresses the config fallback rather than restoring it.
@@ -78,6 +86,20 @@ defmodule Kjogvi.Settings do
 
     Kjogvi.Cache.delete(cache_key(key))
     result
+  end
+
+  @doc """
+  Removes the override row for `key`, restoring the config/default fallback,
+  and invalidates its cache entry.
+  """
+  def delete_setting(key) do
+    case Repo.get_by(Setting, key: to_string(key)) do
+      nil -> :ok
+      setting -> Repo.delete!(setting)
+    end
+
+    Kjogvi.Cache.delete(cache_key(key))
+    :ok
   end
 
   defp importer_signature(nil), do: nil
