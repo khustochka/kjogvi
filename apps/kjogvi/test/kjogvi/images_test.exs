@@ -470,37 +470,6 @@ defmodule Kjogvi.ImagesTest do
     end
   end
 
-  describe "list_images_for_checklist/1" do
-    test "returns images linked to the checklist's observations" do
-      user = AccountsFixtures.user_fixture()
-
-      checklist =
-        Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
-
-      obs = Kjogvi.Factory.insert(:observation, checklist: checklist, taxon_key: "mallar1")
-      image = ImagesFixtures.image_fixture(user: user)
-      {:ok, _} = Images.attach_observations(image, [obs.id])
-
-      assert Images.list_images_for_checklist(checklist.id) |> Enum.map(& &1.id) == [image.id]
-    end
-
-    test "excludes images from other checklists" do
-      user = AccountsFixtures.user_fixture()
-
-      checklist1 =
-        Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
-
-      checklist2 =
-        Kjogvi.Factory.insert(:checklist, user: user, location: Kjogvi.Factory.insert(:location))
-
-      obs2 = Kjogvi.Factory.insert(:observation, checklist: checklist2, taxon_key: "mallar1")
-      image = ImagesFixtures.image_fixture(user: user)
-      {:ok, _} = Images.attach_observations(image, [obs2.id])
-
-      assert Images.list_images_for_checklist(checklist1.id) == []
-    end
-  end
-
   describe "get_observations_for_display/2" do
     test "hydrates observations with taxon, checklist, and location, preserving id order" do
       user = AccountsFixtures.user_fixture()

@@ -7,23 +7,20 @@ defmodule Kjogvi.Images do
   belong to the same checklist.
   """
 
-  import Ecto.Query
-
   alias Kjogvi.Accounts.UserProfile
+  alias Kjogvi.Birding.Observation
   alias Kjogvi.Repo
   alias Kjogvi.Images.AvatarUploader
   alias Kjogvi.Images.Image
-  alias Kjogvi.Images.ImageObservation
   alias Kjogvi.Images.VixProcessor
 
   @doc """
   Lists a user's images, newest first, as a paginated `Scrivener.Page`.
   """
   def list_images(user, %{page: page, page_size: page_size}) do
-    Image
-    |> where([i], i.user_id == ^user.id)
-    |> order_by([i], desc: i.inserted_at, desc: i.id)
-    |> preload(:user)
+    Image.Query.base()
+    |> Image.Query.for_user(user)
+    |> Image.Query.newest_first()
     |> Repo.paginate(page: page, page_size: page_size)
   end
 
@@ -33,9 +30,8 @@ defmodule Kjogvi.Images do
   Used for the public gallery; the owning user is preloaded for display.
   """
   def list_public_images(%{page: page, page_size: page_size}) do
-    Image
-    |> order_by([i], desc: i.inserted_at, desc: i.id)
-    |> preload(:user)
+    Image.Query.base()
+    |> Image.Query.newest_first()
     |> Repo.paginate(page: page, page_size: page_size)
   end
 
@@ -61,9 +57,8 @@ defmodule Kjogvi.Images do
   someone else.
   """
   def get_image!(user, id) do
-    Image
-    |> where([i], i.user_id == ^user.id)
-    |> preload(:user)
+    Image.Query.base()
+    |> Image.Query.for_user(user)
     |> Repo.get!(id)
   end
 
@@ -226,10 +221,10 @@ defmodule Kjogvi.Images do
   """
   def get_observations_for_display(user, observation_ids) when is_list(observation_ids) do
     observations =
-      Kjogvi.Birding.Observation
-      |> join(:inner, [obs], c in assoc(obs, :checklist))
-      |> where([obs, c], obs.id in ^observation_ids and c.user_id == ^user.id)
-      |> preload([_obs, _c], checklist: :location)
+      Observation.Query.with_checklist()
+      |> Observation.Query.owned_by(user)
+      |> Observation.Query.with_ids(observation_ids)
+      |> Observation.Query.preload_checklist_location()
       |> Repo.all()
       |> Kjogvi.Birding.preload_taxa_and_species()
       |> Map.new(&{&1.id, &1})
@@ -273,40 +268,27 @@ defmodule Kjogvi.Images do
     if taxon_keys == [] do
       []
     else
-      Kjogvi.Birding.Observation
-      |> join(:inner, [obs], c in assoc(obs, :checklist))
-      |> where([obs, c], c.user_id == ^user.id and obs.taxon_key in ^taxon_keys)
+      Observation.Query.with_checklist()
+      |> Observation.Query.owned_by(user)
+      |> Observation.Query.with_taxon_keys(taxon_keys)
       |> maybe_scope(checklist_id, date)
-      |> order_by([_obs, c], desc: c.observ_date, desc: c.id)
-      |> limit(^limit)
-      |> preload([_obs, _c], checklist: :location)
+      |> Observation.Query.newest_checklist_first()
+      |> Observation.Query.limit_to(limit)
+      |> Observation.Query.preload_checklist_location()
       |> Repo.all()
       |> Kjogvi.Birding.preload_taxa_and_species()
     end
   end
 
   defp maybe_scope(query, checklist_id, _date) when not is_nil(checklist_id) do
-    where(query, [obs, _c], obs.checklist_id == ^checklist_id)
+    Observation.Query.on_checklist(query, checklist_id)
   end
 
   defp maybe_scope(query, _checklist_id, %Date{} = date) do
-    where(query, [_obs, c], c.observ_date == ^date)
+    Observation.Query.on_date(query, date)
   end
 
   defp maybe_scope(query, _checklist_id, _date), do: query
-
-  @doc """
-  Lists images linked to any observation on the given checklist.
-  """
-  def list_images_for_checklist(checklist_id) do
-    Image
-    |> join(:inner, [i], io in ImageObservation, on: io.image_id == i.id)
-    |> join(:inner, [_i, io], obs in Kjogvi.Birding.Observation, on: obs.id == io.observation_id)
-    |> where([_i, _io, obs], obs.checklist_id == ^checklist_id)
-    |> distinct([i], i.id)
-    |> order_by([i], asc: i.sort_order, asc: i.id)
-    |> Repo.all()
-  end
 
   @doc """
   Public URL for the given version of the image (defaults to `:medium`).
@@ -450,9 +432,9 @@ defmodule Kjogvi.Images do
   # Restricts to observations on the user's own checklists, so a tampered request
   # can't link another user's observations to an image.
   defp load_observations(user_id, observation_ids) do
-    Kjogvi.Birding.Observation
-    |> join(:inner, [obs], c in assoc(obs, :checklist))
-    |> where([obs, c], obs.id in ^observation_ids and c.user_id == ^user_id)
+    Observation.Query.with_checklist()
+    |> Observation.Query.owned_by(user_id)
+    |> Observation.Query.with_ids(observation_ids)
     |> Repo.all()
   end
 end
