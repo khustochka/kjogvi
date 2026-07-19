@@ -11,10 +11,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
   defp create_user_with_book do
     book = Ornitho.Factory.insert(:book, slug: "ebird", version: "v2024")
 
-    user = AccountsFixtures.user_fixture()
-
-    {:ok, user} =
-      Kjogvi.Accounts.update_user_preferences(user, %{"default_book_signature" => "ebird/v2024"})
+    user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
     {user, book}
   end

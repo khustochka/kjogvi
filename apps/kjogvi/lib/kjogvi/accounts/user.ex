@@ -80,6 +80,7 @@ defmodule Kjogvi.Accounts.User do
     |> validate_nickname(opts)
     |> validate_display_name()
     |> ensure_public_token()
+    |> put_default_book_signature()
   end
 
   @doc """
@@ -108,6 +109,21 @@ defmodule Kjogvi.Accounts.User do
     |> validate_nickname(opts)
     |> validate_display_name()
     |> ensure_public_token()
+    |> put_default_book_signature()
+  end
+
+  # Stamps the site default taxonomy on new users. The signature pins which
+  # taxonomy the user's observations are recorded against, so after
+  # registration it must only change through an explicit taxonomy migration —
+  # never through a settings form.
+  defp put_default_book_signature(changeset) do
+    case get_field(changeset, :default_book_signature) do
+      nil ->
+        put_change(changeset, :default_book_signature, Kjogvi.Settings.default_taxonomy())
+
+      _ ->
+        changeset
+    end
   end
 
   # Assigns a public token on first creation, leaving any existing one intact.
@@ -137,12 +153,13 @@ defmodule Kjogvi.Accounts.User do
   end
 
   @doc """
-  Changeset for the user's preferences: book signature plus the associated
-  `UserPreferences` record (created lazily via `cast_assoc` on first save).
+  Changeset for the user's preferences: the associated `UserPreferences` record
+  (created lazily via `cast_assoc` on first save). `default_book_signature` is
+  system-managed and deliberately not castable here.
   """
   def preferences_changeset(user, attrs, _opts \\ []) do
     user
-    |> cast(attrs, [:default_book_signature])
+    |> cast(attrs, [])
     |> cast_assoc(:preferences)
   end
 

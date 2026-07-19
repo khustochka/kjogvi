@@ -73,7 +73,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
     end
 
     test "raises when user has no default_book_signature" do
-      user = Kjogvi.AccountsFixtures.user_fixture()
+      user = Kjogvi.AccountsFixtures.user_fixture(%{default_book_signature: nil})
 
       assert_raise ArgumentError, ~r/default_book_signature/, fn ->
         Observations.import(

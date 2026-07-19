@@ -85,16 +85,25 @@ defmodule Kjogvi.Accounts.UserPreferencesTest do
       user = user_fixture()
       refute Repo.get_by(UserPreferences, user_id: user.id)
 
-      {:ok, updated} =
+      {:ok, _updated} =
         Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "J. Doe",
           "preferences" => %{"ebird" => %{"username" => "birder"}}
         })
 
-      assert updated.default_book_signature == "J. Doe"
-
       assert %UserPreferences{ebird: %{username: "birder"}} =
                Repo.get_by(UserPreferences, user_id: user.id)
+    end
+
+    test "ignores default_book_signature" do
+      user = user_fixture(%{default_book_signature: "ebird/v2024"})
+
+      {:ok, updated} =
+        Accounts.update_user_preferences(user, %{
+          "default_book_signature" => "aba/v8",
+          "preferences" => %{"ebird" => %{"username" => "birder"}}
+        })
+
+      assert updated.default_book_signature == "ebird/v2024"
     end
 
     test "updates an existing preferences row" do

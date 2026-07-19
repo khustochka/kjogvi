@@ -144,8 +144,10 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
         name_sci: "Parus major"
       )
 
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{"default_book_signature" => "ebird/v2024"})
+      user =
+        user
+        |> Ecto.Changeset.change(default_book_signature: "ebird/v2024")
+        |> Kjogvi.Repo.update!()
 
       # The sample image's EXIF capture date (2021-07-15) prefills the picker's
       # date, which scopes the search — so the matching observation must be on a
@@ -558,8 +560,10 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
         name_sci: "Parus major"
       )
 
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{"default_book_signature" => "ebird/v2024"})
+      user =
+        user
+        |> Ecto.Changeset.change(default_book_signature: "ebird/v2024")
+        |> Kjogvi.Repo.update!()
 
       location = Kjogvi.Factory.insert(:location)
 
@@ -933,8 +937,10 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       name_sci: "Parus major"
     )
 
-    {:ok, user} =
-      Kjogvi.Accounts.update_user_preferences(user, %{"default_book_signature" => "ebird/v2024"})
+    user =
+      user
+      |> Ecto.Changeset.change(default_book_signature: "ebird/v2024")
+      |> Kjogvi.Repo.update!()
 
     checklist =
       Kjogvi.Factory.insert(

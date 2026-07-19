@@ -249,6 +249,11 @@ defmodule Kjogvi.UsersTest do
       assert user1.public_token != ""
       assert user1.public_token != user2.public_token
     end
+
+    test "stamps the site default taxonomy" do
+      {:ok, user} = Accounts.register_user(valid_user_attributes())
+      assert user.default_book_signature == "ebird/v2025"
+    end
   end
 
   describe "register_admin/1" do
@@ -274,6 +279,11 @@ defmodule Kjogvi.UsersTest do
     test "grants the admin role" do
       {:ok, user} = Accounts.register_admin(valid_user_attributes(email: "carol@example.com"))
       assert Kjogvi.Accounts.admin_role() in user.roles
+    end
+
+    test "stamps the site default taxonomy" do
+      {:ok, user} = Accounts.register_admin(valid_user_attributes(email: "dave@example.com"))
+      assert user.default_book_signature == "ebird/v2025"
     end
 
     test "sanitizes disallowed characters in the derived nickname" do

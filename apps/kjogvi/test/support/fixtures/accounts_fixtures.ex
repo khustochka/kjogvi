@@ -16,22 +16,36 @@ defmodule Kjogvi.AccountsFixtures do
     })
   end
 
+  # Registration stamps the site default taxonomy, so an explicitly requested
+  # `default_book_signature` (including nil) is applied after the insert.
   def user_fixture(attrs \\ %{}) do
+    {signature, attrs} = attrs |> Map.new() |> Map.pop(:default_book_signature, :stamped)
+
     {:ok, user} =
       attrs
       |> valid_user_attributes()
       |> Kjogvi.Accounts.register_user()
 
+    put_book_signature(user, signature)
+  end
+
+  defp put_book_signature(user, :stamped), do: user
+
+  defp put_book_signature(user, signature) do
     user
+    |> Ecto.Changeset.change(default_book_signature: signature)
+    |> Kjogvi.Repo.update!()
   end
 
   def admin_fixture(attrs \\ %{}) do
+    {signature, attrs} = attrs |> Map.new() |> Map.pop(:default_book_signature, :stamped)
+
     {:ok, user} =
       attrs
       |> valid_user_attributes()
       |> Kjogvi.Accounts.register_admin()
 
-    user
+    put_book_signature(user, signature)
   end
 
   def extract_user_token(fun) do

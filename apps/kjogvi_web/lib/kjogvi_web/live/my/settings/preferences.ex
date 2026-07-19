@@ -21,14 +21,6 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
         phx-submit="update_settings"
       >
         <div class="mt-8 space-y-8 bg-white">
-          <CoreComponents.input
-            field={@settings_form[:default_book_signature]}
-            type="select"
-            label="Default taxonomy"
-            options={@book_options}
-            prompt="Select default taxonomy..."
-          />
-
           <h3 class="text-xl font-header font-semibold leading-none text-zinc-500 mt-6">
             eBird settings
           </h3>
@@ -145,11 +137,6 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     preferences = Accounts.get_user_preferences(user)
     settings_changeset = Accounts.User.preferences_changeset(user, %{})
 
-    books = Ornitho.Finder.Book.all()
-
-    book_options =
-      Enum.map(books, fn b -> {"#{b.name} (#{b.slug}/#{b.version})", "#{b.slug}/#{b.version}"} end)
-
     logbook_location_rows =
       build_logbook_location_rows(scope, preferences.logbook_settings)
 
@@ -159,7 +146,6 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
       |> assign(:user, user)
       |> assign(:preferences, preferences)
       |> assign(:settings_form, to_form(settings_changeset))
-      |> assign(:book_options, book_options)
       |> assign(:logbook_location_rows, logbook_location_rows)
 
     {:ok, socket}

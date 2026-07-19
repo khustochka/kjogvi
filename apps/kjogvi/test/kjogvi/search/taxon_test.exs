@@ -63,12 +63,7 @@ defmodule Kjogvi.Search.TaxonTest do
           name_sci: "Otis tarda"
         )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       location = GeoFixtures.location_fixture()
 
@@ -120,12 +115,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Larus delawarensis"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       results = Taxon.search_taxa("yellow-rumped wa", user)
       codes = Enum.map(results, & &1.code)
@@ -145,12 +135,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Callipepla gambelii"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       # "gambel" is a prefix of the word "Gambel's" — the apostrophe stays
       # inside the word rather than splitting off a "s" fragment.
@@ -168,12 +153,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Glareola pratincola/maldivarum"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       # "oriental" follows a slash with no space; it must still match.
       results = Taxon.search_taxa("oriental", user)
@@ -192,12 +172,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Columba palumbus"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       results = Taxon.search_taxa("wood pigeon", user)
       codes = Enum.map(results, & &1.code)
@@ -224,12 +199,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Acrocephalus arundinaceus"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       results = Taxon.search_taxa("great cr", user)
       codes = Enum.map(results, & &1.code)
@@ -248,12 +218,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Passer domesticus"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       # "hous" is a prefix of the code "houspa".
       results = Taxon.search_taxa("hous", user)
@@ -271,12 +236,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Parus major"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       results = Taxon.search_taxa("parmaj", user)
       assert "gretit1" in Enum.map(results, & &1.code)
@@ -292,12 +252,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Passer domesticus"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       # "ouspa" is inside the code but not a prefix of it — no match.
       results = Taxon.search_taxa("ouspa", user)
@@ -324,12 +279,7 @@ defmodule Kjogvi.Search.TaxonTest do
         name_sci: "Phacellodomus sibilatrix"
       )
 
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          "default_book_signature" => "ebird/v2024"
-        })
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/v2024"})
 
       location = GeoFixtures.location_fixture()
 

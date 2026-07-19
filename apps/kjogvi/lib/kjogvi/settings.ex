@@ -41,6 +41,18 @@ defmodule Kjogvi.Settings do
     get(:default_taxonomy_importer, nil)
   end
 
+  @doc """
+  The site default taxonomy as a `"slug/version"` book signature, derived from
+  `default_taxonomy_importer/0`. Stamped on new users at registration; `nil`
+  when no default importer is configured.
+  """
+  def default_taxonomy do
+    case default_taxonomy_importer() do
+      nil -> nil
+      importer -> "#{importer.slug()}/#{importer.version()}"
+    end
+  end
+
   # Resolution layer. The only place that knows where settings come from --
   # swap this for a DB lookup later without touching any public function.
   defp get(key, default) do

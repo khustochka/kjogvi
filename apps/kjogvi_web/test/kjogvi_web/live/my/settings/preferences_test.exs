@@ -25,23 +25,32 @@ defmodule KjogviWeb.Live.My.Settings.PreferencesTest do
   end
 
   describe "default taxonomy" do
-    test "user can select default book and it is saved", %{conn: conn} do
-      book = Ornitho.Factory.insert(:book)
+    test "does not offer a taxonomy selection", %{conn: conn} do
+      Ornitho.Factory.insert(:book)
 
       user = user_fixture()
+
+      {:ok, lv, _html} = conn |> login_user(user) |> live(~p"/my/settings/preferences")
+
+      refute has_element?(lv, "#user_default_book_signature")
+    end
+
+    test "saving preferences leaves the stamped taxonomy unchanged", %{conn: conn} do
+      user = user_fixture()
+      stamped = user.default_book_signature
 
       {:ok, lv, _html} = conn |> login_user(user) |> live(~p"/my/settings/preferences")
 
       lv
       |> form("#settings_form", %{
         "user" => %{
-          "default_book_signature" => "#{book.slug}/#{book.version}"
+          "preferences" => %{"ebird" => %{"username" => "birder"}}
         }
       })
       |> render_submit()
 
       user = Repo.get!(Kjogvi.Accounts.User, user.id)
-      assert user.default_book_signature == "#{book.slug}/#{book.version}"
+      assert user.default_book_signature == stamped
     end
   end
 

@@ -132,9 +132,14 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
                Jobs.status(Jobs.LegacyImport, %{user_id: user.id})
     end
 
-    # The admin fixture has no default taxonomy, so the run fails; the error
+    # An admin without a default taxonomy makes the run fail; the error
     # travels job -> bridge -> PubSub -> component flash.
-    test "a failed run surfaces the error", %{lv: lv} do
+    test "a failed run surfaces the error", %{conn: conn} do
+      {:ok, lv, _html} =
+        conn
+        |> login_user(Kjogvi.AccountsFixtures.admin_fixture(%{default_book_signature: nil}))
+        |> live(~p"/my/imports")
+
       lv |> element("#legacy-import-form") |> render_submit()
 
       assert %{discard: 1} = Oban.drain_queue(queue: :imports)
