@@ -64,5 +64,24 @@ defmodule KjogviWeb.Live.Admin.Users.SettingsTest do
       assert has_element?(lv, "#login-state", "Login enabled")
       refute Accounts.login_disabled?(Accounts.get_user!(user.id))
     end
+
+    test "shows the user's default taxonomy read-only", %{conn: conn} do
+      user = user_fixture(default_book_signature: "clements/v2023")
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/users/#{user.id}/settings")
+
+      assert has_element?(lv, "#taxonomy-value", "clements/v2023")
+      refute has_element?(lv, "#default-taxonomy form")
+      refute has_element?(lv, "#default-taxonomy select")
+      refute has_element?(lv, "#default-taxonomy button")
+    end
+
+    test "shows a placeholder when the user has no default taxonomy", %{conn: conn} do
+      user = user_fixture(default_book_signature: nil)
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/users/#{user.id}/settings")
+
+      assert has_element?(lv, "#taxonomy-value", "None")
+    end
   end
 end

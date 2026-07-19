@@ -1,13 +1,18 @@
 defmodule KjogviWeb.Live.Admin.Users.Settings do
   @moduledoc """
   Admin page for the per-user settings (`Kjogvi.Settings.User`) of a single
-  user: today just the login kill switch.
+  user: the login kill switch and the user's (read-only) default taxonomy.
 
   Like the site settings page, the flag is stored negatively
   (`login_disabled`) but presented positively — the page states whether *login*
   is enabled and labels the button with the action the click performs. Toggling
   goes through `Accounts.disable_user_login/1` / `enable_user_login/1`, so
   disabling also ends the user's active sessions.
+
+  The default taxonomy (`user.default_book_signature`) is shown but not
+  editable: it pins which taxonomy the user's observations are recorded
+  against, so it can only change through an explicit taxonomy migration, never a
+  settings form.
   """
 
   use KjogviWeb, :live_view
@@ -23,6 +28,7 @@ defmodule KjogviWeb.Live.Admin.Users.Settings do
      socket
      |> assign(:page_title, "#{User.display_name(user)} — Settings")
      |> assign(:user, user)
+     |> assign(:taxonomy_label, taxonomy_label(user))
      |> assign_login_state()}
   end
 
@@ -47,6 +53,23 @@ defmodule KjogviWeb.Live.Admin.Users.Settings do
     assign(socket, :login_enabled, not Accounts.login_disabled?(socket.assigns.user))
   end
 
+  # Resolves the user's default book signature into a display label, falling
+  # back to the raw signature if no matching book is found.
+  defp taxonomy_label(%User{default_book_signature: nil}), do: nil
+
+  defp taxonomy_label(%User{default_book_signature: signature}) do
+    case String.split(signature, "/") do
+      [slug, version] ->
+        case Ornitho.Finder.Book.by_signature(slug, version) do
+          %Ornitho.Schema.Book{name: name} -> "#{name} (#{signature})"
+          nil -> signature
+        end
+
+      _ ->
+        signature
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -59,6 +82,14 @@ defmodule KjogviWeb.Live.Admin.Users.Settings do
         User Settings
         <:subheader>{@user.nickname}</:subheader>
       </.header_with_subheader>
+
+      <section id="default-taxonomy" class="border border-slate-300 rounded-lg p-6">
+        <.h2 class="mb-4!">Default Taxonomy</.h2>
+
+        <p id="taxonomy-value" class="text-lg font-medium text-slate-900 mb-2">
+          {@taxonomy_label || "None"}
+        </p>
+      </section>
 
       <section id="access-flags" class="border border-slate-300 rounded-lg p-6">
         <.h2 class="mb-4!">Access</.h2>
