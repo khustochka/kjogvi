@@ -139,6 +139,9 @@ config :ornithologue, Ornitho.Importer,
 
 config :ornithologue, Ornitho.StreamImporter, adapter: Ornitho.StreamImporter.LocalAdapter
 
+# The taxonomy the admin bootstrap seeds; must be one of the legit importers above.
+config :kjogvi, Kjogvi.Settings, default_taxonomy_importer: Ornitho.Importer.Ebird.V2025
+
 # OBAN
 
 # Jobs live in the `oban` Postgres schema, installed by a main-repo migration

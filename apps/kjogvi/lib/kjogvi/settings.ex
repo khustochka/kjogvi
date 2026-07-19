@@ -34,6 +34,13 @@ defmodule Kjogvi.Settings do
     get(:confirmation_disabled, false)
   end
 
+  @doc """
+  The `Ornitho.Importer` module the bootstrap seeds taxonomy from.
+  """
+  def default_taxonomy_importer do
+    get(:default_taxonomy_importer, nil)
+  end
+
   # Resolution layer. The only place that knows where settings come from --
   # swap this for a DB lookup later without touching any public function.
   defp get(key, default) do
