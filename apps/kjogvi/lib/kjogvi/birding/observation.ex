@@ -21,6 +21,8 @@ defmodule Kjogvi.Birding.Observation do
     # Not included in lifelist even for the owner
     field :unreported, :boolean, default: false
     field :ebird_obs_id, :string
+    field :breeding_code, :string
+    field :ml_catalog_numbers, {:array, :string}, default: []
 
     field :import_source, Ecto.Enum, values: Kjogvi.Types.ImportSource.values()
 
@@ -46,7 +48,9 @@ defmodule Kjogvi.Birding.Observation do
       :private_notes,
       :hidden,
       :unreported,
-      :ebird_obs_id
+      :ebird_obs_id,
+      :breeding_code,
+      :ml_catalog_numbers
     ])
     |> validate_required([
       :taxon_key
