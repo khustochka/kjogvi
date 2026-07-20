@@ -9,6 +9,37 @@ defmodule Kjogvi.Birding.Observation do
 
   alias Kjogvi.Pages.SpeciesTaxaMapping
 
+  # eBird breeding codes as {code, label}, ordered from strongest to weakest evidence.
+  @breeding_codes [
+    {"NY", "Nest with Young"},
+    {"NE", "Nest with Eggs"},
+    {"FS", "Carrying Fecal Sac"},
+    {"FY", "Feeding Young"},
+    {"CF", "Carrying Food"},
+    {"FL", "Recently Fledged Young"},
+    {"ON", "Occupied Nest"},
+    {"UN", "Used Nest (enter 0 if no birds seen)"},
+    {"DD", "Distraction Display"},
+    {"NB", "Nest Building"},
+    {"CN", "Carrying Nesting Material"},
+    {"PE", "Physiological Evidence"},
+    {"B", "Wren/Woodpecker Nest Building"},
+    {"A", "Agitated Behavior"},
+    {"N", "Visiting Probable Nest Site"},
+    {"C", "Courtship, Display or Copulation"},
+    {"T", "Territorial Defense"},
+    {"P", "Pair in Suitable Habitat"},
+    {"M", "Multiple (7+) Singing Birds"},
+    {"S7", "Singing Bird Present 7+ Days"},
+    {"S", "Singing Bird"},
+    {"H", "In Appropriate Habitat"},
+    {"F", "Flyover"}
+  ]
+
+  @breeding_code_values Enum.map(@breeding_codes, &elem(&1, 0))
+
+  def breeding_codes, do: @breeding_codes
+
   schema "observations" do
     belongs_to(:checklist, Kjogvi.Birding.Checklist, foreign_key: :checklist_id)
     field :taxon_key, :string
@@ -55,5 +86,6 @@ defmodule Kjogvi.Birding.Observation do
     |> validate_required([
       :taxon_key
     ])
+    |> validate_inclusion(:breeding_code, @breeding_code_values)
   end
 end
