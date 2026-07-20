@@ -132,7 +132,14 @@ defmodule KjogviWeb.Live.My.Checklists.Show do
     <%!-- Effort (left) + counts (bottom right) --%>
     <div class="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
       <div class="flex min-w-0 flex-wrap items-center gap-x-8 gap-y-3">
-        <.effort_badge effort_type={@checklist.effort_type} class="px-4 py-1.5 text-xl" />
+        <.effort_badge
+          effort_type={@checklist.effort_type}
+          effort_name={@checklist.effort_name}
+          class="px-4 py-1.5 text-xl"
+        />
+        <span :if={@checklist.effort_name} class="text-xl text-stone-700" title="Effort name">
+          {@checklist.effort_name}
+        </span>
         <.ebird_completeness_badge
           :if={!@checklist.ebird_id && not is_nil(@checklist.ebird_complete)}
           ebird_complete={@checklist.ebird_complete}

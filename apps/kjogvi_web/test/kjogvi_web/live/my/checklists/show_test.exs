@@ -243,4 +243,43 @@ defmodule KjogviWeb.Live.My.Checklists.ShowTest do
 
     refute has_element?(show_live, "#observation-#{obs.id}-no-species-page")
   end
+
+  describe "effort badge" do
+    test "shows NFC with a full-name title for nocturnal flight call", %{conn: conn, user: user} do
+      checklist = insert(:checklist, user: user, effort_type: "NOCTURNAL_FLIGHT_CALL")
+
+      {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
+
+      assert has_element?(
+               show_live,
+               ~s{span[title="Effort type: Nocturnal flight call"]},
+               "NFC"
+             )
+    end
+
+    test "OTHER badge titles with the effort name", %{conn: conn, user: user} do
+      checklist =
+        insert(:checklist, user: user, effort_type: "OTHER", effort_name: "Big Sit")
+
+      {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
+
+      assert has_element?(show_live, ~s{span[title="Effort type: Big Sit"]}, "OTHER")
+    end
+
+    test "other types title with their label", %{conn: conn, user: user} do
+      checklist = insert(:checklist, user: user, effort_type: "TRAVEL")
+
+      {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
+
+      assert has_element?(show_live, ~s{span[title="Effort type: Traveling"]}, "Traveling")
+    end
+
+    test "no badge when effort_type is nil", %{conn: conn, user: user} do
+      checklist = insert(:checklist, user: user, effort_type: nil)
+
+      {:ok, show_live, _html} = live(conn, ~p"/my/checklists/#{checklist.id}")
+
+      refute has_element?(show_live, ~s{span[title^="Effort type:"]})
+    end
+  end
 end

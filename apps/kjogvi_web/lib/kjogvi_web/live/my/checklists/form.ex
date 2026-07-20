@@ -27,7 +27,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
       socket
       |> assign(:marked_for_deletion, MapSet.new())
       |> assign(:container_class, "max-w-7xl")
-      |> assign(:effort_types, Birding.Checklist.effort_types())
+      |> assign(:effort_types, effort_type_options())
     }
   end
 
@@ -212,8 +212,9 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
                 type="select"
                 field={@form[:effort_type]}
                 label="Effort Type"
+                prompt="— None —"
                 options={@effort_types}
-                size={length(@effort_types)}
+                size={length(@effort_types) + 1}
               />
             </div>
             <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 flex-1">
@@ -277,6 +278,10 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
                   </label>
                 </div>
               </fieldset>
+
+              <div :if={@form[:effort_type].value == "OTHER"} class="col-span-2">
+                <CoreComponents.input type="text" field={@form[:effort_name]} label="Effort Name" />
+              </div>
             </div>
           </div>
         </div>
@@ -482,6 +487,7 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
       | observ_date: parse_date(params["observ_date"]),
         start_time: parse_time(params["start_time"]),
         effort_type: params["effort_type"],
+        effort_name: params["effort_name"],
         location_id: location_id,
         duration_minutes: parse_int(params["duration_minutes"]),
         distance_kms: parse_float(params["distance_kms"]),
@@ -554,4 +560,12 @@ defmodule KjogviWeb.Live.My.Checklists.Form do
   defp parse_float(nil), do: nil
   defp parse_float(""), do: nil
   defp parse_float(str), do: String.to_float(str)
+
+  # `{label, value}` tuples for the effort-type select.
+  defp effort_type_options do
+    Enum.map(
+      Birding.Checklist.effort_types(),
+      &{KjogviWeb.BirdingComponents.effort_label(&1), &1}
+    )
+  end
 end

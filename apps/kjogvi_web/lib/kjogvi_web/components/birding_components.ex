@@ -21,7 +21,11 @@ defmodule KjogviWeb.BirdingComponents do
     "STATIONARY" => "Stationary",
     "TRAVEL" => "Traveling",
     "AREA" => "Area",
-    "HISTORICAL" => "Historical"
+    "HISTORICAL" => "Historical",
+    "BANDING" => "Banding",
+    "PELAGIC" => "Pelagic",
+    "NOCTURNAL_FLIGHT_CALL" => "Nocturnal flight call",
+    "OTHER" => "Other"
   }
 
   @effort_badge_classes %{
@@ -29,7 +33,11 @@ defmodule KjogviWeb.BirdingComponents do
     "STATIONARY" => "bg-sky-100 text-sky-800 ring-sky-200",
     "TRAVEL" => "bg-forest-100 text-forest-800 ring-forest-200",
     "AREA" => "bg-amber-100 text-amber-800 ring-amber-200",
-    "HISTORICAL" => "bg-violet-100 text-violet-800 ring-violet-200"
+    "HISTORICAL" => "bg-violet-100 text-violet-800 ring-violet-200",
+    "BANDING" => "bg-rose-100 text-rose-800 ring-rose-200",
+    "PELAGIC" => "bg-cyan-100 text-cyan-800 ring-cyan-200",
+    "NOCTURNAL_FLIGHT_CALL" => "bg-indigo-100 text-indigo-800 ring-indigo-200",
+    "OTHER" => "bg-stone-100 text-stone-600 ring-stone-200"
   }
 
   @doc """
@@ -133,8 +141,12 @@ defmodule KjogviWeb.BirdingComponents do
               #{@checklist.id}
             </.link>
           </li>
-          <li title="Effort type">
-            <.effort_badge effort_type={@checklist.effort_type} class="text-sm" />
+          <li>
+            <.effort_badge
+              effort_type={@checklist.effort_type}
+              effort_name={@checklist.effort_name}
+              class="text-sm"
+            />
           </li>
           <li :if={@checklist.start_time} title="Start time" class="tabular-nums">
             <span class="sr-only">Start time:</span>
@@ -323,18 +335,27 @@ defmodule KjogviWeb.BirdingComponents do
 
   @doc """
   Renders the effort type of a checklist as a coloured badge.
+
+  Renders nothing when `effort_type` is `nil`. `effort_name` supplies the hover
+  title for the `OTHER` type.
   """
-  attr :effort_type, :string, required: true
+  attr :effort_type, :string, default: nil
+  attr :effort_name, :string, default: nil
   attr :class, :string, default: nil
+
+  def effort_badge(%{effort_type: nil} = assigns), do: ~H""
 
   def effort_badge(assigns) do
     ~H"""
-    <span class={[
-      "inline-flex items-center rounded-md px-2 py-0.5 font-medium ring-1 ring-inset",
-      effort_badge_class(@effort_type),
-      @class
-    ]}>
-      {effort_label(@effort_type)}
+    <span
+      title={effort_badge_title(@effort_type, @effort_name)}
+      class={[
+        "inline-flex items-center rounded-md px-2 py-0.5 font-medium ring-1 ring-inset",
+        effort_badge_class(@effort_type),
+        @class
+      ]}
+    >
+      {effort_badge_text(@effort_type)}
     </span>
     """
   end
@@ -464,6 +485,17 @@ defmodule KjogviWeb.BirdingComponents do
   defp effort_badge_class(type) do
     Map.get(@effort_badge_classes, type, "bg-stone-100 text-stone-600 ring-stone-200")
   end
+
+  # Badge face: an abbreviation for NFC, the bare token for OTHER, the label otherwise.
+  defp effort_badge_text("NOCTURNAL_FLIGHT_CALL"), do: "NFC"
+  defp effort_badge_text("OTHER"), do: "OTHER"
+  defp effort_badge_text(type), do: effort_label(type)
+
+  # Hover title: OTHER names the free-text effort, everything else names its type label.
+  defp effort_badge_title("OTHER", effort_name) when is_binary(effort_name),
+    do: "Effort type: #{effort_name}"
+
+  defp effort_badge_title(type, _effort_name), do: "Effort type: #{effort_label(type)}"
 
   @doc "Formats a duration in minutes as a human-readable string, e.g. `1 h 35 min`."
   def format_duration(minutes) when minutes >= 60 do

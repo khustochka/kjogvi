@@ -71,6 +71,26 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       assert html =~ "type=\"hidden\""
     end
 
+    test "effort name field is hidden until OTHER is selected", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, "/my/checklists/new")
+
+      refute has_element?(lv, ~s(input[name="checklist[effort_name]"]))
+
+      lv
+      |> render_change("sync_checklist", %{
+        "checklist" => %{"effort_type" => "OTHER"}
+      })
+
+      assert has_element?(lv, ~s(input[name="checklist[effort_name]"]))
+
+      lv
+      |> render_change("sync_checklist", %{
+        "checklist" => %{"effort_type" => "STATIONARY"}
+      })
+
+      refute has_element?(lv, ~s(input[name="checklist[effort_name]"]))
+    end
+
     test "renders empty observation form", %{conn: conn} do
       {:ok, lv, _html} = live(conn, "/my/checklists/new")
 

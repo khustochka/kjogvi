@@ -44,7 +44,7 @@ defmodule Kjogvi.Birding.ChecklistTest do
       assert %{location_id: ["can't be blank"]} = errors_on(changeset)
     end
 
-    test "invalid without effort_type" do
+    test "valid without effort_type" do
       location = insert(:location)
 
       changeset =
@@ -54,7 +54,53 @@ defmodule Kjogvi.Birding.ChecklistTest do
           "user_id" => 1
         })
 
-      assert %{effort_type: ["can't be blank"]} = errors_on(changeset)
+      assert changeset.valid?
+    end
+
+    test "invalid with an unknown effort_type" do
+      location = insert(:location)
+
+      changeset =
+        Checklist.changeset(%Checklist{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "BOGUS",
+          "user_id" => 1
+        })
+
+      assert %{effort_type: ["is invalid"]} = errors_on(changeset)
+    end
+
+    test "accepts effort_name" do
+      location = insert(:location)
+
+      changeset =
+        Checklist.changeset(%Checklist{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "OTHER",
+          "effort_name" => "Big Sit",
+          "user_id" => 1
+        })
+
+      assert changeset.valid?
+      assert Ecto.Changeset.get_field(changeset, :effort_name) == "Big Sit"
+    end
+
+    test "clears effort_name when effort_type is not OTHER" do
+      location = insert(:location)
+
+      changeset =
+        Checklist.changeset(%Checklist{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "effort_type" => "INCIDENTAL",
+          "effort_name" => "Big Sit",
+          "user_id" => 1
+        })
+
+      assert changeset.valid?
+      assert Ecto.Changeset.get_field(changeset, :effort_name) == nil
     end
 
     test "casts optional fields" do
@@ -324,7 +370,11 @@ defmodule Kjogvi.Birding.ChecklistTest do
       assert "AREA" in types
       assert "INCIDENTAL" in types
       assert "HISTORICAL" in types
-      assert length(types) == 5
+      assert "BANDING" in types
+      assert "PELAGIC" in types
+      assert "NOCTURNAL_FLIGHT_CALL" in types
+      assert "OTHER" in types
+      assert length(types) == 9
     end
   end
 end

@@ -11,7 +11,11 @@ defmodule Kjogvi.Birding.Checklist do
     "STATIONARY",
     "TRAVEL",
     "AREA",
-    "HISTORICAL"
+    "HISTORICAL",
+    "BANDING",
+    "PELAGIC",
+    "NOCTURNAL_FLIGHT_CALL",
+    "OTHER"
   ]
 
   def effort_types, do: @effort_types
@@ -21,6 +25,7 @@ defmodule Kjogvi.Birding.Checklist do
     belongs_to(:location, Kjogvi.Geo.Location)
 
     field :effort_type, :string
+    field :effort_name, :string
     field :start_time, :time
     field :duration_minutes, :integer
     field :distance_kms, :float
@@ -66,6 +71,7 @@ defmodule Kjogvi.Birding.Checklist do
       :observ_date,
       :location_id,
       :effort_type,
+      :effort_name,
       :start_time,
       :duration_minutes,
       :distance_kms,
@@ -84,9 +90,14 @@ defmodule Kjogvi.Birding.Checklist do
     |> validate_required([
       :observ_date,
       :location_id,
-      :effort_type,
       :user_id
     ])
+    # Allows nil effort_type
+    #
+    # TODO: In teh future it will be based on the user's preferences, e.g.
+    # allow nil, do not use effort type, or enforce eBird-style effort type.
+    |> validate_inclusion(:effort_type, @effort_types)
+    |> clear_effort_name_unless_other()
     |> validate_location()
     |> validate_effort_fields()
     |> cast_assoc(:observations,
@@ -120,12 +131,20 @@ defmodule Kjogvi.Birding.Checklist do
     end
   end
 
+  # `effort_name` is only meaningful for the `OTHER` effort type; drop it otherwise.
+  defp clear_effort_name_unless_other(changeset) do
+    case get_field(changeset, :effort_type) do
+      "OTHER" -> changeset
+      _ -> put_change(changeset, :effort_name, nil)
+    end
+  end
+
   defp validate_effort_fields(changeset) do
     case get_field(changeset, :effort_type) do
-      "STATIONARY" ->
+      type when type in ["STATIONARY", "BANDING", "NOCTURNAL_FLIGHT_CALL"] ->
         validate_required(changeset, [:start_time, :duration_minutes])
 
-      "TRAVEL" ->
+      type when type in ["TRAVEL", "PELAGIC"] ->
         validate_required(changeset, [:start_time, :duration_minutes, :distance_kms])
 
       "AREA" ->

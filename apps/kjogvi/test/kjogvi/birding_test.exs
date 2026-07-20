@@ -46,7 +46,7 @@ defmodule Kjogvi.BirdingTest do
       refute changeset.valid?
     end
 
-    test "requires observ_date, location_id, effort_type, and user_id" do
+    test "requires observ_date, location_id, and user_id" do
       changeset = Checklist.changeset(%Checklist{}, %{})
 
       refute changeset.valid?
@@ -54,9 +54,10 @@ defmodule Kjogvi.BirdingTest do
       assert %{
                observ_date: ["can't be blank"],
                location_id: ["can't be blank"],
-               effort_type: ["can't be blank"],
                user_id: ["can't be blank"]
              } = errors_on(changeset)
+
+      refute Map.has_key?(errors_on(changeset), :effort_type)
     end
 
     test "creates a checklist with observations" do

@@ -100,7 +100,7 @@ defmodule KjogviWeb.ImageComponents do
   # timing shows just its effort type (or nothing).
   defp effort_parts(checklist) do
     [
-      checklist.effort_type,
+      checklist.effort_type && KjogviWeb.BirdingComponents.effort_label(checklist.effort_type),
       format_time(checklist.start_time),
       format_duration(checklist.duration_minutes),
       format_distance(checklist.distance_kms),

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict uAk56HG0jUAyY1b8NafvDvI1Xs0lP274q9Qc92HgqlhnIvxSLvT6iC8Tu4E797I
+\restrict lySbd5CPrexvpIAZYG2kjFTDQRheNaVgNpTcUa4dZyn51RyokRuqL8fKahFzuEX
 
 -- Dumped from database version 18.3 (Debian 18.3-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -357,7 +357,7 @@ CREATE TABLE public.checklists (
     id bigint NOT NULL,
     observ_date date NOT NULL,
     location_id bigint NOT NULL,
-    effort_type character varying(255) NOT NULL,
+    effort_type character varying(255),
     start_time time(0) without time zone,
     duration_minutes integer,
     distance_kms double precision,
@@ -377,7 +377,8 @@ CREATE TABLE public.checklists (
     cached_year integer GENERATED ALWAYS AS (EXTRACT(year FROM observ_date)) STORED,
     cached_month integer GENERATED ALWAYS AS (EXTRACT(month FROM observ_date)) STORED,
     import_source character varying(255),
-    ebird_complete boolean
+    ebird_complete boolean,
+    effort_name text
 );
 
 
@@ -1717,7 +1718,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict uAk56HG0jUAyY1b8NafvDvI1Xs0lP274q9Qc92HgqlhnIvxSLvT6iC8Tu4E797I
+\unrestrict lySbd5CPrexvpIAZYG2kjFTDQRheNaVgNpTcUa4dZyn51RyokRuqL8fKahFzuEX
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1764,3 +1765,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260716232748);
 INSERT INTO public."schema_migrations" (version) VALUES (20260719043002);
 INSERT INTO public."schema_migrations" (version) VALUES (20260719044909);
 INSERT INTO public."schema_migrations" (version) VALUES (20260719191706);
+INSERT INTO public."schema_migrations" (version) VALUES (20260720051106);

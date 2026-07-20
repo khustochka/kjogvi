@@ -631,7 +631,7 @@ defmodule KjogviWeb.Live.My.Images.FormTest do
       # Sci name (italic), checklist id, and the available effort details.
       assert html =~ "Parus major"
       assert html =~ "##{checklist.id}"
-      assert html =~ "TRAVEL"
+      assert html =~ "Traveling"
       assert html =~ "08:15"
       assert html =~ "90 min"
       assert html =~ "3.5 km"
