@@ -182,6 +182,26 @@ defmodule Kjogvi.Geo.DumpRestoreTest do
       assert Location |> Query.only_common() |> Repo.aggregate(:count) == 0
     end
 
+    test "casts enum columns via the schema type, not the global atom table" do
+      # location_type and import_source are restored by casting the CSV string
+      # against the schema field's Ecto.Enum — not String.to_existing_atom, which
+      # would need the atom preloaded. A valid value round-trips to its atom.
+      insert(:subdivision1,
+        iso_code: "UA-30",
+        country: insert(:country, iso_code: "UA"),
+        import_source: :iso
+      )
+
+      path = tmp_csv()
+      assert {:ok, 2} = Dump.to_file(:common_locations, path)
+      delete_common()
+      assert {:ok, 2} = Restore.from_file(:common_locations, path)
+
+      restored = Location |> Query.only_common() |> Repo.all()
+      assert :subdivision1 in Enum.map(restored, & &1.location_type)
+      assert :iso in Enum.map(restored, & &1.import_source)
+    end
+
     test "bumps the id sequence past the restored ids and the reserved floor" do
       insert(:country, iso_code: "UA")
 

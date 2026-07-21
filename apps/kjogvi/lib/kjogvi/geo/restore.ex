@@ -147,13 +147,13 @@ defmodule Kjogvi.Geo.Restore do
       id: String.to_integer(row["id"]),
       slug: row["slug"],
       name_en: row["name_en"],
-      location_type: String.to_existing_atom(row["location_type"]),
+      location_type: enum(Location, :location_type, row["location_type"]),
       iso_code: string(row["iso_code"]),
       lat: decimal(row["lat"]),
       lon: decimal(row["lon"]),
       is_private: boolean(row["is_private"]),
       public_index: integer(row["public_index"]),
-      import_source: atom(row["import_source"]),
+      import_source: enum(Location, :import_source, row["import_source"]),
       extras: extras(row["extras"]),
       country_id: integer(row["country_id"]),
       subdivision1_id: integer(row["subdivision1_id"]),
@@ -168,7 +168,7 @@ defmodule Kjogvi.Geo.Restore do
   defp row_attrs(:ebird_locations, row, now) do
     %{
       code: row["code"],
-      location_type: String.to_existing_atom(row["location_type"]),
+      location_type: enum(EbirdLocation, :location_type, row["location_type"]),
       country_code: string(row["country_code"]),
       subnational1_code: string(row["subnational1_code"]),
       subnational2_code: string(row["subnational2_code"]),
@@ -192,8 +192,16 @@ defmodule Kjogvi.Geo.Restore do
   defp boolean("false"), do: false
   defp boolean(""), do: nil
 
-  defp atom(""), do: nil
-  defp atom(value), do: String.to_existing_atom(value)
+  # Cast an Ecto.Enum field's stored string back to its atom via the schema's own
+  # type, so the valid set stays sourced from the schema and no global atom-table
+  # lookup (String.to_existing_atom) is needed — the latter needs the defining
+  # module already loaded, which a lean boot can't guarantee.
+  defp enum(_schema, _field, ""), do: nil
+
+  defp enum(schema, field, value) do
+    {:ok, atom} = Ecto.Type.cast(schema.__schema__(:type, field), value)
+    atom
+  end
 
   defp extras(""), do: %{}
   defp extras(value), do: Jason.decode!(value)
