@@ -12,8 +12,11 @@ defmodule Kjogvi.Umbrella.MixProject do
       dialyzer: dialyzer(),
       test_coverage: [tool: ExCoveralls],
       releases: [
-        kjogvi: [
+        web: [
           applications: [kjogvi_web: :permanent, opentelemetry: :temporary]
+        ],
+        kjogvi: [
+          applications: [kjogvi: :permanent, opentelemetry: :temporary]
         ]
       ]
     ]

@@ -65,7 +65,8 @@ RUN mix assets.deploy
 COPY config/runtime.exs config/
 
 COPY rel rel
-RUN mix release
+RUN mix release kjogvi
+RUN mix release web
 
 #######################################################################
 
@@ -97,6 +98,7 @@ ENV MIX_ENV="prod"
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/kjogvi ./
+COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/web ./
 
 USER nobody
 
