@@ -1,0 +1,83 @@
+#!/bin/sh
+# Full dev reset: remembers the current admin's email, drops and recreates the
+# database, recreates that admin with a fresh password (saved to 1Password via
+# bin/create_admin), then runs the bootstrap import (taxonomy + locations).
+#
+#   bin/reset_dev [EMAIL] [--vault VAULT] [--url URL]
+#
+# EMAIL overrides the remembered admin email (required when the database has no
+# admin yet). --vault and --url are passed through to bin/create_admin.
+set -eu
+
+email=""
+passthrough=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --vault|--url)
+      passthrough="$passthrough $1 ${2:?"$1 needs a value"}"
+      shift 2
+      ;;
+    *)
+      email="$1"
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$email" ]; then
+  echo "Reading current admin email from the database..."
+  # The value is tagged and grepped out so boot lines on stdout don't get
+  # mistaken for it. stderr flows through to the terminal.
+  email=$(mix run -e '
+    Logger.configure(level: :warning)
+    case Kjogvi.Accounts.list_admins() do
+      [%{email: email} | _] -> IO.puts("ADMIN_EMAIL=" <> email)
+      [] -> :ok
+    end
+  ' | sed -n 's/^ADMIN_EMAIL=//p')
+fi
+
+if [ -z "$email" ]; then
+  echo "No admin email found in the database and none given." >&2
+  echo "Pass one explicitly: bin/reset_dev EMAIL" >&2
+  exit 1
+fi
+
+echo "Admin email: $email"
+
+echo "Resetting the database..."
+# Run from the kjogvi app dir: its ecto.reset alias seeds via priv/repo/seeds.exs,
+# a relative path that only resolves there, not at the umbrella root. (mix cmd
+# --app cd's into the app; mix do --app does not, so it can't find the seeds.)
+(cd apps/kjogvi && mix ecto.reset)
+
+echo "Creating admin user..."
+# shellcheck disable=SC2086
+bin/create_admin "$email" $passthrough
+
+echo "Running bootstrap import (taxonomy + locations)..."
+# Runs the bootstrap steps directly (not via the Oban Bootstrap job): import the
+# default taxonomy, then restore common and eBird locations. Common locations
+# must land before eBird ones — the eBird snapshot links to their ids.
+mix run -e '
+  Logger.configure(level: :warning)
+
+  importer = Kjogvi.Settings.default_taxonomy_importer()
+
+  if Ornitho.Finder.Book.exists?(importer.slug(), importer.version()) do
+    IO.puts("Taxonomy #{importer.name()} already imported, skipping.")
+  else
+    IO.puts("Importing #{importer.name()} taxonomy...")
+    {:ok, _count} = importer.process_import()
+  end
+
+  IO.puts("Restoring common locations...")
+  {:ok, _count} = Kjogvi.Geo.Restore.run(:common_locations)
+
+  IO.puts("Restoring eBird locations...")
+  {:ok, _count} = Kjogvi.Geo.Restore.run(:ebird_locations)
+
+  IO.puts("Bootstrap finished.")
+'
+
+echo "Dev reset complete."
