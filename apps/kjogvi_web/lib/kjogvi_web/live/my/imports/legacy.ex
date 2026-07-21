@@ -86,7 +86,7 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
   # enqueuing a second one, so re-reading the status afterwards keeps the
   # button state honest either way.
   defp start_import(%{assigns: %{user: user}} = socket) do
-    {:ok, _job} = Oban.insert(Jobs.LegacyImport.new(%{user_id: user.id}))
+    {:ok, _job} = OpentelemetryOban.insert(Jobs.LegacyImport.new(%{user_id: user.id}))
 
     socket
     |> clear_flash()

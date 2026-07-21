@@ -33,7 +33,7 @@ defmodule KjogviWeb.Live.Admin.Imports.Index do
   # enqueuing a second one, so re-reading the status keeps the button honest.
   @impl true
   def handle_event("start_bootstrap", _params, socket) do
-    {:ok, _job} = Oban.insert(Jobs.Bootstrap.new(%{}))
+    {:ok, _job} = OpentelemetryOban.insert(Jobs.Bootstrap.new(%{}))
 
     {:noreply, assign(socket, :bootstrap_result, Jobs.status(Jobs.Bootstrap))}
   end

@@ -5,6 +5,7 @@ defmodule Kjogvi.Telemetry.Opentelemetry do
 
   def setup() do
     Kjogvi.Opentelemetry.Ecto.setup()
+    OpentelemetryOban.setup()
 
     Kjogvi.Telemetry.Opentelemetry.LegacyImport.setup()
     Kjogvi.Telemetry.Opentelemetry.TaxonomyImport.setup()

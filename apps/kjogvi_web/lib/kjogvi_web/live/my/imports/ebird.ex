@@ -89,7 +89,7 @@ defmodule KjogviWeb.Live.My.Imports.Ebird do
     case Ebird.Web.ebird_credentials(user) do
       {:ok, _credentials} ->
         Store.ChecklistPreload.reset_preloads(user)
-        {:ok, _job} = Oban.insert(Jobs.EbirdPreload.new(%{user_id: user.id}))
+        {:ok, _job} = OpentelemetryOban.insert(Jobs.EbirdPreload.new(%{user_id: user.id}))
 
         socket
         |> clear_flash()
