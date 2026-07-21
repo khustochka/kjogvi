@@ -81,7 +81,8 @@ defmodule Kjogvi.Birding.Observation do
       :unreported,
       :ebird_obs_id,
       :breeding_code,
-      :ml_catalog_numbers
+      :ml_catalog_numbers,
+      :import_source
     ])
     |> validate_required([
       :taxon_key

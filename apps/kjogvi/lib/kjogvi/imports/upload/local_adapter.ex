@@ -4,8 +4,11 @@ defmodule Kjogvi.Imports.Upload.LocalAdapter do
   The default adapter — dev and test round-trip local files and never touch
   the prod upload bucket.
 
-  `:path` is used as-is (relative to the cwd, or absolute). Unlike
-  `Kjogvi.Datasets.LocalAdapter` these files are throwaway, so there is no
+  `:path` is used as-is. It should be **absolute**: the writer (a LiveView in
+  one umbrella app) and the reader (an Oban job in another) run with different
+  working directories, so a relative path would resolve to different places and
+  the job would miss the file. The base config anchors it to the umbrella root.
+  Unlike `Kjogvi.Datasets.LocalAdapter` these files are throwaway, so there is no
   `:otp_app`/priv resolution — a scratch dir is exactly what's wanted.
   """
 

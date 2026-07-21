@@ -28,6 +28,17 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
     from e in query, where: e.id == ^id
   end
 
+  def by_code(query \\ EbirdLocation, code) do
+    from e in query, where: e.code == ^code
+  end
+
+  @doc """
+  Rows whose eBird `code` is in the given list.
+  """
+  def by_codes(query \\ EbirdLocation, codes) do
+    from e in query, where: e.code in ^codes
+  end
+
   @doc """
   Rows linked to the given common location.
   """

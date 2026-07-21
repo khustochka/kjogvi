@@ -165,9 +165,15 @@ config :kjogvi, Kjogvi.Datasets,
 
 # Temporary import uploads (Kjogvi.Imports.Upload): local scratch files by
 # default; prod switches to a dedicated S3 bucket in runtime.exs.
+#
+# The path is anchored to the umbrella root (this config file's dir) rather than
+# left relative: the LiveView that stores an upload and the Oban job that reads
+# it back run in different umbrella apps with different working directories, so a
+# relative "tmp/imports" would resolve to two different places (the writer's cwd
+# vs. e.g. apps/ornitho_web) and the job would fail with :enoent.
 config :kjogvi, Kjogvi.Imports.Upload,
   adapter: Kjogvi.Imports.Upload.LocalAdapter,
-  path: "tmp/imports"
+  path: Path.expand("../tmp/imports", __DIR__)
 
 config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@kjogvi.local"}
 

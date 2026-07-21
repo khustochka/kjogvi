@@ -327,9 +327,14 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     # The run itself is exercised in Kjogvi.Jobs.Ebird.ImportTest; here it is
     # never drained, so these tests stop at the enqueued job.
     test "uploading a zip stashes it and enqueues the import job", %{lv: lv, user: user} do
+      # `:zip.create` bakes the current time into each entry's header, so reuse
+      # one zip for both the upload and the round-trip assertion — generating it
+      # twice can straddle a second boundary and differ by a timestamp byte.
+      zip = csv_zip()
+
       file =
         file_input(lv, "#ebird-csv-import-form", :ebird_zip, [
-          %{name: "MyEBirdData.zip", content: csv_zip(), type: "application/zip"}
+          %{name: "MyEBirdData.zip", content: zip, type: "application/zip"}
         ])
 
       assert render_upload(file, "MyEBirdData.zip") =~ "MyEBirdData.zip"
@@ -351,7 +356,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       on_exit(fn -> File.rm(dest) end)
       assert :ok = Kjogvi.Imports.Upload.fetch_to(key, dest)
-      assert File.read!(dest) == csv_zip()
+      assert File.read!(dest) == zip
     end
 
     test "submitting with no file selected shows an error and enqueues nothing",
@@ -360,6 +365,40 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       assert html =~ "Choose an eBird export (.zip) to import."
       assert Jobs.status(Jobs.Ebird.Import, %{user_id: user.id}) == %AsyncResult{}
+    end
+
+    test "a second upload while an import runs is rejected and not orphaned",
+         %{lv: lv, user: user} do
+      # An import is already in flight for this user.
+      Oban.insert!(Jobs.Ebird.Import.new(%{user_id: user.id, upload_key: "in-flight"}))
+
+      file =
+        file_input(lv, "#ebird-csv-import-form", :ebird_zip, [
+          %{name: "MyEBirdData.zip", content: csv_zip(), type: "application/zip"}
+        ])
+
+      assert render_upload(file, "MyEBirdData.zip") =~ "MyEBirdData.zip"
+      html = lv |> element("#ebird-csv-import-form") |> render_submit()
+
+      assert html =~ "An eBird import is already in progress."
+
+      # The exclusive job wasn't duplicated: only the original in-flight one.
+      assert [%Oban.Job{args: %{"upload_key" => "in-flight"}}] =
+               Oban.Job |> Kjogvi.Repo.all(prefix: Oban.config().prefix)
+
+      # The rejected upload was deleted, not orphaned: no stored uploads remain
+      # for this user (the "in-flight" key was never actually stored).
+      assert stored_ebird_uploads(user) == []
+    end
+
+    defp stored_ebird_uploads(user) do
+      config = Application.get_env(:kjogvi, Kjogvi.Imports.Upload)
+      dir = Path.join([Keyword.fetch!(config, :path), "imports", "ebird", to_string(user.id)])
+
+      case File.ls(dir) do
+        {:ok, files} -> files
+        {:error, :enoent} -> []
+      end
     end
 
     test "a progress message is routed to the CSV import component", %{lv: lv, user: user} do
