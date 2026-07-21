@@ -429,6 +429,26 @@ defmodule Kjogvi.UsersTest do
     end
   end
 
+  describe "list_admins/0" do
+    test "returns only admins, ordered by nickname" do
+      {:ok, _} =
+        Accounts.register_admin(valid_user_attributes(email: "zoe@example.com", nickname: "zoe"))
+
+      {:ok, _} =
+        Accounts.register_admin(valid_user_attributes(email: "amy@example.com", nickname: "amy"))
+
+      # A non-admin must be excluded.
+      Kjogvi.AccountsFixtures.user_fixture(nickname: "bob")
+
+      assert ["amy", "zoe"] = Accounts.list_admins() |> Enum.map(& &1.nickname)
+    end
+
+    test "returns an empty list when there are no admins" do
+      Kjogvi.AccountsFixtures.user_fixture()
+      assert Accounts.list_admins() == []
+    end
+  end
+
   describe "change_user_registration/2" do
     test "returns a changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})

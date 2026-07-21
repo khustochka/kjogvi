@@ -631,6 +631,15 @@ defmodule Kjogvi.Accounts do
     from u in User, where: ^admin_role() in u.roles
   end
 
+  @doc """
+  Lists admin users, ordered by nickname.
+  """
+  def list_admins do
+    admins()
+    |> User.Query.order_by_nickname()
+    |> Repo.all()
+  end
+
   @admin_exists_key {__MODULE__, :admin_exists}
 
   @doc """
