@@ -195,6 +195,19 @@ if config_env() == :prod do
     access_key_id: System.get_env("KJOGVI_DATASETS_ACCESS_KEY_ID"),
     secret_access_key: System.get_env("KJOGVI_DATASETS_SECRET_ACCESS_KEY")
 
+  # KJOGVI IMPORT UPLOADS
+
+  # Temporary per-user import uploads (eBird exports etc.) live in a dedicated
+  # S3 bucket, separate from images so a lifecycle rule can expire abandoned
+  # uploads. Credentials are optional: when unset, ex_aws falls back to the
+  # global chain / instance role.
+  config :kjogvi, Kjogvi.Imports.Upload,
+    adapter: Kjogvi.Imports.Upload.S3Adapter,
+    bucket: System.get_env("KJOGVI_EBIRD_UPLOADS_BUCKET"),
+    region: System.get_env("KJOGVI_EBIRD_UPLOADS_REGION"),
+    access_key_id: System.get_env("KJOGVI_EBIRD_UPLOADS_ACCESS_KEY_ID"),
+    secret_access_key: System.get_env("KJOGVI_EBIRD_UPLOADS_SECRET_ACCESS_KEY")
+
   # KJOGVI Legacy Import
 
   config :kjogvi, Kjogvi.Legacy.Import,

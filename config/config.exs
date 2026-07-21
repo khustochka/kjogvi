@@ -163,6 +163,12 @@ config :kjogvi, Kjogvi.Datasets,
   otp_app: :kjogvi,
   path: "priv/datasets"
 
+# Temporary import uploads (Kjogvi.Imports.Upload): local scratch files by
+# default; prod switches to a dedicated S3 bucket in runtime.exs.
+config :kjogvi, Kjogvi.Imports.Upload,
+  adapter: Kjogvi.Imports.Upload.LocalAdapter,
+  path: "tmp/imports"
+
 config :kjogvi, :email, registration_sender: {"Kjogvi User Management", "users@kjogvi.local"}
 
 config :kjogvi, Kjogvi.Legacy.Import,
