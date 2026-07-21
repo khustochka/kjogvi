@@ -63,6 +63,9 @@ defmodule Kjogvi.MixProject do
       {:cachex, "~> 4.0"},
       {:csv, "~> 3.0"},
       {:oban, "~> 2.23"},
+      # Oban is started here, so oban_met must boot first to attach its
+      # auto-start handler for the dashboard's metrics (Oban.Web is in kjogvi_web).
+      {:oban_met, "~> 1.2"},
       # Fork of waffle that makes hackney optional.
       {:waffle, github: "khustochka/waffle", branch: "hackney-optional", override: true},
       {:waffle_ecto, "~> 0.0.12"},
