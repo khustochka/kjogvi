@@ -8,6 +8,7 @@ defmodule KjogviWeb.Live.My.Imports.Index do
 
   on_mount {Imports.Legacy, :attach}
   on_mount {Imports.Ebird, :attach}
+  on_mount {Imports.EbirdCsv, :attach}
 
   def mount(_params, _session, %{assigns: assigns} = socket) do
     {:ok,
@@ -40,7 +41,8 @@ defmodule KjogviWeb.Live.My.Imports.Index do
   defp imports do
     [
       {Imports.Legacy, "Legacy Import", "legacy-import", fn user -> Accounts.admin?(user) end},
-      {Imports.Ebird, "eBird preload", "ebird-import", fn _ -> true end}
+      {Imports.Ebird, "eBird preload", "ebird-import", fn _ -> true end},
+      {Imports.EbirdCsv, "eBird CSV import", "ebird-csv-import", fn _ -> true end}
     ]
   end
 end

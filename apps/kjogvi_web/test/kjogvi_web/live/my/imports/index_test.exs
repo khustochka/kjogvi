@@ -25,11 +25,13 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       assert html =~ "Import Tasks"
       assert html =~ "Legacy Import"
       assert html =~ "eBird preload"
+      assert html =~ "eBird CSV import"
       # The ISO locations import lives on /admin/imports/locations now.
       refute html =~ "Locations Import"
     end
 
-    test "a non-admin user sees only the eBird import checklist", %{conn: conn} do
+    test "a non-admin user sees the eBird import checklists but not the legacy one",
+         %{conn: conn} do
       {:ok, _lv, html} =
         conn
         |> login_user(Kjogvi.AccountsFixtures.user_fixture())
@@ -37,6 +39,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       assert html =~ "Import Tasks"
       assert html =~ "eBird preload"
+      assert html =~ "eBird CSV import"
       refute html =~ "Legacy Import"
     end
 
@@ -297,6 +300,72 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       assert html =~ "eBird preload failed: User does not have eBird configuration."
       assert Store.ChecklistPreload.get_preloads(user).checklists == []
       assert Jobs.status(Jobs.EbirdPreload, %{user_id: user.id}) == %AsyncResult{}
+    end
+  end
+
+  describe "eBird CSV import" do
+    setup %{conn: conn} do
+      user = Kjogvi.AccountsFixtures.user_fixture()
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      %{lv: lv, user: user}
+    end
+
+    defp csv_zip do
+      {:ok, {_name, bin}} =
+        :zip.create(~c"export.zip", [{~c"MyEBirdData.csv", "Row ID,Common Name\n1,Mallard\n"}], [
+          :memory
+        ])
+
+      bin
+    end
+
+    # The run itself is exercised in Kjogvi.Jobs.Ebird.ImportTest; here it is
+    # never drained, so these tests stop at the enqueued job.
+    test "uploading a zip stashes it and enqueues the import job", %{lv: lv, user: user} do
+      file =
+        file_input(lv, "#ebird-csv-import-form", :ebird_zip, [
+          %{name: "MyEBirdData.zip", content: csv_zip(), type: "application/zip"}
+        ])
+
+      assert render_upload(file, "MyEBirdData.zip") =~ "MyEBirdData.zip"
+
+      lv |> element("#ebird-csv-import-form") |> render_submit()
+
+      assert has_element?(lv, "#ebird-csv-import-form button[disabled]")
+      assert render(lv) =~ "eBird import in progress..."
+
+      assert %AsyncResult{loading: %{message: _}} =
+               Jobs.status(Jobs.Ebird.Import, %{user_id: user.id})
+
+      # The job carries the stored upload key, and the file is on disk for it.
+      [%Oban.Job{args: %{"upload_key" => key}}] =
+        Oban.Job |> Kjogvi.Repo.all(prefix: Oban.config().prefix)
+
+      dest =
+        Path.join(System.tmp_dir!(), "kjogvi_csv_fetch_#{System.unique_integer([:positive])}")
+
+      on_exit(fn -> File.rm(dest) end)
+      assert :ok = Kjogvi.Imports.Upload.fetch_to(key, dest)
+      assert File.read!(dest) == csv_zip()
+    end
+
+    test "submitting with no file selected shows an error and enqueues nothing",
+         %{lv: lv, user: user} do
+      html = lv |> element("#ebird-csv-import-form") |> render_submit()
+
+      assert html =~ "Choose an eBird export (.zip) to import."
+      assert Jobs.status(Jobs.Ebird.Import, %{user_id: user.id}) == %AsyncResult{}
+    end
+
+    test "a progress message is routed to the CSV import component", %{lv: lv, user: user} do
+      broadcast_progress({:ebird_import, user.id}, %{message: "Unpacking export..."})
+
+      assert flush_render(lv) =~ "Unpacking export..."
     end
   end
 end
