@@ -6,7 +6,10 @@ defmodule Kjogvi.Imports.Upload do
   Unlike `Kjogvi.Datasets` (curated, admin-owned snapshots) and
   `Kjogvi.Images` (permanent, user-facing media), these uploads are
   **ephemeral**: a user hands one in, an import job consumes it, and it is
-  deleted. Files are addressed by an opaque `key` scoped to the owning user
+  deleted — except after a failed run, which retains the file for admin
+  review (`Kjogvi.Imports.ImportLog.upload_key`); a bucket lifecycle rule
+  must leave retained files enough time to be looked at.
+  Files are addressed by an opaque `key` scoped to the owning user
   (`imports/<kind>/<user_id>/<uuid>.<ext>`), so one user's uploads can never
   collide with or be read as another's.
 

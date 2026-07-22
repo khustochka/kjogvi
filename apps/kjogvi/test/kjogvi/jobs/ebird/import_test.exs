@@ -85,7 +85,7 @@ defmodule Kjogvi.Jobs.Ebird.ImportTest do
       refute File.exists?(Path.join(dir, key))
     end
 
-    test "errors on a zip with no CSV, and still cleans up the upload", %{dir: dir, user: user} do
+    test "errors on a zip with no CSV, retaining the upload", %{dir: dir, user: user} do
       {:ok, {_name, zip}} =
         :zip.create(~c"export.zip", [{~c"readme.txt", "no csv here"}], [:memory])
 
@@ -94,7 +94,7 @@ defmodule Kjogvi.Jobs.Ebird.ImportTest do
       assert {:error, :no_csv_in_zip} =
                Import.perform(%Oban.Job{args: %{"user_id" => user.id, "upload_key" => key}})
 
-      refute File.exists?(Path.join(dir, key))
+      assert File.exists?(Path.join(dir, key))
     end
 
     test "errors on a corrupt zip", %{user: user} do
@@ -120,7 +120,7 @@ defmodule Kjogvi.Jobs.Ebird.ImportTest do
       %{user: user}
     end
 
-    test "a drained run finishes its import log with the summary", %{user: user} do
+    test "a drained run finishes its import log with the summary", %{dir: dir, user: user} do
       header =
         "Submission ID,Common Name,Scientific Name,Taxonomic Order,Count," <>
           "State/Province,County,Location ID,Location,Latitude,Longitude,Date,Time," <>
@@ -144,9 +144,18 @@ defmodule Kjogvi.Jobs.Ebird.ImportTest do
       assert log.summary["checklists_unmapped"] == 1
       assert log.started_at
       assert log.finished_at
+
+      # The failed rows are in the DB, so the consumed upload is deleted and
+      # unlinked.
+      assert [%{category: :unmapped, submission_id: "S1"}] =
+               Kjogvi.Imports.list_import_errors(log.id)
+
+      assert log.upload_key == nil
+      refute File.exists?(Path.join(dir, key))
     end
 
-    test "a failed run marks its import log failed with the reason", %{user: user} do
+    test "a failed run marks its import log failed and retains the upload",
+         %{dir: dir, user: user} do
       {:ok, {_name, zip}} =
         :zip.create(~c"export.zip", [{~c"readme.txt", "no csv here"}], [:memory])
 
@@ -158,6 +167,8 @@ defmodule Kjogvi.Jobs.Ebird.ImportTest do
       log = Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, log.id)
       assert log.status == :failed
       assert log.error == ":no_csv_in_zip"
+      assert log.upload_key == key
+      assert File.exists?(Path.join(dir, key))
     end
   end
 end

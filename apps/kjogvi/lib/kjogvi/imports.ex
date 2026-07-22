@@ -9,6 +9,7 @@ defmodule Kjogvi.Imports do
   `Kjogvi.Imports.Upload`.
   """
 
+  alias Kjogvi.Imports.ImportError
   alias Kjogvi.Imports.ImportLog
   alias Kjogvi.Repo
 
@@ -23,7 +24,7 @@ defmodule Kjogvi.Imports do
   def enqueue_ebird_import(user, upload_key) do
     Repo.transact(fn ->
       {:ok, import_log} =
-        %{source: :ebird, user_id: user.id}
+        %{source: :ebird, user_id: user.id, upload_key: upload_key}
         |> ImportLog.create_changeset()
         |> Repo.insert()
 
@@ -70,6 +71,60 @@ defmodule Kjogvi.Imports do
   """
   def log_failed(import_log_id, error) do
     transition(import_log_id, %{status: :failed, error: error, finished_at: DateTime.utc_now()})
+  end
+
+  @doc """
+  Persists a run's failed rows as `ImportError` records, in the order given.
+
+  Entries are maps with `:category` and `:rows`, plus optional
+  `:submission_id` and `:error`.
+  """
+  def record_errors(_import_log_id, []), do: :ok
+
+  def record_errors(import_log_id, entries) do
+    now = DateTime.utc_now()
+
+    rows =
+      Enum.map(entries, fn entry ->
+        %{
+          category: Map.fetch!(entry, :category),
+          rows: Map.fetch!(entry, :rows),
+          submission_id: Map.get(entry, :submission_id),
+          error: Map.get(entry, :error),
+          import_log_id: import_log_id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    {_count, nil} = Repo.insert_all(ImportError, rows)
+    :ok
+  end
+
+  @doc """
+  The failed rows recorded for the run, oldest first.
+  """
+  def list_import_errors(import_log_id) do
+    ImportError.Query.by_import_log(import_log_id)
+    |> ImportError.Query.oldest_first()
+    |> Repo.all()
+  end
+
+  @doc """
+  Unlinks the run's consumed (deleted) upload. `nil` — a job enqueued without
+  a log — is a no-op.
+  """
+  def clear_upload_key(nil), do: :ok
+
+  def clear_upload_key(import_log_id) do
+    case Repo.get(ImportLog, import_log_id) do
+      nil ->
+        :ok
+
+      import_log ->
+        {:ok, _} = import_log |> Ecto.Changeset.change(upload_key: nil) |> Repo.update()
+        :ok
+    end
   end
 
   defp transition(import_log_id, attrs) do

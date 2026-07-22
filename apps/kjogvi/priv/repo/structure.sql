@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict WHd4z4aKajNUgaaxYgJizXVSe9Qnoe4EjbxfkWyUMjmzK7jGAi8uwbG7VuybDhP
+\restrict gtlUyMaIr9bSdoMl8Y3LrGh3hli9poGQ4g9U9bCX4qQA7QhYYpcslXIhJlLQpKc
 
 -- Dumped from database version 18.3 (Debian 18.3-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -551,6 +551,41 @@ ALTER SEQUENCE public.images_id_seq OWNED BY public.images.id;
 
 
 --
+-- Name: import_errors; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.import_errors (
+    id bigint NOT NULL,
+    category character varying(255) NOT NULL,
+    submission_id character varying(255),
+    rows jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,
+    error text,
+    import_log_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: import_errors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.import_errors_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: import_errors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.import_errors_id_seq OWNED BY public.import_errors.id;
+
+
+--
 -- Name: import_logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -564,7 +599,8 @@ CREATE TABLE public.import_logs (
     finished_at timestamp without time zone,
     user_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    upload_key character varying(255)
 );
 
 
@@ -1006,6 +1042,13 @@ ALTER TABLE ONLY public.images ALTER COLUMN id SET DEFAULT nextval('public.image
 
 
 --
+-- Name: import_errors id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.import_errors ALTER COLUMN id SET DEFAULT nextval('public.import_errors_id_seq'::regclass);
+
+
+--
 -- Name: import_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1177,6 +1220,14 @@ ALTER TABLE ONLY public.image_observations
 
 ALTER TABLE ONLY public.images
     ADD CONSTRAINT images_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: import_errors import_errors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.import_errors
+    ADD CONSTRAINT import_errors_pkey PRIMARY KEY (id);
 
 
 --
@@ -1485,6 +1536,13 @@ CREATE UNIQUE INDEX images_user_id_slug_index ON public.images USING btree (user
 
 
 --
+-- Name: import_errors_import_log_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX import_errors_import_log_id_index ON public.import_errors USING btree (import_log_id);
+
+
+--
 -- Name: import_logs_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1755,6 +1813,14 @@ ALTER TABLE ONLY public.images
 
 
 --
+-- Name: import_errors import_errors_import_log_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.import_errors
+    ADD CONSTRAINT import_errors_import_log_id_fkey FOREIGN KEY (import_log_id) REFERENCES public.import_logs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: import_logs import_logs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1870,7 +1936,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict WHd4z4aKajNUgaaxYgJizXVSe9Qnoe4EjbxfkWyUMjmzK7jGAi8uwbG7VuybDhP
+\unrestrict gtlUyMaIr9bSdoMl8Y3LrGh3hli9poGQ4g9U9bCX4qQA7QhYYpcslXIhJlLQpKc
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1921,3 +1987,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260720051106);
 INSERT INTO public."schema_migrations" (version) VALUES (20260720204431);
 INSERT INTO public."schema_migrations" (version) VALUES (20260721035446);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722215520);
+INSERT INTO public."schema_migrations" (version) VALUES (20260722221701);

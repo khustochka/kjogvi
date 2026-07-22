@@ -9,9 +9,15 @@ defmodule Kjogvi.Imports.ImportLog do
 
   `summary` holds the run's counts as returned by the import (string-keyed
   once read back). `:completed_with_errors` means the run finished but some
-  rows were not imported; `error` carries the failure reason of a `:failed`
-  run. A row stuck in `:running` past the job timeout means the run died
-  without reporting (e.g. a VM crash).
+  rows were not imported; those rows are kept as `Kjogvi.Imports.ImportError`
+  records. `error` carries the failure reason of a `:failed` run. A row stuck
+  in `:running` past the job timeout means the run died without reporting
+  (e.g. a VM crash).
+
+  `upload_key` points at the run's source file (`Kjogvi.Imports.Upload`),
+  recorded at enqueue. A cleanly consumed upload is deleted and the key
+  cleared; a key still present means the file was retained — the run failed
+  outright, died, or overflowed the per-run `ImportError` cap.
   """
 
   use Kjogvi.Schema
@@ -27,6 +33,7 @@ defmodule Kjogvi.Imports.ImportLog do
     field :status, Ecto.Enum, values: @statuses, default: :queued
     field :summary, :map, default: %{}
     field :error, :string
+    field :upload_key, :string
     field :started_at, :utc_datetime_usec
     field :finished_at, :utc_datetime_usec
 
@@ -38,7 +45,7 @@ defmodule Kjogvi.Imports.ImportLog do
   @doc false
   def create_changeset(attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:source, :user_id])
+    |> cast(attrs, [:source, :user_id, :upload_key])
     |> validate_required([:source, :user_id])
     |> assoc_constraint(:user)
   end

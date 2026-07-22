@@ -42,12 +42,21 @@ defmodule Kjogvi.Ebird.Import do
       and appears in the lifelist — the direct inserts here bypass the per-write
       promotion that `Kjogvi.Birding.create_checklist/2` does.
 
+    * **Failed rows.** When the run belongs to an `Kjogvi.Imports.ImportLog`
+      (the `:import_log_id` option), every submission that isn't imported —
+      and every row dropped for an unresolved taxon — is kept verbatim as an
+      `Kjogvi.Imports.ImportError` record, capped per run
+      (`:max_error_records`); past the cap the summary's `errors_truncated`
+      flag is set and the import job retains the uploaded file instead.
+
   Returns `{:ok, summary}` where summary carries the counts and the collected
   `unresolved_taxa` (distinct unmatched scientific names) — or `{:error, reason}`
   when the user has no usable taxonomy book.
   """
 
   @error_counts [:checklists_unmapped, :checklists_invalid, :checklists_failed]
+
+  @max_error_records 1000
 
   require Logger
 
@@ -63,17 +72,25 @@ defmodule Kjogvi.Ebird.Import do
   @doc """
   Runs the import against the CSV at `csv_path` for `user`.
 
-  `opts` carries a `:broadcast_key` (the Oban job) for progress reporting; unused
-  for now.
+  Options:
+
+    * `:import_log_id` — the `ImportLog` to attach failed rows to; without it
+      they are only counted.
+    * `:max_error_records` — per-run cap on stored `ImportError` records.
   """
-  def run(user, csv_path, _opts \\ []) do
+  def run(user, csv_path, opts \\ []) do
+    import_log_id = Keyword.get(opts, :import_log_id)
+    max_errors = Keyword.get(opts, :max_error_records, @max_error_records)
+
     with {:ok, book} <- resolve_book(user) do
       rows = parse_csv(csv_path)
       taxon_keys = resolve_taxon_keys(book, rows)
       location_ids = upsert_user_locations(user, rows)
 
-      summary = import_checklists(user, rows, taxon_keys, location_ids)
+      {error_records, summary} =
+        import_checklists(user, rows, taxon_keys, location_ids, max_errors)
 
+      persist_errors(import_log_id, error_records)
       promote_observations(user)
 
       Logger.info(
@@ -267,9 +284,17 @@ defmodule Kjogvi.Ebird.Import do
     |> Kjogvi.Pages.Promotion.promote_observations_by_query()
   end
 
+  defp persist_errors(nil, _error_records), do: :ok
+
+  defp persist_errors(import_log_id, error_records) do
+    Kjogvi.Imports.record_errors(import_log_id, error_records)
+  end
+
   # Groups rows into submissions, skips submissions the user already has, and
   # inserts the rest — each checklist with its (resolvable) observations.
-  defp import_checklists(user, rows, taxon_keys, location_ids) do
+  # Returns `{error_records, summary}` with the failed rows collected along
+  # the way (in file order, capped at `max_errors`).
+  defp import_checklists(user, rows, taxon_keys, location_ids, max_errors) do
     by_submission = Enum.group_by(rows, & &1["Submission ID"])
     new_ids = new_submission_ids(user, Map.keys(by_submission))
 
@@ -280,15 +305,23 @@ defmodule Kjogvi.Ebird.Import do
       checklists_unmapped: 0,
       checklists_invalid: 0,
       checklists_failed: 0,
-      unresolved_taxa: MapSet.new()
+      unresolved_taxa: MapSet.new(),
+      errors_truncated: false,
+      error_records: [],
+      errors_count: 0
     }
 
-    for {submission_id, submission_rows} <- by_submission,
-        MapSet.member?(new_ids, submission_id),
-        reduce: acc do
-      acc -> insert_submission(user, submission_rows, taxon_keys, location_ids, acc)
-    end
-    |> Map.update!(:unresolved_taxa, &Enum.sort(MapSet.to_list(&1)))
+    acc =
+      for {submission_id, submission_rows} <- by_submission,
+          MapSet.member?(new_ids, submission_id),
+          reduce: acc do
+        acc -> insert_submission(user, submission_rows, taxon_keys, location_ids, acc, max_errors)
+      end
+
+    {Enum.reverse(acc.error_records),
+     acc
+     |> Map.drop([:error_records, :errors_count])
+     |> Map.update!(:unresolved_taxa, &Enum.sort(MapSet.to_list(&1)))}
   end
 
   # eBird submission ids we don't already have a checklist for.
@@ -301,27 +334,44 @@ defmodule Kjogvi.Ebird.Import do
     |> MapSet.new()
   end
 
-  defp insert_submission(user, rows, taxon_keys, location_ids, acc) do
+  defp insert_submission(user, rows, taxon_keys, location_ids, acc, max_errors) do
     [first | _] = rows
 
     case Converter.checklist_attrs(first) do
       # A blank Submission ID is a malformed export row, not a mapping bug:
-      # count it apart from the changeset failures in `insert_checklist`.
+      # count it apart from the changeset failures below.
       {:error, :missing_submission_id} ->
-        Map.update!(acc, :checklists_invalid, &(&1 + 1))
+        acc
+        |> Map.update!(:checklists_invalid, &(&1 + 1))
+        |> add_error_record(%{category: :invalid, submission_id: nil, rows: rows}, max_errors)
 
       {:ok, attrs} ->
-        {observations, unresolved} = build_observations(rows, taxon_keys)
+        {observations, unresolved, dropped} = build_observations(rows, taxon_keys)
         acc = Map.update!(acc, :unresolved_taxa, &MapSet.union(&1, unresolved))
 
         case Map.get(location_ids, first["Location ID"]) do
-          nil -> Map.update!(acc, :checklists_unmapped, &(&1 + 1))
-          location_id -> insert_checklist(user, attrs, location_id, observations, acc)
+          nil ->
+            acc
+            |> Map.update!(:checklists_unmapped, &(&1 + 1))
+            |> add_error_record(
+              %{category: :unmapped, submission_id: attrs.ebird_id, rows: rows},
+              max_errors
+            )
+
+          location_id ->
+            record_insert(
+              insert_checklist(user, attrs, location_id, observations),
+              attrs,
+              rows,
+              dropped,
+              acc,
+              max_errors
+            )
         end
     end
   end
 
-  defp insert_checklist(user, attrs, location_id, observations, acc) do
+  defp insert_checklist(user, attrs, location_id, observations) do
     attrs =
       attrs
       |> Map.put(:user_id, user.id)
@@ -330,45 +380,72 @@ defmodule Kjogvi.Ebird.Import do
 
     # `ebird_id` and `import_source` aren't in the checklist form's cast list
     # (they're import metadata, not user-editable), so set them directly.
-    changeset =
-      %Checklist{}
-      |> Checklist.changeset(attrs)
-      |> Changeset.put_change(:ebird_id, attrs.ebird_id)
-      |> Changeset.put_change(:import_source, :ebird)
+    %Checklist{}
+    |> Checklist.changeset(attrs)
+    |> Changeset.put_change(:ebird_id, attrs.ebird_id)
+    |> Changeset.put_change(:import_source, :ebird)
+    |> Repo.insert()
+  end
 
-    case Repo.insert(changeset) do
-      {:ok, checklist} ->
-        acc
-        |> Map.update!(:checklists_created, &(&1 + 1))
-        |> Map.update!(:observations_created, &(&1 + length(checklist.observations)))
+  defp record_insert({:ok, checklist}, attrs, _rows, dropped, acc, max_errors) do
+    acc
+    |> Map.update!(:checklists_created, &(&1 + 1))
+    |> Map.update!(:observations_created, &(&1 + length(checklist.observations)))
+    |> record_dropped_rows(attrs.ebird_id, dropped, max_errors)
+  end
 
-      {:error, changeset} ->
-        Logger.warning(
-          "eBird import: skipping checklist #{attrs.ebird_id}: " <>
-            inspect(changeset_errors(changeset))
-        )
+  defp record_insert({:error, changeset}, attrs, rows, _dropped, acc, max_errors) do
+    error = inspect(changeset_errors(changeset))
+    Logger.warning("eBird import: skipping checklist #{attrs.ebird_id}: " <> error)
 
-        Map.update!(acc, :checklists_failed, &(&1 + 1))
-    end
+    acc
+    |> Map.update!(:checklists_failed, &(&1 + 1))
+    |> add_error_record(
+      %{category: :failed, submission_id: attrs.ebird_id, rows: rows, error: error},
+      max_errors
+    )
+  end
+
+  # Rows dropped from an imported checklist for unresolved taxa: keep them so
+  # the observations can be backfilled once the taxonomy matches.
+  defp record_dropped_rows(acc, _submission_id, [], _max_errors), do: acc
+
+  defp record_dropped_rows(acc, submission_id, dropped, max_errors) do
+    add_error_record(
+      acc,
+      %{category: :unresolved_taxa, submission_id: submission_id, rows: Enum.reverse(dropped)},
+      max_errors
+    )
+  end
+
+  # Past the cap, counts keep accumulating but the rows are only in the
+  # retained upload (`errors_truncated`).
+  defp add_error_record(%{errors_count: count} = acc, _record, max_errors)
+       when count >= max_errors do
+    %{acc | errors_truncated: true}
+  end
+
+  defp add_error_record(acc, record, _max_errors) do
+    %{acc | error_records: [record | acc.error_records], errors_count: acc.errors_count + 1}
   end
 
   # Observation attrs for a submission's rows, resolving each row's scientific
-  # name to a taxon key. Rows whose name the book doesn't know are dropped and
-  # their names collected as unresolved.
+  # name to a taxon key. Rows whose name the book doesn't know are dropped —
+  # their names collected as unresolved, the raw rows kept for the error record.
   defp build_observations(rows, taxon_keys) do
-    Enum.reduce(rows, {[], MapSet.new()}, fn row, acc ->
-      add_observation(Converter.observation_attrs(row), taxon_keys, acc)
+    Enum.reduce(rows, {[], MapSet.new(), []}, fn row, acc ->
+      add_observation(row, Converter.observation_attrs(row), taxon_keys, acc)
     end)
   end
 
   # A row with no scientific name isn't an observation at all (blank/malformed);
   # drop it silently rather than reporting nil as unresolved.
-  defp add_observation(%{name_sci: nil}, _taxon_keys, acc), do: acc
+  defp add_observation(_row, %{name_sci: nil}, _taxon_keys, acc), do: acc
 
-  defp add_observation(%{name_sci: name_sci} = attrs, taxon_keys, {obs, unresolved}) do
+  defp add_observation(row, %{name_sci: name_sci} = attrs, taxon_keys, {obs, unresolved, dropped}) do
     case Map.fetch(taxon_keys, name_sci) do
-      {:ok, taxon_key} -> {[obs_attrs(attrs, taxon_key) | obs], unresolved}
-      :error -> {obs, MapSet.put(unresolved, name_sci)}
+      {:ok, taxon_key} -> {[obs_attrs(attrs, taxon_key) | obs], unresolved, dropped}
+      :error -> {obs, MapSet.put(unresolved, name_sci), [row | dropped]}
     end
   end
 

@@ -514,6 +514,129 @@ defmodule Kjogvi.Ebird.ImportTest do
     end
   end
 
+  describe "error records" do
+    alias Kjogvi.Imports
+
+    defp import_log(user) do
+      {:ok, log} =
+        %{source: :ebird, user_id: user.id}
+        |> Kjogvi.Imports.ImportLog.create_changeset()
+        |> Repo.insert()
+
+      log
+    end
+
+    # A full CSV line with everything but the varying fields defaulted.
+    defp obs_row(submission_id, name_sci, state, loc_id) do
+      row([
+        submission_id,
+        "Common Name",
+        name_sci,
+        "243",
+        "1",
+        state,
+        "",
+        loc_id,
+        "Somewhere",
+        "",
+        "",
+        "2015-11-14",
+        "",
+        "eBird - Casual Observation",
+        "0",
+        "0",
+        "",
+        "",
+        "1",
+        "",
+        "",
+        "",
+        ""
+      ])
+    end
+
+    test "an unmapped submission's raw rows are recorded" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+      log = import_log(user)
+
+      path = csv_file([obs_row("S1", "Dendrocygna autumnalis", "X", "L1")])
+
+      assert {:ok, summary} = Import.run(user, path, import_log_id: log.id)
+      assert summary.errors_truncated == false
+
+      assert [error] = Imports.list_import_errors(log.id)
+      assert error.category == :unmapped
+      assert error.submission_id == "S1"
+
+      assert [%{"Submission ID" => "S1", "Scientific Name" => "Dendrocygna autumnalis"}] =
+               error.rows
+    end
+
+    test "a submission with a blank Submission ID is recorded as invalid" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+      link_texas!()
+      log = import_log(user)
+
+      path = csv_file([obs_row("", "Dendrocygna autumnalis", "US-TX", "L100")])
+
+      assert {:ok, _summary} = Import.run(user, path, import_log_id: log.id)
+
+      assert [error] = Imports.list_import_errors(log.id)
+      assert error.category == :invalid
+      assert error.submission_id == nil
+      assert [%{"Location ID" => "L100"}] = error.rows
+    end
+
+    test "rows dropped for unresolved taxa are recorded for an imported checklist" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+      link_texas!()
+      log = import_log(user)
+
+      path =
+        csv_file([
+          obs_row("S1", "Dendrocygna autumnalis", "US-TX", "L100"),
+          obs_row("S1", "Bogus specius", "US-TX", "L100")
+        ])
+
+      assert {:ok, summary} = Import.run(user, path, import_log_id: log.id)
+      assert summary.checklists_created == 1
+      assert summary.observations_created == 1
+
+      assert [error] = Imports.list_import_errors(log.id)
+      assert error.category == :unresolved_taxa
+      assert error.submission_id == "S1"
+      assert [%{"Scientific Name" => "Bogus specius"}] = error.rows
+    end
+
+    test "records are capped per run and the summary flags truncation" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+      log = import_log(user)
+
+      path =
+        csv_file([
+          obs_row("S1", "Dendrocygna autumnalis", "X", "L1"),
+          obs_row("S2", "Dendrocygna autumnalis", "X", "L1")
+        ])
+
+      assert {:ok, summary} =
+               Import.run(user, path, import_log_id: log.id, max_error_records: 1)
+
+      assert summary.checklists_unmapped == 2
+      assert summary.errors_truncated == true
+
+      assert [%{category: :unmapped}] = Imports.list_import_errors(log.id)
+    end
+
+    test "without an import log the failures are only counted" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+
+      path = csv_file([obs_row("S1", "Dendrocygna autumnalis", "X", "L1")])
+
+      assert {:ok, %{checklists_unmapped: 1}} = Import.run(user, path)
+      assert Repo.aggregate(Kjogvi.Imports.ImportError, :count) == 0
+    end
+  end
+
   describe "errors?/1" do
     defp summary(overrides) do
       Map.merge(

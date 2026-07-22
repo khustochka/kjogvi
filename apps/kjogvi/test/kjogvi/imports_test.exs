@@ -15,6 +15,7 @@ defmodule Kjogvi.ImportsTest do
       assert log.source == :ebird
       assert log.status == :queued
       assert log.user_id == user.id
+      assert log.upload_key == "some/key.zip"
 
       log_id = log.id
       user_id = user.id
@@ -94,6 +95,58 @@ defmodule Kjogvi.ImportsTest do
       Kjogvi.Repo.delete!(log)
 
       assert :ok = Imports.log_started(log.id)
+    end
+  end
+
+  describe "error records" do
+    setup %{user: user} do
+      {:ok, log} = Imports.enqueue_ebird_import(user, "a.zip")
+      %{log: log}
+    end
+
+    test "record_errors/2 persists entries readable in order", %{log: log} do
+      entries = [
+        %{category: :unmapped, submission_id: "S1", rows: [%{"Location ID" => "L1"}]},
+        %{category: :failed, submission_id: "S2", rows: [%{"Location ID" => "L2"}], error: "bad"}
+      ]
+
+      assert :ok = Imports.record_errors(log.id, entries)
+
+      assert [first, second] = Imports.list_import_errors(log.id)
+
+      assert first.category == :unmapped
+      assert first.submission_id == "S1"
+      assert first.rows == [%{"Location ID" => "L1"}]
+      assert first.error == nil
+
+      assert second.category == :failed
+      assert second.error == "bad"
+    end
+
+    test "record_errors/2 with no entries writes nothing", %{log: log} do
+      assert :ok = Imports.record_errors(log.id, [])
+      assert Imports.list_import_errors(log.id) == []
+    end
+
+    test "deleting the log deletes its error records", %{log: log} do
+      :ok = Imports.record_errors(log.id, [%{category: :invalid, rows: []}])
+
+      Kjogvi.Repo.delete!(log)
+
+      assert Kjogvi.Repo.aggregate(Kjogvi.Imports.ImportError, :count) == 0
+    end
+  end
+
+  describe "clear_upload_key/1" do
+    test "unlinks the upload from the log", %{user: user} do
+      {:ok, log} = Imports.enqueue_ebird_import(user, "a.zip")
+
+      assert :ok = Imports.clear_upload_key(log.id)
+      assert Kjogvi.Repo.get!(ImportLog, log.id).upload_key == nil
+    end
+
+    test "is a no-op without a log id" do
+      assert :ok = Imports.clear_upload_key(nil)
     end
   end
 end
