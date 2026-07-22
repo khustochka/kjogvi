@@ -33,8 +33,12 @@ defmodule Kjogvi.Legacy.Import.Observations do
     # logbook cache invalidation doesn't run. Evict the user's logbook cache.
     Kjogvi.Birding.Logbook.Cache.invalidate(opts[:user].id)
 
-    # Promoting
-    Kjogvi.Pages.Promotion.promote_observations_by_query(Observation)
+    # Promoting: create species pages for the imported user's observed taxa so
+    # each species shows in the lifelist (the direct inserts here bypass the
+    # per-write promotion in `Kjogvi.Birding.create_checklist/2`).
+    Observation.Query.with_checklist()
+    |> Observation.Query.owned_by(opts[:user])
+    |> Kjogvi.Pages.Promotion.promote_observations_by_query()
 
     :ok
   end

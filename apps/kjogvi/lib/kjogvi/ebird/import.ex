@@ -38,6 +38,11 @@ defmodule Kjogvi.Ebird.Import do
       malformed row: it's dropped and counted in `checklists_invalid`, kept
       distinct from the changeset failures that would signal a mapping bug.
 
+    * **Promotion.** After the checklists are in, the user's observed taxa are
+      promoted (`Kjogvi.Pages.Promotion`) so each imported species gets a page
+      and appears in the lifelist — the direct inserts here bypass the per-write
+      promotion that `Kjogvi.Birding.create_checklist/2` does.
+
   Returns `{:ok, summary}` where summary carries the counts and the collected
   `unresolved_taxa` (distinct unmatched scientific names) — or `{:error, reason}`
   when the user has no usable taxonomy book.
@@ -47,6 +52,7 @@ defmodule Kjogvi.Ebird.Import do
 
   alias Ecto.Changeset
   alias Kjogvi.Birding.Checklist
+  alias Kjogvi.Birding.Observation
   alias Kjogvi.Ebird.CsvImport.Converter
   alias Kjogvi.Ebird.UserLocation
   alias Kjogvi.Geo.EbirdLocation
@@ -66,6 +72,8 @@ defmodule Kjogvi.Ebird.Import do
       location_ids = upsert_user_locations(user, rows)
 
       summary = import_checklists(user, rows, taxon_keys, location_ids)
+
+      promote_observations(user)
 
       Logger.info(
         "eBird import: #{summary.checklists_created} checklists, " <>
@@ -227,6 +235,16 @@ defmodule Kjogvi.Ebird.Import do
     |> Location.validate_user_owned_type()
     |> Location.validate_common_ancestry()
     |> Repo.insert()
+  end
+
+  # The import inserts checklists directly (bypassing `Birding.create_checklist/2`),
+  # so the per-write promotion never runs. Promote the user's observed taxa once at
+  # the end so every imported species gets a page and shows in the lifelist
+  # (`Pages.Promotion` only touches taxa still lacking a mapping).
+  defp promote_observations(user) do
+    Observation.Query.with_checklist()
+    |> Observation.Query.owned_by(user)
+    |> Kjogvi.Pages.Promotion.promote_observations_by_query()
   end
 
   # Groups rows into submissions, skips submissions the user already has, and

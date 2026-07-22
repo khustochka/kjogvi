@@ -144,4 +144,26 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       assert obs.updated_at == ~U[2026-01-02 03:04:05.000000Z]
     end
   end
+
+  describe "after_import/1" do
+    test "promotes the imported user's observed taxa, leaving other users' taxa alone" do
+      book = Ornitho.Factory.insert(:book)
+      taxon = Ornitho.Factory.insert(:taxon, book: book, category: "species")
+      other_taxon = Ornitho.Factory.insert(:taxon, book: book, category: "species")
+      key = Ornitho.Schema.Taxon.key(taxon)
+      other_key = Ornitho.Schema.Taxon.key(other_taxon)
+
+      user = Kjogvi.AccountsFixtures.user_fixture()
+      other_user = Kjogvi.AccountsFixtures.user_fixture()
+      insert(:observation, checklist: build(:checklist, user: user), taxon_key: key)
+      insert(:observation, checklist: build(:checklist, user: other_user), taxon_key: other_key)
+
+      refute Kjogvi.Pages.Species.from_taxon_key(key)
+
+      assert :ok = Observations.after_import(user: user)
+
+      assert Kjogvi.Pages.Species.from_taxon_key(key)
+      refute Kjogvi.Pages.Species.from_taxon_key(other_key)
+    end
+  end
 end

@@ -126,6 +126,50 @@ defmodule Kjogvi.Ebird.ImportTest do
       assert Enum.all?(checklist.observations, &(&1.import_source == :ebird))
     end
 
+    test "promotes imported taxa so each observed species gets a page" do
+      {user, book} = user_with_taxa(["Dendrocygna autumnalis"])
+      link_texas!()
+
+      key =
+        Ornitho.Finder.Taxon.all(book)
+        |> Enum.find(&(&1.name_sci == "Dendrocygna autumnalis"))
+        |> then(&Ornitho.Schema.Taxon.key(%{&1 | book: book}))
+
+      refute Kjogvi.Pages.Species.from_taxon_key(key)
+
+      path =
+        csv_file([
+          row([
+            "S1",
+            "BBWD",
+            "Dendrocygna autumnalis",
+            "243",
+            "1",
+            "US-TX",
+            "",
+            "L100",
+            "Park",
+            "",
+            "",
+            "2015-11-14",
+            "",
+            "eBird - Casual Observation",
+            "0",
+            "0",
+            "",
+            "",
+            "1",
+            "",
+            "",
+            "",
+            ""
+          ])
+        ])
+
+      assert {:ok, _summary} = Import.run(user, path)
+      assert Kjogvi.Pages.Species.from_taxon_key(key)
+    end
+
     test "unresolved scientific names are skipped and reported; the checklist still imports" do
       {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
       link_texas!()
