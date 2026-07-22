@@ -39,7 +39,13 @@ defmodule KjogviWeb.ImportComponents do
       "#{count_noun(count(summary, "checklists_created"), "checklist")} and " <>
         "#{count_noun(count(summary, "observations_created"), "observation")} imported"
 
-    Enum.join([imported | issue_details(summary)], "; ")
+    updated =
+      case count(summary, "checklists_updated") do
+        0 -> []
+        n -> ["#{count_noun(n, "checklist")} updated"]
+      end
+
+    Enum.join([imported | updated] ++ issue_details(summary), "; ")
   end
 
   def import_details(_log), do: nil

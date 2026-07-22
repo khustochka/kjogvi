@@ -84,6 +84,11 @@ defmodule Kjogvi.Birding.Checklist.Query do
     )
   end
 
+  def with_ebird_ids(query, ebird_ids) do
+    from [..., checklist: c] in query,
+      where: c.ebird_id in ^ebird_ids
+  end
+
   def all_ebird_ids(query) do
     from(c in query,
       where: not is_nil(c.ebird_id),

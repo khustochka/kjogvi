@@ -30,12 +30,20 @@ defmodule Kjogvi.Ebird.Import do
       match is skipped and reported — its checklist and other observations still
       import.
 
-    * **Checklists.** Checklists whose `Submission ID` the user already has are
-      skipped (there is no observation id in the export to reconcile against, so
-      re-import only adds genuinely new submissions). New ones are inserted with
-      their observations. A submission with no `Submission ID` at all is a
-      malformed row: it's dropped and counted in `checklists_invalid`, kept
-      distinct from the changeset failures that would signal a mapping bug.
+    * **Checklists.** eBird is the source of truth: each submission is upserted
+      by its globally unique `Submission ID`. A submission the user doesn't have
+      yet is inserted with its observations; one they already have is updated in
+      place (its checklist-wide fields and its observations), so a re-import
+      heals earlier runs and picks up edits the user made in eBird. Within a
+      checklist an observation is matched by its `taxon_key`; incoming rows
+      update the matching observation and add new ones. Observations are **never
+      deleted** — an observation gone from the export (or one added locally in
+      Kjógvi) stays, keeping any attached images and edits. A submission whose
+      fields are already identical is left untouched (counted in
+      `checklists_skipped`), avoiding write churn. A submission with no
+      `Submission ID` at all is a malformed row: it's dropped and counted in
+      `checklists_invalid`, kept distinct from the changeset failures that would
+      signal a mapping bug.
 
     * **Promotion.** After the checklists are in, the user's observed taxa are
       promoted (`Kjogvi.Pages.Promotion`) so each imported species gets a page
@@ -94,8 +102,8 @@ defmodule Kjogvi.Ebird.Import do
       promote_observations(user)
 
       Logger.info(
-        "eBird import: #{summary.checklists_created} checklists, " <>
-          "#{summary.observations_created} observations for user #{user.id}"
+        "eBird import: #{summary.checklists_created} created, " <>
+          "#{summary.checklists_updated} updated checklists for user #{user.id}"
       )
 
       {:ok, summary}
@@ -115,7 +123,7 @@ defmodule Kjogvi.Ebird.Import do
 
   @doc """
   Whether the summary of a finished run reports rows that were not imported
-  (skipped duplicates don't count — they are already there).
+  (unchanged checklists don't count — their data is already there).
   """
   def errors?(summary) do
     Enum.any?(@error_counts, &(Map.fetch!(summary, &1) > 0)) or summary.unresolved_taxa != []
@@ -290,18 +298,20 @@ defmodule Kjogvi.Ebird.Import do
     Kjogvi.Imports.record_errors(import_log_id, error_records)
   end
 
-  # Groups rows into submissions, skips submissions the user already has, and
-  # inserts the rest — each checklist with its (resolvable) observations.
-  # Returns `{error_records, summary}` with the failed rows collected along
-  # the way (in file order, capped at `max_errors`).
+  # Groups rows into submissions and upserts each — inserting new checklists and
+  # updating existing ones in place, each with its (resolvable) observations.
+  # Returns `{error_records, summary}` with the failed rows collected along the
+  # way (in file order, capped at `max_errors`).
   defp import_checklists(user, rows, taxon_keys, location_ids, max_errors) do
     by_submission = Enum.group_by(rows, & &1["Submission ID"])
-    new_ids = new_submission_ids(user, Map.keys(by_submission))
+    existing = existing_checklists(user, Map.keys(by_submission))
 
     acc = %{
       checklists_created: 0,
+      checklists_updated: 0,
       observations_created: 0,
-      checklists_skipped: map_size(by_submission) - MapSet.size(new_ids),
+      observations_updated: 0,
+      checklists_skipped: 0,
       checklists_unmapped: 0,
       checklists_invalid: 0,
       checklists_failed: 0,
@@ -311,11 +321,17 @@ defmodule Kjogvi.Ebird.Import do
       errors_count: 0
     }
 
+    ctx = %{
+      user: user,
+      taxon_keys: taxon_keys,
+      location_ids: location_ids,
+      existing: existing,
+      max_errors: max_errors
+    }
+
     acc =
-      for {submission_id, submission_rows} <- by_submission,
-          MapSet.member?(new_ids, submission_id),
-          reduce: acc do
-        acc -> insert_submission(user, submission_rows, taxon_keys, location_ids, acc, max_errors)
+      for {_submission_id, submission_rows} <- by_submission, reduce: acc do
+        acc -> upsert_submission(ctx, submission_rows, acc)
       end
 
     {Enum.reverse(acc.error_records),
@@ -324,18 +340,23 @@ defmodule Kjogvi.Ebird.Import do
      |> Map.update!(:unresolved_taxa, &Enum.sort(MapSet.to_list(&1)))}
   end
 
-  # eBird submission ids we don't already have a checklist for.
-  defp new_submission_ids(user, submission_ids) do
+  # `%{ebird_id => checklist}` for the submissions the user already has, with
+  # observations preloaded so an update can merge against them.
+  defp existing_checklists(user, submission_ids) do
+    ids = Enum.reject(submission_ids, &is_nil/1)
+
     Checklist
     |> Checklist.Query.as_checklist()
     |> Checklist.Query.by_user(user)
-    |> Checklist.Query.find_new_checklists(submission_ids)
+    |> Checklist.Query.with_ebird_ids(ids)
     |> Repo.all()
-    |> MapSet.new()
+    |> Repo.preload(:observations)
+    |> Map.new(&{&1.ebird_id, &1})
   end
 
-  defp insert_submission(user, rows, taxon_keys, location_ids, acc, max_errors) do
+  defp upsert_submission(ctx, rows, acc) do
     [first | _] = rows
+    %{taxon_keys: taxon_keys, location_ids: location_ids, max_errors: max_errors} = ctx
 
     case Converter.checklist_attrs(first) do
       # A blank Submission ID is a malformed export row, not a mapping bug:
@@ -359,8 +380,10 @@ defmodule Kjogvi.Ebird.Import do
             )
 
           location_id ->
-            record_insert(
-              insert_checklist(user, attrs, location_id, observations),
+            checklist = Map.get(ctx.existing, attrs.ebird_id)
+
+            record_upsert(
+              upsert_checklist(ctx.user, checklist, attrs, location_id, observations),
               attrs,
               rows,
               dropped,
@@ -371,7 +394,10 @@ defmodule Kjogvi.Ebird.Import do
     end
   end
 
-  defp insert_checklist(user, attrs, location_id, observations) do
+  # Insert when the user doesn't have the submission; otherwise merge the
+  # incoming attrs and observations into the existing checklist. An unchanged
+  # checklist yields `{:ok, :unchanged}` so the caller can skip the write.
+  defp upsert_checklist(user, nil, attrs, location_id, observations) do
     attrs =
       attrs
       |> Map.put(:user_id, user.id)
@@ -385,16 +411,72 @@ defmodule Kjogvi.Ebird.Import do
     |> Changeset.put_change(:ebird_id, attrs.ebird_id)
     |> Changeset.put_change(:import_source, :ebird)
     |> Repo.insert()
+    |> tag_outcome(:created)
   end
 
-  defp record_insert({:ok, checklist}, attrs, _rows, dropped, acc, max_errors) do
+  defp upsert_checklist(user, %Checklist{} = checklist, attrs, location_id, observations) do
+    attrs =
+      attrs
+      |> Map.drop([:ebird_id, :import_source])
+      |> Map.put(:user_id, user.id)
+      |> Map.put(:location_id, location_id)
+      |> Map.put(:observations, merge_observations(checklist.observations, observations))
+
+    changeset = Checklist.changeset(checklist, attrs)
+
+    if changeset.changes == %{} do
+      {:ok, :unchanged}
+    else
+      changeset |> Repo.update() |> tag_outcome(:updated)
+    end
+  end
+
+  # Merges incoming observation attrs into the checklist's existing observations
+  # by `taxon_key`, as cast params for `cast_assoc`: a matched existing
+  # observation carries its `id` so it's updated in place; unmatched incoming
+  # rows have none and are inserted; existing observations with no incoming row
+  # are re-emitted unchanged so `on_replace: :delete` never drops them.
+  defp merge_observations(existing_obs, incoming) do
+    by_taxon_key = Map.new(existing_obs, &{&1.taxon_key, &1})
+
+    {updated, seen} =
+      Enum.map_reduce(incoming, MapSet.new(), fn attrs, seen ->
+        case Map.get(by_taxon_key, attrs.taxon_key) do
+          nil -> {attrs, seen}
+          obs -> {Map.put(attrs, :id, obs.id), MapSet.put(seen, obs.taxon_key)}
+        end
+      end)
+
+    kept =
+      for obs <- existing_obs, not MapSet.member?(seen, obs.taxon_key) do
+        %{id: obs.id, taxon_key: obs.taxon_key}
+      end
+
+    updated ++ kept
+  end
+
+  defp tag_outcome({:ok, checklist}, outcome), do: {:ok, outcome, checklist}
+  defp tag_outcome({:error, changeset}, _outcome), do: {:error, changeset}
+
+  defp record_upsert({:ok, :unchanged}, _attrs, _rows, _dropped, acc, _max_errors) do
+    Map.update!(acc, :checklists_skipped, &(&1 + 1))
+  end
+
+  defp record_upsert({:ok, :created, checklist}, attrs, _rows, dropped, acc, max_errors) do
     acc
     |> Map.update!(:checklists_created, &(&1 + 1))
     |> Map.update!(:observations_created, &(&1 + length(checklist.observations)))
     |> record_dropped_rows(attrs.ebird_id, dropped, max_errors)
   end
 
-  defp record_insert({:error, changeset}, attrs, rows, _dropped, acc, max_errors) do
+  defp record_upsert({:ok, :updated, checklist}, attrs, _rows, dropped, acc, max_errors) do
+    acc
+    |> Map.update!(:checklists_updated, &(&1 + 1))
+    |> Map.update!(:observations_updated, &(&1 + length(checklist.observations)))
+    |> record_dropped_rows(attrs.ebird_id, dropped, max_errors)
+  end
+
+  defp record_upsert({:error, changeset}, attrs, rows, _dropped, acc, max_errors) do
     error = inspect(changeset_errors(changeset))
     Logger.warning("eBird import: skipping checklist #{attrs.ebird_id}: " <> error)
 

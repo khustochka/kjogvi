@@ -41,6 +41,43 @@ defmodule Kjogvi.Ebird.ImportTest do
     Enum.join(fields, ",")
   end
 
+  # The book's taxon key for a scientific name, as the import derives it.
+  defp taxon_key(book, name_sci) do
+    Ornitho.Finder.Taxon.all(book)
+    |> Enum.find(&(&1.name_sci == name_sci))
+    |> then(&Ornitho.Schema.Taxon.key(%{&1 | book: book}))
+  end
+
+  # A compact eBird CSV row at Texas location L100, taking the submission id,
+  # scientific name, and count, plus optional overrides for other columns.
+  defp tx_row(submission_id, name_sci, count, opts \\ []) do
+    row([
+      submission_id,
+      Keyword.get(opts, :common_name, "Common"),
+      name_sci,
+      "243",
+      count,
+      "US-TX",
+      "",
+      Keyword.get(opts, :loc_id, "L100"),
+      Keyword.get(opts, :loc_name, "Park"),
+      "",
+      "",
+      Keyword.get(opts, :date, "2015-11-14"),
+      "",
+      Keyword.get(opts, :protocol, "eBird - Casual Observation"),
+      "0",
+      "0",
+      "",
+      "",
+      "1",
+      "",
+      Keyword.get(opts, :notes, ""),
+      "",
+      ""
+    ])
+  end
+
   # Links the eBird `US-TX` region to a common subdivision1 so sites at Texas
   # locations get parented (and their checklists mapped).
   defp link_texas! do
@@ -465,45 +502,124 @@ defmodule Kjogvi.Ebird.ImportTest do
       refute Repo.exists?(Checklist)
     end
 
-    test "re-importing skips checklists the user already has" do
+    test "re-importing identical data leaves the checklist unchanged" do
       {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
       link_texas!()
 
-      line =
-        row([
-          "S1",
-          "BBWD",
-          "Dendrocygna autumnalis",
-          "243",
-          "1",
-          "US-TX",
-          "",
-          "L100",
-          "Park",
-          "",
-          "",
-          "2015-11-14",
-          "",
-          "eBird - Casual Observation",
-          "0",
-          "0",
-          "",
-          "",
-          "1",
-          "",
-          "",
-          "",
-          ""
-        ])
+      line = tx_row("S1", "Dendrocygna autumnalis", "1")
 
       assert {:ok, first} = Import.run(user, csv_file([line]))
       assert first.checklists_created == 1
 
+      before = Repo.get_by!(Checklist, ebird_id: "S1")
+
       assert {:ok, second} = Import.run(user, csv_file([line]))
       assert second.checklists_created == 0
+      assert second.checklists_updated == 0
       assert second.checklists_skipped == 1
 
       assert Repo.aggregate(from(c in Checklist, where: c.ebird_id == "S1"), :count) == 1
+      # An unchanged checklist isn't rewritten.
+      assert Repo.get_by!(Checklist, ebird_id: "S1").updated_at == before.updated_at
+    end
+
+    test "re-importing updates a changed checklist's fields in place" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+      link_texas!()
+
+      assert {:ok, _} =
+               Import.run(user, csv_file([tx_row("S1", "Dendrocygna autumnalis", "1")]))
+
+      # eBird now reports a different count for the same observation.
+      assert {:ok, summary} =
+               Import.run(user, csv_file([tx_row("S1", "Dendrocygna autumnalis", "5")]))
+
+      assert summary.checklists_created == 0
+      assert summary.checklists_updated == 1
+
+      checklist = Checklist |> Repo.get_by!(ebird_id: "S1") |> Repo.preload(:observations)
+      assert [%{quantity: "5"}] = checklist.observations
+      assert Repo.aggregate(from(c in Checklist, where: c.ebird_id == "S1"), :count) == 1
+    end
+
+    test "re-importing adds a newly reported observation, matching by taxon key" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis", "Anser caerulescens"])
+      link_texas!()
+
+      assert {:ok, _} =
+               Import.run(user, csv_file([tx_row("S1", "Dendrocygna autumnalis", "1")]))
+
+      assert {:ok, summary} =
+               Import.run(
+                 user,
+                 csv_file([
+                   tx_row("S1", "Dendrocygna autumnalis", "1"),
+                   tx_row("S1", "Anser caerulescens", "2")
+                 ])
+               )
+
+      assert summary.checklists_updated == 1
+
+      checklist = Checklist |> Repo.get_by!(ebird_id: "S1") |> Repo.preload(:observations)
+      assert length(checklist.observations) == 2
+
+      names = Enum.map(checklist.observations, & &1.taxon_key) |> Enum.uniq() |> length()
+      assert names == 2
+    end
+
+    test "re-importing never deletes an observation dropped from the export" do
+      {user, book} = user_with_taxa(["Dendrocygna autumnalis", "Anser caerulescens"])
+      link_texas!()
+
+      goose_key = taxon_key(book, "Anser caerulescens")
+
+      assert {:ok, _} =
+               Import.run(
+                 user,
+                 csv_file([
+                   tx_row("S1", "Dendrocygna autumnalis", "1"),
+                   tx_row("S1", "Anser caerulescens", "2")
+                 ])
+               )
+
+      # The second species is gone from the re-export; it must survive with its data.
+      assert {:ok, _} =
+               Import.run(user, csv_file([tx_row("S1", "Dendrocygna autumnalis", "1")]))
+
+      checklist = Checklist |> Repo.get_by!(ebird_id: "S1") |> Repo.preload(:observations)
+      assert length(checklist.observations) == 2
+
+      goose = Enum.find(checklist.observations, &(&1.taxon_key == goose_key))
+      assert goose.quantity == "2"
+    end
+
+    test "re-importing backfills an observation whose taxon the book now carries" do
+      # The book knows only the duck at first, so the goose row is dropped as an
+      # unresolved taxon while its checklist still imports.
+      {user, book} = user_with_taxa(["Dendrocygna autumnalis"])
+      link_texas!()
+
+      lines = [
+        tx_row("S1", "Dendrocygna autumnalis", "1"),
+        tx_row("S1", "Anser caerulescens", "2")
+      ]
+
+      assert {:ok, first} = Import.run(user, csv_file(lines))
+      assert first.checklists_created == 1
+      assert first.unresolved_taxa == ["Anser caerulescens"]
+
+      checklist = Checklist |> Repo.get_by!(ebird_id: "S1") |> Repo.preload(:observations)
+      assert length(checklist.observations) == 1
+
+      # The goose is added to the book; a re-import backfills its observation.
+      Ornitho.Factory.insert(:taxon, book: book, name_sci: "Anser caerulescens")
+
+      assert {:ok, second} = Import.run(user, csv_file(lines))
+      assert second.checklists_updated == 1
+      assert second.unresolved_taxa == []
+
+      checklist = Checklist |> Repo.get_by!(ebird_id: "S1") |> Repo.preload(:observations)
+      assert length(checklist.observations) == 2
     end
 
     test "errors when the user has no default book" do
