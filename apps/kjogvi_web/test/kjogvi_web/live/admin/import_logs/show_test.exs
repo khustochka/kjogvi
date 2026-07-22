@@ -81,5 +81,57 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.ShowTest do
 
       assert html =~ "The recorded rows were capped"
     end
+
+    test "offers a retry for a finished run holding its upload", %{conn: conn} do
+      log = finished_run(user_fixture(), upload_key: "a.zip")
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/import_logs/#{log}")
+
+      assert has_element?(lv, "#retry-import")
+    end
+
+    test "offers no retry for a run with nothing to replay", %{conn: conn} do
+      log = finished_run(user_fixture(), upload_key: nil)
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/import_logs/#{log}")
+
+      refute has_element?(lv, "#retry-import")
+    end
+
+    test "retrying navigates to the new run", %{conn: conn} do
+      log = finished_run(user_fixture(), upload_key: "a.zip")
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/import_logs/#{log}")
+
+      {:error, {:live_redirect, %{to: to}}} =
+        lv |> element("#retry-import") |> render_click()
+
+      assert to =~ ~r"^/admin/import_logs/\d+$"
+      refute to == "/admin/import_logs/#{log.id}"
+    end
+
+    test "links a retry back to the run it re-ran", %{conn: conn} do
+      original = finished_run(user_fixture(), upload_key: "a.zip")
+      {:ok, retry} = Imports.retry_import(original.id)
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/import_logs/#{retry}")
+
+      assert has_element?(
+               lv,
+               "#import-log-facts a[href='/admin/import_logs/#{original.id}']"
+             )
+    end
+  end
+
+  # A finished run inserted directly (no Oban job), leaving the user's exclusive
+  # import slot free for a retry.
+  defp finished_run(user, opts) do
+    {:ok, log} =
+      %{source: :ebird, user_id: user.id, upload_key: opts[:upload_key]}
+      |> Kjogvi.Imports.ImportLog.create_changeset()
+      |> Kjogvi.Repo.insert()
+
+    :ok = Imports.log_completed(log.id, :completed, %{})
+    Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, log.id)
   end
 end

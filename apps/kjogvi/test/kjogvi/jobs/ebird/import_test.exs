@@ -2,6 +2,8 @@ defmodule Kjogvi.Jobs.Ebird.ImportTest do
   # Not async: swaps the Kjogvi.Imports.Upload application env.
   use Kjogvi.DataCase, async: false
 
+  import Kjogvi.Factory
+
   alias Kjogvi.Imports.Upload
   alias Kjogvi.Jobs.Ebird.Import
 
@@ -168,6 +170,97 @@ defmodule Kjogvi.Jobs.Ebird.ImportTest do
       assert log.status == :failed
       assert log.error == ":no_csv_in_zip"
       assert log.upload_key == key
+      assert File.exists?(Path.join(dir, key))
+    end
+  end
+
+  describe "retrying a run" do
+    @moduletag :capture_log
+
+    @header "Submission ID,Common Name,Scientific Name,Taxonomic Order,Count," <>
+              "State/Province,County,Location ID,Location,Latitude,Longitude,Date,Time," <>
+              "Protocol,Duration (Min),All Obs Reported,Distance Traveled (km)," <>
+              "Area Covered (ha),Number of Observers,Breeding Code,Observation Details," <>
+              "Checklist Comments,ML Catalog Numbers"
+
+    # An eBird row for a Texas checklist S1 of a Mallard.
+    @tx_row "S1,Mallard,Anas platyrhynchos,1,2,US-TX,,L100,Pond,,,2015-11-14,," <>
+              "eBird - Casual Observation,0,0,,,1,,,,"
+
+    setup do
+      book = Ornitho.Factory.insert(:book)
+      Ornitho.Factory.insert(:taxon, book: book, name_sci: "Anas platyrhynchos")
+
+      user =
+        Kjogvi.AccountsFixtures.user_fixture(
+          default_book_signature: "#{book.slug}/#{book.version}"
+        )
+
+      %{user: user}
+    end
+
+    # Links eBird US-TX to a common subdivision1 so Texas checklists map.
+    defp link_texas! do
+      state = insert(:subdivision1, country: shared_country())
+      insert(:ebird_subdivision1, code: "US-TX", country_code: "US", location: state)
+    end
+
+    test "replaying stored rows imports the checklist the second time round", %{user: user} do
+      # First run: the region is unlinked, so the checklist is unmapped. Its rows
+      # are recorded and the upload is consumed (nothing truncated).
+      zip = csv_zip(@header <> "\n" <> @tx_row <> "\n")
+      {:ok, key} = Upload.store(user, :ebird, "zip", zip)
+
+      {:ok, original} = Kjogvi.Imports.enqueue_ebird_import(user, key)
+      Oban.drain_queue(queue: :imports)
+
+      original = Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, original.id)
+      assert original.status == :completed_with_errors
+      assert original.upload_key == nil
+      assert [%{category: :unmapped}] = Kjogvi.Imports.list_import_errors(original.id)
+
+      # The region is now matchable; retrying replays the stored rows.
+      link_texas!()
+
+      {:ok, retry} = Kjogvi.Imports.retry_import(original.id)
+      Oban.drain_queue(queue: :imports)
+
+      retry = Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, retry.id)
+      assert retry.status == :completed
+      assert retry.retried_from_id == original.id
+      assert retry.summary["checklists_created"] == 1
+
+      assert Kjogvi.Repo.aggregate(
+               from(c in Kjogvi.Birding.Checklist, where: c.ebird_id == "S1"),
+               :count
+             ) == 1
+    end
+
+    test "replaying a retained upload re-runs the whole file", %{dir: dir, user: user} do
+      # First run fails outright (no CSV), so the upload is retained.
+      {:ok, {_name, bad_zip}} =
+        :zip.create(~c"export.zip", [{~c"readme.txt", "no csv"}], [:memory])
+
+      {:ok, key} = Upload.store(user, :ebird, "zip", bad_zip)
+      {:ok, original} = Kjogvi.Imports.enqueue_ebird_import(user, key)
+      Oban.drain_queue(queue: :imports)
+
+      original = Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, original.id)
+      assert original.status == :failed
+      assert original.upload_key == key
+
+      link_texas!()
+
+      {:ok, retry} = Kjogvi.Imports.retry_import(original.id)
+      # The upload moved to the retry; the original no longer claims it.
+      assert Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, original.id).upload_key == nil
+
+      Oban.drain_queue(queue: :imports)
+
+      retry = Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, retry.id)
+      # Still fails — the retained file is still the same bad zip.
+      assert retry.status == :failed
+      assert retry.upload_key == key
       assert File.exists?(Path.join(dir, key))
     end
   end

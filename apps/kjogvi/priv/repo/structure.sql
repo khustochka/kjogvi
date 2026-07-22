@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict gtlUyMaIr9bSdoMl8Y3LrGh3hli9poGQ4g9U9bCX4qQA7QhYYpcslXIhJlLQpKc
+\restrict Cy6Jk9EVeOarl1bKzePbvAkOf5vVEhYdpIhmbkziHUUWAB3Hi9t5gOT8JIrgWq3
 
 -- Dumped from database version 18.3 (Debian 18.3-1.pgdg13+1)
 -- Dumped by pg_dump version 18.4
@@ -600,7 +600,8 @@ CREATE TABLE public.import_logs (
     user_id bigint NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    upload_key character varying(255)
+    upload_key character varying(255),
+    retried_from_id bigint
 );
 
 
@@ -1543,6 +1544,13 @@ CREATE INDEX import_errors_import_log_id_index ON public.import_errors USING btr
 
 
 --
+-- Name: import_logs_retried_from_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX import_logs_retried_from_id_index ON public.import_logs USING btree (retried_from_id);
+
+
+--
 -- Name: import_logs_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1821,6 +1829,14 @@ ALTER TABLE ONLY public.import_errors
 
 
 --
+-- Name: import_logs import_logs_retried_from_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.import_logs
+    ADD CONSTRAINT import_logs_retried_from_id_fkey FOREIGN KEY (retried_from_id) REFERENCES public.import_logs(id) ON DELETE SET NULL;
+
+
+--
 -- Name: import_logs import_logs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1936,7 +1952,7 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gtlUyMaIr9bSdoMl8Y3LrGh3hli9poGQ4g9U9bCX4qQA7QhYYpcslXIhJlLQpKc
+\unrestrict Cy6Jk9EVeOarl1bKzePbvAkOf5vVEhYdpIhmbkziHUUWAB3Hi9t5gOT8JIrgWq3
 
 INSERT INTO public."schema_migrations" (version) VALUES (20231216191458);
 INSERT INTO public."schema_migrations" (version) VALUES (20231224012458);
@@ -1988,3 +2004,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20260720204431);
 INSERT INTO public."schema_migrations" (version) VALUES (20260721035446);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722215520);
 INSERT INTO public."schema_migrations" (version) VALUES (20260722221701);
+INSERT INTO public."schema_migrations" (version) VALUES (20260722230903);

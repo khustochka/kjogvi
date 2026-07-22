@@ -71,6 +71,94 @@ defmodule Kjogvi.Imports do
   end
 
   @doc """
+  Whether the run can be retried: it must have finished and still hold either
+  its source upload or recorded failed rows to replay.
+  """
+  def retryable?(%ImportLog{} = import_log) do
+    ImportLog.finished?(import_log) and
+      (not is_nil(import_log.upload_key) or has_import_errors?(import_log.id))
+  end
+
+  defp has_import_errors?(import_log_id) do
+    ImportError.Query.by_import_log(import_log_id) |> Repo.exists?()
+  end
+
+  @doc """
+  Re-runs a finished eBird import as a fresh run.
+
+  When the original still has its source upload, that file is re-run in full
+  (the upload_key moves to the new run so it stays the ground truth); otherwise
+  the rows stored on the original's `ImportError` records are replayed. Either
+  way the retry is a new `ImportLog` linked back via `retried_from_id`, moving
+  through its own lifecycle and appearing in the user's import history.
+
+  Returns `{:error, :not_retryable}` for a run with nothing to replay, and
+  `{:error, :already_running}` (rolling the new run back) when an import for the
+  same user is already in flight.
+  """
+  def retry_import(import_log_id) do
+    import_log = Repo.get!(ImportLog, import_log_id)
+
+    if retryable?(import_log) do
+      Repo.transact(fn -> do_retry(import_log) end)
+    else
+      {:error, :not_retryable}
+    end
+  end
+
+  defp do_retry(%ImportLog{upload_key: upload_key} = original) when not is_nil(upload_key) do
+    # The upload is single-use ground truth: hand it to the new run so the old
+    # run no longer claims a file the retry may consume.
+    {:ok, _} = original |> Ecto.Changeset.change(upload_key: nil) |> Repo.update()
+
+    with {:ok, retry} <- insert_retry_log(original, upload_key) do
+      enqueue_retry(retry, %{
+        user_id: original.user_id,
+        upload_key: upload_key,
+        import_log_id: retry.id
+      })
+    end
+  end
+
+  defp do_retry(%ImportLog{} = original) do
+    with {:ok, retry} <- insert_retry_log(original, nil) do
+      enqueue_retry(retry, %{
+        user_id: original.user_id,
+        import_log_id: retry.id,
+        retry_of: original.id
+      })
+    end
+  end
+
+  defp insert_retry_log(original, upload_key) do
+    %{
+      source: original.source,
+      user_id: original.user_id,
+      upload_key: upload_key,
+      retried_from_id: original.id
+    }
+    |> ImportLog.create_changeset()
+    |> Repo.insert()
+  end
+
+  defp enqueue_retry(retry, job_args) do
+    case Oban.insert(Kjogvi.Jobs.Ebird.Import.new(job_args)) do
+      {:ok, %Oban.Job{conflict?: true}} -> {:error, :already_running}
+      {:ok, _job} -> {:ok, retry}
+    end
+  end
+
+  @doc """
+  The rows stored across a run's `ImportError` records, flattened in order —
+  the payload a stored-rows retry replays.
+  """
+  def stored_import_rows(import_log_id) do
+    import_log_id
+    |> list_import_errors()
+    |> Enum.flat_map(& &1.rows)
+  end
+
+  @doc """
   Marks the run as `:running`. A no-op when the log is gone (e.g. the user
   was deleted mid-run).
   """

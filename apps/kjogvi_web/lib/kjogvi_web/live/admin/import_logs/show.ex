@@ -30,14 +30,43 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
      socket
      |> assign(:page_title, "Import Log ##{import_log.id}")
      |> assign(:import_log, import_log)
+     |> assign(:retryable, Imports.retryable?(import_log))
      |> assign(:errors, errors)}
+  end
+
+  @impl true
+  def handle_event("retry", _params, %{assigns: %{import_log: import_log}} = socket) do
+    case Imports.retry_import(import_log.id) do
+      {:ok, retry} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Retry started.")
+         |> push_navigate(to: ~p"/admin/import_logs/#{retry}")}
+
+      {:error, :already_running} ->
+        {:noreply, put_flash(socket, :error, "An import for this user is already running.")}
+
+      {:error, :not_retryable} ->
+        {:noreply, put_flash(socket, :error, "This run can no longer be retried.")}
+    end
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.h1>Import Log #{@import_log.id}</.h1>
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <.h1 class="mb-0!">Import Log #{@import_log.id}</.h1>
+        <.button
+          :if={@retryable}
+          type="button"
+          id="retry-import"
+          phx-click="retry"
+          data-confirm="Re-run this import? eBird data is the source of truth, so any local edits to its checklists will be overwritten."
+        >
+          Retry
+        </.button>
+      </div>
 
       <dl id="import-log-facts" class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt class="text-stone-500">User</dt>
@@ -52,6 +81,12 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
         <dd :if={@import_log.started_at}><.import_time at={@import_log.started_at} /></dd>
         <dt :if={@import_log.finished_at} class="text-stone-500">Finished</dt>
         <dd :if={@import_log.finished_at}><.import_time at={@import_log.finished_at} /></dd>
+        <dt :if={@import_log.retried_from_id} class="text-stone-500">Retry of</dt>
+        <dd :if={@import_log.retried_from_id}>
+          <.link navigate={~p"/admin/import_logs/#{@import_log.retried_from_id}"}>
+            Run #{@import_log.retried_from_id}
+          </.link>
+        </dd>
         <dt :if={import_details(@import_log)} class="text-stone-500">Outcome</dt>
         <dd :if={import_details(@import_log)} class="whitespace-pre-wrap">
           {import_details(@import_log)}

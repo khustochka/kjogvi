@@ -115,6 +115,113 @@ defmodule Kjogvi.ImportsTest do
     end
   end
 
+  describe "retryable?/1 and retry_import/1" do
+    # A finished run for `user`, holding an upload and/or error rows. Inserts the
+    # log directly (no Oban job) so the user's exclusive import slot stays free
+    # for a retry to occupy.
+    defp finished_run(user, opts) do
+      {:ok, log} =
+        %{source: :ebird, user_id: user.id, upload_key: opts[:upload_key]}
+        |> ImportLog.create_changeset()
+        |> Kjogvi.Repo.insert()
+
+      status = Keyword.get(opts, :status, :completed_with_errors)
+      :ok = Imports.log_completed(log.id, status, %{})
+
+      if rows = opts[:error_rows] do
+        :ok =
+          Imports.record_errors(log.id, [%{category: :unmapped, submission_id: "S1", rows: rows}])
+      end
+
+      Kjogvi.Repo.get!(ImportLog, log.id)
+    end
+
+    test "a run with a retained upload is retryable", %{user: user} do
+      log = finished_run(user, upload_key: "a.zip")
+      assert Imports.retryable?(log)
+    end
+
+    test "a run with only error rows is retryable", %{user: user} do
+      log = finished_run(user, upload_key: nil, error_rows: [%{"Submission ID" => "S1"}])
+      assert Imports.retryable?(log)
+    end
+
+    test "a run with neither upload nor errors is not retryable", %{user: user} do
+      log = finished_run(user, upload_key: nil)
+      refute Imports.retryable?(log)
+    end
+
+    test "an unfinished run is not retryable", %{user: user} do
+      {:ok, log} = Imports.enqueue_ebird_import(user, "a.zip")
+      refute Imports.retryable?(Kjogvi.Repo.get!(ImportLog, log.id))
+    end
+
+    test "retrying a retained upload moves the file to a new linked run", %{user: user} do
+      original = finished_run(user, upload_key: "a.zip")
+
+      assert {:ok, retry} = Imports.retry_import(original.id)
+
+      assert retry.id != original.id
+      assert retry.retried_from_id == original.id
+      assert retry.upload_key == "a.zip"
+      assert retry.source == :ebird
+      assert retry.status == :queued
+
+      # The upload is single-use: the original no longer claims it.
+      assert Kjogvi.Repo.get!(ImportLog, original.id).upload_key == nil
+
+      assert [%Oban.Job{args: %{"upload_key" => "a.zip", "import_log_id" => retry_id}}] =
+               Kjogvi.Repo.all(Oban.Job, prefix: Oban.config().prefix)
+
+      assert retry_id == retry.id
+    end
+
+    test "retrying error rows enqueues a replay job carrying the origin", %{user: user} do
+      original = finished_run(user, upload_key: nil, error_rows: [%{"Submission ID" => "S1"}])
+
+      assert {:ok, retry} = Imports.retry_import(original.id)
+
+      assert retry.retried_from_id == original.id
+      assert retry.upload_key == nil
+
+      assert [%Oban.Job{args: args}] = Kjogvi.Repo.all(Oban.Job, prefix: Oban.config().prefix)
+      assert args["retry_of"] == original.id
+      assert args["import_log_id"] == retry.id
+      refute Map.has_key?(args, "upload_key")
+    end
+
+    test "retrying a non-retryable run errors", %{user: user} do
+      original = finished_run(user, upload_key: nil)
+      assert {:error, :not_retryable} = Imports.retry_import(original.id)
+    end
+
+    test "a run already in flight for the user rolls the retry back", %{user: user} do
+      original = finished_run(user, upload_key: "a.zip")
+      # Occupy the user's exclusive slot.
+      {:ok, _blocking} = Imports.enqueue_ebird_import(user, "blocking.zip")
+
+      assert {:error, :already_running} = Imports.retry_import(original.id)
+
+      # The rolled-back retry left no new log, and the upload stayed on the original.
+      assert Kjogvi.Repo.get!(ImportLog, original.id).upload_key == "a.zip"
+      assert Kjogvi.Repo.aggregate(ImportLog, :count) == 2
+    end
+  end
+
+  describe "stored_import_rows/1" do
+    test "flattens every error record's rows in order", %{user: user} do
+      {:ok, log} = Imports.enqueue_ebird_import(user, "a.zip")
+
+      :ok =
+        Imports.record_errors(log.id, [
+          %{category: :unmapped, submission_id: "S1", rows: [%{"n" => "1"}, %{"n" => "2"}]},
+          %{category: :failed, submission_id: "S2", rows: [%{"n" => "3"}]}
+        ])
+
+      assert Imports.stored_import_rows(log.id) == [%{"n" => "1"}, %{"n" => "2"}, %{"n" => "3"}]
+    end
+  end
+
   describe "paginate_import_errors/2" do
     test "pages the run's errors oldest first", %{user: user} do
       {:ok, log} = Imports.enqueue_ebird_import(user, "a.zip")

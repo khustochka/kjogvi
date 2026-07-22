@@ -18,6 +18,9 @@ defmodule Kjogvi.Imports.ImportLog do
   recorded at enqueue. A cleanly consumed upload is deleted and the key
   cleared; a key still present means the file was retained — the run failed
   outright, died, or overflowed the per-run `ImportError` cap.
+
+  `retried_from` points at the run this one re-ran (a retry is always a fresh
+  run with its own lifecycle and history entry), for the admin audit trail.
   """
 
   use Kjogvi.Schema
@@ -38,6 +41,7 @@ defmodule Kjogvi.Imports.ImportLog do
     field :finished_at, :utc_datetime_usec
 
     belongs_to(:user, User)
+    belongs_to(:retried_from, __MODULE__)
 
     timestamps()
   end
@@ -45,7 +49,7 @@ defmodule Kjogvi.Imports.ImportLog do
   @doc false
   def create_changeset(attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:source, :user_id, :upload_key])
+    |> cast(attrs, [:source, :user_id, :upload_key, :retried_from_id])
     |> validate_required([:source, :user_id])
     |> assoc_constraint(:user)
   end

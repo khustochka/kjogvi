@@ -78,20 +78,33 @@ defmodule Kjogvi.Ebird.Import do
   alias Kjogvi.Repo
 
   @doc """
-  Runs the import against the CSV at `csv_path` for `user`.
+  Runs the import against the CSV at `csv_path` for `user`. See `run_rows/3`
+  for the options.
+  """
+  def run(user, csv_path, opts \\ []) do
+    with {:ok, book} <- resolve_book(user) do
+      run_rows(user, parse_csv(csv_path), Keyword.put(opts, :book, book))
+    end
+  end
+
+  @doc """
+  Runs the import against already-parsed `rows` (header-keyed CSV maps) for
+  `user`. A retry replays the rows stored on a previous run's `ImportError`
+  records through here, without a source file.
 
   Options:
 
     * `:import_log_id` — the `ImportLog` to attach failed rows to; without it
       they are only counted.
     * `:max_error_records` — per-run cap on stored `ImportError` records.
+    * `:book` — the resolved taxonomy book, when the caller already has it
+      (as `run/3` does); otherwise it is resolved from the user here.
   """
-  def run(user, csv_path, opts \\ []) do
+  def run_rows(user, rows, opts \\ []) do
     import_log_id = Keyword.get(opts, :import_log_id)
     max_errors = Keyword.get(opts, :max_error_records, @max_error_records)
 
-    with {:ok, book} <- resolve_book(user) do
-      rows = parse_csv(csv_path)
+    with {:ok, book} <- book_from_opts(user, opts) do
       taxon_keys = resolve_taxon_keys(book, rows)
       location_ids = upsert_user_locations(user, rows)
 
@@ -107,6 +120,13 @@ defmodule Kjogvi.Ebird.Import do
       )
 
       {:ok, summary}
+    end
+  end
+
+  defp book_from_opts(user, opts) do
+    case Keyword.get(opts, :book) do
+      %Ornitho.Schema.Book{} = book -> {:ok, book}
+      nil -> resolve_book(user)
     end
   end
 

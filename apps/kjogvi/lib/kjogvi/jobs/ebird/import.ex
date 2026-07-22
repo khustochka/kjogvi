@@ -10,8 +10,12 @@ defmodule Kjogvi.Jobs.Ebird.Import do
   overflows the `ImportError` cap keeps the file — it is then the ground truth
   for the rows the database doesn't hold (`ImportLog.upload_key`).
 
-  Enqueue through `Kjogvi.Imports.enqueue_ebird_import/2`, which creates the
-  run's `ImportLog` and puts its id in the args for
+  A retry with no upload carries `retry_of` (the original run's id) instead:
+  the rows stored on that run's `ImportError` records are replayed through
+  `Kjogvi.Ebird.Import.run_rows/3`, no file involved.
+
+  Enqueue through `Kjogvi.Imports.enqueue_ebird_import/2` (or `retry_import/1`),
+  which creates the run's `ImportLog` and puts its id in the args for
   `Kjogvi.Imports.LogRecorder`.
   """
 
@@ -52,6 +56,14 @@ defmodule Kjogvi.Jobs.Ebird.Import do
     after
       File.rm_rf(scratch)
     end
+  end
+
+  # A stored-rows retry: replay the rows recorded on the original run, no file.
+  def perform(%Oban.Job{args: %{"user_id" => user_id, "retry_of" => retry_of} = args}) do
+    user = Accounts.get_user!(user_id)
+    rows = Kjogvi.Imports.stored_import_rows(retry_of)
+
+    Kjogvi.Ebird.Import.run_rows(user, rows, import_log_id: args["import_log_id"])
   end
 
   # A cleanly consumed upload is deleted and unlinked from the log; any other
