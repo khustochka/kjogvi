@@ -165,3 +165,58 @@ linked =
   end)
 
 IO.puts("\nLinked #{linked} eBird user locations (1:1) for user #{user_id}.")
+
+# --- Name-alias pass ----------------------------------------------------------
+#
+# eBird locations whose name doesn't spell-match the app location's name_en, but
+# which are the same place. After the checklist-based 1:1 linking above, link these
+# by name: the aliased eBird name is matched against exactly one app location.
+name_aliases = [
+  {"Kyiv City", "Kyiv"},
+  {"Kherson oblast general area", "Khersonska oblast"},
+  {"Cherkas'ka Oblast'", "Cherkaska oblast"},
+  {"Winnipeg--East Kildonan/Transcona", "East Kildonan/Transcona General Area"},
+  {"Birds Hill PP", "Birds Hill Provincial Park"},
+  {"Mitchell Lake Audubon Center (HOTE 103)", "Mitchell Lake Audubon Center"},
+  {"Winnipeg--Kildonan Settlers Bridge", "Kildonan Settlers Bridge"}
+]
+
+alias_linked =
+  Enum.reduce(name_aliases, 0, fn {ebird_name, app_name}, count ->
+    ebird_loc =
+      Repo.one(
+        from u in UserLocation,
+          where: u.user_id == ^user_id and u.name == ^ebird_name and is_nil(u.location_id),
+          select: u.ebird_loc_id
+      )
+
+    app_ids =
+      Repo.all(from l in Kjogvi.Geo.Location, where: l.name_en == ^app_name, select: l.id)
+
+    case {ebird_loc, app_ids} do
+      {nil, _} ->
+        IO.puts("  alias skipped: no unlinked eBird location named #{inspect(ebird_name)}")
+        count
+
+      {_, []} ->
+        IO.puts("  alias skipped: no app location named #{inspect(app_name)}")
+        count
+
+      {_, [_, _ | _]} ->
+        IO.puts("  alias skipped: #{length(app_ids)} app locations named #{inspect(app_name)}")
+        count
+
+      {ebird_loc, [app_id]} ->
+        {n, _} =
+          Repo.update_all(
+            from(u in UserLocation,
+              where: u.user_id == ^user_id and u.ebird_loc_id == ^ebird_loc
+            ),
+            set: [location_id: app_id, updated_at: now]
+          )
+
+        count + n
+    end
+  end)
+
+IO.puts("Linked #{alias_linked} eBird user locations by name alias for user #{user_id}.")
