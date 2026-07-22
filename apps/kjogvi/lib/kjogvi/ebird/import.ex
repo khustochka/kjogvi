@@ -47,6 +47,8 @@ defmodule Kjogvi.Ebird.Import do
   when the user has no usable taxonomy book.
   """
 
+  @error_counts [:checklists_unmapped, :checklists_invalid, :checklists_failed]
+
   require Logger
 
   alias Ecto.Changeset
@@ -93,6 +95,14 @@ defmodule Kjogvi.Ebird.Import do
   end
 
   defp resolve_book(_user), do: {:error, :no_default_book}
+
+  @doc """
+  Whether the summary of a finished run reports rows that were not imported
+  (skipped duplicates don't count — they are already there).
+  """
+  def errors?(summary) do
+    Enum.any?(@error_counts, &(Map.fetch!(summary, &1) > 0)) or summary.unresolved_taxa != []
+  end
 
   # Reads every row into a list, keyed by the header line (`headers: true`).
   # Not incremental: rows are taxonomy-ordered, so a submission's rows are
@@ -269,6 +279,7 @@ defmodule Kjogvi.Ebird.Import do
       checklists_skipped: map_size(by_submission) - MapSet.size(new_ids),
       checklists_unmapped: 0,
       checklists_invalid: 0,
+      checklists_failed: 0,
       unresolved_taxa: MapSet.new()
     }
 
@@ -337,7 +348,7 @@ defmodule Kjogvi.Ebird.Import do
             inspect(changeset_errors(changeset))
         )
 
-        acc
+        Map.update!(acc, :checklists_failed, &(&1 + 1))
     end
   end
 

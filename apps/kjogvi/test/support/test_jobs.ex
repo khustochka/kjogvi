@@ -43,3 +43,23 @@ defmodule Kjogvi.TestJobs.PlainWorker do
   @impl Oban.Worker
   def perform(_job), do: :ok
 end
+
+defmodule Kjogvi.TestJobs.LoggedWorker do
+  @moduledoc """
+  A worker carrying an `import_log_id` for `Kjogvi.Imports.LogRecorder`,
+  steerable through its args, with a `completion_status/1` driven by the
+  summary it returns.
+  """
+
+  use Oban.Worker, queue: :imports, max_attempts: 1
+
+  @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"error" => reason}}), do: {:error, reason}
+  def perform(%Oban.Job{args: %{"raise" => true}}), do: raise("logged boom")
+  def perform(%Oban.Job{args: %{"cancel" => reason}}), do: {:cancel, reason}
+  def perform(%Oban.Job{args: %{"summary" => summary}}), do: {:ok, summary}
+  def perform(_job), do: :ok
+
+  def completion_status(%{"errors" => true}), do: :completed_with_errors
+  def completion_status(_summary), do: :completed
+end

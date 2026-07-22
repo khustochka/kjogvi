@@ -407,4 +407,113 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
       assert flush_render(lv) =~ "Unpacking export..."
     end
   end
+
+  describe "import history" do
+    alias Kjogvi.Imports
+
+    setup do
+      %{user: Kjogvi.AccountsFixtures.user_fixture()}
+    end
+
+    test "shows an empty state without any runs", %{conn: conn, user: user} do
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      assert has_element?(lv, "#import-history")
+      assert render(lv) =~ "No imports yet"
+    end
+
+    test "lists the user's runs with status and counts, not other users'",
+         %{conn: conn, user: user} do
+      other_user = Kjogvi.AccountsFixtures.user_fixture()
+      {:ok, other_log} = Imports.enqueue_ebird_import(other_user, "other.zip")
+
+      {:ok, log} = Imports.enqueue_ebird_import(user, "mine.zip")
+
+      Imports.log_completed(log.id, :completed_with_errors, %{
+        checklists_created: 3,
+        observations_created: 12,
+        checklists_unmapped: 2,
+        unresolved_taxa: ["Bogus specius"]
+      })
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      assert has_element?(lv, "#import-log-#{log.id}")
+      refute has_element?(lv, "#import-log-#{other_log.id}")
+
+      html = render(lv)
+      assert html =~ "Completed with issues"
+      assert html =~ "3 checklists and 12 observations imported"
+      assert html =~ "2 checklists not imported"
+      assert html =~ "1 taxon unrecognized"
+    end
+
+    test "a failed run shows its error", %{conn: conn, user: user} do
+      {:ok, log} = Imports.enqueue_ebird_import(user, "mine.zip")
+      Imports.log_failed(log.id, "The export contained no CSV file.")
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      assert has_element?(lv, "#import-log-#{log.id}")
+
+      html = render(lv)
+      assert html =~ "Failed"
+      assert html =~ "The export contained no CSV file."
+    end
+
+    test "starting a CSV import adds a queued run to the history", %{conn: conn, user: user} do
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      file =
+        file_input(lv, "#ebird-csv-import-form", :ebird_zip, [
+          %{name: "MyEBirdData.zip", content: csv_zip(), type: "application/zip"}
+        ])
+
+      render_upload(file, "MyEBirdData.zip")
+      lv |> element("#ebird-csv-import-form") |> render_submit()
+
+      [log] = Imports.list_import_logs(user)
+      assert has_element?(lv, "#import-log-#{log.id}")
+      assert render(lv) =~ "Queued"
+    end
+
+    test "a lifecycle broadcast refreshes the history", %{conn: conn, user: user} do
+      {:ok, log} = Imports.enqueue_ebird_import(user, "mine.zip")
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/imports")
+
+      assert render(lv) =~ "Queued"
+
+      # Simulates what the LogRecorder does before the Bridge broadcast fires.
+      Imports.log_completed(log.id, :completed, %{
+        checklists_created: 1,
+        observations_created: 1
+      })
+
+      broadcast_lifecycle(
+        {:ebird_import, user.id},
+        :ok,
+        AsyncResult.ok(AsyncResult.loading(%{}), %{message: "Done."})
+      )
+
+      html = flush_render(lv)
+      assert html =~ "Completed"
+      assert html =~ "1 checklist and 1 observation imported"
+    end
+  end
 end

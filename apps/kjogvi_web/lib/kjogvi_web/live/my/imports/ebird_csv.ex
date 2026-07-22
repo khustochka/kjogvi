@@ -86,21 +86,23 @@ defmodule KjogviWeb.Live.My.Imports.EbirdCsv do
     end
   end
 
-  # The import job is exclusive per user (`unique_keys: [:user_id]`), so inserting
-  # while one is in flight returns the running job (`conflict?: true`) rather than
-  # enqueuing this one — and it would never read this upload. Delete the just-
-  # stored file so it isn't orphaned, and tell the user an import is already
-  # running instead of silently dropping their new file.
+  # The import job is exclusive per user, so enqueuing while one is in flight
+  # returns `:already_running` rather than starting another — and the running
+  # job would never read this upload. Delete the just-stored file so it isn't
+  # orphaned, and tell the user an import is already running instead of
+  # silently dropping their new file.
   defp enqueue_import(socket, user, key) do
-    case Oban.insert(Jobs.Ebird.Import.new(%{user_id: user.id, upload_key: key})) do
-      {:ok, %Oban.Job{conflict?: true}} ->
+    case Kjogvi.Imports.enqueue_ebird_import(user, key) do
+      {:error, :already_running} ->
         Upload.delete(key)
 
         socket
         |> clear_flash()
         |> put_flash(:error, "An eBird import is already in progress. Wait for it to finish.")
 
-      {:ok, _job} ->
+      {:ok, _import_log} ->
+        send(self(), :refresh_import_logs)
+
         socket
         |> clear_flash()
         |> assign(:async_result, Jobs.status(Jobs.Ebird.Import, %{user_id: user.id}))

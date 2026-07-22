@@ -104,4 +104,60 @@ defmodule Kjogvi.Jobs.Ebird.ImportTest do
                Import.perform(%Oban.Job{args: %{"user_id" => user.id, "upload_key" => key}})
     end
   end
+
+  describe "import log recording" do
+    @moduletag :capture_log
+
+    setup do
+      book = Ornitho.Factory.insert(:book)
+      Ornitho.Factory.insert(:taxon, book: book, name_sci: "Anas platyrhynchos")
+
+      user =
+        Kjogvi.AccountsFixtures.user_fixture(
+          default_book_signature: "#{book.slug}/#{book.version}"
+        )
+
+      %{user: user}
+    end
+
+    test "a drained run finishes its import log with the summary", %{user: user} do
+      header =
+        "Submission ID,Common Name,Scientific Name,Taxonomic Order,Count," <>
+          "State/Province,County,Location ID,Location,Latitude,Longitude,Date,Time," <>
+          "Protocol,Duration (Min),All Obs Reported,Distance Traveled (km)," <>
+          "Area Covered (ha),Number of Observers,Breeding Code,Observation Details," <>
+          "Checklist Comments,ML Catalog Numbers"
+
+      row =
+        "S1,Mallard,Anas platyrhynchos,1,2,X,,L100,Pond,,,2015-11-14,," <>
+          "eBird - Casual Observation,0,0,,,1,,,,"
+
+      zip = csv_zip(header <> "\n" <> row <> "\n")
+      {:ok, key} = Upload.store(user, :ebird, "zip", zip)
+
+      {:ok, log} = Kjogvi.Imports.enqueue_ebird_import(user, key)
+      Oban.drain_queue(queue: :imports)
+
+      log = Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, log.id)
+      # The unlinked region leaves the checklist unmapped — an errors outcome.
+      assert log.status == :completed_with_errors
+      assert log.summary["checklists_unmapped"] == 1
+      assert log.started_at
+      assert log.finished_at
+    end
+
+    test "a failed run marks its import log failed with the reason", %{user: user} do
+      {:ok, {_name, zip}} =
+        :zip.create(~c"export.zip", [{~c"readme.txt", "no csv here"}], [:memory])
+
+      {:ok, key} = Upload.store(user, :ebird, "zip", zip)
+
+      {:ok, log} = Kjogvi.Imports.enqueue_ebird_import(user, key)
+      Oban.drain_queue(queue: :imports)
+
+      log = Kjogvi.Repo.get!(Kjogvi.Imports.ImportLog, log.id)
+      assert log.status == :failed
+      assert log.error == ":no_csv_in_zip"
+    end
+  end
 end

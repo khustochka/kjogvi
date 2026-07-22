@@ -513,4 +513,35 @@ defmodule Kjogvi.Ebird.ImportTest do
       assert {:error, :no_default_book} = Import.run(user, path)
     end
   end
+
+  describe "errors?/1" do
+    defp summary(overrides) do
+      Map.merge(
+        %{
+          checklists_created: 5,
+          observations_created: 20,
+          checklists_skipped: 2,
+          checklists_unmapped: 0,
+          checklists_invalid: 0,
+          checklists_failed: 0,
+          unresolved_taxa: []
+        },
+        overrides
+      )
+    end
+
+    test "a clean run has no errors, even with skipped duplicates" do
+      refute Import.errors?(summary(%{}))
+    end
+
+    test "unmapped, invalid, or failed checklists are errors" do
+      assert Import.errors?(summary(%{checklists_unmapped: 1}))
+      assert Import.errors?(summary(%{checklists_invalid: 1}))
+      assert Import.errors?(summary(%{checklists_failed: 1}))
+    end
+
+    test "unresolved taxa are errors" do
+      assert Import.errors?(summary(%{unresolved_taxa: ["Bogus specius"]}))
+    end
+  end
 end

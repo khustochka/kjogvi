@@ -7,6 +7,10 @@ defmodule Kjogvi.Jobs.Ebird.Import do
   args. The job fetches the `.zip` to a scratch dir, unpacks it, and hands the
   inner CSV to `Kjogvi.Ebird.Import`. On the way out it deletes both the
   scratch dir and the stored upload — the upload is single-use.
+
+  Enqueue through `Kjogvi.Imports.enqueue_ebird_import/2`, which creates the
+  run's `ImportLog` and puts its id in the args for
+  `Kjogvi.Imports.LogRecorder`.
   """
 
   use Kjogvi.Jobs.Runtime.ExclusiveWorker, unique_keys: [:user_id]
@@ -22,6 +26,12 @@ defmodule Kjogvi.Jobs.Ebird.Import do
 
   @impl Oban.Worker
   def timeout(_job), do: :timer.minutes(10)
+
+  # For Kjogvi.Imports.LogRecorder: a run that finished but left rows
+  # unimported logs as :completed_with_errors.
+  def completion_status(summary) do
+    if Kjogvi.Ebird.Import.errors?(summary), do: :completed_with_errors, else: :completed
+  end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"user_id" => user_id, "upload_key" => upload_key}} = job) do
