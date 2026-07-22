@@ -285,10 +285,65 @@ defmodule Kjogvi.Ebird.ImportTest do
       assert site.country_id == state.country_id
     end
 
-    test "falls back to the country when the state itself has no linked common location" do
+    test "resolves an existing unmapped user location and imports its checklist" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+      state = link_texas!()
+
+      # A user location left unmapped by an earlier run (its region wasn't matched
+      # then). The state is matched now, so this run should link it and import.
+      insert(:ebird_user_location,
+        user: user,
+        ebird_loc_id: "L956160",
+        name: "Brackenridge Park",
+        state: "US-TX",
+        location: nil
+      )
+
+      path =
+        csv_file([
+          row([
+            "S1",
+            "BBWD",
+            "Dendrocygna autumnalis",
+            "243",
+            "1",
+            "US-TX",
+            "Bexar",
+            "L956160",
+            "Brackenridge Park",
+            "29.46",
+            "-98.46",
+            "2015-11-14",
+            "",
+            "eBird - Casual Observation",
+            "0",
+            "0",
+            "",
+            "",
+            "1",
+            "",
+            "",
+            "",
+            ""
+          ])
+        ])
+
+      assert {:ok, summary} = Import.run(user, path)
+      assert summary.checklists_created == 1
+      assert summary.checklists_unmapped == 0
+
+      user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L956160")
+      site = Repo.get(Location, user_location.location_id)
+      assert site.location_type == :site
+      assert site.subdivision1_id == state.id
+      assert Repo.exists?(from(c in Checklist, where: c.ebird_id == "S1"))
+    end
+
+    test "leaves the location unmapped when only its country is linked, not the state" do
       {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
 
-      # Only the country is linked; the state (US-TX) is not.
+      # Only the country is linked; the state (US-TX) is not — no ancestor fallback,
+      # so the site isn't created under the country.
       country = insert(:country)
       insert(:ebird_location, code: "US", country_code: "US", location: country)
 
@@ -322,12 +377,12 @@ defmodule Kjogvi.Ebird.ImportTest do
         ])
 
       assert {:ok, summary} = Import.run(user, path)
-      assert summary.checklists_created == 1
+      assert summary.checklists_created == 0
+      assert summary.checklists_unmapped == 1
 
       user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L777000")
-      site = Repo.get(Location, user_location.location_id)
-      assert site.country_id == country.id
-      assert site.subdivision1_id == nil
+      assert user_location.location_id == nil
+      refute Repo.exists?(from(c in Checklist, where: c.ebird_id == "S1"))
     end
 
     test "an unresolvable region leaves the location unmapped and skips its checklists" do

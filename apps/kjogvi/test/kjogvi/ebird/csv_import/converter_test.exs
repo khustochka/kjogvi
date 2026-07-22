@@ -108,6 +108,16 @@ defmodule Kjogvi.Ebird.CsvImport.ConverterTest do
       assert_in_delta attrs.area_acres, 24.7105, 0.0001
     end
 
+    test "a distance eBird wrote without a leading zero parses" do
+      assert {:ok, attrs} = Converter.checklist_attrs(row(%{"Distance Traveled (km)" => ".729"}))
+      assert attrs.distance_kms == 0.729
+    end
+
+    test "an area eBird wrote without a leading zero parses" do
+      assert {:ok, attrs} = Converter.checklist_attrs(row(%{"Area Covered (ha)" => ".5"}))
+      assert_in_delta attrs.area_acres, 1.235525, 0.0001
+    end
+
     test "a blank Submission ID is an invalid row" do
       assert Converter.checklist_attrs(row(%{"Submission ID" => ""})) ==
                {:error, :missing_submission_id}

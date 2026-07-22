@@ -20,11 +20,10 @@ defmodule Kjogvi.Ebird.Import do
       `Kjogvi.Ebird.UserLocation` (the user's own eBird-location table). A user
       location already mapped to a real `Kjogvi.Geo.Location` reuses it;
       otherwise a `:site` is created and linked, placed under the common location
-      the row's `State/Province` eBird region resolves to — falling back to its
-      country when the state itself has no linked common location, since the
-      hierarchy requires every place to belong to a country. When neither
-      resolves, the user location is stored unmapped and its checklists are
-      skipped (counted in `checklists_unmapped`) until the region is matched.
+      the row's `State/Province` eBird region resolves to. When the state has no
+      linked common location the user location is stored unmapped (no ancestor
+      fallback) and its checklists are skipped (counted in `checklists_unmapped`)
+      until the region is matched.
 
     * **Taxa.** Each row's `Scientific Name` is resolved against the user's
       taxonomy book (`default_book_signature`) into a `taxon_key`. A name with no
@@ -125,10 +124,10 @@ defmodule Kjogvi.Ebird.Import do
   end
 
   # Upserts one `UserLocation` per distinct `Location ID`, returning
-  # `%{ebird_loc_id => location_id}` for the mapped real location (nil when
-  # neither the state nor its country resolves to a common location, since the
-  # hierarchy requires every place to belong to a country). Existing user
-  # locations keep whatever they were already linked to.
+  # `%{ebird_loc_id => location_id}` for the mapped real location (nil when the
+  # state has no matched common location). An already-mapped user location keeps
+  # its link; an existing but unmapped one is (re-)resolved now, so a location left
+  # unmapped by an earlier run gets its site once its region is matchable.
   defp upsert_user_locations(user, rows) do
     existing = existing_user_locations(user, rows)
     parents = parent_locations(rows)
@@ -157,15 +156,14 @@ defmodule Kjogvi.Ebird.Import do
     |> Enum.uniq_by(& &1.ebird_loc_id)
   end
 
-  # `%{ebird_code => common_location}` over the eBird region codes the CSV needs
-  # (each `State/Province` code and its country code) that resolve to a linked
-  # common location. Codes with no linked location are absent.
+  # `%{state_code => common_location}` over the `State/Province` codes the CSV
+  # needs that resolve to a linked common location. Codes with no linked location
+  # are absent.
   defp parent_locations(rows) do
     codes =
       rows
       |> Enum.map(& &1["State/Province"])
       |> Enum.reject(&blank?/1)
-      |> Enum.flat_map(&[&1, country_code(&1)])
       |> Enum.uniq()
 
     EbirdLocation.Query.by_codes(codes)
@@ -175,13 +173,16 @@ defmodule Kjogvi.Ebird.Import do
     |> Map.new(&{&1.code, &1.location})
   end
 
-  # The country part of an eBird region code: `"US-TX"` → `"US"`, `"US"` → `"US"`.
-  defp country_code(code), do: code |> String.split("-") |> List.first()
-
   defp upsert_user_location(user, attrs, existing, parents) do
     case Map.fetch(existing, attrs.ebird_loc_id) do
-      {:ok, %UserLocation{location_id: location_id}} ->
+      # Already linked to a real location — keep it.
+      {:ok, %UserLocation{location_id: location_id}} when not is_nil(location_id) ->
         {attrs.ebird_loc_id, location_id}
+
+      # Exists but unmapped (an earlier run couldn't place it): resolve and link now.
+      {:ok, %UserLocation{} = user_location} ->
+        {:ok, updated} = link_user_location(user, user_location, attrs, parents)
+        {attrs.ebird_loc_id, updated.location_id}
 
       :error ->
         {:ok, user_location} = insert_user_location(user, attrs, parents)
@@ -189,10 +190,10 @@ defmodule Kjogvi.Ebird.Import do
     end
   end
 
-  # A new user location is linked to a fresh `:site` when a parent resolves — the
-  # state's common location, else its country's (the hierarchy requires a
-  # country). When neither resolves, the user location is stored unmapped
-  # (`location_id: nil`): its checklists can't be placed yet and are skipped.
+  # A new user location is linked to a fresh `:site` under the common location its
+  # `State/Province` resolves to. When the state has no matched common location the
+  # user location is stored unmapped (`location_id: nil`) — we don't place the site
+  # under an ancestor as a fallback — and its checklists are skipped.
   defp insert_user_location(user, attrs, parents) do
     Repo.transact(fn ->
       with {:ok, location} <- create_site(user, attrs, resolve_parent(attrs.state, parents)) do
@@ -205,14 +206,23 @@ defmodule Kjogvi.Ebird.Import do
     end)
   end
 
-  defp resolve_parent(nil, _parents), do: nil
-
-  defp resolve_parent(state_code, parents) do
-    Map.get(parents, state_code) || Map.get(parents, country_code(state_code))
+  # Resolves an existing unmapped user location: creates its `:site` and links it.
+  # Stays unmapped when the state still has no matched common location.
+  defp link_user_location(user, user_location, attrs, parents) do
+    Repo.transact(fn ->
+      with {:ok, location} <- create_site(user, attrs, resolve_parent(attrs.state, parents)) do
+        user_location
+        |> UserLocation.changeset(%{location_id: location && location.id})
+        |> Repo.update()
+      end
+    end)
   end
 
-  # No resolvable parent: the hierarchy requires a country, so no site can be
-  # created — leave the user location unmapped.
+  defp resolve_parent(nil, _parents), do: nil
+  defp resolve_parent(state_code, parents), do: Map.get(parents, state_code)
+
+  # The state has no matched common location: leave the user location unmapped
+  # rather than placing its site under an ancestor.
   defp create_site(_user, _attrs, nil), do: {:ok, nil}
 
   # The eBird location id (`"L956160"`) downcased is a stable, per-user-unique

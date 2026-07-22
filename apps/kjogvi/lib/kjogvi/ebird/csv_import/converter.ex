@@ -180,12 +180,18 @@ defmodule Kjogvi.Ebird.CsvImport.Converter do
   defp parse_float(nil), do: nil
   defp parse_float(""), do: nil
 
+  # eBird writes fractional values without a leading zero (`.729`, `-.5`), which
+  # `Float.parse` rejects; restore the zero before parsing.
   defp parse_float(value) do
-    case Float.parse(String.trim(value)) do
+    case Float.parse(leading_zero(String.trim(value))) do
       {float, _} -> float
       :error -> nil
     end
   end
+
+  defp leading_zero("." <> _ = value), do: "0" <> value
+  defp leading_zero("-." <> rest), do: "-0." <> rest
+  defp leading_zero(value), do: value
 
   defp blank_to_nil(nil), do: nil
 

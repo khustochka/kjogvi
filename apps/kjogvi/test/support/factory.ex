@@ -89,6 +89,18 @@ defmodule Kjogvi.Factory do
     merge_attributes(base, attrs)
   end
 
+  # A user's eBird location as recorded from a "Download My Data" export. Pass
+  # `location:` to link a real `Geo.Location` (defaults to unmapped).
+  def ebird_user_location_factory(attrs) do
+    base = %Kjogvi.Ebird.UserLocation{
+      user: Kjogvi.AccountsFixtures.user_fixture(),
+      ebird_loc_id: sequence(:ebird_loc_id, &"L#{&1}"),
+      name: sequence(:ebird_user_location_name, &"eBird Location #{&1}")
+    }
+
+    merge_attributes(base, attrs)
+  end
+
   def special_factory do
     %Kjogvi.Geo.Location{
       slug: sequence(:slug, &"special#{&1}"),
