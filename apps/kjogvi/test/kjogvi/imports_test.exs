@@ -57,6 +57,84 @@ defmodule Kjogvi.ImportsTest do
     end
   end
 
+  describe "list_import_logs_for_admin/2" do
+    test "lists all users' runs newest first with users preloaded", %{user: user} do
+      other_user = Kjogvi.AccountsFixtures.user_fixture()
+
+      {:ok, older} = Imports.enqueue_ebird_import(user, "a.zip")
+      {:ok, newer} = Imports.enqueue_ebird_import(other_user, "b.zip")
+
+      page = Imports.list_import_logs_for_admin()
+
+      assert Enum.map(page.entries, & &1.id) == [newer.id, older.id]
+      assert Enum.map(page.entries, & &1.user.id) == [other_user.id, user.id]
+    end
+
+    test ":issues narrows to failed and completed-with-errors runs", %{user: user} do
+      users = [user | Enum.map(1..3, fn _ -> Kjogvi.AccountsFixtures.user_fixture() end)]
+
+      [queued, completed, with_errors, failed] =
+        Enum.map(users, fn u ->
+          {:ok, log} = Imports.enqueue_ebird_import(u, "a.zip")
+          log
+        end)
+
+      :ok = Imports.log_completed(completed.id, :completed, %{})
+      :ok = Imports.log_completed(with_errors.id, :completed_with_errors, %{})
+      :ok = Imports.log_failed(failed.id, "boom")
+
+      page = Imports.list_import_logs_for_admin(:issues)
+
+      assert Enum.map(page.entries, & &1.id) == [failed.id, with_errors.id]
+      refute queued.id in Enum.map(page.entries, & &1.id)
+    end
+
+    test "paginates", %{user: user} do
+      other_user = Kjogvi.AccountsFixtures.user_fixture()
+
+      {:ok, older} = Imports.enqueue_ebird_import(user, "a.zip")
+      {:ok, newer} = Imports.enqueue_ebird_import(other_user, "b.zip")
+
+      page = Imports.list_import_logs_for_admin(:all, %{page: 2, page_size: 1})
+
+      assert Enum.map(page.entries, & &1.id) == [older.id]
+      assert page.total_entries == 2
+      refute newer.id in Enum.map(page.entries, & &1.id)
+    end
+  end
+
+  describe "get_import_log!/1" do
+    test "returns the run with its user preloaded", %{user: user} do
+      {:ok, log} = Imports.enqueue_ebird_import(user, "a.zip")
+
+      assert Imports.get_import_log!(log.id).user.id == user.id
+    end
+
+    test "raises on an unknown id" do
+      assert_raise Ecto.NoResultsError, fn -> Imports.get_import_log!(0) end
+    end
+  end
+
+  describe "paginate_import_errors/2" do
+    test "pages the run's errors oldest first", %{user: user} do
+      {:ok, log} = Imports.enqueue_ebird_import(user, "a.zip")
+
+      :ok =
+        Imports.record_errors(log.id, [
+          %{category: :invalid, rows: []},
+          %{category: :unmapped, submission_id: "S1", rows: []}
+        ])
+
+      page = Imports.paginate_import_errors(log.id, %{page: 1, page_size: 1})
+
+      assert [%{category: :invalid}] = page.entries
+      assert page.total_entries == 2
+
+      assert [%{category: :unmapped}] =
+               Imports.paginate_import_errors(log.id, %{page: 2, page_size: 1}).entries
+    end
+  end
+
   describe "log transitions" do
     setup %{user: user} do
       {:ok, log} = Imports.enqueue_ebird_import(user, "a.zip")

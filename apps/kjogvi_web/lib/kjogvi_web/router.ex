@@ -183,12 +183,18 @@ defmodule KjogviWeb.Router do
       live "/imports", Live.Admin.Imports.Index, :index
       live "/imports/locations", Live.Admin.Imports.Locations.Index, :index
 
+      live "/import_logs", Live.Admin.ImportLogs.Index, :index
+      live "/import_logs/page/:page", Live.Admin.ImportLogs.Index, :index
+      live "/import_logs/:id", Live.Admin.ImportLogs.Show, :show
+
       live "/users", Live.Admin.Users.Index, :index
       live "/users/page/:page", Live.Admin.Users.Index, :index
       live "/users/:id/settings", Live.Admin.Users.Settings, :edit
 
       live "/settings", Live.Admin.Settings.Index, :index
     end
+
+    get "/import_logs/:id/upload", Admin.ImportUploadController, :download
 
     ornitho_web "/taxonomy",
       root_layout: {KjogviWeb.Layouts, :root},

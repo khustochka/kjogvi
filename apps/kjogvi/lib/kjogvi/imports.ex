@@ -47,6 +47,30 @@ defmodule Kjogvi.Imports do
   end
 
   @doc """
+  All users' import runs for the admin view, newest first and paginated, with
+  users preloaded. `:issues` narrows to runs that failed or finished with
+  unimported rows.
+  """
+  def list_import_logs_for_admin(filter \\ :all, pagination \\ %{}) do
+    ImportLog
+    |> admin_filter(filter)
+    |> ImportLog.Query.newest_first()
+    |> ImportLog.Query.preload_user()
+    |> Repo.paginate(pagination)
+  end
+
+  defp admin_filter(query, :all), do: query
+  defp admin_filter(query, :issues), do: ImportLog.Query.with_issues(query)
+
+  @doc """
+  The run with its user preloaded. Raises if it doesn't exist.
+  """
+  def get_import_log!(id) do
+    ImportLog.Query.preload_user()
+    |> Repo.get!(id)
+  end
+
+  @doc """
   Marks the run as `:running`. A no-op when the log is gone (e.g. the user
   was deleted mid-run).
   """
@@ -108,6 +132,15 @@ defmodule Kjogvi.Imports do
     ImportError.Query.by_import_log(import_log_id)
     |> ImportError.Query.oldest_first()
     |> Repo.all()
+  end
+
+  @doc """
+  The run's failed rows for the admin view, oldest first and paginated.
+  """
+  def paginate_import_errors(import_log_id, pagination \\ %{}) do
+    ImportError.Query.by_import_log(import_log_id)
+    |> ImportError.Query.oldest_first()
+    |> Repo.paginate(pagination)
   end
 
   @doc """

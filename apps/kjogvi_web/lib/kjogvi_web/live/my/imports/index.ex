@@ -11,7 +11,6 @@ defmodule KjogviWeb.Live.My.Imports.Index do
   use KjogviWeb, :live_view
 
   alias Kjogvi.Accounts
-  alias Kjogvi.Imports.ImportLog
   alias KjogviWeb.Live.My.Imports
 
   on_mount {__MODULE__, :import_log_refresh}
@@ -75,19 +74,12 @@ defmodule KjogviWeb.Live.My.Imports.Index do
           id={"import-log-#{log.id}"}
           class="flex flex-wrap items-baseline gap-x-3 gap-y-1 border border-stone-200 rounded-lg px-4 py-3"
         >
-          <span class="text-sm text-stone-500">
-            <time datetime={DateTime.to_iso8601(log.inserted_at)}>
-              {Calendar.strftime(log.inserted_at, "%-d %b %Y %H:%M")}
-            </time>
-          </span>
+          <span class="text-sm text-stone-500"><.import_time at={log.inserted_at} /></span>
           <span class="font-medium">{Kjogvi.Types.ImportSource.label(log.source)}</span>
-          <span class={[
-            "text-xs font-medium rounded-full px-2 py-0.5",
-            status_class(log.status)
-          ]}>
-            {status_label(log.status)}
+          <.import_status_badge status={log.status} />
+          <span :if={import_details(log)} class="text-sm text-stone-600">
+            {import_details(log)}
           </span>
-          <span :if={details(log) != nil} class="text-sm text-stone-600">{details(log)}</span>
         </li>
       </ul>
     </section>
@@ -101,53 +93,4 @@ defmodule KjogviWeb.Live.My.Imports.Index do
       {Imports.EbirdCsv, "eBird CSV import", "ebird-csv-import", fn _ -> true end}
     ]
   end
-
-  defp status_label(:queued), do: "Queued"
-  defp status_label(:running), do: "Running"
-  defp status_label(:completed), do: "Completed"
-  defp status_label(:completed_with_errors), do: "Completed with issues"
-  defp status_label(:failed), do: "Failed"
-
-  defp status_class(:queued), do: "bg-stone-100 text-stone-600"
-  defp status_class(:running), do: "bg-sky-100 text-sky-700"
-  defp status_class(:completed), do: "bg-forest-100 text-forest-700"
-  defp status_class(:completed_with_errors), do: "bg-amber-100 text-amber-700"
-  defp status_class(:failed), do: "bg-rose-100 text-rose-700"
-
-  defp details(%ImportLog{status: :failed, error: error}), do: error
-
-  defp details(%ImportLog{status: status, summary: summary})
-       when status in [:completed, :completed_with_errors] do
-    imported =
-      "#{count_noun(count(summary, "checklists_created"), "checklist")} and " <>
-        "#{count_noun(count(summary, "observations_created"), "observation")} imported"
-
-    Enum.join([imported | issue_details(summary)], "; ")
-  end
-
-  defp details(_log), do: nil
-
-  defp issue_details(summary) do
-    not_imported =
-      count(summary, "checklists_invalid") + count(summary, "checklists_unmapped") +
-        count(summary, "checklists_failed")
-
-    unrecognized = summary |> Map.get("unresolved_taxa", []) |> length()
-
-    Enum.reject(
-      [
-        not_imported > 0 && "#{count_noun(not_imported, "checklist")} not imported",
-        unrecognized > 0 && "#{count_noun(unrecognized, "taxon", "taxa")} unrecognized"
-      ],
-      &(&1 == false)
-    )
-  end
-
-  # Summaries are JSONB written by each import kind, so read them tolerantly.
-  defp count(summary, key), do: Map.get(summary, key, 0)
-
-  defp count_noun(count, singular, plural \\ nil)
-  defp count_noun(1, singular, _plural), do: "1 #{singular}"
-  defp count_noun(count, singular, nil), do: "#{count} #{singular}s"
-  defp count_noun(count, _singular, plural), do: "#{count} #{plural}"
 end
