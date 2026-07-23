@@ -52,6 +52,27 @@ defmodule Kjogvi.Ebird.CsvImport.ConverterTest do
       assert attrs.county == nil
       assert attrs.state == nil
     end
+
+    test "a country-level record's '<CC>-' state collapses to the country code" do
+      attrs = Converter.user_location_attrs(row(%{"State/Province" => "XX-", "County" => ""}))
+      assert attrs.state == "XX"
+    end
+  end
+
+  describe "region_code/1" do
+    test "a real subnational code passes through" do
+      assert Converter.region_code("US-TX") == "US-TX"
+    end
+
+    test "a country-level '<CC>-' code collapses to the country code" do
+      assert Converter.region_code("XX-") == "XX"
+      assert Converter.region_code("CA-") == "CA"
+    end
+
+    test "a blank cell is nil" do
+      assert Converter.region_code("") == nil
+      assert Converter.region_code(nil) == nil
+    end
   end
 
   describe "checklist_attrs/1" do

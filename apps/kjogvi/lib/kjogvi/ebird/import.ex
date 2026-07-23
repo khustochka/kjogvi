@@ -211,14 +211,16 @@ defmodule Kjogvi.Ebird.Import do
     |> Enum.uniq_by(& &1.ebird_loc_id)
   end
 
-  # `%{state_code => common_location}` over the `State/Province` codes the CSV
-  # needs that resolve to a linked common location. Codes with no linked location
-  # are absent.
+  # `%{region_code => common_location}` over the normalized `State/Province`
+  # codes the CSV needs that resolve to a linked common location. Codes with no
+  # linked location are absent. Keyed by the same normalized code stored on the
+  # user location, so a country-level record (`"XX-"` → `"XX"`) resolves to the
+  # country eBird row rather than a nonexistent `"XX-"` subdivision.
   defp parent_locations(rows) do
     codes =
       rows
-      |> Enum.map(& &1["State/Province"])
-      |> Enum.reject(&blank?/1)
+      |> Enum.map(&Converter.region_code(&1["State/Province"]))
+      |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
     EbirdLocation.Query.by_codes(codes)
@@ -262,12 +264,14 @@ defmodule Kjogvi.Ebird.Import do
   end
 
   # Resolves an existing unmapped user location: creates its `:site` and links it.
-  # Stays unmapped when the state still has no matched common location.
+  # Also refreshes the normalized `state`, healing rows an earlier run stored with
+  # the raw `"<CC>-"` code. Stays unmapped when the state still has no matched
+  # common location.
   defp link_user_location(user, user_location, attrs, parents) do
     Repo.transact(fn ->
       with {:ok, location} <- create_site(user, attrs, resolve_parent(attrs.state, parents)) do
         user_location
-        |> UserLocation.changeset(%{location_id: location && location.id})
+        |> UserLocation.changeset(%{state: attrs.state, location_id: location && location.id})
         |> Repo.update()
       end
     end)
@@ -560,8 +564,4 @@ defmodule Kjogvi.Ebird.Import do
   defp changeset_errors(changeset) do
     Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
   end
-
-  defp blank?(nil), do: true
-  defp blank?(""), do: true
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
 end

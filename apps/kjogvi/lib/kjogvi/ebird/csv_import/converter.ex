@@ -29,20 +29,36 @@ defmodule Kjogvi.Ebird.CsvImport.Converter do
   }
 
   @doc """
-  The `Ebird.UserLocation` attrs for a row: eBird's location id, name, and the
-  raw `State/Province` code and `County` name as recorded in the export. The same
-  values repeat across every row of a location, so a caller upserting per
-  `ebird_loc_id` can take them from any one row.
+  The `Ebird.UserLocation` attrs for a row: eBird's location id, name, the
+  normalized `State/Province` region code (see `region_code/1`) and the `County`
+  name as recorded in the export. The same values repeat across every row of a
+  location, so a caller upserting per `ebird_loc_id` can take them from any one
+  row.
   """
   def user_location_attrs(row) do
     %{
       ebird_loc_id: blank_to_nil(row["Location ID"]),
       name: blank_to_nil(row["Location"]),
-      state: blank_to_nil(row["State/Province"]),
+      state: region_code(row["State/Province"]),
       county: blank_to_nil(row["County"]),
       lat: blank_to_nil(row["Latitude"]),
       lon: blank_to_nil(row["Longitude"])
     }
+  end
+
+  @doc """
+  Normalizes an eBird `State/Province` cell into the region code that names its
+  eBird location. A record placed at country level (no state) is written as
+  `"<CC>-"` — the country code with an empty subnational part and a trailing dash
+  (e.g. `"XX-"` for the High Seas, `"CA-"` for Canada as a whole). That is the
+  country itself, so it collapses to the bare country code `"XX"`; a real
+  subnational code (`"US-TX"`) passes through, and a blank cell is nil.
+  """
+  def region_code(value) do
+    case blank_to_nil(value) do
+      nil -> nil
+      code -> String.replace_suffix(code, "-", "")
+    end
   end
 
   @doc """

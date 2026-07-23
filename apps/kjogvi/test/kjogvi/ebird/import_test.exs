@@ -322,6 +322,56 @@ defmodule Kjogvi.Ebird.ImportTest do
       assert site.country_id == state.country_id
     end
 
+    test "a country-level record ('<CC>-') maps under the country, storing the bare code" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+
+      # The record is placed directly at country level: eBird writes its
+      # State/Province as "XX-" (country XX, no state). It should resolve to the
+      # linked country eBird row, not a nonexistent "XX-" subdivision.
+      country = insert(:country)
+      insert(:ebird_location, code: "XX", country_code: "XX", location: country)
+
+      path =
+        csv_file([
+          row([
+            "S1",
+            "BBWD",
+            "Dendrocygna autumnalis",
+            "243",
+            "1",
+            "XX-",
+            "",
+            "L4171245",
+            "High Seas",
+            "0.0",
+            "0.0",
+            "2015-11-14",
+            "",
+            "eBird - Casual Observation",
+            "0",
+            "0",
+            "",
+            "",
+            "1",
+            "",
+            "",
+            "",
+            ""
+          ])
+        ])
+
+      assert {:ok, summary} = Import.run(user, path)
+      assert summary.checklists_created == 1
+      assert summary.checklists_unmapped == 0
+
+      user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L4171245")
+      assert user_location.state == "XX"
+
+      site = Repo.get(Location, user_location.location_id)
+      assert site.location_type == :site
+      assert site.country_id == country.id
+    end
+
     test "resolves an existing unmapped user location and imports its checklist" do
       {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
       state = link_texas!()
