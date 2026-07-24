@@ -40,6 +40,18 @@ defmodule Kjogvi.Geo.EbirdLocation.Query do
   end
 
   @doc """
+  Subdivision2 rows under the given `subnational1_code`s whose `name` is in the
+  given list — the candidates for matching an eBird location recorded at a county
+  (subdivision2) level by name.
+  """
+  def subdivision2s_by_name(query \\ EbirdLocation, subnational1_codes, names) do
+    from e in query,
+      where:
+        e.location_type == :subdivision2 and e.subnational1_code in ^subnational1_codes and
+          e.name in ^names
+  end
+
+  @doc """
   Rows linked to the given common location.
   """
   def for_location(query \\ EbirdLocation, location_id) do

@@ -38,6 +38,14 @@ defmodule Kjogvi.Factory do
     }
   end
 
+  def subdivision2_factory do
+    %Kjogvi.Geo.Location{
+      slug: sequence(:slug, &"subdivision2-#{&1}"),
+      name_en: sequence(:name_en, &"Subdivision2 #{&1}"),
+      location_type: :subdivision2
+    }
+  end
+
   # A country-level eBird region; `country_code` follows the (possibly passed)
   # code, as in the real dump. Pass the code fields explicitly for subdivision
   # rows, or use `ebird_subdivision1_factory`.

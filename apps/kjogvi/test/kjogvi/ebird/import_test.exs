@@ -86,6 +86,37 @@ defmodule Kjogvi.Ebird.ImportTest do
     state
   end
 
+  # An eBird CSV row for a checklist at an administrative level: the location's
+  # name equals the region it sits in. Takes submission id and scientific name,
+  # plus `:state`, `:county`, `:name`, and `:loc_id` overrides.
+  defp admin_row(submission_id, name_sci, opts) do
+    row([
+      submission_id,
+      "Common",
+      name_sci,
+      "243",
+      "1",
+      Keyword.fetch!(opts, :state),
+      Keyword.get(opts, :county, ""),
+      Keyword.get(opts, :loc_id, "L100"),
+      Keyword.fetch!(opts, :name),
+      "",
+      "",
+      "2015-11-14",
+      "",
+      "eBird - Casual Observation",
+      "0",
+      "0",
+      "",
+      "",
+      "1",
+      "",
+      "",
+      "",
+      ""
+    ])
+  end
+
   describe "run/3" do
     test "imports a checklist and its observations, resolving taxa by scientific name" do
       {user, _book} = user_with_taxa(["Dendrocygna autumnalis", "Anser caerulescens"])
@@ -322,14 +353,21 @@ defmodule Kjogvi.Ebird.ImportTest do
       assert site.country_id == state.country_id
     end
 
-    test "a country-level record ('<CC>-') maps under the country, storing the bare code" do
+    test "an ordinary place at country level ('<CC>-') gets a site under the country" do
       {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
 
-      # The record is placed directly at country level: eBird writes its
-      # State/Province as "XX-" (country XX, no state). It should resolve to the
-      # linked country eBird row, not a nonexistent "XX-" subdivision.
+      # A record placed directly at country level (no state): eBird writes its
+      # State/Province as "XX-" (country XX, no state). Its name isn't the
+      # country's, so it's an ordinary place — a site under the country, resolved
+      # via the "XX" country eBird row (not a nonexistent "XX-" subdivision).
       country = insert(:country)
-      insert(:ebird_location, code: "XX", country_code: "XX", location: country)
+
+      insert(:ebird_location,
+        code: "XX",
+        country_code: "XX",
+        name: "High Seas Country",
+        location: country
+      )
 
       path =
         csv_file([
@@ -370,6 +408,174 @@ defmodule Kjogvi.Ebird.ImportTest do
       site = Repo.get(Location, user_location.location_id)
       assert site.location_type == :site
       assert site.country_id == country.id
+    end
+
+    test "a country-level checklist (name == country) links to the country, no site" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+
+      country = insert(:country, name_en: "Canada")
+      insert(:ebird_location, code: "CA", country_code: "CA", name: "Canada", location: country)
+
+      path = csv_file([admin_row("S1", "Dendrocygna autumnalis", state: "CA-", name: "Canada")])
+
+      assert {:ok, summary} = Import.run(user, path)
+      assert summary.checklists_created == 1
+
+      user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L100")
+      assert user_location.location_id == country.id
+    end
+
+    test "a subdivision1-level checklist (name == subdivision) links to it, no site" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+
+      subdivision = insert(:subdivision1, name_en: "Alberta", country: shared_country())
+
+      insert(:ebird_subdivision1,
+        code: "CA-AB",
+        country_code: "CA",
+        name: "Alberta",
+        location: subdivision
+      )
+
+      path =
+        csv_file([admin_row("S1", "Dendrocygna autumnalis", state: "CA-AB", name: "Alberta")])
+
+      assert {:ok, summary} = Import.run(user, path)
+      assert summary.checklists_created == 1
+
+      user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L100")
+      assert user_location.location_id == subdivision.id
+    end
+
+    test "a subdivision2-level checklist (county, name == subdivision2) links to it, no site" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+
+      # The subdivision2's own common location, matched to its eBird row. eBird
+      # names the subdivision2 only via the County column, so the match is by name.
+      county = insert(:subdivision2, name_en: "South Interlake", country: shared_country())
+
+      insert(:ebird_subdivision2,
+        code: "CA-MB-FT",
+        subnational1_code: "CA-MB",
+        name: "South Interlake",
+        location: county
+      )
+
+      path =
+        csv_file([
+          admin_row("S1", "Dendrocygna autumnalis",
+            state: "CA-MB",
+            county: "South Interlake",
+            name: "South Interlake"
+          )
+        ])
+
+      assert {:ok, summary} = Import.run(user, path)
+      assert summary.checklists_created == 1
+
+      user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L100")
+      assert user_location.location_id == county.id
+    end
+
+    test "a subdivision2-level checklist gets a site when its eBird row is unlinked" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+
+      subdivision = insert(:subdivision1, name_en: "Manitoba", country: shared_country())
+
+      insert(:ebird_subdivision1,
+        code: "CA-MB",
+        country_code: "CA",
+        name: "Manitoba",
+        location: subdivision
+      )
+
+      # The subdivision2 eBird row exists but has no common location — the common
+      # case for eBird's sub2 regions — so it falls back to an ordinary site under
+      # the subdivision1 rather than staying unmapped.
+      insert(:ebird_subdivision2,
+        code: "CA-MB-FT",
+        subnational1_code: "CA-MB",
+        name: "South Interlake",
+        location: nil
+      )
+
+      path =
+        csv_file([
+          admin_row("S1", "Dendrocygna autumnalis",
+            state: "CA-MB",
+            county: "South Interlake",
+            name: "South Interlake",
+            loc_id: "L444000"
+          )
+        ])
+
+      assert {:ok, summary} = Import.run(user, path)
+      assert summary.checklists_created == 1
+      assert summary.checklists_unmapped == 0
+
+      user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L444000")
+      site = Repo.get(Location, user_location.location_id)
+      assert site.location_type == :site
+      assert site.name_en == "South Interlake"
+      assert site.subdivision1_id == subdivision.id
+    end
+
+    test "a country-level checklist stays unmapped when its eBird row is unlinked" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+
+      # A country whose eBird row has no common location: no site fallback at this
+      # level — the location stays unmapped until the region is matched.
+      insert(:ebird_location, code: "CA", country_code: "CA", name: "Canada", location: nil)
+
+      path = csv_file([admin_row("S1", "Dendrocygna autumnalis", state: "CA-", name: "Canada")])
+
+      assert {:ok, summary} = Import.run(user, path)
+      assert summary.checklists_created == 0
+      assert summary.checklists_unmapped == 1
+
+      user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L100")
+      assert user_location.location_id == nil
+    end
+
+    test "an ordinary place in a county (name != subdivision2) still gets a site" do
+      {user, _book} = user_with_taxa(["Dendrocygna autumnalis"])
+
+      subdivision = insert(:subdivision1, name_en: "Manitoba", country: shared_country())
+
+      insert(:ebird_subdivision1,
+        code: "CA-MB",
+        country_code: "CA",
+        name: "Manitoba",
+        location: subdivision
+      )
+
+      insert(:ebird_subdivision2,
+        code: "CA-MB-FT",
+        subnational1_code: "CA-MB",
+        name: "South Interlake",
+        location: nil
+      )
+
+      # A real place inside the South Interlake county: its own name isn't the
+      # county's, so it's an ordinary site under Manitoba.
+      path =
+        csv_file([
+          admin_row("S1", "Dendrocygna autumnalis",
+            state: "CA-MB",
+            county: "South Interlake",
+            name: "Netley Marsh",
+            loc_id: "L555000"
+          )
+        ])
+
+      assert {:ok, summary} = Import.run(user, path)
+      assert summary.checklists_created == 1
+
+      user_location = Repo.get_by(UserLocation, user_id: user.id, ebird_loc_id: "L555000")
+      site = Repo.get(Location, user_location.location_id)
+      assert site.location_type == :site
+      assert site.name_en == "Netley Marsh"
+      assert site.subdivision1_id == subdivision.id
     end
 
     test "resolves an existing unmapped user location and imports its checklist" do
