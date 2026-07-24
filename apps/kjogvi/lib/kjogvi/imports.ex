@@ -38,10 +38,16 @@ defmodule Kjogvi.Imports do
   end
 
   @doc """
-  The user's import runs, newest first.
+  The user's import runs, newest first. `:source` narrows to one import source.
   """
-  def list_import_logs(user) do
+  def list_import_logs(user, opts \\ []) do
     ImportLog.Query.by_user(user)
+    |> then(fn query ->
+      case Keyword.get(opts, :source) do
+        nil -> query
+        source -> ImportLog.Query.by_source(query, source)
+      end
+    end)
     |> ImportLog.Query.newest_first()
     |> Repo.all()
   end

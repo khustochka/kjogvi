@@ -11,6 +11,10 @@ defmodule Kjogvi.Imports.ImportLog.Query do
     from l in query, where: l.user_id == ^user.id
   end
 
+  def by_source(query \\ ImportLog, source) do
+    from l in query, where: l.source == ^source
+  end
+
   def newest_first(query \\ ImportLog) do
     from l in query, order_by: [desc: l.id]
   end

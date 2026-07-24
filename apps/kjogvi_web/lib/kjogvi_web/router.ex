@@ -158,6 +158,8 @@ defmodule KjogviWeb.Router do
       live "/lifelist/:year/:location", Live.Lifelist.Index, :index
 
       live "/imports", Live.My.Imports.Index, :index
+
+      live "/ebird", Live.My.Ebird.Index, :index
     end
   end
 
