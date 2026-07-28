@@ -124,6 +124,8 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 ### Testing
 `Phoenix.LiveViewTest` + `LazyHTML`. Assert elements by ID, not HTML. Test outcomes, not implementation.
 
+Add and update tests for all new and changed code before committing, but be wary of creating tests covering already covered functionality.
+
 ## Key File References
 
 | File | Purpose |
@@ -185,12 +187,6 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 - Update module and function documentation when making changes.
 - Keep documentation concise. Don't explain what's obvious from the code (e.g. don't write 'Returns `true` if...'), and don't describe the change you made or how the code used to work.
 
-### Testing & committing
-
-- Add and update tests for all new and changed code before committing.
-- Check for tests verifying the same functionality.
-- Before committing, run `mix lint.fix` (to auto-fix formatting + linting) and the tests.
-
 ### Frontend & accessibility
 
 - When designing frontend, always make it responsive (check on smaller screen sizes).
@@ -202,12 +198,8 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 
 ## Committing
 
-- Never commit without explicit, in-the-moment approval. "Commit" means run `git commit` directly — the tool-confirmation dialog is the approval gate. If `git commit` would run with no confirmation prompt at all, ask first; never let a commit land with zero confirmation.
-- Before committing, run `mix lint.fix` and the tests (`mix test`). Fix lint errors; pre-existing TODO/FIXME tags can be ignored.
-- End the commit subject (first line) with a period.
-- Use an `Assisted-by:` trailer, not `Co-Authored-By:`.
-- Never override git config on commit (no `-c commit.gpgsign=false` or similar).
-- For multi-stage work, stop after each stage for review before committing or continuing.
+- Before committing, run `mix lint.fix` (auto-fixes formatting + linting) and `mix test`. Fix lint errors; pre-existing TODO/FIXME tags can be ignored.
+- Migrations touch `structure.sql` — the root `ecto.migrate`/`ecto.rollback` aliases dump it in dev, so commit the result alongside the migration.
 
 ## Log papercuts
 
