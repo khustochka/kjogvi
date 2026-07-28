@@ -107,6 +107,20 @@ defmodule Kjogvi.Birding.Checklist do
     )
   end
 
+  @doc """
+  Changeset for importers, which additionally set the provenance fields
+  (`ebird_id`, `import_source`) that `changeset/2` deliberately leaves out.
+
+  Re-casts the observations with `Observation.import_changeset/2` so nested
+  observation provenance is carried through too.
+  """
+  def import_changeset(checklist, attrs) do
+    checklist
+    |> changeset(attrs)
+    |> cast(attrs, [:ebird_id, :import_source])
+    |> cast_assoc(:observations, with: &Kjogvi.Birding.Observation.import_changeset/2)
+  end
+
   # Skip the location lookup (a DB query) when the changeset is already invalid.
   defp validate_location(%Ecto.Changeset{valid?: false} = changeset) do
     changeset

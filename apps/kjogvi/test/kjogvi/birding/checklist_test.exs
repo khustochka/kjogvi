@@ -361,6 +361,68 @@ defmodule Kjogvi.Birding.ChecklistTest do
     end
   end
 
+  describe "changeset/2 import provenance" do
+    test "ignores ebird_id and import_source" do
+      location = insert(:location)
+
+      changeset =
+        Checklist.changeset(%Checklist{}, %{
+          "observ_date" => "2024-05-10",
+          "location_id" => location.id,
+          "user_id" => 1,
+          "ebird_id" => "S123456789",
+          "import_source" => "ebird"
+        })
+
+      assert changeset.valid?
+      assert get_change(changeset, :ebird_id) == nil
+      assert get_change(changeset, :import_source) == nil
+    end
+  end
+
+  describe "import_changeset/2" do
+    test "casts ebird_id and import_source on top of the regular changeset" do
+      location = insert(:location)
+
+      changeset =
+        Checklist.import_changeset(%Checklist{}, %{
+          observ_date: "2024-05-10",
+          location_id: location.id,
+          user_id: 1,
+          ebird_id: "S123456789",
+          import_source: :ebird
+        })
+
+      assert changeset.valid?
+      assert get_change(changeset, :import_source) == :ebird
+      assert get_change(changeset, :ebird_id) == "S123456789"
+    end
+
+    test "carries provenance through to nested observations" do
+      location = insert(:location)
+
+      changeset =
+        Checklist.import_changeset(%Checklist{}, %{
+          observ_date: "2024-05-10",
+          location_id: location.id,
+          user_id: 1,
+          import_source: :ebird,
+          observations: [
+            %{
+              taxon_key: "ebird/eBird_2023/bkcchi1",
+              ebird_obs_id: "OBS123",
+              import_source: :ebird
+            }
+          ]
+        })
+
+      assert changeset.valid?
+      [observation] = get_change(changeset, :observations)
+      assert get_change(observation, :import_source) == :ebird
+      assert get_change(observation, :ebird_obs_id) == "OBS123"
+    end
+  end
+
   describe "effort_types/0" do
     test "returns all effort types" do
       types = Checklist.effort_types()

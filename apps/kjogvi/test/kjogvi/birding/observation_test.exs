@@ -63,6 +63,44 @@ defmodule Kjogvi.Birding.ObservationTest do
     end
   end
 
+  describe "changeset/2 import provenance" do
+    test "ignores ebird_obs_id and import_source" do
+      changeset =
+        Observation.changeset(%Observation{}, %{
+          "taxon_key" => "ebird/eBird_2023/bkcchi1",
+          "ebird_obs_id" => "OBS123",
+          "import_source" => "ebird"
+        })
+
+      assert changeset.valid?
+      assert get_change(changeset, :ebird_obs_id) == nil
+      assert get_change(changeset, :import_source) == nil
+    end
+  end
+
+  describe "import_changeset/2" do
+    test "casts ebird_obs_id and import_source on top of the regular changeset" do
+      changeset =
+        Observation.import_changeset(%Observation{}, %{
+          taxon_key: "ebird/eBird_2023/bkcchi1",
+          quantity: "2",
+          ebird_obs_id: "OBS123",
+          import_source: :ebird
+        })
+
+      assert changeset.valid?
+      assert get_change(changeset, :ebird_obs_id) == "OBS123"
+      assert get_change(changeset, :import_source) == :ebird
+      assert get_change(changeset, :quantity) == "2"
+    end
+
+    test "still requires taxon_key" do
+      changeset = Observation.import_changeset(%Observation{}, %{import_source: :ebird})
+
+      assert %{taxon_key: ["can't be blank"]} = errors_on(changeset)
+    end
+  end
+
   describe "breeding_codes/0" do
     test "returns {code, label} pairs" do
       codes = Observation.breeding_codes()

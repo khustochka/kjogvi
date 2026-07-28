@@ -510,12 +510,8 @@ defmodule Kjogvi.Ebird.Import do
       |> Map.put(:location_id, location_id)
       |> Map.put(:observations, observations)
 
-    # `ebird_id` and `import_source` aren't in the checklist form's cast list
-    # (they're import metadata, not user-editable), so set them directly.
     %Checklist{}
-    |> Checklist.changeset(attrs)
-    |> Changeset.put_change(:ebird_id, attrs.ebird_id)
-    |> Changeset.put_change(:import_source, :ebird)
+    |> Checklist.import_changeset(attrs)
     |> Repo.insert()
     |> tag_outcome(:created)
   end
@@ -523,12 +519,11 @@ defmodule Kjogvi.Ebird.Import do
   defp upsert_checklist(user, %Checklist{} = checklist, attrs, location_id, observations) do
     attrs =
       attrs
-      |> Map.drop([:ebird_id, :import_source])
       |> Map.put(:user_id, user.id)
       |> Map.put(:location_id, location_id)
       |> Map.put(:observations, merge_observations(checklist.observations, observations))
 
-    changeset = Checklist.changeset(checklist, attrs)
+    changeset = Checklist.import_changeset(checklist, attrs)
 
     if changeset.changes == %{} do
       {:ok, :unchanged}

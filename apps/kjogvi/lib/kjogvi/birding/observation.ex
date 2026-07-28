@@ -79,14 +79,22 @@ defmodule Kjogvi.Birding.Observation do
       :private_notes,
       :hidden,
       :unreported,
-      :ebird_obs_id,
       :breeding_code,
-      :ml_catalog_numbers,
-      :import_source
+      :ml_catalog_numbers
     ])
     |> validate_required([
       :taxon_key
     ])
     |> validate_inclusion(:breeding_code, @breeding_code_values)
+  end
+
+  @doc """
+  Changeset for importers, which additionally set the provenance fields
+  (`ebird_obs_id`, `import_source`) that users must not set through a form.
+  """
+  def import_changeset(observation, attrs) do
+    observation
+    |> changeset(attrs)
+    |> cast(attrs, [:ebird_obs_id, :import_source])
   end
 end
