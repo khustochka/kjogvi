@@ -106,11 +106,25 @@ Managed by [ornithologue](./apps/ornithologue/) in the `ornithologue` DB schema;
 ### Images
 [`Kjogvi.Images`](./apps/kjogvi/lib/kjogvi/images.ex) context; Waffle uploader (`Images.Uploader`) + libvips/Vix resizing (`Images.VixProcessor`). Variant filenames are computed at serve time, not stored — only the original `file` is persisted. URLs resolve against each image's own recorded `storage_backend` (not the env's current one), so images stay viewable across environments sharing a DB (prod-S3 image renders on local dev and vice versa).
 
+### Background jobs
+[`Kjogvi.Jobs`](./apps/kjogvi/lib/kjogvi/jobs.ex) wraps Oban with *observable exclusive* jobs. A worker built on `Jobs.Runtime.ExclusiveWorker` runs at most one job per **slot** (worker + identifying args); `Jobs.Runtime.Bridge` rebroadcasts Oban telemetry as PubSub lifecycle events. `Jobs.status/2` reads the slot's current state from `oban_jobs` as a `Util.AsyncResult`, so a freshly mounted LiveView can seed itself before following live broadcasts; `Jobs.progress/2` reports mid-run progress (durable on the job's `meta`, plus a PubSub broadcast). Jobs live under `Kjogvi.Jobs.*` (e.g. `EbirdPreload`, `LegacyImport`).
+
+### eBird
+[`Kjogvi.Ebird.Web`](./apps/kjogvi/lib/kjogvi/ebird/web.ex) talks to the eBird API (`Ebird.Web.Client`) to preload a user's checklists. It's the integration's only piece in the core app today.
+
+### Caching
+[`Kjogvi.Cache`](./apps/kjogvi/lib/kjogvi/cache.ex) is an adapter front end — `Cache.Cachex` in normal operation, `Cache.None` (a no-op) where caching should be off, e.g. tests. Call `Kjogvi.Cache` rather than Cachex directly so the adapter stays swappable.
+
+### Search
+`Kjogvi.Search.Location` and `Kjogvi.Search.Taxon` back the autocomplete pickers, sharing `Search.WordMatch` for term matching. `KjogviWeb`'s autocomplete component highlights matches by wrapping the matched term in `<strong>` — relevant when asserting on suggestion text in tests.
+
 ### CSS
 Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS into `app.js`, not inline `<script>` tags.
 
 ### Testing
 `Phoenix.LiveViewTest` + `LazyHTML`. Assert elements by ID, not HTML. Test outcomes, not implementation.
+
+Add and update tests for all new and changed code before committing, but be wary of creating tests covering already covered functionality.
 
 ## Key File References
 
@@ -118,10 +132,11 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 |------|---------|
 | [mix.exs](./mix.exs) | Umbrella config, development aliases |
 | [config/config.exs](./config/config.exs) | Ornithologue & Tailwind setup |
-| [apps/kjogvi_web/router.ex](./apps/kjogvi_web/lib/kjogvi_web/router.ex) | Main router, area route groups, auth pipelines |
+| [apps/kjogvi_web/lib/kjogvi_web/router.ex](./apps/kjogvi_web/lib/kjogvi_web/router.ex) | Main router, area route groups, auth pipelines |
 | [apps/kjogvi/lib/kjogvi/scope.ex](./apps/kjogvi/lib/kjogvi/scope.ex) | `Kjogvi.Scope`: current/subject user + area |
 | [apps/kjogvi/lib/kjogvi/settings.ex](./apps/kjogvi/lib/kjogvi/settings.ex) | Site-wide settings & feature flags |
-| [apps/kjogvi_web/user_auth.ex](./apps/kjogvi_web/lib/kjogvi_web/user_auth.ex) | Auth + `put_area_*`/`mount_area_*` (in plug.ex/user_auth.ex) |
+| [apps/kjogvi_web/lib/kjogvi_web/user_auth.ex](./apps/kjogvi_web/lib/kjogvi_web/user_auth.ex) | Auth + `put_area_*` / `mount_area_*` on_mounts |
+| [apps/kjogvi/lib/kjogvi/jobs.ex](./apps/kjogvi/lib/kjogvi/jobs.ex) | Exclusive background jobs on Oban: status, progress |
 | [apps/kjogvi/lib/kjogvi/birding.ex](./apps/kjogvi/lib/kjogvi/birding.ex) | Birding context & checklist logic |
 | [apps/kjogvi/lib/kjogvi/geo.ex](./apps/kjogvi/lib/kjogvi/geo.ex) | Geo context: location CRUD, hierarchy & lifelist queries |
 | [apps/kjogvi/lib/kjogvi/geo/location.ex](./apps/kjogvi/lib/kjogvi/geo/location.ex) | Location schema: level-FK hierarchy, types, privacy |
@@ -160,18 +175,17 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 - Avoid partial imports (`import ..., only: ...`) unless necessary. In general, only use `import` where Phoenix/LiveView prescribes it — e.g. importing function components. Otherwise prefer calling the function with its module name, plus an `alias` if it helps.
 - Follow the LiveView naming pattern: `KjogviWeb.Live.Something` lives in `apps/kjogvi_web/lib/kjogvi_web/live/something.ex` (this contradicts the Phoenix recommended pattern of `KjogviWeb.SmthLive`, but is my preference).
 - Avoid adding utility functions unrelated to a module's topic (whether in a LiveView or elsewhere), especially trivial ones like converting `nil` to an empty string. Put them under `Kjogvi.Util`, or avoid them altogether.
-- For multi-step database writes, use `Repo.transact/1` rather than `Ecto.Multi`.
+- For multi-step database writes, use `Repo.transact/1` rather than `Ecto.Multi`. `Kjogvi.Accounts` still uses `Ecto.Multi` in places — that's the pattern being migrated away from, not an example to follow.
+
+### Scope
+
+- Notes above about patterns "being migrated away from" describe direction, not a standing invitation to refactor. Fix the pattern in code you're already changing; don't widen a task to fix it elsewhere.
+- Same for adjacent cleanups you notice in passing: mention them, or log them to `PAPERCUTS.md` as a prospective change, rather than folding them into the current change.
 
 ### Documentation
 
 - Update module and function documentation when making changes.
 - Keep documentation concise. Don't explain what's obvious from the code (e.g. don't write 'Returns `true` if...'), and don't describe the change you made or how the code used to work.
-
-### Testing & committing
-
-- Add and update tests for all new and changed code before committing.
-- Check for tests verifying the same functionality.
-- Before committing, run `mix lint.fix` (to auto-fix formatting + linting) and the tests.
 
 ### Frontend & accessibility
 
@@ -184,13 +198,11 @@ Tailwind v4 with new import syntax (no config). Never use `@apply`. Import JS in
 
 ## Committing
 
-- Never commit without explicit, in-the-moment approval. "Commit" means run `git commit` directly — the tool-confirmation dialog is the approval gate. If `git commit` would run with no confirmation prompt at all, ask first; never let a commit land with zero confirmation.
-- Before committing, run `mix lint.fix` and the tests (`mix test`). Fix lint errors; pre-existing TODO/FIXME tags can be ignored.
-- End the commit subject (first line) with a period.
-- Use an `Assisted-by:` trailer, not `Co-Authored-By:`.
-- Never override git config on commit (no `-c commit.gpgsign=false` or similar).
-- For multi-stage work, stop after each stage for review before committing or continuing.
+- Before committing, run `mix lint.fix` (auto-fixes formatting + linting) and `mix test`. Fix lint errors; pre-existing TODO/FIXME tags can be ignored.
+- Migrations touch `structure.sql` — the root `ecto.migrate`/`ecto.rollback` aliases dump it in dev, so commit the result alongside the migration.
 
 ## Log papercuts
 
-When you hit a small friction while working — a tool call that missed and had to be retried, a confusing or undocumented setup step, a flaky command, a stale cache, a misleading error, a non-obvious gotcha — log it to `PAPERCUTS.md` by appending an entry. One or two sentences: what you were doing → what got in the way (a guess at the cause/fix is a bonus). Do this proactively, in the moment, even though none of these are blocking — logged together they show where the repo needs sanding down. This is distinct from what you accomplished and from tracked bugs.
+When you hit a small friction while working — a tool call that missed and had to be retried, a confusing or undocumented setup step, a flaky command, a stale cache, a misleading error, a non-obvious gotcha — log it to `PAPERCUTS.md` by appending an entry. One or two sentences: what you were doing → what got in the way (a guess at the cause/fix is a bonus). Do this proactively, in the moment, even though none of these are blocking — logged together they show where the repo needs sanding down.
+
+**Only log friction that outlives your change**: after this commit lands, would the next person still trip on it? What you fixed, and your own mistakes along the way, are not papercuts. See the header of `PAPERCUTS.md` before appending.
