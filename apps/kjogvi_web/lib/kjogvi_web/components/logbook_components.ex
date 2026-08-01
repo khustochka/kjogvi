@@ -26,8 +26,8 @@ defmodule KjogviWeb.LogbookComponents do
           <dd class="mb-6 md:mb-4">
             <ul class="list-none space-y-2">
               <%= for entry <- entries do %>
-                <li class="flex gap-2 items-baseline">
-                  <div class="flex flex-wrap gap-x-1 gap-y-0.5 items-baseline">
+                <li>
+                  <div>
                     <span class="text-stone-600 mr-1">
                       <.entry_label entry={entry} current_scope={@current_scope} />:
                     </span>
@@ -65,7 +65,7 @@ defmodule KjogviWeb.LogbookComponents do
     <.icon
       :if={@entry.type == :life and is_nil(@entry.area)}
       name="hero-star-solid"
-      class="w-4 h-4 text-amber-300 mr-px"
+      class="inline-block align-text-bottom w-4 h-4 text-amber-300 mr-px"
     />
     <span phx-no-format>{singular_prefix(@entry)} <.total_badge
       scope={@current_scope}
@@ -87,7 +87,7 @@ defmodule KjogviWeb.LogbookComponents do
     <.icon
       :if={@entry.type == :life and is_nil(@entry.area)}
       name="hero-star-solid"
-      class="w-4 h-4 text-amber-300 mr-px"
+      class="inline-block align-text-bottom w-4 h-4 text-amber-300 mr-px"
     />
     <span phx-no-format>{plural_prefix(@entry)} <.total_badge
       scope={@current_scope}
