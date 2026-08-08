@@ -67,18 +67,26 @@ defmodule Ornitho.Finder.Taxon do
     |> Ornitho.Repo.all()
   end
 
-  @doc "Return a specified page in the list of taxa from a book"
-  def paginate(book, opts \\ []) do
-    page = opts[:page] || 1
-    page_size = opts[:page_size] || @default_page_size
+  @doc """
+  A page of taxa from a book, ordered by `sort_order`.
+
+  Returns `{taxa, %Flop.Meta{}}`; the meta carries `total_pages` and
+  `has_next_page?`.
+  """
+  def page(book, opts \\ []) do
+    flop = %Flop{
+      page: opts[:page] || 1,
+      page_size: opts[:page_size] || @default_page_size,
+      order_by: [:sort_order],
+      order_directions: [:asc]
+    }
 
     Query.Taxon.by_book(book)
-    |> Query.Taxon.ordered()
-    |> Ornitho.Repo.paginate(page: page, page_size: page_size)
+    |> Ornitho.Repo.flop(flop)
   end
 
-  def with_parent_species(%Scrivener.Page{entries: entries} = result) do
-    %{result | entries: with_parent_species(entries)}
+  def with_parent_species({entries, %Flop.Meta{} = meta}) do
+    {with_parent_species(entries), meta}
   end
 
   def with_parent_species(taxon_or_taxa) do

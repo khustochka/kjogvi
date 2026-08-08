@@ -15,8 +15,6 @@ Application.put_env(:ornitho_web, DemoWeb.OrnithoRepo,
 
 defmodule DemoWeb.OrnithoRepo do
   use Ecto.Repo, otp_app: :ornitho_web, adapter: Ecto.Adapters.Postgres
-
-  use Scrivener
 end
 
 Application.put_env(:ornithologue, :repo, DemoWeb.OrnithoRepo)

@@ -3,15 +3,12 @@ defmodule OrnithoWeb.Live.Taxa.Index do
 
   use OrnithoWeb, :live_component
 
-  import Scrivener.PhoenixView
-
   alias OrnithoWeb.Live.Taxa.SearchState
 
   @taxa_per_page 25
-  @pagination_opts [window: 2, template: OrnithoWeb.Scrivener.Phoenix.Template]
 
   @impl true
-  def update(%{book: book, page_num: page_num, search_term: search_term}, socket) do
+  def update(%{book: book, search_term: search_term, page_num: page_num}, socket) do
     {:ok,
      socket
      |> assign(:book, book)
@@ -42,7 +39,7 @@ defmodule OrnithoWeb.Live.Taxa.Index do
 
   attr :book, Ornitho.Schema.Book, required: true
   attr :taxa, :list, required: true
-  attr :page_num, :integer, default: 1
+  attr :next_page, :integer, default: nil
   attr :search_enabled, :boolean, default: false
   attr :search_term, :string, default: nil
 
@@ -69,24 +66,68 @@ defmodule OrnithoWeb.Live.Taxa.Index do
         />
       </form>
 
-      <OrnithoWeb.Live.Taxa.Table.render
-        book={@book}
-        taxa={@taxa}
-        search_state={@search_state}
-        link_builder={&OrnithoWeb.LinkHelper.path(@socket, &1)}
-      />
+      <div id="taxa-list">
+        <.page_nav
+          id="taxa-pagination-top"
+          socket={@socket}
+          book={@book}
+          prev_page={@prev_page}
+          next_page={@next_page}
+        />
 
-      <%= if !@search_state.enabled do %>
-        {paginate(
-          @socket,
-          @taxa,
-          &OrnithoWeb.LinkHelper.book_path/4,
-          [@book],
-          Keyword.merge([live: true], pagination_opts())
-        )}
-      <% end %>
+        <OrnithoWeb.Live.Taxa.Table.render
+          book={@book}
+          taxa={@taxa}
+          search_state={@search_state}
+          link_builder={&OrnithoWeb.LinkHelper.path(@socket, &1)}
+        />
+      </div>
+
+      <.page_nav
+        id="taxa-pagination-bottom"
+        socket={@socket}
+        book={@book}
+        prev_page={@prev_page}
+        next_page={@next_page}
+      />
     </div>
     """
+  end
+
+  attr :id, :string, required: true
+  attr :socket, :any, required: true
+  attr :book, Ornitho.Schema.Book, required: true
+  attr :prev_page, :any, required: true
+  attr :next_page, :any, required: true
+
+  defp page_nav(assigns) do
+    ~H"""
+    <nav :if={@prev_page || @next_page} id={@id} class="my-4">
+      <ul class="flex justify-center gap-3">
+        <li :if={@prev_page}>
+          <.link
+            id={"#{@id}-prev"}
+            patch={page_path(@socket, @book, @prev_page)}
+            rel="prev"
+            class={link_class()}
+          >← Previous page</.link>
+        </li>
+        <li :if={@next_page}>
+          <.link
+            id={"#{@id}-next"}
+            patch={page_path(@socket, @book, @next_page)}
+            rel="next"
+            class={link_class()}
+          >Next page →</.link>
+        </li>
+      </ul>
+    </nav>
+    """
+  end
+
+  defp link_class do
+    "inline-block rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 " <>
+      "text-sm font-semibold leading-6 text-white active:text-white/80 no-underline"
   end
 
   defp assign_search_state(socket, search_term) do
@@ -94,22 +135,36 @@ defmodule OrnithoWeb.Live.Taxa.Index do
     |> assign(:search_state, SearchState.assign_search_term(search_term))
   end
 
-  defp assign_taxa(socket) do
+  # Search results are a plain top-N list, so paging only applies when the
+  # search box is empty.
+  defp assign_taxa(%{assigns: %{search_state: %{enabled: true, term: term}}} = socket) do
+    taxa =
+      Ornitho.Finder.Taxon.search(socket.assigns.book, term, limit: 15)
+      |> Ornitho.Finder.Taxon.with_parent_species()
+
     socket
-    |> assign(:taxa, get_taxa(socket.assigns))
+    |> assign(:taxa, taxa)
+    |> assign(:prev_page, nil)
+    |> assign(:next_page, nil)
   end
 
-  defp get_taxa(%{book: book, search_state: %{enabled: false}, page_num: page_num}) do
-    Ornitho.Finder.Taxon.paginate(book, page: page_num, page_size: @taxa_per_page)
-    |> Ornitho.Finder.Taxon.with_parent_species()
+  defp assign_taxa(socket) do
+    {taxa, meta} =
+      Ornitho.Finder.Taxon.page(socket.assigns.book,
+        page: socket.assigns.page_num,
+        page_size: @taxa_per_page
+      )
+      |> Ornitho.Finder.Taxon.with_parent_species()
+
+    socket
+    |> assign(:taxa, taxa)
+    |> assign(:prev_page, meta.has_previous_page? && meta.current_page - 1)
+    |> assign(:next_page, meta.has_next_page? && meta.current_page + 1)
   end
 
-  defp get_taxa(%{book: book, search_state: %{enabled: true, term: search_term}}) do
-    Ornitho.Finder.Taxon.search(book, search_term, limit: 15)
-    |> Ornitho.Finder.Taxon.with_parent_species()
-  end
-
-  defp pagination_opts do
-    @pagination_opts
+  # Anchored above the pagination so a page change lands on the controls and the
+  # taxa below them, not on the book header.
+  defp page_path(socket, book, page) do
+    OrnithoWeb.LinkHelper.book_path(socket, book, page) <> "#taxa-list"
   end
 end

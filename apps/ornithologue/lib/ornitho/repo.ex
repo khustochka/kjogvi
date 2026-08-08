@@ -59,15 +59,11 @@ defmodule Ornitho.Repo do
     repo().query(sql, params, opts)
   end
 
-  def paginate(queryable, opts \\ []) do
-    case Ornithologue.prefix() do
-      nil ->
-        repo().paginate(queryable, opts)
-
-      prefix ->
-        repo_opts = Keyword.put_new(opts[:options] || [], :prefix, prefix)
-        repo().paginate(queryable, Keyword.put(opts, :options, repo_opts))
-    end
+  @doc """
+  Runs a `Flop` against the configured repo, applying the configured prefix.
+  """
+  def flop(queryable, %Flop{} = flop, opts \\ []) do
+    Flop.run(queryable, flop, Keyword.merge([repo: repo(), query_opts: default_opts()], opts))
   end
 
   @doc """

@@ -199,31 +199,49 @@ defmodule Ornitho.Finder.TaxonTest do
     end
   end
 
-  describe "paginate/2" do
-    test "returns a paginated result" do
+  describe "page/2" do
+    test "returns the first page and reports that more remain" do
       book = insert(:book)
 
       for i <- 1..30 do
         insert(:taxon, book: book, sort_order: i)
       end
 
-      result = Ornitho.Finder.Taxon.paginate(book)
-      assert result.page_number == 1
-      assert result.page_size == 25
-      assert result.total_entries == 30
-      assert length(result.entries) == 25
+      {taxa, meta} = Ornitho.Finder.Taxon.page(book)
+
+      assert length(taxa) == 25
+      assert Enum.map(taxa, & &1.sort_order) == Enum.to_list(1..25)
+      assert meta.has_next_page?
+      assert meta.total_count == 30
+      assert meta.total_pages == 2
     end
 
-    test "respects page and page_size options" do
+    test "returns the requested page without gaps or repeats" do
       book = insert(:book)
 
       for i <- 1..15 do
         insert(:taxon, book: book, sort_order: i)
       end
 
-      result = Ornitho.Finder.Taxon.paginate(book, page: 2, page_size: 10)
-      assert result.page_number == 2
-      assert length(result.entries) == 5
+      {first_taxa, _meta} = Ornitho.Finder.Taxon.page(book, page_size: 10)
+      {next_taxa, next_meta} = Ornitho.Finder.Taxon.page(book, page: 2, page_size: 10)
+
+      assert Enum.map(next_taxa, & &1.sort_order) == Enum.to_list(11..15)
+      refute next_meta.has_next_page?
+
+      ids = Enum.map(first_taxa ++ next_taxa, & &1.id)
+      assert length(Enum.uniq(ids)) == 15
+    end
+
+    test "does not leak taxa from other books" do
+      book = insert(:book)
+      other_book = insert(:book)
+      insert(:taxon, book: book, sort_order: 1)
+      insert(:taxon, book: other_book, sort_order: 2)
+
+      {taxa, _meta} = Ornitho.Finder.Taxon.page(book)
+
+      assert Enum.map(taxa, & &1.book_id) == [book.id]
     end
   end
 
@@ -237,7 +255,7 @@ defmodule Ornitho.Finder.TaxonTest do
       assert loaded.parent_species.id == parent.id
     end
 
-    test "preloads parent_species on a Scrivener.Page" do
+    test "preloads parent_species on a cursor page, keeping the meta" do
       book = insert(:book)
       parent = insert(:taxon, book: book, category: "species", sort_order: 1)
 
@@ -248,11 +266,13 @@ defmodule Ornitho.Finder.TaxonTest do
         sort_order: 2
       )
 
-      page = Ornitho.Finder.Taxon.paginate(book)
-      result = Ornitho.Finder.Taxon.with_parent_species(page)
-      assert %Scrivener.Page{} = result
+      {taxa, meta} =
+        Ornitho.Finder.Taxon.page(book)
+        |> Ornitho.Finder.Taxon.with_parent_species()
 
-      subspecies_entry = Enum.find(result.entries, &(&1.category == "subspecies"))
+      assert %Flop.Meta{} = meta
+
+      subspecies_entry = Enum.find(taxa, &(&1.category == "subspecies"))
       assert subspecies_entry.parent_species.id == parent.id
     end
   end

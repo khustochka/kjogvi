@@ -24,6 +24,108 @@ defmodule OrnithoWeb.Live.Taxa.IndexTest do
       assert html =~ taxon.name_sci
     end
 
+    test "the next link shows the following taxa", %{conn: conn} do
+      book = insert(:book)
+
+      for i <- 1..30 do
+        insert(:taxon, book: book, sort_order: i, name_sci: "Taxon numerus#{i}")
+      end
+
+      {:ok, show_live, html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
+
+      assert html =~ "Taxon numerus1"
+      refute html =~ "Taxon numerus30"
+
+      html2 = show_live |> element("#taxa-pagination-bottom-next") |> render_click()
+
+      assert html2 =~ "Taxon numerus30"
+      refute html2 =~ "Taxon numerus1"
+      refute has_element?(show_live, "#taxa-pagination-bottom-next")
+    end
+
+    test "the next link is a real href anchored to the table", %{conn: conn} do
+      book = insert(:book)
+
+      for i <- 1..30 do
+        insert(:taxon, book: book, sort_order: i)
+      end
+
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
+
+      href =
+        show_live
+        |> element("#taxa-pagination-bottom-next")
+        |> render()
+        |> then(&Regex.run(~r/href="([^"]+)"/, &1))
+        |> Enum.at(1)
+
+      assert href == "/taxonomy/#{book.slug}/#{book.version}/page/2#taxa-list"
+    end
+
+    test "pagination appears both above and below the table", %{conn: conn} do
+      book = insert(:book)
+
+      for i <- 1..30 do
+        insert(:taxon, book: book, sort_order: i)
+      end
+
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
+
+      assert has_element?(show_live, "#taxa-pagination-top-next")
+      assert has_element?(show_live, "#taxa-pagination-bottom-next")
+    end
+
+    test "the second page offers a link back to the previous one", %{conn: conn} do
+      book = insert(:book)
+
+      for i <- 1..30 do
+        insert(:taxon, book: book, sort_order: i, name_sci: "Taxon numerus#{i}")
+      end
+
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}/page/2")
+
+      assert has_element?(show_live, "#taxa-pagination-top-prev")
+
+      html = show_live |> element("#taxa-pagination-bottom-prev") |> render_click()
+
+      assert html =~ "Taxon numerus1"
+    end
+
+    test "no previous link on the first page", %{conn: conn} do
+      book = insert(:book)
+
+      for i <- 1..30 do
+        insert(:taxon, book: book, sort_order: i)
+      end
+
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
+
+      refute has_element?(show_live, "#taxa-pagination-top-prev")
+    end
+
+    test "a junk page number falls back to the first page", %{conn: conn} do
+      book = insert(:book)
+
+      for i <- 1..30 do
+        insert(:taxon, book: book, sort_order: i, name_sci: "Taxon numerus#{i}")
+      end
+
+      {:ok, _show_live, html} =
+        live(conn, "/taxonomy/#{book.slug}/#{book.version}/page/not-a-number")
+
+      assert html =~ "Taxon numerus1"
+    end
+
+    test "no pagination when the book fits on one page", %{conn: conn} do
+      book = insert(:book)
+      insert(:taxon, book: book, sort_order: 1)
+
+      {:ok, show_live, _html} = live(conn, "/taxonomy/#{book.slug}/#{book.version}")
+
+      refute has_element?(show_live, "#taxa-pagination-top")
+      refute has_element?(show_live, "#taxa-pagination-bottom")
+    end
+
     test "spaces are trimmed from the beginning and end of the search term", %{conn: conn} do
       book = insert(:book)
       insert(:taxon, book: book, name_sci: "Acrocephalus palustris")
