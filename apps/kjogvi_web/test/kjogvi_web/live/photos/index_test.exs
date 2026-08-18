@@ -62,4 +62,18 @@ defmodule KjogviWeb.Live.Photos.IndexTest do
     # 25 images at 24 per page leaves exactly one on page 2.
     assert length(Regex.scan(~r/id="photos-\d+"/, render(live))) == 1
   end
+
+  # The grid id carries the page so a page change swaps the whole block instead
+  # of patching stale thumbnails under new captions.
+  test "the grid id changes with the page", %{conn: conn} do
+    user = user_fixture()
+    for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
+
+    {:ok, live, _html} = live(conn, ~p"/community/photos")
+    assert has_element?(live, "#photos-grid-p1")
+
+    {:ok, live, _html} = live(conn, ~p"/community/photos/page/2")
+    assert has_element?(live, "#photos-grid-p2")
+    refute has_element?(live, "#photos-grid-p1")
+  end
 end

@@ -59,7 +59,7 @@ defmodule KjogviWeb.Live.My.Images.Index do
       </div>
 
       <ul
-        id="images-grid"
+        id={"images-grid-p#{@meta.current_page}"}
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         aria-label="Image gallery"
       >
@@ -67,10 +67,10 @@ defmodule KjogviWeb.Live.My.Images.Index do
           <.link navigate={~p"/my/images/#{image.id}"} class="block no-underline">
             <div class="aspect-3/2 rounded-lg overflow-hidden bg-stone-100 flex items-center justify-center">
               <img
+                id={"image-thumb-#{image.id}"}
                 src={Images.url(image, :thumbnail)}
                 alt={image.title || image.slug}
                 class="max-w-full max-h-full object-contain"
-                loading="lazy"
               />
             </div>
             <p class="mt-1 text-xs text-stone-600 truncate">{image.title || image.slug}</p>

@@ -50,7 +50,7 @@ defmodule KjogviWeb.Live.Photos.Index do
       </div>
 
       <ul
-        id="photos-grid"
+        id={"photos-grid-p#{@meta.current_page}"}
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         aria-label="Photo gallery"
       >
@@ -60,7 +60,6 @@ defmodule KjogviWeb.Live.Photos.Index do
               src={Images.url(image, :thumbnail)}
               alt={image.title || image.slug}
               class="max-w-full max-h-full object-contain"
-              loading="lazy"
             />
           </div>
           <p class="mt-1 text-xs text-stone-600 truncate">{image.title || image.slug}</p>
