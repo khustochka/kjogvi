@@ -5,8 +5,6 @@ defmodule KjogviWeb.Live.My.Images.Index do
 
   use KjogviWeb, :live_view
 
-  import Scrivener.PhoenixView
-
   alias Kjogvi.Images
 
   @images_per_page 24
@@ -25,7 +23,7 @@ defmodule KjogviWeb.Live.My.Images.Index do
       Map.get(params, "page", "1")
       |> String.to_integer()
 
-    images =
+    {images, meta} =
       Images.list_images(
         socket.assigns.current_scope.current_user,
         %{page: page, page_size: @images_per_page}
@@ -34,8 +32,9 @@ defmodule KjogviWeb.Live.My.Images.Index do
     {:noreply,
      socket
      |> assign(:page, page)
-     |> assign(:image_count, length(images.entries))
-     |> assign(:images, images)}
+     |> assign(:image_count, length(images))
+     |> assign(:images, images)
+     |> assign(:meta, meta)}
   end
 
   @impl true
@@ -79,19 +78,11 @@ defmodule KjogviWeb.Live.My.Images.Index do
         </li>
       </ul>
 
-      <div class="mt-6">
-        {paginate(@socket, @images, paginated_images_path(), [:index], live: true)}
-      </div>
+      <.pagination id="images-pagination" meta={@meta} path={&images_path/1} />
     </div>
     """
   end
 
-  defp paginated_images_path() do
-    fn _conn, _action, page, _params ->
-      case page do
-        1 -> ~p"/my/images"
-        n -> ~p"/my/images/page/#{n}"
-      end
-    end
-  end
+  defp images_path(1), do: ~p"/my/images"
+  defp images_path(page), do: ~p"/my/images/page/#{page}"
 end

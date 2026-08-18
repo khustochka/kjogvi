@@ -5,8 +5,6 @@ defmodule KjogviWeb.Live.Photos.Index do
 
   use KjogviWeb, :live_view
 
-  import Scrivener.PhoenixView
-
   alias Kjogvi.Images
 
   @images_per_page 24
@@ -26,7 +24,7 @@ defmodule KjogviWeb.Live.Photos.Index do
       |> Map.get("page", "1")
       |> String.to_integer()
 
-    images =
+    {images, meta} =
       Images.list_images_for_scope(
         socket.assigns.current_scope,
         %{page: page, page_size: @images_per_page}
@@ -35,8 +33,9 @@ defmodule KjogviWeb.Live.Photos.Index do
     {:noreply,
      socket
      |> assign(:page, page)
-     |> assign(:image_count, length(images.entries))
-     |> assign(:images, images)}
+     |> assign(:image_count, length(images))
+     |> assign(:images, images)
+     |> assign(:meta, meta)}
   end
 
   @impl true
@@ -68,30 +67,24 @@ defmodule KjogviWeb.Live.Photos.Index do
         </li>
       </ul>
 
-      <div class="mt-6">
-        {paginate(@socket, @images, paginated_photos_path(@current_scope), [:index], live: true)}
-      </div>
+      <.pagination id="photos-pagination" meta={@meta} path={photos_path(@current_scope)} />
     </div>
     """
   end
 
   # Pagination links resolve against the area's base path: the community
   # gallery under /community/photos, a user's gallery under /users/:username/photos.
-  defp paginated_photos_path(%{area: :user, subject_user: %{nickname: nickname}}) do
-    fn _conn, _action, page, _params ->
-      case page do
-        1 -> ~p"/users/#{nickname}/photos"
-        n -> ~p"/users/#{nickname}/photos/page/#{n}"
-      end
+  defp photos_path(%{area: :user, subject_user: %{nickname: nickname}}) do
+    fn
+      1 -> ~p"/users/#{nickname}/photos"
+      page -> ~p"/users/#{nickname}/photos/page/#{page}"
     end
   end
 
-  defp paginated_photos_path(%{area: :community}) do
-    fn _conn, _action, page, _params ->
-      case page do
-        1 -> ~p"/community/photos"
-        n -> ~p"/community/photos/page/#{n}"
-      end
+  defp photos_path(%{area: :community}) do
+    fn
+      1 -> ~p"/community/photos"
+      page -> ~p"/community/photos/page/#{page}"
     end
   end
 end

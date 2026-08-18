@@ -14,7 +14,7 @@ defmodule Kjogvi.ImagesTest do
       image = ImagesFixtures.image_fixture(user: user)
       _other = ImagesFixtures.image_fixture(user: AccountsFixtures.user_fixture())
 
-      assert [returned] = Images.list_images(user, @page).entries
+      assert {[returned], _meta} = Images.list_images(user, @page)
       assert returned.id == image.id
     end
 
@@ -23,7 +23,8 @@ defmodule Kjogvi.ImagesTest do
       older = ImagesFixtures.image_fixture(user: user)
       newer = ImagesFixtures.image_fixture(user: user)
 
-      ids = Images.list_images(user, @page).entries |> Enum.map(& &1.id)
+      {images, _meta} = Images.list_images(user, @page)
+      ids = Enum.map(images, & &1.id)
       assert ids == [newer.id, older.id]
     end
 
@@ -31,13 +32,13 @@ defmodule Kjogvi.ImagesTest do
       user = AccountsFixtures.user_fixture()
       for _ <- 1..3, do: ImagesFixtures.image_fixture(user: user)
 
-      page = Images.list_images(user, %{page: 1, page_size: 2})
-      assert length(page.entries) == 2
-      assert page.total_entries == 3
-      assert page.total_pages == 2
+      {images, meta} = Images.list_images(user, %{page: 1, page_size: 2})
+      assert length(images) == 2
+      assert meta.total_count == 3
+      assert meta.total_pages == 2
 
-      second = Images.list_images(user, %{page: 2, page_size: 2})
-      assert length(second.entries) == 1
+      {second, _meta} = Images.list_images(user, %{page: 2, page_size: 2})
+      assert length(second) == 1
     end
   end
 

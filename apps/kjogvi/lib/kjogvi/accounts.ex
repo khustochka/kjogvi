@@ -11,6 +11,8 @@ defmodule Kjogvi.Accounts do
   alias Kjogvi.Accounts.UserToken
   alias Kjogvi.Accounts.UserNotifier
 
+  @default_admin_pagination %{page: 1, page_size: 50}
+
   @admin_role "admin"
 
   ## Database getters
@@ -76,11 +78,11 @@ defmodule Kjogvi.Accounts do
   end
 
   @doc """
-  A paginated page of users for the admin index, ordered by nickname. When
-  `term` is a non-blank string, only users whose nickname or display name
-  contains it are returned.
+  A page of users for the admin index, ordered by nickname, as
+  `{users, %Flop.Meta{}}`. When `term` is a non-blank string, only users whose
+  nickname or display name contains it are returned.
   """
-  def list_users_for_admin(term \\ "", pagination \\ %{}) do
+  def list_users_for_admin(term \\ "", pagination \\ @default_admin_pagination) do
     User.Query.search(term)
     |> User.Query.order_by_nickname()
     |> Repo.paginate(pagination)
