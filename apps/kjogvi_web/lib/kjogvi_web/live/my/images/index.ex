@@ -58,6 +58,15 @@ defmodule KjogviWeb.Live.My.Images.Index do
         </p>
       </div>
 
+      <.pagination
+        id="images-pagination-top"
+        meta={@meta}
+        path={&images_path/1}
+        label="Pagination (top)"
+        class="mb-2"
+        anchor="images-pagination-top"
+      />
+
       <ul
         id={"images-grid-p#{@meta.current_page}"}
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -78,7 +87,12 @@ defmodule KjogviWeb.Live.My.Images.Index do
         </li>
       </ul>
 
-      <.pagination id="images-pagination" meta={@meta} path={&images_path/1} />
+      <.pagination
+        id="images-pagination"
+        meta={@meta}
+        path={&images_path/1}
+        anchor="images-pagination-top"
+      />
     </div>
     """
   end

@@ -59,7 +59,7 @@ defmodule KjogviWeb.PaginationComponentsTest do
       refute "/things/page/8" in page_links(html)
     end
 
-    test "omits previous and next at the ends of the range" do
+    test "disables previous and next at the ends of the range" do
       first = render_pagination(meta(1, 3))
       refute first =~ ~s(rel="prev")
       assert first =~ ~s(rel="next")
@@ -67,6 +67,46 @@ defmodule KjogviWeb.PaginationComponentsTest do
       last = render_pagination(meta(3, 3))
       assert last =~ ~s(rel="prev")
       refute last =~ ~s(rel="next")
+    end
+
+    # The step controls hold their slots when unavailable, so paging does not
+    # shift the arrows out from under the pointer.
+    test "keeps every step control in place across pages" do
+      counts =
+        for page <- 1..3 do
+          html = render_pagination(meta(page, 3))
+          steps = ~r/(‹|›)/ |> Regex.scan(html) |> length()
+          disabled = ~r/aria-disabled="true"/ |> Regex.scan(html) |> length()
+          {steps, disabled}
+        end
+
+      assert [{2, 1}, {2, 0}, {2, 1}] = counts
+    end
+
+    test "appends the anchor to every page link when one is given" do
+      assigns = %{meta: meta(2, 5)}
+
+      html =
+        rendered_to_string(~H"""
+        <PaginationComponents.pagination
+          meta={@meta}
+          path={&"/things/page/#{&1}"}
+          anchor="the-list"
+        />
+        """)
+
+      links = page_links(html)
+
+      assert links != []
+      assert Enum.all?(links, &String.ends_with?(&1, "#the-list"))
+    end
+
+    # « / » would duplicate the always-present first and last page numbers.
+    test "has no separate first and last controls" do
+      html = render_pagination(meta(5, 10))
+
+      refute html =~ "«"
+      refute html =~ "»"
     end
   end
 end

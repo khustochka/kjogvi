@@ -73,6 +73,15 @@ defmodule KjogviWeb.Live.Admin.Users.Index do
         />
       </div>
 
+      <.pagination
+        id="users-pagination-top"
+        meta={@meta}
+        path={paginated_users_path(@search_term)}
+        label="Pagination (top)"
+        class="mb-2"
+        anchor="users-pagination-top"
+      />
+
       <ul :if={@users != []} id="users" class="space-y-2">
         <li
           :for={user <- @users}
@@ -110,7 +119,12 @@ defmodule KjogviWeb.Live.Admin.Users.Index do
         <p :if={@search_term != ""} class="text-lg font-medium">No users found</p>
       </div>
 
-      <.pagination id="users-pagination" meta={@meta} path={paginated_users_path(@search_term)} />
+      <.pagination
+        id="users-pagination"
+        meta={@meta}
+        path={paginated_users_path(@search_term)}
+        anchor="users-pagination-top"
+      />
     </div>
     """
   end

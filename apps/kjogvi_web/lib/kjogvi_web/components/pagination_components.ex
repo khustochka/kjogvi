@@ -6,6 +6,9 @@ defmodule KjogviWeb.PaginationComponents do
 
   @window 2
 
+  @item_class "inline-block min-w-9 px-3 py-1.5 text-center text-base lg:text-sm leading-snug border rounded"
+  @link_class "text-forest-600 bg-white border-stone-400 hover:bg-forest-50 no-underline"
+
   @doc ~S"""
   Renders numbered page navigation for a `Flop.Meta`.
 
@@ -18,77 +21,105 @@ defmodule KjogviWeb.PaginationComponents do
 
       <.pagination meta={@meta} path={&images_path/1} />
 
+  The prev/next controls keep their slot when they are unavailable, so the
+  arrows stay put under the pointer while paging through. The first and last
+  pages are reached by their numbers, which are always shown.
+
+  Pass `anchor` with the id of an element above the list so a page change lands
+  there rather than leaving the reader where they clicked:
+
+      <.pagination meta={@meta} path={&images_path/1} anchor="images-grid" />
+
   Renders nothing when everything fits on one page.
   """
   attr :meta, Flop.Meta, required: true
   attr :path, :any, required: true
   attr :id, :string, default: "pagination"
+  attr :label, :string, default: "Pagination"
+  attr :class, :any, default: "mt-4"
+  attr :anchor, :string, default: nil
 
   def pagination(assigns) do
+    assigns =
+      assign(assigns,
+        item_class: @item_class,
+        link_class: @link_class,
+        path: anchored(assigns.path, assigns[:anchor])
+      )
+
     ~H"""
-    <nav :if={@meta.total_pages > 1} id={@id} aria-label="Pagination">
-      <ul class="pagination sm:flex gap-2 mt-4">
-        <.page_link
-          :if={@meta.current_page > 2}
-          page={1}
-          path={@path}
-          title="First page"
-          label="«"
-        />
-        <.page_link
-          :if={@meta.has_previous_page?}
+    <nav :if={@meta.total_pages > 1} id={@id} aria-label={@label} class={@class}>
+      <ul class="flex flex-wrap items-baseline justify-center gap-2">
+        <.step
           page={@meta.current_page - 1}
           path={@path}
+          enabled={@meta.has_previous_page?}
           title="Previous page"
           label="‹"
           rel="prev"
         />
-        <li :for={item <- page_items(@meta)} class={item_class(item)}>
-          <span :if={item == :gap} class="inline-block py-2 px-2">…</span>
+        <li :for={item <- page_items(@meta)}>
+          <span :if={item == :gap} class="inline-block px-1 py-1.5 text-stone-500">…</span>
           <span
             :if={item == @meta.current_page}
-            class={"#{page_num_class()} active font-bold"}
             aria-current="page"
+            class={[@item_class, "font-bold text-forest-800 bg-forest-100 border-forest-300"]}
           >{item}</span>
           <.link
             :if={is_integer(item) and item != @meta.current_page}
             patch={@path.(item)}
-            class={link_class()}
+            class={[@item_class, @link_class]}
+            phx-no-format
           >{item}</.link>
         </li>
-        <.page_link
-          :if={@meta.has_next_page?}
+        <.step
           page={@meta.current_page + 1}
           path={@path}
+          enabled={@meta.has_next_page?}
           title="Next page"
           label="›"
           rel="next"
-        />
-        <.page_link
-          :if={@meta.current_page < @meta.total_pages - 1}
-          page={@meta.total_pages}
-          path={@path}
-          title="Last page"
-          label="»"
         />
       </ul>
     </nav>
     """
   end
 
+  # Prev/next. Rendered as an inert span when out of range so the control keeps
+  # its place in the row rather than shifting the others.
   attr :page, :integer, required: true
   attr :path, :any, required: true
+  attr :enabled, :boolean, required: true
   attr :title, :string, required: true
   attr :label, :string, required: true
   attr :rest, :global, include: ~w(rel)
 
-  defp page_link(assigns) do
+  defp step(assigns) do
+    assigns = assign(assigns, item_class: @item_class, link_class: @link_class)
+
     ~H"""
-    <li class="page-item text-center my-2 border">
-      <.link patch={@path.(@page)} title={@title} class={link_class()} {@rest}>{@label}</.link>
+    <li>
+      <.link
+        :if={@enabled}
+        patch={@path.(@page)}
+        title={@title}
+        class={[@item_class, @link_class]}
+        {@rest}
+      >{@label}</.link>
+      <span
+        :if={!@enabled}
+        title={@title}
+        aria-disabled="true"
+        class={[@item_class, "text-stone-300 border-stone-200"]}
+      >{@label}</span>
     </li>
     """
   end
+
+  # Appends the anchor to every page URL, so following a link scrolls to the top
+  # of the list instead of leaving the reader wherever the control was.
+  defp anchored(path, nil), do: path
+  defp anchored(path, anchor), do: fn page -> "#{path.(page)}##{anchor}" end
 
   # A window of pages around the current one, with the first and last page always
   # present and `:gap` marking the elided stretches.
@@ -111,10 +142,4 @@ defmodule KjogviWeb.PaginationComponents do
     end)
     |> Enum.reverse()
   end
-
-  defp item_class(:gap), do: "page-item text-center my-2 disabled border-0"
-  defp item_class(_page), do: "page-item text-center my-2 border"
-
-  defp page_num_class, do: "page-link inline-block whitespace-nowrap py-2 px-4 w-full h-full"
-  defp link_class, do: "#{page_num_class()} hover:bg-zinc-200 no-underline"
 end

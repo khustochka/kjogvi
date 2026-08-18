@@ -48,9 +48,12 @@ defmodule KjogviWeb.Live.Photos.IndexTest do
     user = user_fixture()
     for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
 
-    {:ok, _live, html} = live(conn, ~p"/community/photos")
+    {:ok, live, html} = live(conn, ~p"/community/photos")
 
     assert html =~ "/community/photos/page/2"
+    # Paging controls sit both above and below the grid.
+    assert has_element?(live, "#photos-pagination-top")
+    assert has_element?(live, "#photos-pagination")
   end
 
   test "shows a later page at its own route", %{conn: conn} do

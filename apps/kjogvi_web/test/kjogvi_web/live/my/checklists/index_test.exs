@@ -180,9 +180,12 @@ defmodule KjogviWeb.Live.My.Checklists.IndexTest do
     location = insert(:location)
     insert_list(21, :checklist, location: location, user: user)
 
-    {:ok, _index_live, html} = live(conn, ~p"/my/checklists")
+    {:ok, index_live, html} = live(conn, ~p"/my/checklists")
 
     assert html =~ "/checklists/page/2"
+    # Paging controls sit both above and below the list.
+    assert has_element?(index_live, "#checklists-pagination-top")
+    assert has_element?(index_live, "#checklists-pagination")
   end
 
   describe "search filter" do

@@ -49,6 +49,15 @@ defmodule KjogviWeb.Live.Photos.Index do
         <p class="text-lg font-medium">No photos yet</p>
       </div>
 
+      <.pagination
+        id="photos-pagination-top"
+        meta={@meta}
+        path={photos_path(@current_scope)}
+        label="Pagination (top)"
+        class="mb-2"
+        anchor="photos-pagination-top"
+      />
+
       <ul
         id={"photos-grid-p#{@meta.current_page}"}
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -66,7 +75,12 @@ defmodule KjogviWeb.Live.Photos.Index do
         </li>
       </ul>
 
-      <.pagination id="photos-pagination" meta={@meta} path={photos_path(@current_scope)} />
+      <.pagination
+        id="photos-pagination"
+        meta={@meta}
+        path={photos_path(@current_scope)}
+        anchor="photos-pagination-top"
+      />
     </div>
     """
   end

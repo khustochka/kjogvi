@@ -169,9 +169,23 @@ defmodule KjogviWeb.Live.My.Checklists.Index do
       No checklists match the current filter.
     </p>
 
+    <.pagination
+      id="checklists-pagination-top"
+      meta={@meta}
+      path={paginated_checklist_path(@filter)}
+      label="Pagination (top)"
+      class="mb-2"
+      anchor="checklists-pagination-top"
+    />
+
     <.checklist_list id="checklists" checklists={@checklists} on_delete="delete" />
 
-    <.pagination id="checklists-pagination" meta={@meta} path={paginated_checklist_path(@filter)} />
+    <.pagination
+      id="checklists-pagination"
+      meta={@meta}
+      path={paginated_checklist_path(@filter)}
+      anchor="checklists-pagination-top"
+    />
     """
   end
 

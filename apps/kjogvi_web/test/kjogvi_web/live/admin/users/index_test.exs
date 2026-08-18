@@ -142,7 +142,12 @@ defmodule KjogviWeb.Live.Admin.Users.IndexTest do
 
       # 51 matches over a 50-per-page window: a second page exists and its link
       # carries the search term.
-      assert has_element?(lv, "a[href='/admin/users/page/2?q=birder']")
+      # Page links are anchored above the list so paging does not strand the
+      # reader at the bottom control they clicked.
+      assert has_element?(lv, "a[href='/admin/users/page/2?q=birder#users-pagination-top']")
+      # Paging controls sit both above and below the list.
+      assert has_element?(lv, "#users-pagination-top")
+      assert has_element?(lv, "#users-pagination")
     end
   end
 end
