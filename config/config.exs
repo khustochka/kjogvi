@@ -78,10 +78,6 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :scrivener_phoenix,
-  window: 2,
-  template: KjogviWeb.Scrivener.Phoenix.Template
-
 # ex_aws S3 — IMAGES.
 #
 # The global ex_aws config is the IMAGE storage profile: waffle reads only the

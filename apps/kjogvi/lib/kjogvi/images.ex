@@ -15,24 +15,24 @@ defmodule Kjogvi.Images do
   alias Kjogvi.Images.VixProcessor
 
   @doc """
-  Lists a user's images, newest first, as a paginated `Scrivener.Page`.
+  Lists a user's images, newest first, as `{images, %Flop.Meta{}}`.
   """
-  def list_images(user, %{page: page, page_size: page_size}) do
+  def list_images(user, pagination) do
     Image.Query.base()
     |> Image.Query.for_user(user)
     |> Image.Query.newest_first()
-    |> Repo.paginate(page: page, page_size: page_size)
+    |> Repo.paginate(pagination)
   end
 
   @doc """
-  Lists images from all users, newest first, as a paginated `Scrivener.Page`.
+  Lists images from all users, newest first, as `{images, %Flop.Meta{}}`.
 
   Used for the public gallery; the owning user is preloaded for display.
   """
-  def list_public_images(%{page: page, page_size: page_size}) do
+  def list_public_images(pagination) do
     Image.Query.base()
     |> Image.Query.newest_first()
-    |> Repo.paginate(page: page, page_size: page_size)
+    |> Repo.paginate(pagination)
   end
 
   @doc """

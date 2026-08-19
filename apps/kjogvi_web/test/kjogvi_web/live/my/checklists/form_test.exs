@@ -336,11 +336,11 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Verify checklist was created
-      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
-      assert checklists.entries != []
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      assert checklists != []
 
       # Verify the most recent checklist has the selected location
-      checklist = List.first(checklists.entries)
+      checklist = List.first(checklists)
       assert checklist.location_id == location.id
     end
 
@@ -363,8 +363,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       checklist =
         user
         |> Birding.get_checklists(%{page: 1, page_size: 50})
-        |> Map.get(:entries)
-        |> List.first()
+        |> then(fn {checklists, _meta} -> List.first(checklists) end)
 
       assert checklist.resolved == true
     end
@@ -392,8 +391,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       checklist =
         user
         |> Birding.get_checklists(%{page: 1, page_size: 50})
-        |> Map.get(:entries)
-        |> List.first()
+        |> then(fn {checklists, _meta} -> List.first(checklists) end)
 
       assert checklist.resolved == false
     end
@@ -423,8 +421,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       checklist =
         user
         |> Birding.get_checklists(%{page: 1, page_size: 50})
-        |> Map.get(:entries)
-        |> List.first()
+        |> then(fn {checklists, _meta} -> List.first(checklists) end)
 
       assert checklist.ebird_complete == nil
     end
@@ -452,8 +449,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       checklist =
         user
         |> Birding.get_checklists(%{page: 1, page_size: 50})
-        |> Map.get(:entries)
-        |> List.first()
+        |> then(fn {checklists, _meta} -> List.first(checklists) end)
 
       assert checklist.ebird_complete == true
     end
@@ -481,8 +477,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       checklist =
         user
         |> Birding.get_checklists(%{page: 1, page_size: 50})
-        |> Map.get(:entries)
-        |> List.first()
+        |> then(fn {checklists, _meta} -> List.first(checklists) end)
 
       assert checklist.ebird_complete == false
     end
@@ -555,10 +550,10 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Verify checklist and observation were created
-      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
-      assert checklists.entries != []
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      assert checklists != []
 
-      checklist = List.first(checklists.entries)
+      checklist = List.first(checklists)
       assert checklist.location_id == location.id
 
       loaded_checklist = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
@@ -612,8 +607,8 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Verify both observations were created
-      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
-      checklist = List.first(checklists.entries)
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      checklist = List.first(checklists)
 
       loaded_checklist = Kjogvi.Repo.get!(Birding.Checklist, checklist.id)
       loaded_checklist = Kjogvi.Repo.preload(loaded_checklist, :observations)
@@ -951,8 +946,8 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       assert path =~ ~r"/my/checklists/\d+"
 
       # Only one checklist was created
-      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
-      assert length(checklists.entries) == 1
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      assert length(checklists) == 1
     end
   end
 
@@ -1103,8 +1098,8 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       lv |> render_submit("save", form_data)
 
       # Checklist saved with only the filled observation
-      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
-      checklist = List.first(checklists.entries)
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      checklist = List.first(checklists)
 
       loaded_checklist =
         Kjogvi.Repo.preload(Kjogvi.Repo.get!(Birding.Checklist, checklist.id), :observations)
@@ -1157,7 +1152,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       html = lv |> render_submit("save", form_data)
 
       assert html =~ "is not available"
-      assert Birding.get_checklists(user, %{page: 1, page_size: 50}).entries == []
+      assert {[], _meta} = Birding.get_checklists(user, %{page: 1, page_size: 50})
     end
 
     test "checklist with no observations saves successfully", %{conn: conn, user: user} do
@@ -1178,8 +1173,8 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
 
       lv |> render_submit("save", form_data)
 
-      checklists = Birding.get_checklists(user, %{page: 1, page_size: 50})
-      assert checklists.entries != []
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 50})
+      assert checklists != []
     end
   end
 end

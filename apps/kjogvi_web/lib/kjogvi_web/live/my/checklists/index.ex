@@ -3,8 +3,6 @@ defmodule KjogviWeb.Live.My.Checklists.Index do
 
   use KjogviWeb, :live_view
 
-  import Scrivener.PhoenixView
-
   alias Kjogvi.Birding
   alias Kjogvi.Birding.ChecklistSearch.Filter
   alias KjogviWeb.Live.Components.ChecklistSearchFilter
@@ -136,13 +134,15 @@ defmodule KjogviWeb.Live.My.Checklists.Index do
   defp checked?(_), do: false
 
   defp load_checklists(%{assigns: assigns} = socket) do
-    checklists =
+    {checklists, meta} =
       Birding.search_checklists(assigns.current_scope.current_user, assigns.filter, %{
         page: assigns.page,
         page_size: @checklists_per_page
       })
 
-    assign(socket, :checklists, checklists)
+    socket
+    |> assign(:checklists, checklists)
+    |> assign(:meta, meta)
   end
 
   @impl true
@@ -169,11 +169,23 @@ defmodule KjogviWeb.Live.My.Checklists.Index do
       No checklists match the current filter.
     </p>
 
+    <.pagination
+      id="checklists-pagination-top"
+      meta={@meta}
+      path={paginated_checklist_path(@filter)}
+      label="Pagination (top)"
+      class="mb-2"
+      anchor="checklists-pagination-top"
+    />
+
     <.checklist_list id="checklists" checklists={@checklists} on_delete="delete" />
 
-    <div class="mt-6">
-      {paginate(@socket, @checklists, paginated_checklist_path(@filter), [:index], live: true)}
-    </div>
+    <.pagination
+      id="checklists-pagination"
+      meta={@meta}
+      path={paginated_checklist_path(@filter)}
+      anchor="checklists-pagination-top"
+    />
     """
   end
 
@@ -182,11 +194,9 @@ defmodule KjogviWeb.Live.My.Checklists.Index do
   defp paginated_checklist_path(%Filter{} = filter) do
     query = Filter.to_params(filter)
 
-    fn _conn, _action, page, _params ->
-      case page do
-        1 -> ~p"/my/checklists?#{query}"
-        n -> ~p"/my/checklists/page/#{n}?#{query}"
-      end
+    fn
+      1 -> ~p"/my/checklists?#{query}"
+      page -> ~p"/my/checklists/page/#{page}?#{query}"
     end
   end
 end

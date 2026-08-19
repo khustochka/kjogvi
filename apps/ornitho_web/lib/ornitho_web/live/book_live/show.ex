@@ -19,14 +19,20 @@ defmodule OrnithoWeb.Live.Book.Show do
 
   @impl true
   def handle_params(params, _url, socket) do
-    page =
-      Map.get(params, "page", "1")
-      |> String.to_integer()
-
     {:noreply,
      socket
-     |> assign(:page_num, page)
-     |> assign(:search_term, params["search_term"])}
+     |> assign(:search_term, params["search_term"])
+     |> assign(:page_num, page_num(params["page"]))}
+  end
+
+  # The page number comes from the URL, so a junk one falls back to the first page.
+  defp page_num(nil), do: 1
+
+  defp page_num(param) do
+    case Integer.parse(param) do
+      {n, ""} when n > 0 -> n
+      _else -> 1
+    end
   end
 
   @impl true
@@ -57,8 +63,8 @@ defmodule OrnithoWeb.Live.Book.Show do
       module={OrnithoWeb.Live.Taxa.Index}
       id="taxa-index"
       book={@book}
-      page_num={@page_num}
       search_term={@search_term}
+      page_num={@page_num}
     />
     """
   end

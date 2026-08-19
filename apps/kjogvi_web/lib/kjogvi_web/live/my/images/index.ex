@@ -5,8 +5,6 @@ defmodule KjogviWeb.Live.My.Images.Index do
 
   use KjogviWeb, :live_view
 
-  import Scrivener.PhoenixView
-
   alias Kjogvi.Images
 
   @images_per_page 24
@@ -25,7 +23,7 @@ defmodule KjogviWeb.Live.My.Images.Index do
       Map.get(params, "page", "1")
       |> String.to_integer()
 
-    images =
+    {images, meta} =
       Images.list_images(
         socket.assigns.current_scope.current_user,
         %{page: page, page_size: @images_per_page}
@@ -34,8 +32,9 @@ defmodule KjogviWeb.Live.My.Images.Index do
     {:noreply,
      socket
      |> assign(:page, page)
-     |> assign(:image_count, length(images.entries))
-     |> assign(:images, images)}
+     |> assign(:image_count, length(images))
+     |> assign(:images, images)
+     |> assign(:meta, meta)}
   end
 
   @impl true
@@ -59,8 +58,17 @@ defmodule KjogviWeb.Live.My.Images.Index do
         </p>
       </div>
 
+      <.pagination
+        id="images-pagination-top"
+        meta={@meta}
+        path={&images_path/1}
+        label="Pagination (top)"
+        class="mb-2"
+        anchor="images-pagination-top"
+      />
+
       <ul
-        id="images-grid"
+        id={"images-grid-p#{@meta.current_page}"}
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         aria-label="Image gallery"
       >
@@ -68,10 +76,10 @@ defmodule KjogviWeb.Live.My.Images.Index do
           <.link navigate={~p"/my/images/#{image.id}"} class="block no-underline">
             <div class="aspect-3/2 rounded-lg overflow-hidden bg-stone-100 flex items-center justify-center">
               <img
+                id={"image-thumb-#{image.id}"}
                 src={Images.url(image, :thumbnail)}
                 alt={image.title || image.slug}
                 class="max-w-full max-h-full object-contain"
-                loading="lazy"
               />
             </div>
             <p class="mt-1 text-xs text-stone-600 truncate">{image.title || image.slug}</p>
@@ -79,19 +87,16 @@ defmodule KjogviWeb.Live.My.Images.Index do
         </li>
       </ul>
 
-      <div class="mt-6">
-        {paginate(@socket, @images, paginated_images_path(), [:index], live: true)}
-      </div>
+      <.pagination
+        id="images-pagination"
+        meta={@meta}
+        path={&images_path/1}
+        anchor="images-pagination-top"
+      />
     </div>
     """
   end
 
-  defp paginated_images_path() do
-    fn _conn, _action, page, _params ->
-      case page do
-        1 -> ~p"/my/images"
-        n -> ~p"/my/images/page/#{n}"
-      end
-    end
-  end
+  defp images_path(1), do: ~p"/my/images"
+  defp images_path(page), do: ~p"/my/images/page/#{page}"
 end

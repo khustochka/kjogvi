@@ -147,7 +147,9 @@ Add and update tests for all new and changed code before committing, but be wary
 - **Req**: HTTP client (preferred over httpoison, tesla)
 - **Phoenix LiveView**
 - **Ecto**
-- **Scrivener** (`scrivener_ecto` + `scrivener_phoenix`): pagination — the `/page/:page` routes use it; paginate with it rather than rolling your own
+- **Flop** — pagination in every app; paginate with it rather than rolling your own. Page-based (not cursor), backing the `/page/:page` routes. Both entry points return `{entries, %Flop.Meta{}}`; ordering comes from the query, so callers pass only `%{page:, page_size:}`.
+  - `Kjogvi.Repo.paginate/2` in `kjogvi` / `kjogvi_web`. Page links are rendered by `KjogviWeb.PaginationComponents.pagination/1`, which takes the meta plus a `page -> path` function so each index keeps its own base path and filter/search params.
+  - `Ornitho.Repo.flop/3` in `ornithologue` / `ornitho_web`, which additionally applies the `ornithologue` prefix via Flop's `query_opts`.
 - **ExAws / ExAws.S3**: S3 storage backend for images (see the `storage_backend` note under Images)
 - **Waffle** (`waffle` + `waffle_ecto`): file/image uploads (see Images)
 - **Cachex**: caching

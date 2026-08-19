@@ -11,8 +11,10 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
     Ornitho.Schema.Taxon.key(taxon)
   end
 
+  # Only the matched checklists matter here; pagination meta is covered elsewhere.
   defp page(user, filter) do
-    Birding.search_checklists(user, filter, %{page: 1, page_size: 50})
+    {checklists, _meta} = Birding.search_checklists(user, filter, %{page: 1, page_size: 50})
+    checklists
   end
 
   describe "search_checklists/3 — checklist mode" do
@@ -24,7 +26,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       result = page(user, %Filter{})
 
-      assert [entry] = result.entries
+      assert [entry] = result
       assert entry.id == checklist.id
       # Checklist mode does not attach observations to the panels.
       assert %Ecto.Association.NotLoaded{} = entry.observations
@@ -37,7 +39,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       result = page(user, %Filter{date: ~D[2024-05-01]})
 
-      assert [entry] = result.entries
+      assert [entry] = result
       assert entry.id == match.id
     end
 
@@ -50,7 +52,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       result = page(user, %Filter{location: loc})
 
-      assert [entry] = result.entries
+      assert [entry] = result
       assert entry.id == match.id
     end
 
@@ -64,7 +66,6 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       ids =
         page(user, %Filter{location: parent, include_subregions: true})
-        |> Map.fetch!(:entries)
         |> Enum.map(& &1.id)
         |> Enum.sort()
 
@@ -85,7 +86,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       result = page(user, %Filter{taxon_key: key, exclude_subspecies: true})
 
-      assert [entry] = result.entries
+      assert [entry] = result
       assert entry.id == with_match.id
     end
 
@@ -99,7 +100,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       result = page(user, %Filter{taxon_key: key, exclude_subspecies: true})
 
-      assert [entry] = result.entries
+      assert [entry] = result
       assert [obs] = entry.observations
       assert obs.id == match.id
     end
@@ -117,7 +118,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       result = page(user, %Filter{voice: :heard_only})
 
-      assert [entry] = result.entries
+      assert [entry] = result
       assert [obs] = entry.observations
       assert obs.id == heard.id
     end
@@ -136,7 +137,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       result = page(user, %Filter{voice: :seen})
 
-      assert [entry] = result.entries
+      assert [entry] = result
       assert [obs] = entry.observations
       assert obs.id == seen.id
     end
@@ -154,7 +155,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
 
       result = page(user, %Filter{hidden: true})
 
-      assert [entry] = result.entries
+      assert [entry] = result
       assert [obs] = entry.observations
       assert obs.id == hidden.id
     end
@@ -165,7 +166,7 @@ defmodule Kjogvi.Birding.ChecklistSearchTest do
       other_checklist = insert(:checklist, user: other)
       insert(:observation, checklist: other_checklist, taxon_key: species_key(), hidden: true)
 
-      assert page(user, %Filter{hidden: true}).entries == []
+      assert page(user, %Filter{hidden: true}) == []
     end
   end
 end

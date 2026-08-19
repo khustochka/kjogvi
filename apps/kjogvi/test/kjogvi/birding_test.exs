@@ -290,8 +290,8 @@ defmodule Kjogvi.BirdingTest do
       insert(:checklist, user: user, observ_date: ~D[2024-01-15])
       insert(:checklist, user: user, observ_date: ~D[2024-02-20])
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 10})
-      assert length(page.entries) == 2
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 10})
+      assert length(checklists) == 2
     end
 
     test "does not return checklists from other users" do
@@ -300,8 +300,8 @@ defmodule Kjogvi.BirdingTest do
       insert(:checklist, user: user)
       insert(:checklist, user: other_user)
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 10})
-      assert length(page.entries) == 1
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 10})
+      assert length(checklists) == 1
     end
 
     test "orders checklists by date descending" do
@@ -310,8 +310,8 @@ defmodule Kjogvi.BirdingTest do
       insert(:checklist, user: user, observ_date: ~D[2024-03-20])
       insert(:checklist, user: user, observ_date: ~D[2024-02-10])
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 10})
-      dates = Enum.map(page.entries, & &1.observ_date)
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 10})
+      dates = Enum.map(checklists, & &1.observ_date)
       assert dates == [~D[2024-03-20], ~D[2024-02-10], ~D[2024-01-15]]
     end
 
@@ -321,8 +321,8 @@ defmodule Kjogvi.BirdingTest do
       insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/bkcchi1")
       insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 10})
-      assert hd(page.entries).observation_count == 2
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 10})
+      assert hd(checklists).observation_count == 2
     end
 
     test "includes distinct taxa count" do
@@ -332,8 +332,8 @@ defmodule Kjogvi.BirdingTest do
       insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/amecro")
       insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/bkcchi1")
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 10})
-      entry = hd(page.entries)
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 10})
+      entry = hd(checklists)
       assert entry.observation_count == 3
       assert entry.taxa_count == 2
     end
@@ -350,8 +350,8 @@ defmodule Kjogvi.BirdingTest do
       # A taxon with no species page is not countable.
       insert(:observation, checklist: checklist, taxon_key: "ebird/eBird_2023/unmapped")
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 10})
-      entry = hd(page.entries)
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 10})
+      entry = hd(checklists)
       assert entry.species_count == 1
       assert entry.taxa_count == 2
     end
@@ -364,8 +364,8 @@ defmodule Kjogvi.BirdingTest do
       checklist = insert(:checklist, user: user)
       insert(:observation, checklist: checklist, taxon_key: key, unreported: true)
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 10})
-      entry = hd(page.entries)
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 10})
+      entry = hd(checklists)
       assert entry.species_count == 0
       assert entry.observation_count == 1
     end
@@ -374,8 +374,8 @@ defmodule Kjogvi.BirdingTest do
       user = user_fixture()
       insert(:checklist, user: user)
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 10})
-      entry = hd(page.entries)
+      {checklists, _meta} = Birding.get_checklists(user, %{page: 1, page_size: 10})
+      entry = hd(checklists)
       assert entry.observation_count == 0
       assert entry.taxa_count == 0
       assert entry.species_count == 0
@@ -388,9 +388,9 @@ defmodule Kjogvi.BirdingTest do
         insert(:checklist, user: user, observ_date: Date.add(~D[2024-01-01], i))
       end
 
-      page = Birding.get_checklists(user, %{page: 1, page_size: 2})
-      assert length(page.entries) == 2
-      assert page.total_entries == 5
+      {checklists, meta} = Birding.get_checklists(user, %{page: 1, page_size: 2})
+      assert length(checklists) == 2
+      assert meta.total_count == 5
     end
   end
 
