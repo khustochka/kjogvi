@@ -8,7 +8,7 @@ config :logger, :console, format: "[$level] $message\n"
 
 if config_env() == :dev do
   config :esbuild,
-    version: "0.28.1",
+    version: "0.28.2",
     ornitho_web: [
       args: ~w(
           js/app.js

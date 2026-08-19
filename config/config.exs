@@ -43,7 +43,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.28.1",
+  version: "0.28.2",
   kjogvi_web: [
     args: ~w(
         js/app.js
