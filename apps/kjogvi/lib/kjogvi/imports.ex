@@ -13,6 +13,8 @@ defmodule Kjogvi.Imports do
   alias Kjogvi.Imports.ImportLog
   alias Kjogvi.Repo
 
+  @default_pagination %{page: 1, page_size: 50}
+
   @doc """
   Creates an `ImportLog` and enqueues the eBird import job for it, in one
   transaction.
@@ -57,7 +59,7 @@ defmodule Kjogvi.Imports do
   users preloaded. `:issues` narrows to runs that failed or finished with
   unimported rows.
   """
-  def list_import_logs_for_admin(filter \\ :all, pagination \\ %{}) do
+  def list_import_logs_for_admin(filter \\ :all, pagination \\ @default_pagination) do
     ImportLog
     |> admin_filter(filter)
     |> ImportLog.Query.newest_first()
@@ -231,7 +233,7 @@ defmodule Kjogvi.Imports do
   @doc """
   The run's failed rows for the admin view, oldest first and paginated.
   """
-  def paginate_import_errors(import_log_id, pagination \\ %{}) do
+  def paginate_import_errors(import_log_id, pagination \\ @default_pagination) do
     ImportError.Query.by_import_log(import_log_id)
     |> ImportError.Query.oldest_first()
     |> Repo.paginate(pagination)

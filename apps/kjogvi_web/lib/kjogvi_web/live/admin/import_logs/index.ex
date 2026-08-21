@@ -8,8 +8,6 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Index do
 
   use KjogviWeb, :live_view
 
-  import Scrivener.PhoenixView
-
   alias Kjogvi.Imports
   alias Kjogvi.Imports.ImportLog
 
@@ -25,13 +23,14 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Index do
     filter = if params["status"] == "issues", do: :issues, else: :all
     page = params |> Map.get("page", "1") |> String.to_integer()
 
-    import_logs =
+    {import_logs, meta} =
       Imports.list_import_logs_for_admin(filter, %{page: page, page_size: @logs_per_page})
 
     {:noreply,
      socket
      |> assign(:filter, filter)
-     |> assign(:import_logs, import_logs)}
+     |> assign(:import_logs, import_logs)
+     |> assign(:meta, meta)}
   end
 
   @impl true
@@ -55,11 +54,11 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Index do
         </ul>
       </nav>
 
-      <p :if={@import_logs.entries == []} class="text-sm text-stone-500">No import runs.</p>
+      <p :if={@import_logs == []} class="text-sm text-stone-500">No import runs.</p>
 
-      <ul :if={@import_logs.entries != []} id="import-logs" class="space-y-2">
+      <ul :if={@import_logs != []} id="import-logs" class="space-y-2">
         <li
-          :for={log <- @import_logs.entries}
+          :for={log <- @import_logs}
           id={"import-log-#{log.id}"}
           class="flex flex-wrap items-baseline gap-x-3 gap-y-1 border border-stone-200 rounded-lg px-4 py-3"
         >
@@ -83,9 +82,13 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Index do
         </li>
       </ul>
 
-      <div :if={@import_logs.total_pages > 1} class="mt-6">
-        {paginate(@socket, @import_logs, paginated_logs_path(@filter), [:index], live: true)}
-      </div>
+      <.pagination
+        id="import-logs-pagination"
+        meta={@meta}
+        path={paginated_logs_path(@filter)}
+        class="mt-6"
+        anchor="import-logs"
+      />
     </div>
     """
   end
@@ -102,13 +105,11 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Index do
 
   # Page links carry the filter as a query param so paging preserves it.
   defp paginated_logs_path(filter) do
-    fn _conn, _action, page, _params ->
-      query = if filter == :issues, do: [status: "issues"], else: []
+    query = if filter == :issues, do: [status: "issues"], else: []
 
-      case page do
-        1 -> ~p"/admin/import_logs?#{query}"
-        n -> ~p"/admin/import_logs/page/#{n}?#{query}"
-      end
+    fn
+      1 -> ~p"/admin/import_logs?#{query}"
+      page -> ~p"/admin/import_logs/page/#{page}?#{query}"
     end
   end
 end

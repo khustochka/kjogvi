@@ -7,8 +7,6 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
 
   use KjogviWeb, :live_view
 
-  import Scrivener.PhoenixView
-
   alias Kjogvi.Imports
 
   @errors_per_page 25
@@ -23,7 +21,7 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
     import_log = Imports.get_import_log!(id)
     page = params |> Map.get("page", "1") |> String.to_integer()
 
-    errors =
+    {errors, meta} =
       Imports.paginate_import_errors(import_log.id, %{page: page, page_size: @errors_per_page})
 
     {:noreply,
@@ -31,7 +29,8 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
      |> assign(:page_title, "Import Log ##{import_log.id}")
      |> assign(:import_log, import_log)
      |> assign(:retryable, Imports.retryable?(import_log))
-     |> assign(:errors, errors)}
+     |> assign(:errors, errors)
+     |> assign(:errors_meta, meta)}
   end
 
   @impl true
@@ -104,13 +103,13 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
       <section id="import-errors">
         <.h2>Failed Rows</.h2>
 
-        <p :if={@errors.total_entries == 0} class="text-sm text-stone-500">
+        <p :if={@errors_meta.total_count == 0} class="text-sm text-stone-500">
           No failed rows recorded for this run.
         </p>
 
-        <ul :if={@errors.entries != []} class="space-y-4">
+        <ul :if={@errors != []} class="space-y-4">
           <li
-            :for={error <- @errors.entries}
+            :for={error <- @errors}
             id={"import-error-#{error.id}"}
             class="border border-stone-200 rounded-lg p-4"
           >
@@ -143,9 +142,13 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
           </li>
         </ul>
 
-        <div :if={@errors.total_pages > 1} class="mt-6">
-          {paginate(@socket, @errors, paginated_errors_path(@import_log), [:show], live: true)}
-        </div>
+        <.pagination
+          id="import-errors-pagination"
+          meta={@errors_meta}
+          path={paginated_errors_path(@import_log)}
+          class="mt-6"
+          anchor="import-errors"
+        />
       </section>
     </div>
     """
@@ -163,11 +166,9 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
   end
 
   defp paginated_errors_path(import_log) do
-    fn _conn, _action, page, _params ->
-      case page do
-        1 -> ~p"/admin/import_logs/#{import_log}"
-        n -> ~p"/admin/import_logs/#{import_log}?#{[page: n]}"
-      end
+    fn
+      1 -> ~p"/admin/import_logs/#{import_log}"
+      page -> ~p"/admin/import_logs/#{import_log}?#{[page: page]}"
     end
   end
 end

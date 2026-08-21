@@ -64,10 +64,10 @@ defmodule Kjogvi.ImportsTest do
       {:ok, older} = Imports.enqueue_ebird_import(user, "a.zip")
       {:ok, newer} = Imports.enqueue_ebird_import(other_user, "b.zip")
 
-      page = Imports.list_import_logs_for_admin()
+      {logs, _meta} = Imports.list_import_logs_for_admin()
 
-      assert Enum.map(page.entries, & &1.id) == [newer.id, older.id]
-      assert Enum.map(page.entries, & &1.user.id) == [other_user.id, user.id]
+      assert Enum.map(logs, & &1.id) == [newer.id, older.id]
+      assert Enum.map(logs, & &1.user.id) == [other_user.id, user.id]
     end
 
     test ":issues narrows to failed and completed-with-errors runs", %{user: user} do
@@ -83,10 +83,10 @@ defmodule Kjogvi.ImportsTest do
       :ok = Imports.log_completed(with_errors.id, :completed_with_errors, %{})
       :ok = Imports.log_failed(failed.id, "boom")
 
-      page = Imports.list_import_logs_for_admin(:issues)
+      {logs, _meta} = Imports.list_import_logs_for_admin(:issues)
 
-      assert Enum.map(page.entries, & &1.id) == [failed.id, with_errors.id]
-      refute queued.id in Enum.map(page.entries, & &1.id)
+      assert Enum.map(logs, & &1.id) == [failed.id, with_errors.id]
+      refute queued.id in Enum.map(logs, & &1.id)
     end
 
     test "paginates", %{user: user} do
@@ -95,11 +95,11 @@ defmodule Kjogvi.ImportsTest do
       {:ok, older} = Imports.enqueue_ebird_import(user, "a.zip")
       {:ok, newer} = Imports.enqueue_ebird_import(other_user, "b.zip")
 
-      page = Imports.list_import_logs_for_admin(:all, %{page: 2, page_size: 1})
+      {logs, meta} = Imports.list_import_logs_for_admin(:all, %{page: 2, page_size: 1})
 
-      assert Enum.map(page.entries, & &1.id) == [older.id]
-      assert page.total_entries == 2
-      refute newer.id in Enum.map(page.entries, & &1.id)
+      assert Enum.map(logs, & &1.id) == [older.id]
+      assert meta.total_count == 2
+      refute newer.id in Enum.map(logs, & &1.id)
     end
   end
 
@@ -232,13 +232,13 @@ defmodule Kjogvi.ImportsTest do
           %{category: :unmapped, submission_id: "S1", rows: []}
         ])
 
-      page = Imports.paginate_import_errors(log.id, %{page: 1, page_size: 1})
+      {errors, meta} = Imports.paginate_import_errors(log.id, %{page: 1, page_size: 1})
 
-      assert [%{category: :invalid}] = page.entries
-      assert page.total_entries == 2
+      assert [%{category: :invalid}] = errors
+      assert meta.total_count == 2
 
-      assert [%{category: :unmapped}] =
-               Imports.paginate_import_errors(log.id, %{page: 2, page_size: 1}).entries
+      {[%{category: :unmapped}], _meta} =
+        Imports.paginate_import_errors(log.id, %{page: 2, page_size: 1})
     end
   end
 
