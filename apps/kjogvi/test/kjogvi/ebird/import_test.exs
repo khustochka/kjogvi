@@ -7,6 +7,7 @@ defmodule Kjogvi.Ebird.ImportTest do
   alias Kjogvi.Ebird.Import
   alias Kjogvi.Ebird.UserLocation
   alias Kjogvi.Geo.Location
+  alias Kjogvi.Imports
 
   @header "Submission ID,Common Name,Scientific Name,Taxonomic Order,Count," <>
             "State/Province,County,Location ID,Location,Latitude,Longitude,Date,Time," <>
@@ -887,8 +888,6 @@ defmodule Kjogvi.Ebird.ImportTest do
   end
 
   describe "error records" do
-    alias Kjogvi.Imports
-
     defp import_log(user) do
       {:ok, log} =
         %{source: :ebird, user_id: user.id}

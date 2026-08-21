@@ -1,14 +1,14 @@
 defmodule Kjogvi.Search.LocationTest do
   use Kjogvi.DataCase
 
+  import Ecto.Query
+
   alias Kjogvi.Geo.Location
   alias Kjogvi.Search.Location, as: Search
   alias Kjogvi.GeoFixtures
 
   describe "search_locations/3 with a restricted base query" do
     test "searches only within the supplied query" do
-      import Ecto.Query
-
       keep = GeoFixtures.location_fixture(%{slug: "keep-park", name_en: "Park Keep"})
       drop = GeoFixtures.location_fixture(%{slug: "drop-park", name_en: "Park Drop"})
 

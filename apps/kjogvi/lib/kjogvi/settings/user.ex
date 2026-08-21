@@ -71,12 +71,8 @@ defmodule Kjogvi.Settings.User do
   page doesn't fan out into one lookup per row.
   """
   def login_disabled_ids(user_ids) do
-    import Ecto.Query
-
-    from(s in UserSetting,
-      where: s.user_id in ^user_ids and s.key == "login_disabled" and s.value == ^true,
-      select: s.user_id
-    )
+    user_ids
+    |> UserSetting.Query.user_ids_with_flag("login_disabled", true)
     |> Repo.all()
     |> MapSet.new()
   end
