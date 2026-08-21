@@ -82,6 +82,7 @@ defmodule Kjogvi.MixProject do
       {:nimble_options, "~> 1.1"},
       {:ornithologue, in_umbrella: true},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:jump_credo_checks, "~> 0.5", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:ex_machina, "~> 2.8", only: :test},
       {:ecto_dev_logger, "~> 0.10", only: [:dev]},

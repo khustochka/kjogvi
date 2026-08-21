@@ -49,6 +49,7 @@ defmodule Kjogvi.Umbrella.MixProject do
       # Required to run "mix format" on ~H/.heex files from the umbrella root
       {:phoenix_live_view, "~> 1.2.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:jump_credo_checks, "~> 0.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:lazy_html, ">= 0.1.0", only: :test}
     ]

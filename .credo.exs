@@ -66,6 +66,78 @@
       #
       checks: %{
         enabled: [
+
+          {Jump.CredoChecks.AssertElementSelectorCanNeverFail, []},
+          # Default min_assert_receive_timeout and max_refute_receive_timeout are both nil
+          # (any explicit assert_receive timeout is flagged; refute_receive timeouts are not checked).
+          # - Set min_assert_receive_timeout to allow explicit assert_receive timeouts that are
+          #   integer literals >= the configured value.
+          # - Set max_refute_receive_timeout to flag refute_receive calls with timeouts longer than
+          #   the configured value. Because refute_receive always blocks for its full timeout, a long
+          #   refute_receive sets a lower bound on how long the entire test takes to run.
+          {Jump.CredoChecks.AssertReceiveTimeout,
+            min_assert_receive_timeout: 1_000,
+            max_refute_receive_timeout: 100},
+          {Jump.CredoChecks.AvoidFunctionLevelElse, []},
+          {Jump.CredoChecks.AvoidLoggerConfigureInTest, []},
+          # Default exclusion list is empty
+          {Jump.CredoChecks.AvoidSocketAssignsInTest, excluded: ["test/app_web/plugs/"]},
+          {Jump.CredoChecks.ConditionalAssertion, []},
+          {Jump.CredoChecks.DoctestIExExamples, [
+            # Tells Credo where to look for the `doctest` call.
+            # If you colocate your test files with your implementation, this would just
+            # be `&String.replace_trailing(&1, ".ex", "_test.exs")`
+            derive_test_path: fn filename ->
+              filename
+              |> String.replace_leading("lib/", "test/")
+              |> String.replace_trailing(".ex", "_test.exs")
+            end
+          ]},
+          {Jump.CredoChecks.ForbiddenFunction,
+           functions: [
+             {:erlang, :binary_to_term, "Use Plug.Crypto.non_executable_binary_to_term/2 instead."},
+           ]},
+          {Jump.CredoChecks.LiveViewFormCanBeRehydrated, excluded: ["lib/my_app/"]},
+          {Jump.CredoChecks.LiveViewPubSubRequiresConnected,
+           custom_pubsub_functions: [{MyAppWeb.PubSub, :subscribe}, {:my_imported_subscribe, 1}]},
+          {Jump.CredoChecks.NoManualContentDisposition, []},
+          {Jump.CredoChecks.UndeclaredExternalResource, []},
+          # Default start_after is "0"
+          {Jump.CredoChecks.PreferChangeOverUpDownMigrations, start_after: "20240101000000"},
+          {Jump.CredoChecks.PreferTextColumns, start_after: "20240101000000"},
+          # Exclude files that intentionally decode fully-trusted (never attacker-controlled) input
+          {Jump.CredoChecks.SafeBinaryToTerm, files: %{excluded: ["lib/my_app/trusted_decoder.ex"]}},
+          {Jump.CredoChecks.TestHasNoAssertions, custom_assertion_functions: [:await_has, :await_with_timeout]},
+          # Default max_assertions is 20
+          {Jump.CredoChecks.TooManyAssertions, [max_assertions: 20]},
+          {Jump.CredoChecks.TopLevelAliasImportRequire, []},
+          {Jump.CredoChecks.UnusedLiveViewAssign,
+           [
+             ignored_assigns: [:active_path],
+             # Optional helpers that write assigns like Phoenix.Component.assign/3
+             custom_assign_functions: [
+               {:assign_current_user, 3},
+               {MyApp.LiveHelpers, :assign_tenant, 3}
+             ]
+           ]},
+          {Jump.CredoChecks.UseObanProWorker, []},
+          {Jump.CredoChecks.VacuousTest,
+            [
+              # When true (default), tests that destructure setup context
+              # (3-arity test blocks) are considered not vacuous.
+              # Set to false to check them too.
+              ignore_setup_only_tests?: false,
+              # Additional library namespaces whose calls should not count
+              # as production code. Defaults to []
+              library_modules: [
+                Ecto,
+                Jason,
+                Oban,
+                Phoenix,
+                Plug
+              ]
+            ]},
+          {Jump.CredoChecks.WeakAssertion, []},
           #
           ## Consistency Checks
           #

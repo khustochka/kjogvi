@@ -81,6 +81,7 @@ defmodule OrnithoWeb.MixProject do
       {:lazy_html, ">= 0.1.0", only: :test},
       {:excoveralls, "~> 0.15", only: [:test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:jump_credo_checks, "~> 0.5", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
