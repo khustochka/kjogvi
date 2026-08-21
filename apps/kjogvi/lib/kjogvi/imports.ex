@@ -43,6 +43,13 @@ defmodule Kjogvi.Imports do
   The user's import runs, newest first. `:source` narrows to one import source.
   """
   def list_import_logs(user, opts \\ []) do
+    user
+    |> list_import_logs_query(opts)
+    |> ImportLog.Query.newest_first()
+    |> Repo.all()
+  end
+
+  defp list_import_logs_query(user, opts) do
     ImportLog.Query.by_user(user)
     |> then(fn query ->
       case Keyword.get(opts, :source) do
@@ -50,8 +57,17 @@ defmodule Kjogvi.Imports do
         source -> ImportLog.Query.by_source(query, source)
       end
     end)
-    |> ImportLog.Query.newest_first()
-    |> Repo.all()
+  end
+
+  @doc """
+  The user's most recent import run, or `nil` if they have none. `:source`
+  narrows to one import source.
+  """
+  def latest_import_log(user, opts \\ []) do
+    user
+    |> list_import_logs_query(opts)
+    |> ImportLog.Query.latest()
+    |> Repo.one()
   end
 
   @doc """

@@ -20,6 +20,13 @@ defmodule Kjogvi.Imports.ImportLog.Query do
   end
 
   @doc """
+  Narrows to the single most recent run.
+  """
+  def latest(query \\ ImportLog) do
+    from l in newest_first(query), limit: 1
+  end
+
+  @doc """
   Runs that need admin attention: failed or finished with unimported rows.
   """
   def with_issues(query \\ ImportLog) do

@@ -9,10 +9,17 @@ defmodule KjogviWeb.Live.My.Imports.EbirdCsv do
   enqueued to unpack and import it. The component seeds from
   `Kjogvi.Jobs.status/2` and follows the progress/lifecycle events broadcast
   on the key's PubSub topic.
+
+  A single `<.import_status>` panel above the form carries the whole story:
+  the job's live progress message while a run is in flight, and otherwise the
+  outcome of the user's last run, read from its `ImportLog` (which holds the
+  real counts the job's terminal result doesn't). Flash is reserved for
+  errors about this submission itself, e.g. submitting with no file chosen.
   """
 
   use KjogviWeb, :live_component
 
+  alias Kjogvi.Imports.ImportLog
   alias Kjogvi.Imports.Upload
   alias Kjogvi.Jobs
   alias Kjogvi.Util.AsyncResult
@@ -50,7 +57,12 @@ defmodule KjogviWeb.Live.My.Imports.EbirdCsv do
   defp handle_progress(_msg, socket), do: {:cont, socket}
 
   def update(%{user: user}, socket) do
-    {:ok, socket |> assign(:user, user) |> allow_upload_once() |> subscribe_once()}
+    {:ok,
+     socket
+     |> assign(:user, user)
+     |> allow_upload_once()
+     |> subscribe_once()
+     |> assign_last_run()}
   end
 
   def update(%{async_result: async_result}, socket) do
@@ -58,7 +70,7 @@ defmodule KjogviWeb.Live.My.Imports.EbirdCsv do
      socket
      |> clear_flash()
      |> assign(:async_result, async_result)
-     |> derive_flash()}
+     |> assign_last_run()}
   end
 
   def handle_event("validate", _params, socket) do
@@ -101,12 +113,10 @@ defmodule KjogviWeb.Live.My.Imports.EbirdCsv do
         |> put_flash(:error, "An eBird import is already in progress. Wait for it to finish.")
 
       {:ok, _import_log} ->
-        send(self(), :refresh_import_logs)
-
         socket
         |> clear_flash()
         |> assign(:async_result, Jobs.status(Jobs.Ebird.Import, %{user_id: user.id}))
-        |> derive_flash()
+        |> assign_last_run()
     end
   end
 
@@ -144,18 +154,24 @@ defmodule KjogviWeb.Live.My.Imports.EbirdCsv do
   defp subscribe_once(%{assigns: %{user: user}} = socket) do
     key = {:ebird_import, user.id}
 
-    socket
-    |> assign_new(:async_result, fn ->
+    assign_new(socket, :async_result, fn ->
       Phoenix.PubSub.subscribe(Kjogvi.PubSub, PubSubTopic.for_key(key))
       Jobs.status(Jobs.Ebird.Import, %{user_id: user.id})
     end)
-    |> derive_flash()
   end
 
   def render(assigns) do
     ~H"""
     <div>
       <.main_flash id="ebird-csv-import-flash" flash={@flash} />
+
+      <.import_status
+        id="ebird-csv-import-status"
+        running={running_message(@async_result, @last_run)}
+        failure={unrecorded_failure(@async_result, @last_run)}
+        last_run={@last_run}
+      />
+
       <.form
         id="ebird-csv-import-form"
         for={nil}
@@ -261,27 +277,38 @@ defmodule KjogviWeb.Live.My.Imports.EbirdCsv do
   defp upload_error_message(:too_many_files), do: "Upload one file at a time."
   defp upload_error_message(_), do: "Upload failed."
 
-  defp derive_flash(%{assigns: %{async_result: async_result}} = socket) do
-    cond do
-      async_result.failed ->
-        put_flash(
-          socket,
-          :error,
-          "eBird import failed: " <> result_message(async_result.failed, "Server error.")
-        )
-
-      async_result.loading ->
-        put_flash(socket, :info, result_message(async_result.loading, "In progress..."))
-
-      async_result.ok? ->
-        put_flash(socket, :info, result_message(async_result.result, "Success."))
-
-      :otherwise ->
-        clear_flash(socket)
-    end
+  defp assign_last_run(%{assigns: %{user: user}} = socket) do
+    assign(socket, :last_run, Kjogvi.Imports.latest_import_log(user, source: :ebird))
   end
 
-  defp result_message(%{message: message}, _default) when not is_nil(message), do: message
-  defp result_message(:timeout, _default), do: "Timeout"
-  defp result_message(_other, default), do: default
+  # The message shown while a run is in flight, or `nil` when none is.
+  #
+  # The job row and the log are written by the same telemetry, but the row
+  # outlives the run it describes: a finished log therefore wins over a job
+  # slot still reporting loading, so a completed import is never shown as
+  # perpetually in progress.
+  defp running_message(_async_result, %ImportLog{status: status})
+       when status in [:completed, :completed_with_errors, :failed],
+       do: nil
+
+  defp running_message(%AsyncResult{loading: nil}, _last_run), do: nil
+
+  defp running_message(%AsyncResult{loading: %{message: message}}, _last_run)
+       when is_binary(message),
+       do: message
+
+  defp running_message(%AsyncResult{}, _last_run), do: "eBird import in progress..."
+
+  # A failure the job never got to record on its own log — it crashed, timed
+  # out, or was cancelled. A run that failed on its own terms is reported from
+  # its log instead, which carries the actual reason.
+  defp unrecorded_failure(%AsyncResult{failed: nil}, _last_run), do: nil
+  defp unrecorded_failure(_async_result, %ImportLog{status: :failed}), do: nil
+  defp unrecorded_failure(%AsyncResult{failed: :timeout}, _last_run), do: "The import timed out."
+
+  defp unrecorded_failure(%AsyncResult{failed: %{message: message}}, _last_run)
+       when is_binary(message),
+       do: message
+
+  defp unrecorded_failure(_async_result, _last_run), do: "The import stopped unexpectedly."
 end

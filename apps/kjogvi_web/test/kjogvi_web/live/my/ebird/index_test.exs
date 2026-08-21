@@ -157,25 +157,31 @@ defmodule KjogviWeb.Live.My.Ebird.IndexTest do
     end
   end
 
-  describe "import history" do
+  describe "import status" do
     setup do
       %{user: Kjogvi.AccountsFixtures.user_fixture()}
     end
 
-    test "shows an empty state without any runs", %{conn: conn, user: user} do
+    test "shows nothing for a user who has never imported", %{conn: conn, user: user} do
       {:ok, lv, _html} =
         conn
         |> login_user(user)
         |> live(~p"/my/ebird")
 
-      assert has_element?(lv, "#import-history")
-      assert render(lv) =~ "No imports yet"
+      # The panel's container is always present; it just has nothing to report.
+      assert has_element?(lv, "#ebird-csv-import-status")
+      refute render(lv) =~ "Import complete"
+      refute render(lv) =~ "Import failed"
+
+      # The full run-by-run history is admin-only now.
+      refute has_element?(lv, "#import-history")
     end
 
-    test "lists the user's runs with status and counts, not other users'",
+    test "reports the outcome and counts of the user's last run, not another user's",
          %{conn: conn, user: user} do
       other_user = Kjogvi.AccountsFixtures.user_fixture()
       {:ok, other_log} = Imports.enqueue_ebird_import(other_user, "other.zip")
+      Imports.log_completed(other_log.id, :completed, %{checklists_created: 99})
 
       {:ok, log} = Imports.enqueue_ebird_import(user, "mine.zip")
 
@@ -191,17 +197,37 @@ defmodule KjogviWeb.Live.My.Ebird.IndexTest do
         |> login_user(user)
         |> live(~p"/my/ebird")
 
-      assert has_element?(lv, "#import-log-#{log.id}")
-      refute has_element?(lv, "#import-log-#{other_log.id}")
-
       html = render(lv)
-      assert html =~ "Completed with issues"
+      assert html =~ "Import finished with issues"
       assert html =~ "3 checklists and 12 observations imported"
       assert html =~ "2 checklists not imported"
       assert html =~ "1 taxon unrecognized"
+
+      refute html =~ "99 checklists"
     end
 
-    test "a failed run shows its error", %{conn: conn, user: user} do
+    test "only the latest run is reported", %{conn: conn, user: user} do
+      {:ok, older} = Imports.enqueue_ebird_import(user, "older.zip")
+      Imports.log_failed(older.id, "An older failure nobody needs to see.")
+
+      # The job is exclusive per user across the incomplete states, so the
+      # first run's row has to leave them before a second can be enqueued.
+      Oban.cancel_all_jobs(Oban.Job)
+
+      {:ok, newer} = Imports.enqueue_ebird_import(user, "newer.zip")
+      Imports.log_completed(newer.id, :completed, %{checklists_created: 1})
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/ebird")
+
+      html = render(lv)
+      assert html =~ "Import complete"
+      refute html =~ "An older failure nobody needs to see."
+    end
+
+    test "a failed run shows its reason", %{conn: conn, user: user} do
       {:ok, log} = Imports.enqueue_ebird_import(user, "mine.zip")
       Imports.log_failed(log.id, "The export contained no CSV file.")
 
@@ -210,33 +236,28 @@ defmodule KjogviWeb.Live.My.Ebird.IndexTest do
         |> login_user(user)
         |> live(~p"/my/ebird")
 
-      assert has_element?(lv, "#import-log-#{log.id}")
-
       html = render(lv)
-      assert html =~ "Failed"
+      assert html =~ "Import failed"
       assert html =~ "The export contained no CSV file."
     end
 
-    test "starting a CSV import adds a queued run to the history", %{conn: conn, user: user} do
+    test "an in-progress run shows a spinner and its message, not the info icon",
+         %{conn: conn, user: user} do
       {:ok, lv, _html} =
         conn
         |> login_user(user)
         |> live(~p"/my/ebird")
 
-      file =
-        file_input(lv, "#ebird-csv-import-form", :ebird_zip, [
-          %{name: "MyEBirdData.zip", content: csv_zip(), type: "application/zip"}
-        ])
+      broadcast_progress({:ebird_import, user.id}, %{message: "Importing checklists..."})
 
-      render_upload(file, "MyEBirdData.zip")
-      lv |> element("#ebird-csv-import-form") |> render_submit()
+      html = flush_render(lv)
+      assert html =~ "Importing checklists..."
 
-      [log] = Imports.list_import_logs(user)
-      assert has_element?(lv, "#import-log-#{log.id}")
-      assert render(lv) =~ "Queued"
+      assert has_element?(lv, "#ebird-csv-import-status .animate-spin")
+      refute has_element?(lv, "#ebird-csv-import-status .hero-information-circle-mini")
     end
 
-    test "a lifecycle broadcast refreshes the history", %{conn: conn, user: user} do
+    test "a lifecycle broadcast refreshes the reported outcome", %{conn: conn, user: user} do
       {:ok, log} = Imports.enqueue_ebird_import(user, "mine.zip")
 
       {:ok, lv, _html} =
@@ -244,7 +265,9 @@ defmodule KjogviWeb.Live.My.Ebird.IndexTest do
         |> login_user(user)
         |> live(~p"/my/ebird")
 
-      assert render(lv) =~ "Queued"
+      # A pending job slot reports itself as running, spinner and all.
+      assert render(lv) =~ "eBird import in progress..."
+      assert has_element?(lv, "#ebird-csv-import-status .animate-spin")
 
       # Simulates what the LogRecorder does before the Bridge broadcast fires.
       Imports.log_completed(log.id, :completed, %{
@@ -259,8 +282,26 @@ defmodule KjogviWeb.Live.My.Ebird.IndexTest do
       )
 
       html = flush_render(lv)
-      assert html =~ "Completed"
+      assert html =~ "Import complete"
       assert html =~ "1 checklist and 1 observation imported"
+    end
+
+    test "a crash with nothing recorded on the log still reports a failure",
+         %{conn: conn, user: user} do
+      {:ok, _log} = Imports.enqueue_ebird_import(user, "mine.zip")
+
+      {:ok, lv, _html} =
+        conn
+        |> login_user(user)
+        |> live(~p"/my/ebird")
+
+      broadcast_lifecycle(
+        {:ebird_import, user.id},
+        :error,
+        AsyncResult.failed(%AsyncResult{}, :timeout)
+      )
+
+      assert flush_render(lv) =~ "The import timed out."
     end
   end
 end
