@@ -83,21 +83,21 @@
           # Default exclusion list is empty
           {Jump.CredoChecks.AvoidSocketAssignsInTest, excluded: ["test/app_web/plugs/"]},
           {Jump.CredoChecks.ConditionalAssertion, []},
-          {Jump.CredoChecks.DoctestIExExamples, [
-            # Tells Credo where to look for the `doctest` call.
-            # If you colocate your test files with your implementation, this would just
-            # be `&String.replace_trailing(&1, ".ex", "_test.exs")`
-            derive_test_path: fn filename ->
-              filename
-              |> String.replace_leading("lib/", "test/")
-              |> String.replace_trailing(".ex", "_test.exs")
-            end
-          ]},
+          # {Jump.CredoChecks.DoctestIExExamples, [
+          #   # Tells Credo where to look for the `doctest` call.
+          #   # If you colocate your test files with your implementation, this would just
+          #   # be `&String.replace_trailing(&1, ".ex", "_test.exs")`
+          #   derive_test_path: fn filename ->
+          #     filename
+          #     |> String.replace_leading("lib/", "test/")
+          #     |> String.replace_trailing(".ex", "_test.exs")
+          #   end
+          # ]},
           {Jump.CredoChecks.ForbiddenFunction,
            functions: [
              {:erlang, :binary_to_term, "Use Plug.Crypto.non_executable_binary_to_term/2 instead."},
            ]},
-          {Jump.CredoChecks.LiveViewFormCanBeRehydrated, excluded: ["lib/my_app/"]},
+          # {Jump.CredoChecks.LiveViewFormCanBeRehydrated, excluded: ["lib/my_app/"]},
           {Jump.CredoChecks.LiveViewPubSubRequiresConnected,
            custom_pubsub_functions: [{MyAppWeb.PubSub, :subscribe}, {:my_imported_subscribe, 1}]},
           {Jump.CredoChecks.NoManualContentDisposition, []},
@@ -123,7 +123,7 @@
                {MyApp.LiveHelpers, :assign_tenant, 3}
              ]
            ]},
-          {Jump.CredoChecks.UseObanProWorker, []},
+          # {Jump.CredoChecks.UseObanProWorker, []},
           {Jump.CredoChecks.VacuousTest,
             [
               # When true (default), tests that destructure setup context

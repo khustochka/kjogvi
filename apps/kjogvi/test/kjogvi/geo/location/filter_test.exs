@@ -5,7 +5,13 @@ defmodule Kjogvi.Geo.Location.FilterTest do
 
   describe "%Filter{}" do
     test "is a blank, no-op filter by default" do
-      assert %Filter{exclude_specials: false, exclude_sections: false} = %Filter{}
+      assert %Filter{
+               exclude_specials: false,
+               exclude_sections: false,
+               only_common: false,
+               exclude_disabled: false,
+               within: nil
+             } = Filter.discombo!([])
     end
   end
 
