@@ -57,7 +57,8 @@ defmodule Kjogvi.Birding.ObservationTest do
     end
 
     test "ml_catalog_numbers defaults to empty list when not provided" do
-      changeset = Observation.changeset(%Observation{}, %{"taxon_key" => "ebird/eBird_2023/bkcchi1"})
+      changeset =
+        Observation.changeset(%Observation{}, %{"taxon_key" => "ebird/eBird_2023/bkcchi1"})
 
       assert Ecto.Changeset.apply_changes(changeset).ml_catalog_numbers == []
     end

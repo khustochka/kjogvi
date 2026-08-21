@@ -1,3 +1,7 @@
+# The on_mount tests call UserAuth.on_mount/4 directly as a unit; the returned
+# socket's assigns ARE the function's output under test, so socket-assign reads
+# are correct here, not the integration smell the check targets.
+# credo:disable-for-this-file Jump.CredoChecks.AvoidSocketAssignsInTest
 defmodule KjogviWeb.UserAuthTest do
   use KjogviWeb.ConnCase, async: true
 

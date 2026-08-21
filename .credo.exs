@@ -81,7 +81,7 @@
           {Jump.CredoChecks.AvoidFunctionLevelElse, []},
           {Jump.CredoChecks.AvoidLoggerConfigureInTest, []},
           # Default exclusion list is empty
-          {Jump.CredoChecks.AvoidSocketAssignsInTest, excluded: ["test/app_web/plugs/"]},
+          {Jump.CredoChecks.AvoidSocketAssignsInTest, []},
           {Jump.CredoChecks.ConditionalAssertion, []},
           # {Jump.CredoChecks.DoctestIExExamples, [
           #   # Tells Credo where to look for the `doctest` call.

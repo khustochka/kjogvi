@@ -112,6 +112,7 @@ defmodule KjogviWeb.Live.My.Settings.SecurityTest do
 
       assert get_session(new_password_conn, :user_token) != get_session(conn, :user_token)
 
+      # credo:disable-for-next-line Jump.CredoChecks.AvoidSocketAssignsInTest
       assert Phoenix.Flash.get(new_password_conn.assigns.flash, :info) =~
                "Password updated successfully"
 
