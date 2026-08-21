@@ -10,8 +10,6 @@ defmodule KjogviWeb.Live.Admin.Users.Index do
 
   use KjogviWeb, :live_view
 
-  import Scrivener.PhoenixView
-
   alias Kjogvi.Accounts
   alias Kjogvi.Util.Number
   alias KjogviWeb.Live.Components.Autocomplete.SearchInput
@@ -31,13 +29,15 @@ defmodule KjogviWeb.Live.Admin.Users.Index do
     search_term = params |> Map.get("q", "") |> String.trim()
     page = params |> Map.get("page", "1") |> String.to_integer()
 
-    users = Accounts.list_users_for_admin(search_term, %{page: page, page_size: @users_per_page})
+    {users, meta} =
+      Accounts.list_users_for_admin(search_term, %{page: page, page_size: @users_per_page})
 
     {:noreply,
      socket
      |> assign(:search_term, search_term)
      |> assign(:users, users)
-     |> assign(:login_disabled_ids, Accounts.login_disabled_ids(users.entries))}
+     |> assign(:meta, meta)
+     |> assign(:login_disabled_ids, Accounts.login_disabled_ids(users))}
   end
 
   @impl true
@@ -73,9 +73,18 @@ defmodule KjogviWeb.Live.Admin.Users.Index do
         />
       </div>
 
-      <ul :if={@users.entries != []} id="users" class="space-y-2">
+      <.pagination
+        id="users-pagination-top"
+        meta={@meta}
+        path={paginated_users_path(@search_term)}
+        label="Pagination (top)"
+        class="mb-2"
+        anchor="users-pagination-top"
+      />
+
+      <ul :if={@users != []} id="users" class="space-y-2">
         <li
-          :for={user <- @users.entries}
+          :for={user <- @users}
           id={"user-#{user.id}"}
           class="flex flex-wrap items-baseline gap-x-3 gap-y-1 border border-stone-200 rounded-lg px-4 py-3"
         >
@@ -104,15 +113,18 @@ defmodule KjogviWeb.Live.Admin.Users.Index do
         </li>
       </ul>
 
-      <div :if={@users.entries == []} class="text-center py-8 text-stone-500">
+      <div :if={@users == []} class="text-center py-8 text-stone-500">
         <.icon name="hero-users" class="w-12 h-12 mx-auto mb-4 text-stone-300" />
         <p :if={@search_term == ""} class="text-lg font-medium">No users yet</p>
         <p :if={@search_term != ""} class="text-lg font-medium">No users found</p>
       </div>
 
-      <div :if={@users.entries != []} class="mt-6">
-        {paginate(@socket, @users, paginated_users_path(@search_term), [:index], live: true)}
-      </div>
+      <.pagination
+        id="users-pagination"
+        meta={@meta}
+        path={paginated_users_path(@search_term)}
+        anchor="users-pagination-top"
+      />
     </div>
     """
   end
@@ -120,13 +132,11 @@ defmodule KjogviWeb.Live.Admin.Users.Index do
   # Page links carry the search term as a query param so paging preserves the
   # active search (and keeps each page linkable).
   defp paginated_users_path(search_term) do
-    fn _conn, _action, page, _params ->
-      query = if search_term == "", do: [], else: [q: search_term]
+    query = if search_term == "", do: [], else: [q: search_term]
 
-      case page do
-        1 -> ~p"/admin/users?#{query}"
-        n -> ~p"/admin/users/page/#{n}?#{query}"
-      end
+    fn
+      1 -> ~p"/admin/users?#{query}"
+      page -> ~p"/admin/users/page/#{page}?#{query}"
     end
   end
 

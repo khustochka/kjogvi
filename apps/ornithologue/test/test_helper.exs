@@ -24,8 +24,6 @@ if !function_exported?(Kjogvi.OrnithoRepo, :__info__, 1) do
     use Ecto.Repo,
       otp_app: :ornithologue,
       adapter: Ecto.Adapters.Postgres
-
-    use Scrivener
   end
 
   _ = Ecto.Adapters.Postgres.storage_up(Kjogvi.OrnithoRepo.config())

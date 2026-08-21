@@ -60,9 +60,12 @@ defmodule KjogviWeb.Live.My.Images.IndexTest do
   test "renders pagination links when there is more than one page", %{conn: conn, user: user} do
     for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
 
-    {:ok, _live, html} = live(conn, ~p"/my/images")
+    {:ok, live, html} = live(conn, ~p"/my/images")
 
     assert html =~ "/my/images/page/2"
+    # Paging controls sit both above and below the grid.
+    assert has_element?(live, "#images-pagination-top")
+    assert has_element?(live, "#images-pagination")
   end
 
   test "shows a later page at its own route", %{conn: conn, user: user} do
@@ -71,7 +74,36 @@ defmodule KjogviWeb.Live.My.Images.IndexTest do
     {:ok, live, _html} = live(conn, ~p"/my/images/page/2")
 
     # 25 images at 24 per page leaves exactly one on page 2.
-    assert live |> element("#images-grid") |> render() =~ "images-"
+    assert live |> element("#images-grid-p2") |> render() =~ "images-"
     assert length(Regex.scan(~r/id="images-\d+"/, render(live))) == 1
+  end
+
+  # Each thumbnail is keyed by image id. Without it the per-image <.link> wrapper
+  # survives the patch and the old <img> is reused with a new src, leaving the
+  # previous photo on screen under the new caption.
+  test "thumbnails are keyed per image so none are reused across pages", %{conn: conn, user: user} do
+    for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
+
+    {:ok, _live, page1} = live(conn, ~p"/my/images")
+    {:ok, _live, page2} = live(conn, ~p"/my/images/page/2")
+
+    thumb_ids = fn html ->
+      ~r/id="image-thumb-(\d+)"/ |> Regex.scan(html) |> Enum.map(&Enum.at(&1, 1)) |> MapSet.new()
+    end
+
+    assert MapSet.disjoint?(thumb_ids.(page1), thumb_ids.(page2))
+  end
+
+  # The grid id carries the page so a page change swaps the whole block instead
+  # of patching stale thumbnails under new captions.
+  test "the grid id changes with the page", %{conn: conn, user: user} do
+    for _ <- 1..25, do: ImagesFixtures.image_fixture(user: user)
+
+    {:ok, live, _html} = live(conn, ~p"/my/images")
+    assert has_element?(live, "#images-grid-p1")
+
+    {:ok, live, _html} = live(conn, ~p"/my/images/page/2")
+    assert has_element?(live, "#images-grid-p2")
+    refute has_element?(live, "#images-grid-p1")
   end
 end

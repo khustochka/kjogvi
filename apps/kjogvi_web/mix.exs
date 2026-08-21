@@ -62,7 +62,7 @@ defmodule KjogviWeb.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.0"},
-      {:phoenix_live_dashboard, "~> 0.8.4"},
+      {:phoenix_live_dashboard, "~> 0.9.0"},
       {:oban_web, "~> 2.12"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.5.0", runtime: Mix.env() == :dev},
@@ -81,7 +81,6 @@ defmodule KjogviWeb.MixProject do
       {:ornitho_web, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.5"},
-      {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
       {:floki, ">= 0.30.0"},
       {:excoveralls, "~> 0.15", only: [:test, :dev], runtime: false},
       {:opentelemetry, "~> 1.6"},
@@ -105,14 +104,6 @@ defmodule KjogviWeb.MixProject do
         branch: "add-liveview-params",
         subdir: "instrumentation/opentelemetry_phoenix"
       ]
-    end
-  end
-
-  defp scrivener_phoenix_opts() do
-    if System.get_env("LOCAL_SCRIVENER") do
-      [path: "../../../scrivener_phoenix"]
-    else
-      [github: "khustochka/scrivener_phoenix", branch: "fix-deprecated-link"]
     end
   end
 

@@ -109,6 +109,7 @@ defmodule KjogviWeb do
       import KjogviWeb.IconComponents
       import KjogviWeb.MetaComponents
       import KjogviWeb.NavigationComponents
+      import KjogviWeb.PaginationComponents
       import KjogviWeb.BirdingComponents
       import KjogviWeb.EbirdComponents
       import KjogviWeb.FilterComponents

@@ -52,7 +52,7 @@ defmodule Ornithologue.MixProject do
       {:telemetry, "~> 1.0"},
       # For jsonb columns
       {:jason, "~> 1.0"},
-      {:scrivener_ecto, "~> 3.0"},
+      {:flop, "~> 0.26"},
       {:csv, "~> 3.0"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},

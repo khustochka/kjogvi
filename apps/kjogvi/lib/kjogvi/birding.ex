@@ -61,16 +61,19 @@ defmodule Kjogvi.Birding do
     end
   end
 
-  def get_checklists(user, %{page: page, page_size: page_size}) do
-    pagination =
+  @doc """
+  A page of the user's checklists, newest first, as `{checklists, %Flop.Meta{}}`.
+  """
+  def get_checklists(user, pagination) do
+    {checklists, meta} =
       Checklist
       |> Checklist.Query.as_checklist()
       |> Checklist.Query.by_user(user)
       |> order_by([{:desc, :observ_date}, {:desc, :id}])
       |> Checklist.Query.load_observation_count()
-      |> Repo.paginate(page: page, page_size: page_size)
+      |> Repo.paginate(pagination)
 
-    %{pagination | entries: Geo.Location.Query.put_location_levels(pagination.entries)}
+    {Geo.Location.Query.put_location_levels(checklists), meta}
   end
 
   def fetch_checklist_with_observations(user, id) do

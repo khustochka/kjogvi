@@ -56,7 +56,6 @@ defmodule OrnithoWeb.MixProject do
       {:phoenix_live_view, "~> 1.2.0"},
       {:phoenix, "~> 1.8.2"},
       {:phoenix_html, "~> 4.1"},
-      {:scrivener_phoenix, ">= 0.0.0", scrivener_phoenix_opts()},
       {:ornithologue, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:gettext, "~> 1.0", override: true},
@@ -85,14 +84,6 @@ defmodule OrnithoWeb.MixProject do
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
-  end
-
-  defp scrivener_phoenix_opts() do
-    if System.get_env("LOCAL_SCRIVENER") do
-      [path: "../../../scrivener_phoenix"]
-    else
-      [github: "khustochka/scrivener_phoenix", branch: "fix-deprecated-link"]
-    end
   end
 
   # Aliases are shortcuts or tasks specific to the current project.

@@ -78,7 +78,7 @@ defmodule Kjogvi.MixProject do
       {:http_cookie, "~> 0.11.0"},
       {:floki, ">= 0.30.0"},
       {:datix, "~> 0.3"},
-      {:scrivener_ecto, "~> 3.0"},
+      {:flop, "~> 0.26"},
       {:nimble_options, "~> 1.1"},
       {:ornithologue, in_umbrella: true},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},

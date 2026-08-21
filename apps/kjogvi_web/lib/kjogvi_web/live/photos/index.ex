@@ -5,8 +5,6 @@ defmodule KjogviWeb.Live.Photos.Index do
 
   use KjogviWeb, :live_view
 
-  import Scrivener.PhoenixView
-
   alias Kjogvi.Images
 
   @images_per_page 24
@@ -26,7 +24,7 @@ defmodule KjogviWeb.Live.Photos.Index do
       |> Map.get("page", "1")
       |> String.to_integer()
 
-    images =
+    {images, meta} =
       Images.list_images_for_scope(
         socket.assigns.current_scope,
         %{page: page, page_size: @images_per_page}
@@ -35,8 +33,9 @@ defmodule KjogviWeb.Live.Photos.Index do
     {:noreply,
      socket
      |> assign(:page, page)
-     |> assign(:image_count, length(images.entries))
-     |> assign(:images, images)}
+     |> assign(:image_count, length(images))
+     |> assign(:images, images)
+     |> assign(:meta, meta)}
   end
 
   @impl true
@@ -50,8 +49,17 @@ defmodule KjogviWeb.Live.Photos.Index do
         <p class="text-lg font-medium">No photos yet</p>
       </div>
 
+      <.pagination
+        id="photos-pagination-top"
+        meta={@meta}
+        path={photos_path(@current_scope)}
+        label="Pagination (top)"
+        class="mb-2"
+        anchor="photos-pagination-top"
+      />
+
       <ul
-        id="photos-grid"
+        id={"photos-grid-p#{@meta.current_page}"}
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         aria-label="Photo gallery"
       >
@@ -61,37 +69,35 @@ defmodule KjogviWeb.Live.Photos.Index do
               src={Images.url(image, :thumbnail)}
               alt={image.title || image.slug}
               class="max-w-full max-h-full object-contain"
-              loading="lazy"
             />
           </div>
           <p class="mt-1 text-xs text-stone-600 truncate">{image.title || image.slug}</p>
         </li>
       </ul>
 
-      <div class="mt-6">
-        {paginate(@socket, @images, paginated_photos_path(@current_scope), [:index], live: true)}
-      </div>
+      <.pagination
+        id="photos-pagination"
+        meta={@meta}
+        path={photos_path(@current_scope)}
+        anchor="photos-pagination-top"
+      />
     </div>
     """
   end
 
   # Pagination links resolve against the area's base path: the community
   # gallery under /community/photos, a user's gallery under /users/:username/photos.
-  defp paginated_photos_path(%{area: :user, subject_user: %{nickname: nickname}}) do
-    fn _conn, _action, page, _params ->
-      case page do
-        1 -> ~p"/users/#{nickname}/photos"
-        n -> ~p"/users/#{nickname}/photos/page/#{n}"
-      end
+  defp photos_path(%{area: :user, subject_user: %{nickname: nickname}}) do
+    fn
+      1 -> ~p"/users/#{nickname}/photos"
+      page -> ~p"/users/#{nickname}/photos/page/#{page}"
     end
   end
 
-  defp paginated_photos_path(%{area: :community}) do
-    fn _conn, _action, page, _params ->
-      case page do
-        1 -> ~p"/community/photos"
-        n -> ~p"/community/photos/page/#{n}"
-      end
+  defp photos_path(%{area: :community}) do
+    fn
+      1 -> ~p"/community/photos"
+      page -> ~p"/community/photos/page/#{page}"
     end
   end
 end

@@ -213,7 +213,7 @@ defmodule Kjogvi.UsersTest do
   end
 
   describe "list_users_for_admin/2" do
-    defp admin_nicknames(page), do: page.entries |> Enum.map(& &1.nickname)
+    defp admin_nicknames({users, _meta}), do: Enum.map(users, & &1.nickname)
 
     test "lists all users ordered by nickname when no term is given" do
       user_fixture(nickname: "charlie")
@@ -242,17 +242,18 @@ defmodule Kjogvi.UsersTest do
       user_fixture(nickname: "alice")
       user_fixture(nickname: "bob")
 
-      assert length(Accounts.list_users_for_admin("   ").entries) == 2
+      assert {users, _meta} = Accounts.list_users_for_admin("   ")
+      assert length(users) == 2
     end
 
     test "paginates" do
       for n <- 1..3, do: user_fixture(nickname: "birder#{n}")
 
-      page = Accounts.list_users_for_admin("", %{page: 1, page_size: 2})
+      {users, meta} = Accounts.list_users_for_admin("", %{page: 1, page_size: 2})
 
-      assert length(page.entries) == 2
-      assert page.total_entries == 3
-      assert page.total_pages == 2
+      assert length(users) == 2
+      assert meta.total_count == 3
+      assert meta.total_pages == 2
     end
   end
 

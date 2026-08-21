@@ -43,7 +43,7 @@ config :kjogvi_web, KjogviWeb.Endpoint,
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.28.1",
+  version: "0.28.2",
   kjogvi_web: [
     args: ~w(
         js/app.js
@@ -77,10 +77,6 @@ config :logger, :default_formatter,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
-
-config :scrivener_phoenix,
-  window: 2,
-  template: KjogviWeb.Scrivener.Phoenix.Template
 
 # ex_aws S3 — IMAGES.
 #
