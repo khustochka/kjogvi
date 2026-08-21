@@ -31,7 +31,6 @@ defmodule KjogviWeb.Live.My.Images.Index do
 
     {:noreply,
      socket
-     |> assign(:page, page)
      |> assign(:image_count, length(images))
      |> assign(:images, images)
      |> assign(:meta, meta)}

@@ -43,7 +43,6 @@ defmodule KjogviWeb.Live.Admin.Imports.Locations.Ebird do
 
     socket
     |> assign(:source_state, Datasets.snapshot_status(Import.source_key()))
-    |> assign(:imported, imported)
     |> assign(:counts, counts)
     |> assign(
       :guard,

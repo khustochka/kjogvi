@@ -113,7 +113,10 @@
           {Jump.CredoChecks.TopLevelAliasImportRequire, []},
           {Jump.CredoChecks.UnusedLiveViewAssign,
            [
-             ignored_assigns: [:active_path],
+             # Read only in shared layout templates the check can't trace:
+             # `active_path` in navigation, `container_class` in the page
+             # wrapper, `robots` in the root <head>.
+             ignored_assigns: [:active_path, :container_class, :robots],
              # Optional helpers that write assigns like Phoenix.Component.assign/3
              custom_assign_functions: [
                {:assign_current_user, 3},

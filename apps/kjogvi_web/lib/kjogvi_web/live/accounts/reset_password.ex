@@ -78,7 +78,7 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
       socket =
         socket
         |> assign(forgot_reset_password_disabled: false)
-        |> assign_user_and_token(params)
+        |> assign_user(params)
 
       form_source =
         case socket.assigns do
@@ -122,9 +122,9 @@ defmodule KjogviWeb.Live.Accounts.ResetPassword do
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
   end
 
-  defp assign_user_and_token(socket, %{"token" => token}) do
+  defp assign_user(socket, %{"token" => token}) do
     if user = Accounts.get_user_by_reset_password_token(token) do
-      assign(socket, user: user, token: token)
+      assign(socket, :user, user)
     else
       socket
       |> put_flash(:error, "Reset password link is invalid or it has expired.")
