@@ -190,7 +190,7 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     |> render_click()
 
     assert has_element?(index_live, "#location-delete-error-#{parent.id}", "sub-locations")
-    refute is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, parent.id))
+    assert Kjogvi.Repo.get(Kjogvi.Geo.Location, parent.id).id == parent.id
   end
 
   test "deleting a location with checklists fails with an error and keeps it",
@@ -207,7 +207,7 @@ defmodule KjogviWeb.Live.My.Locations.IndexTest do
     |> render_click()
 
     assert has_element?(index_live, "#location-delete-error-#{location.id}", "checklists")
-    refute is_nil(Kjogvi.Repo.get(Kjogvi.Geo.Location, location.id))
+    assert Kjogvi.Repo.get(Kjogvi.Geo.Location, location.id).id == location.id
   end
 
   test "deletes a location", %{conn: conn, user: user} do

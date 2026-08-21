@@ -144,8 +144,8 @@ defmodule KjogviWeb.Live.Admin.Ebird.Locations.ShowTest do
     view |> element("#create-all-button") |> render_click()
 
     assert has_element?(view, "#flash-group-info", "Created and linked 2 locations.")
-    assert reload(adjuntas).location_id != nil
-    assert reload(aguada).location_id != nil
+    assert is_integer(reload(adjuntas).location_id)
+    assert is_integer(reload(aguada).location_id)
   end
 
   test "create all is offered only for the eBird-only subregions shape", %{conn: conn} do

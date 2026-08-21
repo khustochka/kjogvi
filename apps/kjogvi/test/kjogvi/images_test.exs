@@ -5,6 +5,7 @@ defmodule Kjogvi.ImagesTest do
   alias Kjogvi.Images.Image
   alias Kjogvi.ImagesFixtures
   alias Kjogvi.AccountsFixtures
+  alias Kjogvi.Accounts.UserProfile
 
   describe "list_images/2" do
     @page %{page: 1, page_size: 20}
@@ -88,8 +89,7 @@ defmodule Kjogvi.ImagesTest do
       image1 = ImagesFixtures.image_fixture()
       image2 = ImagesFixtures.image_fixture()
 
-      assert is_binary(image1.token)
-      assert image1.token != ""
+      assert is_binary(image1.token) and image1.token != ""
       assert image1.token != image2.token
     end
   end
@@ -215,8 +215,6 @@ defmodule Kjogvi.ImagesTest do
 
   describe "avatar_url/1" do
     setup :images_env
-
-    alias Kjogvi.Accounts.UserProfile
 
     # A profile carrying a stored avatar, built without touching storage.
     defp profile_with_avatar(user, backend) do

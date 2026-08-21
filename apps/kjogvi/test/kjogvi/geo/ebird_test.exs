@@ -427,7 +427,7 @@ defmodule Kjogvi.Geo.EbirdTest do
       assert Ebird.create_all_common_locations("PR") == %{created: 1, failed: 1}
 
       assert reload(colliding).location_id == nil
-      assert reload(ok).location_id != nil
+      assert is_integer(reload(ok).location_id)
     end
 
     test "reports nothing to do when the country row is unlinked" do
@@ -546,7 +546,7 @@ defmodule Kjogvi.Geo.EbirdTest do
 
       assert Ebird.import_subdivision2s("US") == %{created: 1, failed: 1}
 
-      assert reload(ok).location_id != nil
+      assert is_integer(reload(ok).location_id)
       assert reload(orphan).location_id == nil
     end
 
@@ -594,7 +594,7 @@ defmodule Kjogvi.Geo.EbirdTest do
       assert Ebird.import_subdivision2s("US") == %{created: 1, failed: 1}
 
       assert reload(colliding).location_id == nil
-      assert reload(ok).location_id != nil
+      assert is_integer(reload(ok).location_id)
     end
   end
 end

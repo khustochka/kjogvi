@@ -83,8 +83,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       {date, day_entries} = hd(entries)
       assert date == today
 
-      lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
-      assert lifer_entry != nil
+      assert lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
       assert length(lifer_entry.life_observations) == 1
     end
 
@@ -133,16 +132,12 @@ defmodule Kjogvi.Birding.LogbookTest do
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
-      today_entry = Enum.find(entries, fn {date, _} -> date == today end)
-      assert today_entry != nil
+      assert today_entry = Enum.find(entries, fn {date, _} -> date == today end)
 
       {_date, day_entries} = today_entry
 
       # Should show Canada total (not a world lifer, but new for Canada)
-      ca_total =
-        Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == country_ca.id))
-
-      assert ca_total != nil
+      assert Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == country_ca.id))
 
       # Should NOT show world total (it was seen in Ukraine yesterday)
       world_total = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
@@ -166,14 +161,12 @@ defmodule Kjogvi.Birding.LogbookTest do
       obs(c2, Ornitho.Schema.Taxon.key(taxon))
 
       entries = Logbook.recent_entries(scope(user))
-      today_entry = Enum.find(entries, fn {date, _} -> date == this_year_date end)
-      assert today_entry != nil
+      assert today_entry = Enum.find(entries, fn {date, _} -> date == this_year_date end)
 
       {_date, day_entries} = today_entry
 
       # Should have a year entry for world (nil area), not a total
-      year_entry = Enum.find(day_entries, &(&1.type == :year && is_nil(&1.area)))
-      assert year_entry != nil
+      assert year_entry = Enum.find(day_entries, &(&1.type == :year && is_nil(&1.area)))
       assert year_entry.year == this_year_date.year
 
       # Should NOT show a total entry (not a lifer)
@@ -196,8 +189,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       entries = Logbook.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
-      lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
-      assert lifer_entry != nil
+      assert lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
       assert length(lifer_entry.life_observations) == 2
     end
 
@@ -307,8 +299,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       end
 
       # Today's Canada lifer should appear
-      today_entry = Enum.find(entries, fn {date, _} -> date == today end)
-      assert today_entry != nil
+      assert today_entry = Enum.find(entries, fn {date, _} -> date == today end)
       {_date, today_entries} = today_entry
 
       assert Enum.any?(
@@ -364,8 +355,7 @@ defmodule Kjogvi.Birding.LogbookTest do
       entries = Logbook.recent_entries(scope(user))
       {_date, day_entries} = hd(entries)
 
-      lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
-      assert lifer_entry != nil
+      assert lifer_entry = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
 
       covered_ids = Enum.map(lifer_entry.covered_areas, fn {area, _} -> area.id end)
       assert country.id in covered_ids
@@ -490,16 +480,17 @@ defmodule Kjogvi.Birding.LogbookTest do
       {_date, day_entries} = today_entry
 
       # t1: world lifer (primary = World), covered areas include Canada
-      world_lifer = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
-      assert world_lifer != nil
+      assert world_lifer = Enum.find(day_entries, &(&1.type == :life && is_nil(&1.area)))
       assert length(world_lifer.life_observations) == 1
       assert Enum.any?(world_lifer.covered_areas, fn {a, _} -> a.id == country_ca.id end)
 
       # t2: Canada lifer as its own primary entry
-      canada_lifer =
-        Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == country_ca.id))
+      assert canada_lifer =
+               Enum.find(
+                 day_entries,
+                 &(&1.type == :life && &1.area && &1.area.id == country_ca.id)
+               )
 
-      assert canada_lifer != nil
       assert length(canada_lifer.life_observations) == 1
       assert canada_lifer.covered_areas == []
     end
@@ -532,18 +523,22 @@ defmodule Kjogvi.Birding.LogbookTest do
       {_date, day_entries} = today_entry
 
       # :life primary is Canada; Manitoba should be in its covered_areas.
-      canada_life =
-        Enum.find(day_entries, &(&1.type == :life && &1.area && &1.area.id == country_ca.id))
+      assert canada_life =
+               Enum.find(
+                 day_entries,
+                 &(&1.type == :life && &1.area && &1.area.id == country_ca.id)
+               )
 
-      assert canada_life != nil
       assert Enum.any?(canada_life.covered_areas, fn {a, _} -> a.id == subdivision.id end)
 
       # :year primary is world for the current year. It must NOT have any
       # covered :life areas attached.
-      world_year =
-        Enum.find(day_entries, &(&1.type == :year && is_nil(&1.area) && &1.year == today.year))
+      assert world_year =
+               Enum.find(
+                 day_entries,
+                 &(&1.type == :year && is_nil(&1.area) && &1.year == today.year)
+               )
 
-      assert world_year != nil
       assert world_year.covered_areas == []
     end
 

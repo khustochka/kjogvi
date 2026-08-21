@@ -987,7 +987,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       html = lv |> render_submit("save", form_data)
 
       # Should show validation error for missing location
-      assert html =~ "can&#39;t be blank" or html =~ "can't be blank"
+      assert html =~ "can&#39;t be blank"
     end
 
     test "can add observations after validation failure", %{conn: conn} do
@@ -1134,7 +1134,7 @@ defmodule KjogviWeb.Live.My.Checklists.FormTest do
       html = lv |> render_submit("save", form_data)
 
       # Should show validation error for missing taxon
-      assert html =~ "can&#39;t be blank" or html =~ "can't be blank"
+      assert html =~ "can&#39;t be blank"
     end
 
     test "rejects a special location on save", %{conn: conn, user: user} do

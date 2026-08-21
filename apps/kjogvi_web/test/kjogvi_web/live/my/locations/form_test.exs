@@ -136,8 +136,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       )
       |> render_submit()
 
-      saved = Geo.location_by_slug("the-forks")
-      assert saved
+      assert %Location{} = saved = Geo.location_by_slug("the-forks")
       assert saved.location_type == :site
       assert saved.country_id == country.id
       assert saved.subdivision1_id == subdivision1.id
@@ -161,8 +160,7 @@ defmodule KjogviWeb.Live.My.Locations.FormTest do
       )
       |> render_submit()
 
-      saved = Geo.location_by_slug("kyiv")
-      assert saved
+      assert %Location{} = saved = Geo.location_by_slug("kyiv")
       assert saved.country_id == country.id
       assert saved.subdivision1_id == nil
       assert saved.city_id == nil

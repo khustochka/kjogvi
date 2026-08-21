@@ -49,7 +49,7 @@ defmodule Ornitho.Query.BookTest do
         |> OrnithoRepo.update_all([])
 
       updated = OrnithoRepo.reload(book)
-      assert not is_nil(updated.imported_at)
+      assert %DateTime{} = updated.imported_at
     end
   end
 end

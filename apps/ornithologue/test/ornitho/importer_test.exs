@@ -19,7 +19,6 @@ defmodule Ornitho.ImporterTest do
           @importer.version()
         )
 
-      assert not is_nil(book)
       assert book.name == @importer.name()
     end
 
@@ -70,7 +69,7 @@ defmodule Ornitho.ImporterTest do
     test "sets the imported_at time after the taxa are imported" do
       @importer.process_import()
       book = Ornitho.Finder.Book.by_signature(@importer.slug(), @importer.version())
-      assert not is_nil(book.imported_at)
+      assert %DateTime{} = book.imported_at
     end
   end
 
@@ -103,7 +102,7 @@ defmodule Ornitho.ImporterTest do
   describe "legit_importers/0" do
     test "returns a list of importer modules from config" do
       result = Importer.legit_importers()
-      assert is_list(result)
+      assert result != []
       assert Enum.all?(result, &is_atom/1)
     end
   end
@@ -111,7 +110,7 @@ defmodule Ornitho.ImporterTest do
   describe "legit_importers_string/0" do
     test "returns importer module names as strings" do
       result = Importer.legit_importers_string()
-      assert is_list(result)
+      assert result != []
       assert Enum.all?(result, &is_binary/1)
     end
   end
@@ -119,12 +118,9 @@ defmodule Ornitho.ImporterTest do
   describe "unimported/0" do
     test "returns importers that have not been imported yet" do
       result = Importer.unimported()
-      assert is_list(result)
       legit = Importer.legit_importers()
 
-      for importer <- result do
-        assert importer in legit
-      end
+      assert result -- legit == []
     end
 
     test "excludes already imported books" do

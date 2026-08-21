@@ -56,7 +56,7 @@ defmodule Kjogvi.Legacy.Import.ImagesTest do
       assert image.storage_backend == "legacy"
       assert image.import_source == :legacy
       assert image.legacy_url == "https://example.com/orig.jpg"
-      assert is_binary(image.token)
+      assert is_binary(image.token) and image.token != ""
     end
 
     test "leaves title blank and stashes the legacy title in extras" do

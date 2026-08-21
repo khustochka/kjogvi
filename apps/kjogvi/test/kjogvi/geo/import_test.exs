@@ -107,7 +107,7 @@ defmodule Kjogvi.Geo.ImportTest do
       assert country.extras["official_name"] == "Islamic Republic of Afghanistan"
       assert country.extras["numeric"] == "004"
       assert country.extras["iso_codes_version"] == "4.20.1"
-      assert is_binary(country.extras["imported_at"])
+      assert {:ok, %DateTime{}, _} = DateTime.from_iso8601(country.extras["imported_at"])
     end
 
     test "rolls back the whole import when a parent is missing" do

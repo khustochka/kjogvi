@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Kjogvi.CreateAdminTest do
     assert_received {:mix_shell, :info, ["Password: " <> password]}
 
     user = Accounts.get_user_by_email_and_password("admin@example.com", password)
-    assert user
+    assert user.email == "admin@example.com"
     assert Accounts.admin?(user)
   end
 

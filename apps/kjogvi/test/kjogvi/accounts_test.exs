@@ -359,7 +359,7 @@ defmodule Kjogvi.UsersTest do
       email = unique_user_email()
       {:ok, user} = Accounts.register_user(valid_user_attributes(email: email))
       assert user.email == email
-      assert is_binary(user.hashed_password)
+      assert is_binary(user.hashed_password) and user.hashed_password != ""
       assert is_nil(user.confirmed_at)
       assert is_nil(user.password)
     end
@@ -368,8 +368,7 @@ defmodule Kjogvi.UsersTest do
       {:ok, user1} = Accounts.register_user(valid_user_attributes())
       {:ok, user2} = Accounts.register_user(valid_user_attributes())
 
-      assert is_binary(user1.public_token)
-      assert user1.public_token != ""
+      assert is_binary(user1.public_token) and user1.public_token != ""
       assert user1.public_token != user2.public_token
     end
 

@@ -8,7 +8,16 @@ defmodule Kjogvi.Search.TaxonTest do
 
   describe "search_taxa/2" do
     setup do
-      user = AccountsFixtures.user_fixture()
+      book = Ornitho.Factory.insert(:book, slug: "ebird", version: "setup")
+
+      Ornitho.Factory.insert(:taxon,
+        book: book,
+        code: "grcgre1",
+        name_en: "Great Crested Grebe",
+        name_sci: "Podiceps cristatus"
+      )
+
+      user = AccountsFixtures.user_fixture(%{default_book_signature: "ebird/setup"})
       {:ok, user: user}
     end
 
@@ -25,22 +34,22 @@ defmodule Kjogvi.Search.TaxonTest do
 
     test "filters taxa by English name with user's default book", %{user: user} do
       results = Taxon.search_taxa("grebe", user)
-      assert is_list(results)
+      assert Enum.map(results, & &1.code) == ["grcgre1"]
     end
 
     test "filters taxa by scientific name with user's default book", %{user: user} do
       results = Taxon.search_taxa("podiceps", user)
-      assert is_list(results)
+      assert Enum.map(results, & &1.code) == ["grcgre1"]
     end
 
     test "handles word component matching with user's default book", %{user: user} do
       results = Taxon.search_taxa("great crested", user)
-      assert is_list(results)
+      assert Enum.map(results, & &1.code) == ["grcgre1"]
     end
 
     test "matches word starts with higher priority", %{user: user} do
       results = Taxon.search_taxa("great", user)
-      assert is_list(results)
+      assert "grcgre1" in Enum.map(results, & &1.code)
     end
 
     test "ranks frequently observed taxa higher within same match tier", %{user: _user} do

@@ -63,6 +63,6 @@ defmodule Kjogvi.Jobs.Runtime.BridgeTest do
     Oban.insert!(PlainWorker.new(%{}))
     Oban.drain_queue(queue: :imports)
 
-    refute_receive {:lifecycle, _, _, _}
+    refute_receive {:lifecycle, _, _, _}, 100
   end
 end

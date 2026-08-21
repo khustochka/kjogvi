@@ -892,7 +892,7 @@ defmodule Kjogvi.Ebird.ImportTest do
     defp import_log(user) do
       {:ok, log} =
         %{source: :ebird, user_id: user.id}
-        |> Kjogvi.Imports.ImportLog.create_changeset()
+        |> Imports.ImportLog.create_changeset()
         |> Repo.insert()
 
       log
@@ -1005,7 +1005,7 @@ defmodule Kjogvi.Ebird.ImportTest do
       path = csv_file([obs_row("S1", "Dendrocygna autumnalis", "X", "L1")])
 
       assert {:ok, %{checklists_unmapped: 1}} = Import.run(user, path)
-      assert Repo.aggregate(Kjogvi.Imports.ImportError, :count) == 0
+      assert Repo.aggregate(Imports.ImportError, :count) == 0
     end
   end
 

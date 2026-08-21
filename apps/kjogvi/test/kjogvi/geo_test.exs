@@ -536,11 +536,9 @@ defmodule Kjogvi.GeoTest do
       assert country_node.location.id == country.id
       assert country_node.children_count == 1
 
-      subdivision_node = child_node(country_node.children, subdivision)
-      assert subdivision_node
+      assert subdivision_node = child_node(country_node.children, subdivision)
 
-      site_node = child_node(subdivision_node.children, site)
-      assert site_node
+      assert site_node = child_node(subdivision_node.children, site)
       assert site_node.children == []
       assert site_node.children_count == 0
     end
@@ -915,7 +913,7 @@ defmodule Kjogvi.GeoTest do
       assert Geo.location_by_slug_scope(scope, "own-loc").id == own.id
       assert Geo.location_by_slug_scope(scope, "common-loc").id == common.id
       assert Geo.location_by_slug_scope(scope, "other-loc") == nil
-      refute is_nil(other.id)
+      assert is_integer(other.id)
     end
 
     test "admin scope sees any user's location" do

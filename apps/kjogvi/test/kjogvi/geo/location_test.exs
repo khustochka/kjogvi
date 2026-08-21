@@ -1256,9 +1256,7 @@ defmodule Kjogvi.Geo.LocationTest do
     end
 
     test "accepts a single location and returns a single location", %{site: site} do
-      loaded = Query.put_levels(site)
-
-      refute is_list(loaded)
+      assert %Location{} = loaded = Query.put_levels(site)
       assert loaded.country.name_en == "Canada"
       assert loaded.subdivision1.name_en == "Manitoba"
       assert loaded.city.name_en == "Winnipeg"
@@ -1326,9 +1324,7 @@ defmodule Kjogvi.Geo.LocationTest do
       site = insert(:location, name_en: "Park", location_type: "site", country: country)
       checklist = insert(:checklist, location: site)
 
-      loaded = Query.put_location_levels(checklist)
-
-      refute is_list(loaded)
+      assert %Kjogvi.Birding.Checklist{} = loaded = Query.put_location_levels(checklist)
       assert Location.long_name(:private, loaded.location) == "Park, Canada"
     end
   end
