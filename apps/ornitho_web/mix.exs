@@ -54,7 +54,7 @@ defmodule OrnithoWeb.MixProject do
     [
       # Deps
       {:phoenix_live_view, "~> 1.2.0"},
-      {:phoenix, "~> 1.8.2"},
+      {:phoenix, "~> 1.8.13"},
       {:phoenix_html, "~> 4.1"},
       {:ornithologue, in_umbrella: true},
       {:jason, "~> 1.2"},
