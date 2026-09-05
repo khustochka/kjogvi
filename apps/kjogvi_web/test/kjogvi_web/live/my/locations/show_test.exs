@@ -1,5 +1,7 @@
 defmodule KjogviWeb.Live.My.Locations.ShowTest do
-  use KjogviWeb.ConnCase, async: true
+  # Not async: the static map tests swap the global :kjogvi_web, :google_maps
+  # env, which every location page reads while rendering.
+  use KjogviWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Kjogvi.AccountsFixtures

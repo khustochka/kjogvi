@@ -1,5 +1,7 @@
 defmodule Kjogvi.ImagesTest do
-  use Kjogvi.DataCase, async: true
+  # Not async: the URL tests swap the global :kjogvi, :images env, which
+  # `Images.current_storage_backend/0` reads for every upload.
+  use Kjogvi.DataCase, async: false
 
   alias Kjogvi.Images
   alias Kjogvi.Images.Image

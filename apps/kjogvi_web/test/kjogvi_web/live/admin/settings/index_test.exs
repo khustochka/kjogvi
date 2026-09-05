@@ -158,6 +158,8 @@ defmodule KjogviWeb.Live.Admin.Settings.IndexTest do
       refute has_element?(lv, "#reset-forgot_reset_password_disabled")
     end
 
+    # The LiveView is meant to crash here; capture its expected error report.
+    @tag :capture_log
     test "an unknown flag key is rejected", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/admin/settings")
 
