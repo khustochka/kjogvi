@@ -50,9 +50,6 @@
 
 ## Credits
 
-* The bicycle icon is from [Font Awesome Free](https://fontawesome.com/) 6.x
-(`solid/bicycle`), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-
 * Country and subdivision geo data is derived from the
 [iso-codes](https://salsa.debian.org/iso-codes-team/iso-codes) project
 (ISO 3166 codes and names), licensed under LGPL-2.1-or-later.

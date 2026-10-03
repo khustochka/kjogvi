@@ -180,7 +180,7 @@ defmodule KjogviWeb.BirdingComponents do
           </li>
           <li :if={@checklist.motorless} title="Motorless">
             <span class="inline-flex items-center gap-1 rounded-md bg-forest-50 px-1.5 py-0.5 text-sm font-medium text-forest-600">
-              <.icon name="bicycle" class="h-4 w-4" /> Motorless
+              <.icon name="car-slash" class="h-4 w-4" /> Motorless
             </span>
           </li>
         </ul>

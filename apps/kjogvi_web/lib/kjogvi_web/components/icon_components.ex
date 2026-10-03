@@ -14,7 +14,7 @@ defmodule KjogviWeb.IconComponents do
   directory and bundled into your compiled `app.css`.
 
   A small number of bespoke icons are bundled as inline SVG and
-  referenced by their bare name (e.g. `"bicycle"`).
+  referenced by their bare name (e.g. `"car-slash"`).
 
   You can customize the size and colors of the icons by setting
   width, height, and color classes.
@@ -23,7 +23,7 @@ defmodule KjogviWeb.IconComponents do
 
       <.icon name="hero-x-mark-solid" />
       <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
-      <.icon name="bicycle" class="h-4 w-4" />
+      <.icon name="car-slash" class="h-4 w-4" />
   """
   attr :name, :string, required: true
   attr :class, :string, default: nil
@@ -34,18 +34,36 @@ defmodule KjogviWeb.IconComponents do
     """
   end
 
-  # Font Awesome Free 6.x (solid/bicycle), licensed under CC BY 4.0.
-  # See README.md credits.
-  def icon(%{name: "bicycle"} = assigns) do
+  # A car in side profile, slashed. The mask cuts a gap around the slash; its id
+  # is unique per render so several instances can share a page.
+  def icon(%{name: "car-slash"} = assigns) do
+    assigns = assign(assigns, :mask_id, "car-slash-mask-#{System.unique_integer([:positive])}")
+
     ~H"""
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 640 512"
-      fill="currentColor"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
       aria-hidden="true"
       class={@class}
     >
-      <path d="M312 32c-13.3 0-24 10.7-24 24s10.7 24 24 24l25.7 0 34.6 64-149.4 0-27.4-38C191 99.7 183.7 96 176 96l-56 0c-13.3 0-24 10.7-24 24s10.7 24 24 24l43.7 0 22.1 30.7-26.6 53.1c-10-2.5-20.5-3.8-31.2-3.8C57.3 224 0 281.3 0 352s57.3 128 128 128c65.3 0 119.1-48.9 127-112l49 0c8.5 0 16.3-4.5 20.7-11.8l84.8-143.5 21.7 40.1C402.4 276.3 384 312 384 352c0 70.7 57.3 128 128 128s128-57.3 128-128s-57.3-128-128-128c-13.5 0-26.5 2.1-38.7 6L375.4 48.8C369.8 38.4 359 32 347.2 32L312 32zM458.6 303.7l32.3 59.7c6.3 11.7 20.9 16 32.5 9.7s16-20.9 9.7-32.5l-32.3-59.7c3.6-.6 7.4-.9 11.2-.9c39.8 0 72 32.2 72 72s-32.2 72-72 72s-72-32.2-72-72c0-18.6 7-35.5 18.6-48.3zM133.2 368l65 0c-7.3 32.1-36 56-70.2 56c-39.8 0-72-32.2-72-72s32.2-72 72-72c1.7 0 3.4 .1 5.1 .2l-24.2 48.5c-9 18.1 4.1 39.4 24.3 39.4zm33.7-48l50.7-101.3 72.9 101.2-.1 .1-123.5 0zm90.6-128l108.5 0L317 274.8 257.4 192z" />
+      <defs>
+        <mask id={@mask_id} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+          <rect width="24" height="24" fill="#fff" />
+          <path d="M3 3l18 18" stroke="#000" stroke-width="4.5" />
+        </mask>
+      </defs>
+      <g mask={"url(##{@mask_id})"}>
+        <path d="M4.9 16H3a.75.75 0 0 1-.75-.75v-2.1a1.5 1.5 0 0 1 1.05-1.43l2.95-.92 2.3-3.2a1.5 1.5 0 0 1 1.22-.62h5.06a1.5 1.5 0 0 1 1.15.54L19 11.1h.75a2 2 0 0 1 2 2v2.15a.75.75 0 0 1-.75.75h-1.9M14.9 16H9.1" />
+        <path d="M6.25 10.8H19M12.25 7v3.8" />
+        <circle cx="7" cy="16" r="2.1" />
+        <circle cx="17" cy="16" r="2.1" />
+      </g>
+      <path d="M3 3l18 18" />
     </svg>
     """
   end

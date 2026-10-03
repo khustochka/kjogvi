@@ -71,7 +71,7 @@ Default to plain assigns and lists. Don't reach for streams reflexively — use 
 [`CoreComponents`](./apps/kjogvi_web/lib/kjogvi_web/components/core_components.ex) (`<.icon>`, `<.input>`, `<.button>`, `<.flash>`, etc.) is the stock module Phoenix generates. It's kept largely as-is for reference and should be replaced over time by more specific, purpose-built components for this app — prefer (or add) a dedicated component over reaching for a generic CoreComponent.
 
 ### Icons
-Heroicons via the `<.icon>` component (e.g. `name="hero-star-solid"`); the bicycle is a bundled inline-SVG variant: `<.icon name="bicycle" />`.
+Heroicons via the `<.icon>` component (e.g. `name="hero-star-solid"`); a few bespoke icons are bundled inline SVGs referenced by bare name, e.g. `<.icon name="car-slash" />` (motorless).
 
 ### Database / Ecto
 One repo, `Kjogvi.Repo`. Taxonomy tables live in the same database under the `ornithologue` Postgres schema: `config :ornithologue, repo: Kjogvi.Repo, prefix: "ornithologue"` — the [Ornithologue](./apps/ornithologue/) library applies the prefix to all its operations via its `Ornitho.Repo` facade. Never query the taxonomy tables through `Kjogvi.Repo` directly; go through the Ornitho API (`Ornitho.Finder.*`, `Ornitho.Ops.*`), which handles the prefix. The `ornithologue` schema is installed by a regular main-repo migration calling `Ornitho.Migrations.up/1`.

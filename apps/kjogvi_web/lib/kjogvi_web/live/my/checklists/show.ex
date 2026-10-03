@@ -93,7 +93,7 @@ defmodule KjogviWeb.Live.My.Checklists.Show do
             title="Motorless"
             class="inline-flex items-center gap-1 rounded-md bg-forest-50 px-2 py-0.5 text-sm font-medium text-forest-600"
           >
-            <.icon name="bicycle" class="h-4 w-4" /> Motorless
+            <.icon name="car-slash" class="h-4 w-4" /> Motorless
           </span>
         </div>
       </div>
