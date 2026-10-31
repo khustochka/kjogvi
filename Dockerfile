@@ -10,8 +10,8 @@
 
 #######################################################################
 
-ARG BASE_IMAGE=public.ecr.aws/m7x1i1o0/kjogvi-base:debiantrixie-20260803-20260820-191752
-ARG BUILD_IMAGE=public.ecr.aws/m7x1i1o0/kjogvi-build:elixir1.20.3-otp29.0.5-debiantrixie-20260803-node24.18.0-20260820-191752
+ARG BASE_IMAGE=public.ecr.aws/m7x1i1o0/kjogvi-base:debiantrixie-20261027-20261031-032443
+ARG BUILD_IMAGE=public.ecr.aws/m7x1i1o0/kjogvi-build:elixir1.20.5-otp29.1.2-debiantrixie-20261027-node26.13.0-20261031-032443
 
 #######################################################################
 
