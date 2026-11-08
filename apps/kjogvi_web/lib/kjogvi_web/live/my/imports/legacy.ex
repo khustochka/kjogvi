@@ -49,7 +49,14 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
   defp handle_progress(_msg, socket), do: {:cont, socket}
 
   def update(%{user: user}, socket) do
-    {:ok, socket |> assign(:user, user) |> subscribe_once()}
+    {:ok,
+     socket
+     |> assign(:user, user)
+     |> assign(:legacy_book_signature, Kjogvi.Legacy.Import.book_signature())
+     |> assign_new(:switches_taxonomy, fn ->
+       user.default_book_signature != Kjogvi.Legacy.Import.book_signature()
+     end)
+     |> subscribe_once()}
   end
 
   def update(%{async_result: async_result}, socket) do
@@ -57,8 +64,17 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
      socket
      |> clear_flash()
      |> assign(:async_result, async_result)
+     |> clear_taxonomy_note()
      |> derive_flash()}
   end
+
+  # A successful run has switched the user's taxonomy; the scope's user is
+  # stale until the next mount.
+  defp clear_taxonomy_note(%{assigns: %{async_result: %{ok?: true}}} = socket) do
+    assign(socket, :switches_taxonomy, false)
+  end
+
+  defp clear_taxonomy_note(socket), do: socket
 
   # The PubSub subscription and initial status snapshot belong to the component's
   # lifetime, not to each parent re-render. `assign_new` seeds `async_result` the
@@ -98,6 +114,15 @@ defmodule KjogviWeb.Live.My.Imports.Legacy do
     ~H"""
     <div>
       <.main_flash id="legacy-import-flash" flash={@flash} />
+      <p :if={@switches_taxonomy} id="legacy-import-taxonomy-note" class="text-sm text-zinc-600">
+        <%= if @user.default_book_signature do %>
+          Importing will switch your default taxonomy from <b>{@user.default_book_signature}</b>
+          to <b>{@legacy_book_signature}</b>.
+        <% else %>
+          Importing will set your default taxonomy to <b>{@legacy_book_signature}</b>.
+        <% end %>
+        Observations from other sources keep their current taxonomy.
+      </p>
       <.form
         id="legacy-import-form"
         for={nil}

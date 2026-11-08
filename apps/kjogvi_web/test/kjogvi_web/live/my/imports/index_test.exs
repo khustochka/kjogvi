@@ -123,6 +123,53 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     end
   end
 
+  describe "legacy taxonomy note" do
+    defp mount_imports(conn, attrs) do
+      {:ok, lv, _html} =
+        conn
+        |> login_user(Kjogvi.AccountsFixtures.admin_fixture(attrs))
+        |> live(~p"/my/imports")
+
+      lv
+    end
+
+    test "warns when the import will switch the user's taxonomy", %{conn: conn} do
+      lv = mount_imports(conn, %{default_book_signature: "ebird/v2025"})
+
+      assert has_element?(
+               lv,
+               "#legacy-import-taxonomy-note",
+               "from ebird/v2025 to #{Kjogvi.Legacy.Import.book_signature()}"
+             )
+    end
+
+    test "says the taxonomy will be set when the user has none", %{conn: conn} do
+      lv = mount_imports(conn, %{default_book_signature: nil})
+
+      assert has_element?(lv, "#legacy-import-taxonomy-note", "will set your default taxonomy")
+    end
+
+    test "is absent when the user already has the legacy taxonomy", %{conn: conn} do
+      lv = mount_imports(conn, %{default_book_signature: Kjogvi.Legacy.Import.book_signature()})
+
+      refute has_element?(lv, "#legacy-import-taxonomy-note")
+    end
+
+    test "disappears after a successful import", %{conn: conn} do
+      user = Kjogvi.AccountsFixtures.admin_fixture(%{default_book_signature: "ebird/v2025"})
+      {:ok, lv, _html} = conn |> login_user(user) |> live(~p"/my/imports")
+
+      broadcast_lifecycle(
+        {:legacy_import, user.id},
+        :ok,
+        AsyncResult.ok(%{message: "Legacy import done."})
+      )
+
+      _ = flush_render(lv)
+      refute has_element?(lv, "#legacy-import-taxonomy-note")
+    end
+  end
+
   describe "starting the legacy import" do
     setup %{conn: conn} do
       user = Kjogvi.AccountsFixtures.admin_fixture()
