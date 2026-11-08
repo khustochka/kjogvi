@@ -429,6 +429,20 @@ defmodule Kjogvi.UsersTest do
     end
   end
 
+  describe "default_book/1" do
+    test "returns the book named by the user's signature" do
+      book = Ornitho.Factory.insert(:book)
+      user = user_fixture(%{default_book_signature: "#{book.slug}/#{book.version}"})
+
+      assert Accounts.default_book(user).id == book.id
+    end
+
+    test "returns nil when the book isn't loaded or there is no signature" do
+      assert Accounts.default_book(user_fixture(%{default_book_signature: "none/v0"})) == nil
+      assert Accounts.default_book(user_fixture(%{default_book_signature: nil})) == nil
+    end
+  end
+
   describe "set_default_book_signature/2" do
     test "replaces the user's default book signature" do
       user = user_fixture(%{default_book_signature: "ebird/v2025"})

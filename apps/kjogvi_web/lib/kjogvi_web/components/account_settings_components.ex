@@ -1,7 +1,8 @@
 defmodule KjogviWeb.AccountSettingsComponents do
   @moduledoc """
   Layout and navigation for the account settings sections
-  (Profile / Security / Preferences).
+  (Profile / Security / Preferences), plus read-only account values shown
+  there and on the admin user pages.
   """
   use Phoenix.Component
 
@@ -61,6 +62,30 @@ defmodule KjogviWeb.AccountSettingsComponents do
         {render_slot(@inner_block)}
       </div>
     </div>
+    """
+  end
+
+  @doc """
+  Renders a user's default taxonomy: the book name with its signature, the bare
+  signature when the book isn't loaded, or "None".
+  """
+  attr :id, :string, required: true
+  attr :signature, :string, required: true
+  attr :book, Ornitho.Schema.Book, default: nil
+  attr :class, :any, default: nil
+
+  def default_taxonomy(assigns) do
+    ~H"""
+    <p id={@id} class={@class}>
+      <%= cond do %>
+        <% @book -> %>
+          {@book.name} ({@signature})
+        <% @signature -> %>
+          {@signature}
+        <% true -> %>
+          None
+      <% end %>
+    </p>
     """
   end
 end

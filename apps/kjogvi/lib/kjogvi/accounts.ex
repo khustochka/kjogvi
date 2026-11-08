@@ -413,6 +413,17 @@ defmodule Kjogvi.Accounts do
   end
 
   @doc """
+  The `Ornitho.Schema.Book` named by the user's `default_book_signature`; `nil`
+  when the signature is unset or names no loaded book.
+  """
+  def default_book(%User{default_book_signature: nil}), do: nil
+
+  def default_book(%User{default_book_signature: signature}) do
+    [slug, version] = String.split(signature, "/")
+    Ornitho.Finder.Book.by_signature(slug, version)
+  end
+
+  @doc """
   Sets the user's default taxonomy (a `"slug/version"` book signature).
 
   Only the signature changes: the user's existing observations keep the

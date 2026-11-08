@@ -14,6 +14,21 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
     <.account_settings active={:preferences}>
       <.h2>Preferences</.h2>
 
+      <section id="default-taxonomy" class="mt-8">
+        <h3 class="text-xl font-header font-semibold leading-none text-zinc-500">
+          Default taxonomy
+        </h3>
+        <.default_taxonomy
+          id="default-taxonomy-value"
+          signature={@user.default_book_signature}
+          book={@default_book}
+          class="mt-4 text-zinc-900"
+        />
+        <p class="mt-1 text-sm text-zinc-500">
+          The taxonomy new observations are recorded against. It can't be changed here.
+        </p>
+      </section>
+
       <.form
         for={@settings_form}
         id="settings_form"
@@ -145,6 +160,7 @@ defmodule KjogviWeb.Live.My.Settings.Preferences do
       |> assign(:page_title, "Preferences")
       |> assign(:user, user)
       |> assign(:preferences, preferences)
+      |> assign(:default_book, Accounts.default_book(user))
       |> assign(:settings_form, to_form(settings_changeset))
       |> assign(:logbook_location_rows, logbook_location_rows)
 

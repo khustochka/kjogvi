@@ -28,7 +28,7 @@ defmodule KjogviWeb.Live.Admin.Users.Settings do
      socket
      |> assign(:page_title, "#{User.display_name(user)} — Settings")
      |> assign(:user, user)
-     |> assign(:taxonomy_label, taxonomy_label(user))
+     |> assign(:default_book, Accounts.default_book(user))
      |> assign_login_state()}
   end
 
@@ -53,23 +53,6 @@ defmodule KjogviWeb.Live.Admin.Users.Settings do
     assign(socket, :login_enabled, not Accounts.login_disabled?(socket.assigns.user))
   end
 
-  # Resolves the user's default book signature into a display label, falling
-  # back to the raw signature if no matching book is found.
-  defp taxonomy_label(%User{default_book_signature: nil}), do: nil
-
-  defp taxonomy_label(%User{default_book_signature: signature}) do
-    case String.split(signature, "/") do
-      [slug, version] ->
-        case Ornitho.Finder.Book.by_signature(slug, version) do
-          %Ornitho.Schema.Book{name: name} -> "#{name} (#{signature})"
-          nil -> signature
-        end
-
-      _ ->
-        signature
-    end
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -86,9 +69,12 @@ defmodule KjogviWeb.Live.Admin.Users.Settings do
       <section id="default-taxonomy" class="border border-slate-300 rounded-lg p-6">
         <.h2 class="mb-4!">Default Taxonomy</.h2>
 
-        <p id="taxonomy-value" class="text-lg font-medium text-slate-900 mb-2">
-          {@taxonomy_label || "None"}
-        </p>
+        <.default_taxonomy
+          id="taxonomy-value"
+          signature={@user.default_book_signature}
+          book={@default_book}
+          class="text-lg font-medium text-slate-900 mb-2"
+        />
       </section>
 
       <section id="access-flags" class="border border-slate-300 rounded-lg p-6">
