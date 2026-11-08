@@ -1,4 +1,4 @@
-defmodule Convertor.Ebird.V2022 do
+defmodule Converter.Ebird.V2022 do
   @moduledoc """
   Converts two checklist CSVs into one nice CSV for the importer.
   """
@@ -154,4 +154,4 @@ defmodule Convertor.Ebird.V2022 do
   end
 end
 
-Convertor.Ebird.V2022.convert()
+Converter.Ebird.V2022.convert()

@@ -1,36 +1,26 @@
-defmodule Convertor.Ebird.V2024 do
+defmodule Converter.Ebird.V2023 do
   @moduledoc """
   Converts two checklist CSVs into one nice CSV for the importer.
-
-  This one is for Clements/eBird v2024.
-
-  Authority will be added in future update.
-
-  Run from the umbrella root:
-
-  ```bash
-  mix run apps/ornithologue/scripts/convertor/ebird.v2024.exs
-  ```
   """
 
   @extras_conversion %{
     "TAXON_ORDER" => {:integer, :ebird_order},
     "SPECIES_GROUP" => {:string, :species_group},
-    "Clements v2024b change" => {:string, :change_type},
-    "text for website v2024b" => {:string, :change_text},
+    "Clements v2023 change" => {:string, :change_type},
+    "text for website v2023" => {:string, :change_text},
     "range" => {:string, :range},
     "extinct" => {:boolean, :extinct},
     "extinct year" => {:string, :extinct_year}
   }
 
-  @convert_dir Path.join(:code.priv_dir(:ornithologue), "convert/ebird/v2024")
+  @convert_dir Path.join(:code.priv_dir(:ornithologue), "convert/ebird/v2023")
 
-  @ebird_taxonomy_file Path.join(@convert_dir, "eBird_taxonomy_v2024.csv")
+  @ebird_taxonomy_file Path.join(@convert_dir, "ebird_taxonomy_v2023.csv")
   @clements_checklist_file Path.join(
                              @convert_dir,
-                             "eBird-Clements-v2024-integrated-checklist-October-2024-rev.csv"
+                             "eBird-Clements-v2023-integrated-checklist-October-2023.csv"
                            )
-  @output_file Path.join(@convert_dir, "ornithologue_ebird_v2024.csv")
+  @output_file Path.join(@convert_dir, "ornithologue_ebird_v2023.csv")
 
   def convert do
     extract_taxa_from_csv(@ebird_taxonomy_file)
@@ -155,11 +145,8 @@ defmodule Convertor.Ebird.V2024 do
     end
   end
 
-  # NOTE: Authority will be added in future list update
-
   # {authority_string, has_brackets?}
   defp extract_authority("" = _authority), do: {nil, nil}
-  defp extract_authority(nil), do: {nil, nil}
 
   defp extract_authority(authority) do
     {
@@ -169,4 +156,4 @@ defmodule Convertor.Ebird.V2024 do
   end
 end
 
-Convertor.Ebird.V2024.convert()
+Converter.Ebird.V2023.convert()

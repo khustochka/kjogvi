@@ -1,4 +1,4 @@
-defmodule Convertor.AviList.V2025 do
+defmodule Converter.AviList.V2025 do
   @moduledoc """
   Converts the checklist CSV into a simpler one for the importer.
 
@@ -7,7 +7,7 @@ defmodule Convertor.AviList.V2025 do
   Run from the umbrella root:
 
   ```bash
-  mix run apps/ornithologue/scripts/convertor/avilist.v2025.exs
+  mix run apps/ornithologue/scripts/converter/avilist.v2025.exs
   ```
   """
 
@@ -173,4 +173,4 @@ defmodule Convertor.AviList.V2025 do
   end
 end
 
-Convertor.AviList.V2025.convert()
+Converter.AviList.V2025.convert()
