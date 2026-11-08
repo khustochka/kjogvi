@@ -11,11 +11,8 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
   alias Kjogvi.Repo
 
   describe "import/3" do
-    test "builds taxon_key from the user's default_book_signature" do
-      user =
-        Kjogvi.AccountsFixtures.user_fixture()
-        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
-        |> Repo.update!()
+    test "builds taxon_key from the :book_signature option" do
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       checklist = insert(:checklist, user: user)
 
@@ -24,18 +21,16 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", now, now]],
-        user: user
+        user: user,
+        book_signature: "ebird/v2026"
       )
 
       [obs] = Repo.all(Observation)
-      assert obs.taxon_key == "/ebird/v2025/amerob"
+      assert obs.taxon_key == "/ebird/v2026/amerob"
     end
 
     test "marks imported observations with the :legacy import source" do
-      user =
-        Kjogvi.AccountsFixtures.user_fixture()
-        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
-        |> Repo.update!()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       checklist = insert(:checklist, user: user)
 
@@ -44,7 +39,8 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", now, now]],
-        user: user
+        user: user,
+        book_signature: "ebird/v2026"
       )
 
       [obs] = Repo.all(Observation)
@@ -52,10 +48,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
     end
 
     test "normalizes blank text columns to nil" do
-      user =
-        Kjogvi.AccountsFixtures.user_fixture()
-        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
-        |> Repo.update!()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       checklist = insert(:checklist, user: user)
 
@@ -64,7 +57,8 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at", "quantity", "notes"],
         [[checklist.id, "amerob", now, now, "  ", "  kept  "]],
-        user: user
+        user: user,
+        book_signature: "ebird/v2026"
       )
 
       [obs] = Repo.all(Observation)
@@ -72,33 +66,8 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       assert obs.notes == "kept"
     end
 
-    test "raises when user has no default_book_signature" do
-      user = Kjogvi.AccountsFixtures.user_fixture(%{default_book_signature: nil})
-
-      assert_raise ArgumentError, ~r/default_book_signature/, fn ->
-        Observations.import(
-          ["card_id", "ebird_code", "created_at", "updated_at"],
-          [[1, "amerob", "2026-01-02T03:04:05Z", "2026-01-02T03:04:05Z"]],
-          user: user
-        )
-      end
-    end
-
-    test "raises when no :user option is provided" do
-      assert_raise ArgumentError, ~r/requires a :user option/, fn ->
-        Observations.import(
-          ["card_id", "ebird_code", "created_at", "updated_at"],
-          [[1, "amerob", "2026-01-02T03:04:05Z", "2026-01-02T03:04:05Z"]],
-          []
-        )
-      end
-    end
-
     test "falls back to the checklist's timestamps when created_at/updated_at are nil" do
-      user =
-        Kjogvi.AccountsFixtures.user_fixture()
-        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
-        |> Repo.update!()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       checklist_time = ~U[2020-05-06 07:08:09.000000Z]
 
@@ -110,7 +79,8 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", nil, nil]],
-        user: user
+        user: user,
+        book_signature: "ebird/v2026"
       )
 
       [obs] = Repo.all(Observation)
@@ -119,10 +89,7 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
     end
 
     test "keeps the observation's own timestamps when present" do
-      user =
-        Kjogvi.AccountsFixtures.user_fixture()
-        |> Ecto.Changeset.change(default_book_signature: "ebird/v2025")
-        |> Repo.update!()
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       checklist_time = ~U[2020-05-06 07:08:09.000000Z]
 
@@ -136,7 +103,8 @@ defmodule Kjogvi.Legacy.Import.ObservationsTest do
       Observations.import(
         ["card_id", "ebird_code", "created_at", "updated_at"],
         [[checklist.id, "amerob", obs_time, obs_time]],
-        user: user
+        user: user,
+        book_signature: "ebird/v2026"
       )
 
       [obs] = Repo.all(Observation)

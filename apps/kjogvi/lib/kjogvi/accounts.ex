@@ -413,6 +413,19 @@ defmodule Kjogvi.Accounts do
   end
 
   @doc """
+  Sets the user's default taxonomy (a `"slug/version"` book signature).
+
+  Only the signature changes: the user's existing observations keep the
+  `taxon_key`s they were recorded with. Meant for flows that rewrite the
+  user's observations themselves, such as the legacy import.
+  """
+  def set_default_book_signature(%User{} = user, signature) when is_binary(signature) do
+    user
+    |> User.default_book_signature_changeset(signature)
+    |> Repo.update()
+  end
+
+  @doc """
   The user's preferences, or `UserPreferences.default/0` when none saved yet.
   """
   def get_user_preferences(%User{} = user) do

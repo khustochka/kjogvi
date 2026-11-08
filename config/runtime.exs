@@ -231,8 +231,6 @@ end
 # and printed to the logs.
 config :kjogvi, :setup_code, System.get_env("SETUP_CODE")
 
-config :kjogvi, Kjogvi.Legacy.Import, taxonomy_slug: System.get_env("LEGACY_TAXONOMY_SLUG")
-
 config :kjogvi_web, :google_maps, api_key: System.get_env("GOOGLE_MAPS_API_KEY")
 
 # IMAGES

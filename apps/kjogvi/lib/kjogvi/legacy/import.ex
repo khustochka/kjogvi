@@ -1,28 +1,43 @@
 defmodule Kjogvi.Legacy.Import do
-  @moduledoc false
+  @moduledoc """
+  Imports a user's data from the legacy app.
+
+  Legacy observations reference taxa by eBird code from the legacy app's
+  taxonomy, so they are keyed against `book_signature/0` regardless of the
+  user's default taxonomy, and the user's `default_book_signature` is switched
+  to it as part of the import.
+  """
 
   require Logger
 
+  # The taxonomy version the legacy app's eBird codes come from.
+  @book_signature "ebird/v2026"
+
+  def book_signature, do: @book_signature
+
   def run(user, opts \\ []) do
-    with :ok <- validate(user),
+    with :ok <- validate_book(),
          :ok <- validate_adapter_config() do
       opts
       |> Keyword.put(:user, user)
+      |> Keyword.put(:book_signature, @book_signature)
       |> import_all()
     end
   end
 
-  defp validate(%{default_book_signature: sig}) when is_binary(sig) and sig != "" do
-    :ok
-  end
+  defp validate_book do
+    [slug, version] = String.split(@book_signature, "/")
 
-  defp validate(_user) do
-    {:error,
-     %{
-       message:
-         "Legacy import requires a default taxonomy. " <>
-           "Set it in account settings before running the import."
-     }}
+    if Ornitho.Finder.Book.exists?(slug, version) do
+      :ok
+    else
+      {:error,
+       %{
+         message:
+           "Legacy import requires the #{@book_signature} taxonomy. " <>
+             "Import it before running the import."
+       }}
+    end
   end
 
   # Lets the configured adapter check its own required config (DB connection,
@@ -48,6 +63,8 @@ defmodule Kjogvi.Legacy.Import do
                  :ok <- perform_import(:locations, opts),
                  :ok <- perform_import(:checklists, opts),
                  :ok <- perform_import(:observations, opts),
+                 {:ok, _} <-
+                   Kjogvi.Accounts.set_default_book_signature(opts[:user], @book_signature),
                  # Images are imported last: they link back to observations
                  # (see Kjogvi.Legacy.Import.Images).
                  :ok <- perform_import(:images, opts) do

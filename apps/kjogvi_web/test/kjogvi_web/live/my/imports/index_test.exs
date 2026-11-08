@@ -145,20 +145,15 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
                Jobs.status(Jobs.LegacyImport, %{user_id: user.id})
     end
 
-    # An admin without a default taxonomy makes the run fail; the error
-    # travels job -> bridge -> PubSub -> component flash.
-    test "a failed run surfaces the error", %{conn: conn} do
-      {:ok, lv, _html} =
-        conn
-        |> login_user(Kjogvi.AccountsFixtures.admin_fixture(%{default_book_signature: nil}))
-        |> live(~p"/my/imports")
-
+    # The legacy taxonomy isn't loaded in the test DB, so the run fails; the
+    # error travels job -> bridge -> PubSub -> component flash.
+    test "a failed run surfaces the error", %{lv: lv} do
       lv |> element("#legacy-import-form") |> render_submit()
 
       assert %{discard: 1} = Oban.drain_queue(queue: :imports)
 
       assert flush_render(lv) =~
-               "Legacy import failed: Legacy import requires a default taxonomy."
+               "Legacy import failed: Legacy import requires the ebird/v2026 taxonomy."
     end
 
     test "a second start while a run is pending does not enqueue another job", %{lv: lv} do

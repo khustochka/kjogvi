@@ -12,7 +12,7 @@ defmodule Kjogvi.Legacy.Import.Observations do
 
   def import(columns_str, rows, opts) do
     columns = columns_str |> Enum.map(&String.to_atom/1)
-    book_signature = book_signature!(opts)
+    book_signature = Keyword.fetch!(opts, :book_signature)
 
     raw = for row <- rows, do: Map.new(Enum.zip(columns, row))
     checklist_times = checklist_times(raw)
@@ -95,20 +95,5 @@ defmodule Kjogvi.Legacy.Import.Observations do
     Enum.reduce(@blank_to_nil_columns, obs, fn key, acc ->
       Map.update(acc, key, nil, &Utils.blank_to_nil/1)
     end)
-  end
-
-  defp book_signature!(opts) do
-    case Keyword.get(opts, :user) do
-      %{default_book_signature: sig} when is_binary(sig) and sig != "" ->
-        sig
-
-      %{default_book_signature: _} ->
-        raise ArgumentError,
-              "Legacy import requires the user to have `default_book_signature` set. " <>
-                "Configure it in account settings."
-
-      _ ->
-        raise ArgumentError, "Legacy import requires a :user option"
-    end
   end
 end

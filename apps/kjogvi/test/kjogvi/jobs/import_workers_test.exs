@@ -29,13 +29,13 @@ defmodule Kjogvi.Jobs.ImportWorkersTest do
 
   describe "LegacyImport.perform/1" do
     test "surfaces the import's own error" do
-      # Without a default taxonomy the import refuses to run.
-      user = Kjogvi.AccountsFixtures.user_fixture(%{default_book_signature: nil})
+      # The legacy taxonomy isn't loaded in the test DB, so the import refuses to run.
+      user = Kjogvi.AccountsFixtures.user_fixture()
 
       assert {:error, %{message: message}} =
                LegacyImport.perform(%Oban.Job{args: %{"user_id" => user.id}})
 
-      assert message =~ "default taxonomy"
+      assert message =~ Kjogvi.Legacy.Import.book_signature()
     end
   end
 

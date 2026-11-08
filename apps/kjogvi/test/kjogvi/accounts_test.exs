@@ -429,6 +429,22 @@ defmodule Kjogvi.UsersTest do
     end
   end
 
+  describe "set_default_book_signature/2" do
+    test "replaces the user's default book signature" do
+      user = user_fixture(%{default_book_signature: "ebird/v2025"})
+
+      assert {:ok, user} = Accounts.set_default_book_signature(user, "ebird/v2026")
+      assert Accounts.get_user!(user.id).default_book_signature == "ebird/v2026"
+    end
+
+    test "rejects a malformed signature" do
+      user = user_fixture()
+
+      assert {:error, changeset} = Accounts.set_default_book_signature(user, "ebird")
+      assert %{default_book_signature: [_]} = errors_on(changeset)
+    end
+  end
+
   describe "list_admins/0" do
     test "returns only admins, ordered by nickname" do
       {:ok, _} =

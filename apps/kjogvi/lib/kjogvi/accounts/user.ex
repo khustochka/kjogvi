@@ -126,6 +126,16 @@ defmodule Kjogvi.Accounts.User do
     end
   end
 
+  @doc """
+  Changeset replacing `default_book_signature`. Not for settings forms — see
+  `Kjogvi.Accounts.set_default_book_signature/2`.
+  """
+  def default_book_signature_changeset(user, signature) do
+    user
+    |> change(default_book_signature: signature)
+    |> validate_format(:default_book_signature, ~r{\A[^/]+/[^/]+\z})
+  end
+
   # Assigns a public token on first creation, leaving any existing one intact.
   defp ensure_public_token(changeset) do
     case get_field(changeset, :public_token) do
