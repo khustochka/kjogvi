@@ -1,32 +1,24 @@
 defmodule Kjogvi.Jobs.BootstrapTest do
-  # Not async: swaps the global Kjogvi.Datasets and Kjogvi.Settings config.
+  # Not async: swaps the global Kjogvi.Datasets config.
   use Kjogvi.DataCase, async: false
 
   @moduletag :capture_log
 
   alias Kjogvi.Jobs.Bootstrap
 
-  # An empty snapshot dir makes both restores fail with :enoent, and the offline
-  # demo importer stands in for the configured taxonomy default.
+  # An empty snapshot dir makes both restores fail with :enoent. The taxonomy
+  # step imports the demo book pinned as the default in config/test.exs.
   setup do
     dir = Path.join(System.tmp_dir!(), "datasets_#{System.unique_integer([:positive])}")
     original_datasets = Application.get_env(:kjogvi, Kjogvi.Datasets)
-    original_settings = Application.get_env(:kjogvi, Kjogvi.Settings, [])
 
     Application.put_env(:kjogvi, Kjogvi.Datasets,
       adapter: Kjogvi.Datasets.LocalAdapter,
       path: dir
     )
 
-    Application.put_env(
-      :kjogvi,
-      Kjogvi.Settings,
-      Keyword.put(original_settings, :default_taxonomy_importer, Ornitho.Importer.Demo.V1)
-    )
-
     on_exit(fn ->
       Application.put_env(:kjogvi, Kjogvi.Datasets, original_datasets)
-      Application.put_env(:kjogvi, Kjogvi.Settings, original_settings)
       File.rm_rf(dir)
     end)
 

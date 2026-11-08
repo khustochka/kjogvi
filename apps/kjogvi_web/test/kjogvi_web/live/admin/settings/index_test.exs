@@ -22,7 +22,7 @@ defmodule KjogviWeb.Live.Admin.Settings.IndexTest do
 
       assert has_element?(lv, "h1", "Site Settings")
       assert has_element?(lv, "#default-taxonomy-source", "from the application config")
-      assert has_element?(lv, "#default-taxonomy-source strong", "ebird/v2025")
+      assert has_element?(lv, "#default-taxonomy-source strong", "demo/v1")
       refute has_element?(lv, "#reset-taxonomy")
     end
 
@@ -67,7 +67,7 @@ defmodule KjogviWeb.Live.Admin.Settings.IndexTest do
       lv |> element("#reset-taxonomy") |> render_click()
 
       assert Settings.get_override(:default_taxonomy) == :error
-      assert Settings.default_taxonomy() == "ebird/v2025"
+      assert Settings.default_taxonomy() == "demo/v1"
       assert has_element?(lv, "#default-taxonomy-source", "from the application config")
     end
   end

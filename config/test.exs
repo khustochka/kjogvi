@@ -13,6 +13,11 @@ config :waffle,
   storage: Waffle.Storage.Local,
   storage_dir_prefix: Path.join(System.tmp_dir!(), "kjogvi_test_uploads")
 
+# Pin the default taxonomy to the offline demo book, so tests are independent of
+# the real default in config.exs (which changes with each eBird release) and
+# never download a source file.
+config :kjogvi, Kjogvi.Settings, default_taxonomy_importer: Ornitho.Importer.Demo.V1
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

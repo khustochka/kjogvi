@@ -5,7 +5,7 @@ defmodule Kjogvi.SettingsTest do
 
   describe "default_taxonomy/0" do
     test "derives the signature from the configured default importer" do
-      assert Settings.default_taxonomy() == "ebird/v2025"
+      assert Settings.default_taxonomy() == "demo/v1"
     end
 
     test "a database row overrides the config-derived signature" do
@@ -92,7 +92,7 @@ defmodule Kjogvi.SettingsTest do
       :ok = Settings.delete_setting(:default_taxonomy)
 
       assert Settings.get_override(:default_taxonomy) == :error
-      assert Settings.default_taxonomy() == "ebird/v2025"
+      assert Settings.default_taxonomy() == "demo/v1"
     end
 
     test "is a no-op when no row exists" do

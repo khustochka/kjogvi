@@ -374,7 +374,7 @@ defmodule Kjogvi.UsersTest do
 
     test "stamps the site default taxonomy" do
       {:ok, user} = Accounts.register_user(valid_user_attributes())
-      assert user.default_book_signature == "ebird/v2025"
+      assert user.default_book_signature == "demo/v1"
     end
   end
 
@@ -405,7 +405,7 @@ defmodule Kjogvi.UsersTest do
 
     test "stamps the site default taxonomy" do
       {:ok, user} = Accounts.register_admin(valid_user_attributes(email: "dave@example.com"))
-      assert user.default_book_signature == "ebird/v2025"
+      assert user.default_book_signature == "demo/v1"
     end
 
     test "sanitizes disallowed characters in the derived nickname" do

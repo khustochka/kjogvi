@@ -52,27 +52,18 @@ defmodule KjogviWeb.Live.Admin.Imports.IndexTest do
   describe "bootstrap" do
     # Point dataset storage at an empty scratch dir: the restores then fail with
     # :enoent, which drives the job to a terminal state. The taxonomy step runs
-    # first, so it is pointed at the offline demo importer rather than the
-    # configured default, which would download a real source file.
+    # first and imports the offline demo book pinned in config/test.exs.
     setup %{conn: conn} do
       dir = Path.join(System.tmp_dir!(), "datasets_#{System.unique_integer([:positive])}")
       original_datasets = Application.get_env(:kjogvi, Kjogvi.Datasets)
-      original_settings = Application.get_env(:kjogvi, Kjogvi.Settings, [])
 
       Application.put_env(:kjogvi, Kjogvi.Datasets,
         adapter: Kjogvi.Datasets.LocalAdapter,
         path: dir
       )
 
-      Application.put_env(
-        :kjogvi,
-        Kjogvi.Settings,
-        Keyword.put(original_settings, :default_taxonomy_importer, Ornitho.Importer.Demo.V1)
-      )
-
       on_exit(fn ->
         Application.put_env(:kjogvi, Kjogvi.Datasets, original_datasets)
-        Application.put_env(:kjogvi, Kjogvi.Settings, original_settings)
         File.rm_rf(dir)
       end)
 

@@ -130,13 +130,14 @@ config :ornithologue, Ornitho.Importer,
     Ornitho.Importer.Ebird.V2023,
     Ornitho.Importer.Ebird.V2024,
     Ornitho.Importer.Ebird.V2025,
+    Ornitho.Importer.Ebird.V2026,
     Ornitho.Importer.AviList.V2025
   ]
 
 config :ornithologue, Ornitho.StreamImporter, adapter: Ornitho.StreamImporter.LocalAdapter
 
 # The taxonomy the admin bootstrap seeds; must be one of the legit importers above.
-config :kjogvi, Kjogvi.Settings, default_taxonomy_importer: Ornitho.Importer.Ebird.V2025
+config :kjogvi, Kjogvi.Settings, default_taxonomy_importer: Ornitho.Importer.Ebird.V2026
 
 # OBAN
 
