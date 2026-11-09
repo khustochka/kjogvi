@@ -493,4 +493,25 @@ defmodule Kjogvi.BirdingTest do
       assert Kjogvi.Repo.get(Checklist, checklist.id)
     end
   end
+
+  describe "taxon_observations/2" do
+    test "returns the user's observations of exactly that taxon, newest first, with locations" do
+      user = user_fixture()
+      species = Ornitho.Factory.insert(:taxon)
+      subspecies = Ornitho.Factory.insert(:taxon, book: species.book, parent_species: species)
+      key = Ornitho.Schema.Taxon.key(species)
+
+      older = insert(:checklist, user: user, observ_date: ~D[2020-01-01])
+      newer = insert(:checklist, user: user, observ_date: ~D[2021-01-01])
+      obs_older = insert(:observation, checklist: older, taxon_key: key)
+      obs_newer = insert(:observation, checklist: newer, taxon_key: key, unreported: true)
+      insert(:observation, checklist: newer, taxon_key: Ornitho.Schema.Taxon.key(subspecies))
+      insert(:observation, checklist: insert(:checklist), taxon_key: key)
+
+      result = Birding.taxon_observations(user, key)
+
+      assert Enum.map(result, & &1.id) == [obs_newer.id, obs_older.id]
+      assert %Kjogvi.Geo.Location{} = hd(result).checklist.location
+    end
+  end
 end

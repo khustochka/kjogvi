@@ -157,6 +157,8 @@ defmodule KjogviWeb.Router do
       live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
       live "/lifelist/:year/:location", Live.Lifelist.Index, :index
 
+      live "/taxa/:slug/:version/:code", Live.My.Taxa.Show, :show
+
       live "/imports", Live.My.Imports.Index, :index
 
       live "/ebird", Live.My.Ebird.Index, :index

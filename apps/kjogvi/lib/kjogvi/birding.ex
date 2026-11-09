@@ -101,6 +101,28 @@ defmodule Kjogvi.Birding do
     |> Repo.preload(observations: from(obs in Observation, order_by: obs.id))
   end
 
+  @doc """
+  All of `user`'s observations recorded with exactly `taxon_key`, newest first,
+  with checklists and their full location levels loaded.
+  """
+  def taxon_observations(user, taxon_key) do
+    observations =
+      Observation.Query.with_checklist()
+      |> Observation.Query.owned_by(user)
+      |> Observation.Query.with_taxon_keys([taxon_key])
+      |> Observation.Query.newest_checklist_first()
+      |> Observation.Query.preload_checklist_location()
+      |> Repo.all()
+
+    checklists =
+      observations
+      |> Enum.map(& &1.checklist)
+      |> Geo.Location.Query.put_location_levels()
+      |> Map.new(&{&1.id, &1})
+
+    Enum.map(observations, &%{&1 | checklist: checklists[&1.checklist_id]})
+  end
+
   def preload_taxa_and_species(observations) do
     taxa =
       for obs <- observations, uniq: true do
