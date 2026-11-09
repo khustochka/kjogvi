@@ -155,11 +155,10 @@ defmodule OrnithoWeb.TaxaComponents do
       :if={@category}
       class={[
         category_to_color(@category),
-        "text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg whitespace-nowrap"
+        "inline-block text-white px-1 pt-0 pb-0.5 font-semibold text-sm rounded-lg whitespace-nowrap"
       ]}
-    >
-      <span class="sr-only">[</span>{@category}<span class="sr-only">]</span>
-    </span>
+      phx-no-format
+    ><span class="sr-only">[</span>{@category}<span class="sr-only">]</span></span>
     """
   end
 
@@ -172,12 +171,10 @@ defmodule OrnithoWeb.TaxaComponents do
     ~H"""
     <span
       :if={Ornitho.Schema.Taxon.extinct?(@taxon)}
-      class="text-white bg-black px-1.5 pt-0.5 pb-1 mx-1 font-semibold text-xs rounded-lg"
+      class="inline-block text-white bg-black px-1.5 pt-0.5 pb-1 mx-1 font-semibold text-xs rounded-lg"
       title="Extinct"
-    >
-      <span aria-hidden="true">EX</span>
-      <span class="sr-only">Extinct</span>
-    </span>
+      phx-no-format
+    ><span aria-hidden="true">EX</span><span class="sr-only"> Extinct</span></span>
     """
   end
 
