@@ -1,6 +1,6 @@
 <%!-- Public view --%>
 <div class="flex min-h-screen flex-col">
-  <div class="bg-neutral-800 text-sm md:text-[0.8125rem] font-semibold py-1 px-1 md:px-2 text-center">
+  <div class="bg-private-bar text-private-bar-text text-sm md:text-[0.8125rem] font-semibold py-1 px-1 md:px-2 text-center">
     <.access_control user={@current_scope.current_user}>
       <:guest_access>
         <.login_menu />
