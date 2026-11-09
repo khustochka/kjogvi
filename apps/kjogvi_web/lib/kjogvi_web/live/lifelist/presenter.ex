@@ -15,6 +15,10 @@ defmodule KjogviWeb.Live.Lifelist.Presenter do
     |> title
   end
 
+  def title(%{book: %Ornitho.Schema.Book{}, year: nil, location: nil, month: nil}) do
+    "Taxa Lifelist"
+  end
+
   def title(%{year: nil, location: nil, month: nil}) do
     "Lifelist"
   end

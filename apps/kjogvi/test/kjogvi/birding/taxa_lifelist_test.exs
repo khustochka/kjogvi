@@ -100,6 +100,16 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
     end
   end
 
+  describe "species_count/1" do
+    test "counts distinct species, ignoring taxa without one", ctx do
+      observe(ctx.user, ctx.species, ~D[2020-01-01])
+      observe(ctx.user, ctx.subspecies, ~D[2020-01-01])
+      observe(ctx.user, ctx.spuh, ~D[2020-01-01])
+
+      assert generate(ctx, []) |> TaxaLifelist.species_count() == 1
+    end
+  end
+
   describe "Lifelist.generate/2 with a book" do
     test "years and months come from the book's observations", ctx do
       observe(ctx.user, ctx.spuh, ~D[2020-04-01])

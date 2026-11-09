@@ -60,6 +60,7 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
     } do
       {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist")
 
+      assert has_element?(lv, "h1", "Taxa Lifelist")
       assert has_element?(lv, "#lifelist-book b", "eBird/Clements Checklist v2026")
 
       assert has_element?(
@@ -77,6 +78,23 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
              )
 
       refute has_element?(lv, "#lifelist-table", "Elsewhere Duck")
+    end
+
+    test "shows taxa and species counts; the species count switches to Species only", %{
+      conn: conn
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist")
+
+      assert has_element?(lv, "#lifelist-total", "2")
+      assert has_element?(lv, "#lifelist-total", "taxa recorded")
+      assert has_element?(lv, "#lifelist-species-total", "1")
+      assert has_element?(lv, "#lifelist-species-total", "species recorded")
+
+      lv |> element("#lifelist-species-total") |> render_click()
+      assert_patch(lv, ~p"/my/taxa/lifelist?species_only=true")
+
+      refute has_element?(lv, "#lifelist-species-total")
+      assert has_element?(lv, "#lifelist-total", "species recorded")
     end
 
     test "uncountable taxa are not bold", %{conn: conn} do

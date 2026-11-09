@@ -47,6 +47,18 @@ defmodule Kjogvi.Birding.TaxaLifelist do
     |> Location.Query.preload_all_locations()
   end
 
+  @doc """
+  Number of distinct species the entries' taxa roll up to.
+  """
+  @spec species_count([Entry.t()]) :: non_neg_integer()
+  def species_count(entries) do
+    entries
+    |> Enum.map(&Taxon.species(&1.taxon))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq_by(& &1.id)
+    |> length()
+  end
+
   defp roll_up(entries, false), do: entries
 
   defp roll_up(entries, true) do

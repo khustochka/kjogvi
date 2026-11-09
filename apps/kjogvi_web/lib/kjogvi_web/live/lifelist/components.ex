@@ -154,19 +154,9 @@ defmodule KjogviWeb.Live.Lifelist.Components do
 
   # A book lifelist entry links to the user's own taxon page, a species lifer
   # to its species page.
-  defp lifer_name(%{lifer: %TaxaLifelist.Entry{taxon: taxon}} = assigns) do
-    assigns = assign(assigns, :countable, not is_nil(Ornitho.Schema.Taxon.species(taxon)))
-
+  defp lifer_name(%{lifer: %TaxaLifelist.Entry{}} = assigns) do
     ~H"""
-    <span class="species_link" phx-no-format>
-      <.link
-        phx-no-format
-        navigate={~p"/my/taxa/#{@lifer.taxon.book.slug}/#{@lifer.taxon.book.version}/#{@lifer.taxon.code}"}
-        class={[if(@countable, do: "font-semibold"), "text-[1.05rem] text-forest-500 underline decoration-forest-200 hover:decoration-forest-500 hover:bg-forest-100 rounded-sm px-1 -mx-1 underline-offset-2 transition"]}
-      ><%= @lifer.taxon.name_en %></.link> <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@lifer.taxon.name_sci}</i></span>
-    <span :if={@lifer.taxon.category != "species"} class="text-xs text-stone-500">
-      ({@lifer.taxon.category})
-    </span>
+    <.taxon_link taxon={@lifer.taxon} />
     """
   end
 

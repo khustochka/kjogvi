@@ -548,6 +548,29 @@ defmodule KjogviWeb.BirdingComponents do
     """
   end
 
+  @doc """
+  Link to the user's own page for a taxon (with its `book` loaded), followed by
+  the scientific name and, unless it is a species, the category. Taxa that
+  don't roll up to a species (spuhs, slashes, hybrids…) aren't bold.
+  """
+  attr :taxon, Taxon, required: true
+
+  def taxon_link(assigns) do
+    assigns = assign(assigns, :countable, not is_nil(Taxon.species(assigns.taxon)))
+
+    ~H"""
+    <span class="taxon_link" phx-no-format>
+      <.link
+        phx-no-format
+        navigate={~p"/my/taxa/#{@taxon.book.slug}/#{@taxon.book.version}/#{@taxon.code}"}
+        class={[if(@countable, do: "font-semibold"), "text-[1.05rem] text-orange-600 underline decoration-orange-200 hover:decoration-orange-500 hover:bg-orange-50 rounded-sm px-1 -mx-1 underline-offset-2 transition"]}
+      ><%= @taxon.name_en %></.link> <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@taxon.name_sci}</i></span>
+    <span :if={@taxon.category != "species"} class="text-xs text-stone-500">
+      ({@taxon.category})
+    </span>
+    """
+  end
+
   attr :key, :string, required: true
   attr :target, :string, default: nil
 

@@ -31,7 +31,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   def mount(_params, _session, %{assigns: %{live_action: :taxa} = assigns} = socket) do
     case Kjogvi.Accounts.default_book(assigns.current_scope.current_user) do
-      nil -> {:ok, assign(socket, book: nil, page_title: "Taxa lifelist", robots: [:noindex])}
+      nil -> {:ok, assign(socket, book: nil, page_title: "Taxa Lifelist", robots: [:noindex])}
       book -> mount_lifelist(assign(socket, :book, book))
     end
   end
@@ -203,7 +203,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         </ul>
       </div>
       <div class="flex flex-wrap gap-2 mb-1">
-        <.species_count_header lifelist={@lifelist} unit={count_unit(@filter)} />
+        <.species_count_header
+          lifelist={@lifelist}
+          unit={count_unit(@filter)}
+          current_scope={@current_scope}
+        />
       </div>
     </div>
 
@@ -511,9 +515,42 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
+  # All taxa of a book: the taxa count plus the species they roll up to.
+  defp species_count_header(
+         %{lifelist: %{filter: %{book: %Ornitho.Schema.Book{}, species_only: false}}} = assigns
+       ) do
+    assigns =
+      assign(
+        assigns,
+        :species_total,
+        Kjogvi.Birding.TaxaLifelist.species_count(assigns.lifelist.list)
+      )
+
+    ~H"""
+    <div
+      id="lifelist-total"
+      class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg"
+    >
+      <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
+      <span class="text-forest-100 text-sm font-medium">{@unit} recorded</span>
+    </div>
+    <.link
+      id="lifelist-species-total"
+      patch={lifelist_path(@current_scope, %{@lifelist.filter | species_only: true})}
+      class="inline-flex items-baseline gap-2.5 bg-forest-100 text-forest-800 px-4 py-2.5 rounded-lg hover:bg-forest-200 no-underline group"
+    >
+      <span class="text-2xl font-header font-bold tracking-tight">{@species_total}</span>
+      <span class="text-sm font-medium group-hover:underline">species recorded</span>
+    </.link>
+    """
+  end
+
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: false}}} = assigns) do
     ~H"""
-    <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
+    <div
+      id="lifelist-total"
+      class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg"
+    >
       <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
       <span class="text-forest-100 text-sm font-medium">{@unit} recorded</span>
     </div>

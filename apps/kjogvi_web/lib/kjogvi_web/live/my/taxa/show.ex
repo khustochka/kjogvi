@@ -17,11 +17,19 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
     taxon =
       (Ornitho.Finder.Taxon.by_code(book, code) || raise(KjogviWeb.NotFoundError))
       |> Ornitho.Finder.Taxon.with_parent_species()
+      |> Map.put(:book, book)
+
+    # `taxon_link/1` builds the link from the taxon's book.
+    taxon =
+      case taxon.parent_species do
+        nil -> taxon
+        parent -> %{taxon | parent_species: %{parent | book: book}}
+      end
 
     observations =
       Birding.taxon_observations(
         socket.assigns.current_scope.current_user,
-        Taxon.key(%{taxon | book: book})
+        Taxon.key(taxon)
       )
 
     {
@@ -68,11 +76,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
       <dd :if={@taxon.order || @taxon.family}>{@taxon.order} / {@taxon.family}</dd>
       <dt :if={@taxon.parent_species} class="text-stone-500">Species</dt>
       <dd :if={@taxon.parent_species} id="taxon-parent-species">
-        <.link
-          navigate={~p"/my/taxa/#{@book.slug}/#{@book.version}/#{@taxon.parent_species.code}"}
-          class="text-forest-700 underline hover:text-forest-900"
-        >{@taxon.parent_species.name_en}</.link>
-        <i class="text-stone-500">{@taxon.parent_species.name_sci}</i>
+        <.taxon_link taxon={@taxon.parent_species} />
       </dd>
     </dl>
 
