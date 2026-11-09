@@ -1,7 +1,7 @@
 defmodule KjogviWeb.Live.My.Taxa.Show do
   @moduledoc """
-  A taxon from any taxonomy book, with the user's observations recorded with
-  exactly that taxon.
+  A taxon from any taxonomy book, with a paginated list of the user's
+  observations recorded with exactly that taxon.
   """
 
   use KjogviWeb, :live_view
@@ -9,6 +9,8 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
   alias Kjogvi.Birding
   alias Kjogvi.Geo
   alias Ornitho.Schema.Taxon
+
+  @observations_per_page 50
 
   @impl true
   def mount(%{"slug" => slug, "version" => version, "code" => code}, _session, socket) do
@@ -26,11 +28,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
         parent -> %{taxon | parent_species: %{parent | book: book}}
       end
 
-    observations =
-      Birding.taxon_observations(
-        socket.assigns.current_scope.current_user,
-        Taxon.key(taxon)
-      )
+    user = socket.assigns.current_scope.current_user
 
     {
       :ok,
@@ -38,19 +36,28 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
       |> assign(:page_title, "#{taxon.name_en} · #{book.name}")
       |> assign(:book, book)
       |> assign(:taxon, taxon)
-      |> assign(:observations, observations)
-      |> assign(:first_record_id, first_record_id(observations))
+      |> assign(:first_record_id, Birding.first_taxon_observation_id(user, Taxon.key(taxon)))
     }
   end
 
-  # The earliest observation that counts toward the lifelist.
-  defp first_record_id(observations) do
-    observations
-    |> Enum.reject(& &1.unreported)
-    |> List.last()
-    |> case do
-      nil -> nil
-      observation -> observation.id
+  @impl true
+  def handle_params(params, _url, %{assigns: assigns} = socket) do
+    page = params |> Map.get("page", "1") |> String.to_integer()
+
+    {observations, meta} =
+      Birding.taxon_observations(
+        assigns.current_scope.current_user,
+        Taxon.key(assigns.taxon),
+        %{page: page, page_size: @observations_per_page}
+      )
+
+    {:noreply, assign(socket, observations: observations, meta: meta)}
+  end
+
+  defp observations_path(book, taxon) do
+    fn
+      1 -> ~p"/my/taxa/#{book.slug}/#{book.version}/#{taxon.code}"
+      page -> ~p"/my/taxa/#{book.slug}/#{book.version}/#{taxon.code}/page/#{page}"
     end
   end
 
@@ -81,12 +88,21 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
     </dl>
 
     <.h2 class="mt-8">
-      My observations <span class="text-stone-400 font-normal">({length(@observations)})</span>
+      My observations <span class="text-stone-400 font-normal">({@meta.total_count})</span>
     </.h2>
 
     <p :if={@observations == []} id="taxon-no-observations" class="text-stone-600">
       You haven't recorded this taxon.
     </p>
+
+    <.pagination
+      id="taxon-observations-pagination-top"
+      meta={@meta}
+      path={observations_path(@book, @taxon)}
+      label="Pagination (top)"
+      class="mb-2"
+      anchor="taxon-observations-pagination-top"
+    />
 
     <ul :if={@observations != []} id="taxon-observations" class="border-t border-stone-200">
       <li
@@ -126,6 +142,13 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
         </ul>
       </li>
     </ul>
+
+    <.pagination
+      id="taxon-observations-pagination"
+      meta={@meta}
+      path={observations_path(@book, @taxon)}
+      anchor="taxon-observations-pagination-top"
+    />
     """
   end
 end

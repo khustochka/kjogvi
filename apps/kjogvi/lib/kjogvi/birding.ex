@@ -102,17 +102,16 @@ defmodule Kjogvi.Birding do
   end
 
   @doc """
-  All of `user`'s observations recorded with exactly `taxon_key`, newest first,
-  with checklists and their full location levels loaded.
+  A page of `user`'s observations recorded with exactly `taxon_key`, newest
+  first, as `{observations, %Flop.Meta{}}`, with checklists and their full
+  location levels loaded.
   """
-  def taxon_observations(user, taxon_key) do
-    observations =
-      Observation.Query.with_checklist()
-      |> Observation.Query.owned_by(user)
-      |> Observation.Query.with_taxon_keys([taxon_key])
+  def taxon_observations(user, taxon_key, pagination) do
+    {observations, meta} =
+      taxon_observations_query(user, taxon_key)
       |> Observation.Query.newest_checklist_first()
       |> Observation.Query.preload_checklist_location()
-      |> Repo.all()
+      |> Repo.paginate(pagination)
 
     checklists =
       observations
@@ -120,7 +119,25 @@ defmodule Kjogvi.Birding do
       |> Geo.Location.Query.put_location_levels()
       |> Map.new(&{&1.id, &1})
 
-    Enum.map(observations, &%{&1 | checklist: checklists[&1.checklist_id]})
+    {Enum.map(observations, &%{&1 | checklist: checklists[&1.checklist_id]}), meta}
+  end
+
+  @doc """
+  Id of `user`'s first counted observation of exactly `taxon_key`, or `nil`.
+  """
+  def first_taxon_observation_id(user, taxon_key) do
+    taxon_observations_query(user, taxon_key)
+    |> Observation.Query.reported()
+    |> Observation.Query.oldest_first()
+    |> Observation.Query.limit_to(1)
+    |> Observation.Query.select_id()
+    |> Repo.one()
+  end
+
+  defp taxon_observations_query(user, taxon_key) do
+    Observation.Query.with_checklist()
+    |> Observation.Query.owned_by(user)
+    |> Observation.Query.with_taxon_keys([taxon_key])
   end
 
   def preload_taxa_and_species(observations) do

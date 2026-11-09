@@ -494,7 +494,7 @@ defmodule Kjogvi.BirdingTest do
     end
   end
 
-  describe "taxon_observations/2" do
+  describe "taxon_observations/3" do
     test "returns the user's observations of exactly that taxon, newest first, with locations" do
       user = user_fixture()
       species = Ornitho.Factory.insert(:taxon)
@@ -508,10 +508,47 @@ defmodule Kjogvi.BirdingTest do
       insert(:observation, checklist: newer, taxon_key: Ornitho.Schema.Taxon.key(subspecies))
       insert(:observation, checklist: insert(:checklist), taxon_key: key)
 
-      result = Birding.taxon_observations(user, key)
+      {result, meta} = Birding.taxon_observations(user, key, %{page: 1, page_size: 10})
 
       assert Enum.map(result, & &1.id) == [obs_newer.id, obs_older.id]
       assert %Kjogvi.Geo.Location{} = hd(result).checklist.location
+      assert meta.total_count == 2
+
+      {[page2], _meta} = Birding.taxon_observations(user, key, %{page: 2, page_size: 1})
+      assert page2.id == obs_older.id
+    end
+  end
+
+  describe "first_taxon_observation_id/2" do
+    test "is the earliest counted observation of the taxon" do
+      user = user_fixture()
+      key = Ornitho.Schema.Taxon.key(Ornitho.Factory.insert(:taxon))
+
+      insert(:observation,
+        checklist: insert(:checklist, user: user, observ_date: ~D[2019-01-01]),
+        taxon_key: key,
+        unreported: true
+      )
+
+      first =
+        insert(:observation,
+          checklist: insert(:checklist, user: user, observ_date: ~D[2020-01-01]),
+          taxon_key: key
+        )
+
+      insert(:observation,
+        checklist: insert(:checklist, user: user, observ_date: ~D[2021-01-01]),
+        taxon_key: key
+      )
+
+      assert Birding.first_taxon_observation_id(user, key) == first.id
+    end
+
+    test "is nil without counted observations" do
+      user = user_fixture()
+      key = Ornitho.Schema.Taxon.key(Ornitho.Factory.insert(:taxon))
+
+      assert Birding.first_taxon_observation_id(user, key) == nil
     end
   end
 end

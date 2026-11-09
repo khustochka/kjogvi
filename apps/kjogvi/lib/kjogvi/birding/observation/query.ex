@@ -36,7 +36,7 @@ defmodule Kjogvi.Birding.Observation.Query do
   @spec reportable_for_scope(Kjogvi.Scope.t()) :: Ecto.Query.t()
   def reportable_for_scope(%Kjogvi.Scope{} = scope) do
     with_checklist()
-    |> where([observation: o], o.unreported == false)
+    |> reported()
     |> maybe_for_user(Kjogvi.Scope.subject_user(scope))
     |> maybe_exclude_hidden(Kjogvi.Scope.visibility(scope))
   end
@@ -143,6 +143,25 @@ defmodule Kjogvi.Birding.Observation.Query do
   end
 
   @doc """
+  Excludes unreported observations, which don't count toward lifelists.
+  """
+  def reported(query) do
+    where(query, [observation: o], o.unreported == false)
+  end
+
+  @doc """
+  Orders by first encounter: oldest checklist first, a missing start time
+  after any time.
+  """
+  def oldest_first(query) do
+    order_by(query, [observation: o, checklist: c],
+      asc: c.observ_date,
+      asc_nulls_last: c.start_time,
+      asc: o.id
+    )
+  end
+
+  @doc """
   Orders by newest checklist first.
   """
   def newest_checklist_first(query) do
@@ -154,6 +173,13 @@ defmodule Kjogvi.Birding.Observation.Query do
   """
   def limit_to(query, count) when is_integer(count) do
     limit(query, ^count)
+  end
+
+  @doc """
+  Selects only the observation id.
+  """
+  def select_id(query) do
+    select(query, [observation: o], o.id)
   end
 
   @doc """

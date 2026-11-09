@@ -111,4 +111,32 @@ defmodule KjogviWeb.Live.My.Taxa.ShowTest do
     refute has_element?(lv, "#observation-#{uncounted.id}", "First record")
     assert has_element?(lv, "#observation-#{counted.id}", "First record")
   end
+
+  test "paginates observations, keeping the first record mark on its page",
+       %{conn: conn, user: user, book: book, species: species} do
+    first =
+      insert(:observation,
+        checklist: insert(:checklist, user: user, observ_date: ~D[2000-01-01]),
+        taxon_key: Taxon.key(species)
+      )
+
+    checklist = insert(:checklist, user: user, observ_date: ~D[2020-01-01])
+
+    for _ <- 1..50,
+        do: insert(:observation, checklist: checklist, taxon_key: Taxon.key(species))
+
+    {:ok, lv, _html} = live(conn, taxon_path(book, species))
+
+    assert has_element?(lv, "h2", "(51)")
+    refute has_element?(lv, "#observation-#{first.id}")
+
+    assert has_element?(
+             lv,
+             "#taxon-observations-pagination a[href^='#{taxon_path(book, species)}/page/2']"
+           )
+
+    {:ok, lv, _html} = live(conn, "#{taxon_path(book, species)}/page/2")
+
+    assert has_element?(lv, "#observation-#{first.id}", "First record")
+  end
 end
