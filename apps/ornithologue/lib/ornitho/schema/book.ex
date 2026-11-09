@@ -42,6 +42,12 @@ defmodule Ornitho.Schema.Book do
     @default_order
   end
 
+  @doc """
+  The book's `"slug/version"` signature.
+  """
+  @spec signature(%{slug: String.t(), version: String.t()}) :: String.t()
+  def signature(%{slug: slug, version: version}), do: "#{slug}/#{version}"
+
   def creation_changeset(%Book{} = book, attrs) do
     book
     |> changeset_common_process(attrs)

@@ -42,25 +42,13 @@ defmodule Ornithologue do
         |> Query.Taxon.by_codes(by_book[{book.slug, book.version}])
         |> Ornitho.Repo.all()
         |> Ornitho.Repo.preload(:parent_species)
-        |> Enum.map(fn taxon ->
-          add_book_to_taxon_and_species(taxon, book)
-        end)
+        |> Enum.map(&Taxon.put_book(&1, book))
         |> Enum.group_by(&Taxon.key/1)
         |> Map.new(fn {key, [val | _]} -> {key, val} end)
 
       acc
       |> Map.merge(grouped)
     end)
-  end
-
-  defp add_book_to_taxon_and_species(taxon, book) do
-    new_taxon =
-      case taxon.parent_species do
-        nil -> taxon
-        species -> Map.put(taxon, :parent_species, %{species | book: book})
-      end
-
-    Map.put(new_taxon, :book, book)
   end
 
   @spec extract_books_and_codes([String.t()]) :: %{{String.t(), String.t()} => [String.t()]}

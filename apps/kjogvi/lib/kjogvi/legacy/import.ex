@@ -26,9 +26,7 @@ defmodule Kjogvi.Legacy.Import do
   end
 
   defp validate_book do
-    [slug, version] = String.split(@book_signature, "/")
-
-    if Ornitho.Finder.Book.exists?(slug, version) do
+    if Ornitho.Finder.Book.by_signature(@book_signature) do
       :ok
     else
       {:error,

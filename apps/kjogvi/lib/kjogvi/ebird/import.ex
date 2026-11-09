@@ -137,16 +137,14 @@ defmodule Kjogvi.Ebird.Import do
     end
   end
 
-  defp resolve_book(%{default_book_signature: sig}) when is_binary(sig) and sig != "" do
-    [slug, version] = String.split(sig, "/")
+  defp resolve_book(%{default_book_signature: nil}), do: {:error, :no_default_book}
 
-    case Ornitho.Finder.Book.by_signature(slug, version) do
+  defp resolve_book(user) do
+    case Kjogvi.Accounts.default_book(user) do
       %Ornitho.Schema.Book{} = book -> {:ok, book}
       nil -> {:error, :book_not_found}
     end
   end
-
-  defp resolve_book(_user), do: {:error, :no_default_book}
 
   @doc """
   Whether the summary of a finished run reports rows that were not imported

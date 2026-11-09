@@ -26,6 +26,18 @@ defmodule Ornitho.Finder.Book do
     |> Ornitho.Repo.all()
   end
 
+  @doc """
+  The book with a `"slug/version"` signature; `nil` if the signature is
+  malformed or names no book.
+  """
+  @spec by_signature(String.t()) :: Book.t() | nil
+  def by_signature(signature) do
+    case String.split(signature, "/") do
+      [slug, version] -> by_signature(slug, version)
+      _ -> nil
+    end
+  end
+
   @spec by_signature(String.t(), String.t()) :: Book.t() | nil
   def by_signature(slug, version) do
     Query.Book.base_book()

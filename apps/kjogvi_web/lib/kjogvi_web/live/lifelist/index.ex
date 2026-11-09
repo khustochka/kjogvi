@@ -12,6 +12,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   alias Kjogvi.Util
   alias Kjogvi.Birding.Lifelist
+  alias Ornitho.Schema.Book
 
   alias KjogviWeb.DateHelper
   alias KjogviWeb.Live.Lifelist.Grouping
@@ -69,7 +70,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @impl true
   def handle_event("select_book", %{"book" => signature}, %{assigns: assigns} = socket) do
-    book = Enum.find(assigns.books, &(book_signature(&1) == signature)) || assigns.book
+    book = Enum.find(assigns.books, &(Book.signature(&1) == signature)) || assigns.book
 
     {:noreply,
      push_patch(socket, to: lifelist_path(assigns.current_scope, %{assigns.filter | book: book}))}
@@ -78,15 +79,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   defp taxa_book(nil, default_book), do: default_book
 
   defp taxa_book(signature, _default_book) do
-    with [slug, version] <- String.split(signature, "/"),
-         %Ornitho.Schema.Book{} = book <- Ornitho.Finder.Book.by_signature(slug, version) do
-      book
-    else
-      _ -> raise KjogviWeb.NotFoundError
-    end
+    Ornitho.Finder.Book.by_signature(signature) || raise KjogviWeb.NotFoundError
   end
-
-  defp book_signature(book), do: "#{book.slug}/#{book.version}"
 
   defp handle_lifelist_params(%{assigns: assigns} = socket, params) do
     scope = assigns.current_scope
@@ -502,7 +496,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     |> assign(:page_title, "#{assigns.page_header} (#{assigns.book.name})")
   end
 
-  defp count_unit(%{book: %Ornitho.Schema.Book{}, species_only: false}), do: "taxa"
+  defp count_unit(%{book: %Book{}, species_only: false}), do: "taxa"
   defp count_unit(_filter), do: "species"
 
   # Private view not indexed
@@ -580,7 +574,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       >
         <option
           :for={book <- @books}
-          value={book_signature(book)}
+          value={Book.signature(book)}
           selected={book.id == @book.id}
         >
           {book.name}
@@ -594,7 +588,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  attr :book, Ornitho.Schema.Book, required: true
+  attr :book, Book, required: true
   attr :entries, :list, required: true
 
   # Recorded taxa missing from the list though they should be on it.
@@ -620,7 +614,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     """
   end
 
-  attr :book, Ornitho.Schema.Book, required: true
+  attr :book, Book, required: true
   attr :entries, :list, required: true
 
   # Taxa without a species from other books: their absence is expected.
@@ -651,14 +645,14 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     ~H"""
     <.taxon_link taxon={@entry.taxon} />
     <span class="text-xs text-stone-500">
-      in {@entry.taxon.book.slug}/{@entry.taxon.book.version}
+      in {Book.signature(@entry.taxon.book)}
     </span>
     """
   end
 
   # All taxa of a book: the taxa count plus the species they roll up to.
   defp species_count_header(
-         %{lifelist: %{filter: %{book: %Ornitho.Schema.Book{}, species_only: false}}} = assigns
+         %{lifelist: %{filter: %{book: %Book{}, species_only: false}}} = assigns
        ) do
     assigns =
       assign(

@@ -23,7 +23,7 @@ defmodule KjogviWeb.Paths.LifelistPath do
       when area in [:private, :admin] do
     {year, location, query_params} = split_params(filter)
 
-    my_taxa_p(year, location, [{:book, "#{book.slug}/#{book.version}"} | query_params])
+    my_taxa_p(year, location, [{:book, Ornitho.Schema.Book.signature(book)} | query_params])
   end
 
   def lifelist_path(scope, path_opts) when is_map(path_opts) do

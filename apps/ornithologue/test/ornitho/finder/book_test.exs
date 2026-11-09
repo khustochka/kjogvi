@@ -58,6 +58,25 @@ defmodule Ornitho.Finder.BookTest do
     end
   end
 
+  describe "by_signature/1" do
+    test "returns the book matching a slug/version signature" do
+      book = insert(:book, slug: "ebird", version: "v2024")
+
+      assert Ornitho.Finder.Book.by_signature("ebird/v2024").id == book.id
+    end
+
+    test "returns nil when no match" do
+      assert Ornitho.Finder.Book.by_signature("nonexistent/v1") == nil
+    end
+
+    test "returns nil for a malformed signature" do
+      insert(:book, slug: "ebird", version: "v2024")
+
+      assert Ornitho.Finder.Book.by_signature("ebird") == nil
+      assert Ornitho.Finder.Book.by_signature("ebird/v2024/extra") == nil
+    end
+  end
+
   describe "by_signature!/2" do
     test "returns the book matching slug and version" do
       book = insert(:book, slug: "ebird", version: "v2024")

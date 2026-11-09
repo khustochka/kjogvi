@@ -8,6 +8,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
 
   alias Kjogvi.Birding
   alias Kjogvi.Geo
+  alias Ornitho.Schema.Book
   alias Ornitho.Schema.Taxon
 
   @observations_per_page 50
@@ -16,17 +17,11 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
   def mount(%{"slug" => slug, "version" => version, "code" => code}, _session, socket) do
     book = Ornitho.Finder.Book.by_signature(slug, version) || raise KjogviWeb.NotFoundError
 
+    # `taxon_link/1` builds the link from the taxon's book.
     taxon =
       (Ornitho.Finder.Taxon.by_code(book, code) || raise(KjogviWeb.NotFoundError))
       |> Ornitho.Finder.Taxon.with_parent_species()
-      |> Map.put(:book, book)
-
-    # `taxon_link/1` builds the link from the taxon's book.
-    taxon =
-      case taxon.parent_species do
-        nil -> taxon
-        parent -> %{taxon | parent_species: %{parent | book: book}}
-      end
+      |> Taxon.put_book(book)
 
     user = socket.assigns.current_scope.current_user
 
@@ -77,7 +72,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
     <dl id="taxon-details" class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
       <dt class="text-stone-500">Taxonomy</dt>
       <dd>
-        <b class="font-semibold">{@book.name}</b> ({@book.slug}/{@book.version})
+        <b class="font-semibold">{@book.name}</b> ({Book.signature(@book)})
       </dd>
       <dt :if={@taxon.order || @taxon.family} class="text-stone-500">Order / family</dt>
       <dd :if={@taxon.order || @taxon.family}>{@taxon.order} / {@taxon.family}</dd>

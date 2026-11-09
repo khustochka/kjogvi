@@ -50,6 +50,15 @@ defmodule Ornitho.Schema.Taxon do
     "/#{slug}/#{version}/#{code}"
   end
 
+  @doc """
+  Sets `book` on the taxon and on its parent species, if loaded.
+  """
+  @spec put_book(t(), Book.t()) :: t()
+  def put_book(%Taxon{parent_species: %Taxon{} = species} = taxon, book),
+    do: %{taxon | book: book, parent_species: %{species | book: book}}
+
+  def put_book(%Taxon{} = taxon, book), do: %{taxon | book: book}
+
   def species(taxon) do
     cond do
       is_nil(taxon) ->

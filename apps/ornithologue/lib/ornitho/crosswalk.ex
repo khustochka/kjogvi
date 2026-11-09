@@ -74,11 +74,6 @@ defmodule Ornitho.Crosswalk do
     |> Query.Taxon.by_concept_ids(concept_ids)
     |> Ornitho.Repo.all()
     |> Ornitho.Repo.preload(:parent_species)
-    |> Map.new(&{&1.taxon_concept_id, put_book(&1, book)})
+    |> Map.new(&{&1.taxon_concept_id, Taxon.put_book(&1, book)})
   end
-
-  defp put_book(%Taxon{parent_species: nil} = taxon, book), do: %{taxon | book: book}
-
-  defp put_book(%Taxon{parent_species: species} = taxon, book),
-    do: %{taxon | book: book, parent_species: %{species | book: book}}
 end

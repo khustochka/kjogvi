@@ -59,6 +59,34 @@ defmodule Ornitho.Schema.TaxonTest do
     end
   end
 
+  describe "put_book/2" do
+    test "sets the book on a taxon without a parent species" do
+      book = insert(:book)
+
+      taxon =
+        insert(:taxon, book: book, parent_species: nil) |> OrnithoRepo.preload(:parent_species)
+
+      result = Taxon.put_book(taxon, book)
+
+      assert result.book == book
+      assert result.parent_species == nil
+    end
+
+    test "sets the book on the taxon and its parent species" do
+      book = insert(:book)
+      parent = insert(:taxon, book: book, category: "species")
+
+      subspecies =
+        insert(:taxon, book: book, category: "subspecies", parent_species: parent)
+        |> OrnithoRepo.preload(:parent_species)
+
+      result = Taxon.put_book(subspecies, book)
+
+      assert result.book == book
+      assert result.parent_species.book == book
+    end
+  end
+
   describe "species/1" do
     test "returns nil when taxon is nil" do
       assert Taxon.species(nil) == nil

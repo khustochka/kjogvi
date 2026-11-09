@@ -418,10 +418,8 @@ defmodule Kjogvi.Accounts do
   """
   def default_book(%User{default_book_signature: nil}), do: nil
 
-  def default_book(%User{default_book_signature: signature}) do
-    [slug, version] = String.split(signature, "/")
-    Ornitho.Finder.Book.by_signature(slug, version)
-  end
+  def default_book(%User{default_book_signature: signature}),
+    do: Ornitho.Finder.Book.by_signature(signature)
 
   @doc """
   Sets the user's default taxonomy (a `"slug/version"` book signature).

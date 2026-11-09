@@ -89,7 +89,10 @@ defmodule KjogviWeb.Live.Admin.Settings.Index do
 
   defp book_options do
     Ornitho.Finder.Book.all()
-    |> Enum.map(fn b -> {"#{b.name} (#{b.slug}/#{b.version})", "#{b.slug}/#{b.version}"} end)
+    |> Enum.map(fn b ->
+      signature = Ornitho.Schema.Book.signature(b)
+      {"#{b.name} (#{signature})", signature}
+    end)
   end
 
   @impl true

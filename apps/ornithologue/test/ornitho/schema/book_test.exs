@@ -11,4 +11,10 @@ defmodule Ornitho.Schema.BookTest do
       assert OrnithoRepo.all(Book) == [book]
     end
   end
+
+  describe "signature/1" do
+    test "joins slug and version" do
+      assert Book.signature(%Book{slug: "ebird", version: "v2024"}) == "ebird/v2024"
+    end
+  end
 end

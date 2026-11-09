@@ -55,8 +55,8 @@ defmodule Kjogvi.Search.Taxon do
   def search_taxa(query_text, user) when is_binary(query_text) and byte_size(query_text) > 0 do
     query_text = String.downcase(String.trim(query_text))
 
-    case get_user_book(user) do
-      {:ok, book} ->
+    case Kjogvi.Accounts.default_book(user) do
+      %Book{} = book ->
         counts = observation_counts(user)
 
         book
@@ -66,7 +66,7 @@ defmodule Kjogvi.Search.Taxon do
         |> Enum.take(@limit)
         |> Enum.map(&add_taxon_key(&1, book))
 
-      :error ->
+      nil ->
         []
     end
   end
@@ -78,19 +78,6 @@ defmodule Kjogvi.Search.Taxon do
   """
   def all_taxa(book) do
     Ornitho.Finder.Taxon.all(book)
-  end
-
-  defp get_user_book(user) do
-    if is_nil(user.default_book_signature) do
-      :error
-    else
-      [slug, version] = String.split(user.default_book_signature, "/")
-
-      case Ornitho.Finder.Book.by_signature(slug, version) do
-        %Book{} = book -> {:ok, book}
-        nil -> :error
-      end
-    end
   end
 
   defp matches_query?(taxon, query_text) do
@@ -158,7 +145,7 @@ defmodule Kjogvi.Search.Taxon do
   end
 
   defp observation_count(taxon, counts, book) do
-    key = "/#{book.slug}/#{book.version}/#{taxon.code}"
+    key = Ornitho.Schema.Taxon.key(%{taxon | book: book})
     Map.get(counts, key, 0)
   end
 
@@ -200,6 +187,6 @@ defmodule Kjogvi.Search.Taxon do
   end
 
   defp add_taxon_key(taxon, book) do
-    Map.put(taxon, :key, "/#{book.slug}/#{book.version}/#{taxon.code}")
+    Map.put(taxon, :key, Ornitho.Schema.Taxon.key(%{taxon | book: book}))
   end
 end
