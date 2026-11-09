@@ -15,6 +15,7 @@ defmodule Converter.AviList.V2025 do
     "Sequence" => {:integer, :avilist_order},
     "Family_English_name" => {:string, :species_group},
     "Range" => {:string, :range},
+    "Extinct_or_possibly_extinct" => {:string, :extinction_status},
     "IUCN_Red_List_Category" => {:string, :iucn_red_list_category},
     "Species_code_Cornell_Lab" => {:string, :ebird_code}
   }
