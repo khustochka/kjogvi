@@ -7,6 +7,7 @@ defmodule Kjogvi.Birding.Lifelist do
   alias Kjogvi.Repo
 
   alias Kjogvi.Birding.LifeObservation
+  alias Kjogvi.Birding.TaxaLifelist
   alias __MODULE__
   alias __MODULE__.Filter
   alias __MODULE__.Result
@@ -21,12 +22,14 @@ defmodule Kjogvi.Birding.Lifelist do
 
   @doc """
   Generate lifelist based on provided filter options.
+
+  The list holds `LifeObservation`s, or `TaxaLifelist.Entry`s when the filter
+  has a `book`.
   """
   def generate(scope, filter \\ [])
 
   def generate(scope, %Filter{} = filter) do
-    generate_with_species(scope, filter)
-    |> Location.Query.preload_all_locations()
+    generate_list(scope, filter)
     |> then(fn list ->
       %Result{
         user: Kjogvi.Scope.subject_user(scope),
@@ -120,6 +123,13 @@ defmodule Kjogvi.Birding.Lifelist do
 
   # ===
 
+  defp generate_list(scope, %Filter{book: nil} = filter) do
+    generate_with_species(scope, filter)
+    |> Location.Query.preload_all_locations()
+  end
+
+  defp generate_list(scope, filter), do: TaxaLifelist.generate(scope, filter)
+
   defp generate_with_species(scope, filter, opts \\ []) do
     Lifelist.Query.lifelist_query(scope, filter, opts)
     |> fetch_with_species()
@@ -130,6 +140,21 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Repo.all()
     |> Enum.map(&Repo.load(LifeObservation, &1))
     |> Repo.preload(:species_page)
+  end
+
+  defp maybe_add_extras(
+         scope,
+         %{filter: filter = %{exclude_heard_only: true, book: %Ornitho.Schema.Book{}}} = result
+       ) do
+    seen_taxon_ids = MapSet.new(result.list, & &1.taxon.id)
+
+    heard_only_list =
+      TaxaLifelist.generate(scope, %{filter | exclude_heard_only: false})
+      |> Enum.reject(&MapSet.member?(seen_taxon_ids, &1.taxon.id))
+
+    heard_only = %Result{filter: filter, list: heard_only_list, total: length(heard_only_list)}
+
+    %{result | extras: %{heard_only: heard_only}}
   end
 
   defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do

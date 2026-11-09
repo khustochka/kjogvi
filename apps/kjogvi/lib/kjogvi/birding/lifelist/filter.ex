@@ -1,6 +1,10 @@
 defmodule Kjogvi.Birding.Lifelist.Filter do
   @moduledoc """
   Lifelist filtering parameters.
+
+  With a `book`, the lifelist is of taxa recorded in that taxonomy book rather
+  than of species pages (see `Kjogvi.Birding.TaxaLifelist`); `species_only`
+  then rolls those taxa up to species.
   """
 
   alias Kjogvi.Geo
@@ -31,6 +35,14 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
     sort: [
       type: {:in, [:date, :taxonomy]},
       default: :date
+    ],
+    book: [
+      type: {:or, [{:struct, Ornitho.Schema.Book}, nil]},
+      default: nil
+    ],
+    species_only: [
+      type: :boolean,
+      default: false
     ]
   ]
 

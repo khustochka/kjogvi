@@ -1,5 +1,10 @@
 defmodule KjogviWeb.Live.Lifelist.Index do
-  @moduledoc false
+  @moduledoc """
+  The lifelist, filtered by location, year, month, etc.
+
+  Serves the community, user, and private species lifelists, plus the `:taxa`
+  action: the private lifelist of taxa in the user's default taxonomy book.
+  """
 
   use KjogviWeb, :live_view
 
@@ -14,10 +19,30 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @all_months 1..12
 
+  @toggle_labels [
+    exclude_heard_only: "Heard only excluded",
+    motorless: "Motorless only"
+  ]
+
   @impl true
-  def mount(_params, _session, %{assigns: assigns} = socket) do
+  def mount(_params, _session, %{assigns: %{live_action: :taxa_redirect}} = socket) do
+    {:ok, push_navigate(socket, to: ~p"/my/taxa/lifelist")}
+  end
+
+  def mount(_params, _session, %{assigns: %{live_action: :taxa} = assigns} = socket) do
+    case Kjogvi.Accounts.default_book(assigns.current_scope.current_user) do
+      nil -> {:ok, assign(socket, book: nil, page_title: "Taxa lifelist", robots: [:noindex])}
+      book -> mount_lifelist(assign(socket, :book, book))
+    end
+  end
+
+  def mount(_params, _session, socket) do
+    mount_lifelist(assign(socket, :book, nil))
+  end
+
+  defp mount_lifelist(%{assigns: assigns} = socket) do
     all_years =
-      Lifelist.years(assigns.current_scope)
+      Lifelist.years(assigns.current_scope, book: assigns.book)
       |> Enum.reverse()
 
     {
@@ -30,13 +55,17 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   @impl true
+  def handle_params(_params, _url, %{assigns: %{live_action: :taxa, book: nil}} = socket) do
+    {:noreply, socket}
+  end
+
   def handle_params(params, _url, %{assigns: assigns} = socket) do
     scope = assigns.current_scope
 
     filter =
       KjogviWeb.Live.Lifelist.Params.to_filter(scope, params)
       |> case do
-        {:ok, filter} -> filter
+        {:ok, filter} -> with_book(filter, assigns.book)
         {:error, _} -> raise KjogviWeb.NotFoundError
       end
 
@@ -53,7 +82,8 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
     # Which locations to show as pills: countries/subdivisions with observations
     # across the whole lifelist (ignoring the current filter).
-    present_locations = Kjogvi.Geo.get_locations_by_ids(Lifelist.location_ids(scope))
+    present_locations =
+      Kjogvi.Geo.get_locations_by_ids(Lifelist.location_ids(scope, book: assigns.book))
 
     # Which of those pills are active: locations with observations within the
     # current filtered subset.
@@ -109,6 +139,12 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     }
   end
 
+  defp with_book(filter, nil), do: filter
+
+  # The taxa lifelist has no motorless or heard-only filters.
+  defp with_book(filter, book),
+    do: %{filter | book: book, motorless: false, exclude_heard_only: false}
+
   defp group_lifelist(%{filter: %{sort: :taxonomy}} = lifelist),
     do: Grouping.by_taxonomy(lifelist)
 
@@ -116,6 +152,21 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   @impl true
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
+  def render(%{live_action: :taxa, book: nil} = assigns) do
+    ~H"""
+    <.h1>{@page_title}</.h1>
+    <div
+      id="taxa-no-default-book"
+      class="my-6 p-4 rounded border border-amber-300 bg-amber-50 text-sm text-stone-700"
+    >
+      You have no default taxonomy, so there is nothing to show. See <.link
+        navigate={~p"/my/settings/preferences#default-taxonomy"}
+        class="text-forest-700 underline hover:text-forest-900"
+      >Preferences</.link>.
+    </div>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <%!-- Page title + stats --%>
@@ -130,6 +181,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           class="mt-1 text-stone-500"
           phx-no-format
         ><%= for {segment, index} <- Enum.with_index(@location_ancestor_segments) do %><span :if={index > 0}>, </span><.link href={lifelist_path(@current_scope, %{@filter | location: segment})} class="decoration-stone-300 hover:text-stone-700 hover:decoration-stone-500">{segment.name_en}</.link><% end %></p>
+        <p :if={@book} id="lifelist-book" class="mt-1 text-sm text-stone-600">
+          Taxa in <b class="font-semibold text-stone-800">{@book.name}</b>
+          ({@book.slug}/{@book.version})
+        </p>
         <ul
           :if={@filter.motorless or @filter.exclude_heard_only}
           class="mt-2 flex flex-wrap items-center gap-2 list-none"
@@ -148,7 +203,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
         </ul>
       </div>
       <div class="flex flex-wrap gap-2 mb-1">
-        <.species_count_header lifelist={@lifelist} />
+        <.species_count_header lifelist={@lifelist} unit={count_unit(@filter)} />
       </div>
     </div>
 
@@ -157,6 +212,21 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       <%!-- Sidebar: collapses on mobile, sticky on desktop --%>
       <aside class="lg:w-56 xl:w-64 shrink-0 mb-4 lg:mb-0">
         <div class="sidebar-sticky">
+          <%!-- Outside the collapsible filters: it changes what is listed, not which records --%>
+          <div
+            :if={@book}
+            id="lifelist-species-only"
+            class="mb-3 lg:mb-5 lg:pb-5 lg:border-b lg:border-stone-100"
+          >
+            <.toggle_switch
+              enabled={@filter.species_only}
+              href={lifelist_path(@current_scope, %{@filter | species_only: !@filter.species_only})}
+              off_label="Species only"
+              on_label="Species only"
+              on_action="Include all taxa"
+            />
+          </div>
+
           <%!-- Mobile: toggle button with filter summary --%>
           <button
             phx-click={JS.toggle_class("open", to: "#filter-body")}
@@ -283,10 +353,10 @@ defmodule KjogviWeb.Live.Lifelist.Index do
                 </ul>
               </div>
 
-              <hr class="border-stone-100" />
+              <hr :if={is_nil(@book)} class="border-stone-100" />
 
               <%!-- Toggles (lower priority filters) --%>
-              <ul class="space-y-3 list-none" aria-label="Filters">
+              <ul :if={is_nil(@book)} class="space-y-3 list-none" aria-label="Filters">
                 <li>
                   <.toggle_switch
                     enabled={@filter.exclude_heard_only}
@@ -375,10 +445,18 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     |> Enum.drop(1)
   end
 
-  defp derive_page_title(%{assigns: assigns} = socket) do
+  defp derive_page_title(%{assigns: %{book: nil} = assigns} = socket) do
     socket
     |> assign(:page_title, assigns[:page_header] || Presenter.title(assigns.filter))
   end
+
+  defp derive_page_title(%{assigns: assigns} = socket) do
+    socket
+    |> assign(:page_title, "#{assigns.page_header} (#{assigns.book.name})")
+  end
+
+  defp count_unit(%{book: %Ornitho.Schema.Book{}, species_only: false}), do: "taxa"
+  defp count_unit(_filter), do: "species"
 
   # Private view not indexed
   defp derive_robots(%{assigns: %{current_scope: %Kjogvi.Scope{area: area}}} = socket)
@@ -421,16 +499,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
             parts
         end
       end)
-      |> then(fn parts ->
-        if assigns.filter.exclude_heard_only,
-          do: parts ++ ["Heard only excluded"],
-          else: parts
-      end)
-      |> then(fn parts ->
-        if assigns.filter.motorless,
-          do: parts ++ ["Motorless only"],
-          else: parts
-      end)
+      |> Kernel.++(for {key, label} <- @toggle_labels, Map.fetch!(assigns.filter, key), do: label)
 
     assigns = assign(assigns, :parts, parts)
 
@@ -446,7 +515,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     ~H"""
     <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
       <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
-      <span class="text-forest-100 text-sm font-medium">species recorded</span>
+      <span class="text-forest-100 text-sm font-medium">{@unit} recorded</span>
     </div>
     """
   end
@@ -455,11 +524,11 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     ~H"""
     <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
       <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
-      <span class="text-forest-100 text-sm font-medium">species seen</span>
+      <span class="text-forest-100 text-sm font-medium">{@unit} seen</span>
     </div>
     <div class="inline-flex items-baseline gap-2.5 bg-purple-600/60 text-white px-4 py-2.5 rounded-lg">
       <span class="text-2xl font-header font-bold tracking-tight">&nbsp;</span>
-      <span class="text-purple-100 text-sm font-medium">No heard only species</span>
+      <span class="text-purple-100 text-sm font-medium">No heard only {@unit}</span>
     </div>
     """
   end
@@ -468,7 +537,7 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     ~H"""
     <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
       <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
-      <span class="text-forest-100 text-sm font-medium">species seen</span>
+      <span class="text-forest-100 text-sm font-medium">{@unit} seen</span>
     </div>
     <a
       href="#heard-only-list"

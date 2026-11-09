@@ -70,6 +70,14 @@ defmodule KjogviWeb.Live.Lifelist.Params do
     end
   end
 
+  defp add_param(acc, {"species_only", species_only}, _scope) do
+    if species_only == "true" do
+      add_success(acc, {:species_only, true})
+    else
+      acc
+    end
+  end
+
   defp add_param(acc, {"sort", sort}, _scope) do
     case sort do
       "taxonomy" -> add_success(acc, {:sort, :taxonomy})

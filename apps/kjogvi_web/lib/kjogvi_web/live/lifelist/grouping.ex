@@ -12,6 +12,7 @@ defmodule KjogviWeb.Live.Lifelist.Grouping do
   """
 
   alias Kjogvi.Birding.Lifelist.Result
+  alias Kjogvi.Birding.TaxaLifelist.Entry
 
   @type rank :: pos_integer()
   @type lifer :: map()
@@ -25,14 +26,15 @@ defmodule KjogviWeb.Live.Lifelist.Grouping do
   def by_taxonomy(%Result{list: list}) do
     list
     |> Enum.with_index(fn lifer, i -> {lifer, i + 1} end)
-    |> Enum.chunk_by(fn {lifer, _rank} ->
-      {lifer.species_page.order, lifer.species_page.family}
-    end)
+    |> Enum.chunk_by(fn {lifer, _rank} -> order_and_family(lifer) end)
     |> Enum.map(fn [{first, _} | _] = chunk ->
-      sp = first.species_page
-      {{:taxonomy, sp.order, sp.family}, chunk}
+      {order, family} = order_and_family(first)
+      {{:taxonomy, order, family}, chunk}
     end)
   end
+
+  defp order_and_family(%Entry{taxon: taxon}), do: {taxon.order, taxon.family}
+  defp order_and_family(%{species_page: sp}), do: {sp.order, sp.family}
 
   @spec by_year(Result.t()) :: [group()]
   def by_year(%Result{filter: %{year: year}, list: list, total: total})

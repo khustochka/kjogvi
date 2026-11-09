@@ -78,7 +78,7 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   def observations_filtered(scope, filter \\ [])
 
   def observations_filtered(scope, %Filter{} = filter) do
-    base = from([o, c] in Observation.Query.base_for_scope(scope))
+    base = from([o, c] in base_query(scope, filter.book))
 
     Map.from_struct(filter)
     |> Enum.reduce(base, fn filter, query ->
@@ -106,6 +106,15 @@ defmodule Kjogvi.Birding.Lifelist.Query do
 
   def observations_filtered(user, filter) do
     filter |> Filter.discombo!() |> then(&observations_filtered(user, &1))
+  end
+
+  # Species lifelist: observations with a species page. Book lifelist: every
+  # observation of a taxon from the book, species page or not.
+  defp base_query(scope, nil), do: Observation.Query.base_for_scope(scope)
+
+  defp base_query(scope, book) do
+    Observation.Query.reportable_for_scope(scope)
+    |> Observation.Query.in_book(book)
   end
 
   @doc """

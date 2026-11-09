@@ -3,6 +3,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
 
   use KjogviWeb, :html
 
+  alias Kjogvi.Birding.TaxaLifelist
   alias Kjogvi.Geo
 
   attr :id, :string, required: true
@@ -126,7 +127,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         data-value={@value}
       ></span>
       <div class="mb-1 col-span-3 md:col-span-1">
-        <.species_link species={@lifer.species_page} />
+        <.lifer_name lifer={@lifer} />
       </div>
       <div class="col-start-2 col-end-5 md:col-span-1 justify-self-end text-right text-sm text-stone-500">
         <time time={@lifer.observ_date}>
@@ -146,6 +147,32 @@ defmodule KjogviWeb.Live.Lifelist.Components do
         <% end %>
       </div>
     </li>
+    """
+  end
+
+  attr :lifer, :any, required: true
+
+  # A book lifelist entry links to the user's own taxon page, a species lifer
+  # to its species page.
+  defp lifer_name(%{lifer: %TaxaLifelist.Entry{taxon: taxon}} = assigns) do
+    assigns = assign(assigns, :countable, not is_nil(Ornitho.Schema.Taxon.species(taxon)))
+
+    ~H"""
+    <span class="species_link" phx-no-format>
+      <.link
+        phx-no-format
+        navigate={~p"/my/taxa/#{@lifer.taxon.book.slug}/#{@lifer.taxon.book.version}/#{@lifer.taxon.code}"}
+        class={[if(@countable, do: "font-semibold"), "text-[1.05rem] text-forest-500 underline decoration-forest-200 hover:decoration-forest-500 hover:bg-forest-100 rounded-sm px-1 -mx-1 underline-offset-2 transition"]}
+      ><%= @lifer.taxon.name_en %></.link> <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@lifer.taxon.name_sci}</i></span>
+    <span :if={@lifer.taxon.category != "species"} class="text-xs text-stone-500">
+      ({@lifer.taxon.category})
+    </span>
+    """
+  end
+
+  defp lifer_name(assigns) do
+    ~H"""
+    <.species_link species={@lifer.species_page} />
     """
   end
 

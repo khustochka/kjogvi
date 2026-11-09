@@ -12,16 +12,31 @@ defmodule Kjogvi.Birding.Observation.Query do
   species/taxa mapping.
 
   Named bindings `:observation`, `:checklist`, and `:stm` are set so callers can
-  extend the query without relying on positional order. Always excludes
-  unreported observations and restricts to the scope's subject user (unless the
-  scope has no subject user, in which case observations are aggregated across
-  all users — the community lifelist). Hidden observations are excluded unless
-  the scope's visibility is `:private` — this is the single place that privacy
-  rule is applied for observation feeds, so lifelist and logbook stay consistent.
+  extend the query without relying on positional order. The inner join on the
+  mapping drops observations of taxa with no species page (spuhs, slashes,
+  hybrids); use `reportable_for_scope/1` to keep them.
   """
   @spec base_for_scope(Kjogvi.Scope.t()) :: Ecto.Query.t()
   def base_for_scope(%Kjogvi.Scope{} = scope) do
-    base_query()
+    reportable_for_scope(scope)
+    |> join(:inner, [observation: o], stm in assoc(o, :species_taxa_mapping), as: :stm)
+  end
+
+  @doc """
+  A scope's reportable observations of any taxon, joined to their checklist
+  (named bindings `:observation`, `:checklist`).
+
+  Always excludes unreported observations and restricts to the scope's subject
+  user (unless the scope has no subject user, in which case observations are
+  aggregated across all users — the community lifelist). Hidden observations are
+  excluded unless the scope's visibility is `:private` — this is the single place
+  that privacy rule is applied for observation feeds, so lifelists and logbook
+  stay consistent.
+  """
+  @spec reportable_for_scope(Kjogvi.Scope.t()) :: Ecto.Query.t()
+  def reportable_for_scope(%Kjogvi.Scope{} = scope) do
+    with_checklist()
+    |> where([observation: o], o.unreported == false)
     |> maybe_for_user(Kjogvi.Scope.subject_user(scope))
     |> maybe_exclude_hidden(Kjogvi.Scope.visibility(scope))
   end
@@ -31,18 +46,16 @@ defmodule Kjogvi.Birding.Observation.Query do
   defp maybe_for_user(query, %{id: user_id}),
     do: where(query, [checklist: c], c.user_id == ^user_id)
 
-  defp base_query do
-    from o in Observation,
-      as: :observation,
-      join: c in assoc(o, :checklist),
-      as: :checklist,
-      join: stm in assoc(o, :species_taxa_mapping),
-      as: :stm,
-      where: o.unreported == false
-  end
-
   defp maybe_exclude_hidden(query, :private), do: query
   defp maybe_exclude_hidden(query, :public), do: exclude_hidden(query)
+
+  @doc """
+  Restricts to observations of taxa from the given book.
+  """
+  def in_book(query, %{slug: slug, version: version}) do
+    prefix = "/#{slug}/#{version}/"
+    where(query, [observation: o], fragment("starts_with(?, ?)", o.taxon_key, ^prefix))
+  end
 
   def by_checklist(query, %{id: checklist_id}) do
     where(query, [o], o.checklist_id == ^checklist_id)

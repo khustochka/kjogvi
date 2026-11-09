@@ -12,10 +12,19 @@ defmodule KjogviWeb.Paths.LifelistPath do
 
   def lifelist_path(scope, path_opts \\ [])
 
-  def lifelist_path(scope, %Lifelist.Filter{} = filter) do
+  def lifelist_path(scope, %Lifelist.Filter{book: nil} = filter) do
     {year, location, query_params} = split_params(filter)
 
     lifelist_gen_path(scope, year, location, query_params)
+  end
+
+  # A book lifelist is the user's own, in their default taxonomy, so the book
+  # is implied by the URL.
+  def lifelist_path(%{area: area} = _scope, %Lifelist.Filter{} = filter)
+      when area in [:private, :admin] do
+    {year, location, query_params} = split_params(filter)
+
+    my_taxa_p(year, location, query_params)
   end
 
   def lifelist_path(scope, path_opts) when is_map(path_opts) do
@@ -30,7 +39,7 @@ defmodule KjogviWeb.Paths.LifelistPath do
     {%{year: year, location: location}, query_filters} =
       filter
       |> Map.from_struct()
-      |> Map.split([:year, :location])
+      |> Map.split([:year, :location, :book])
 
     query_filters
     |> Map.drop(@filter_exclude_from_query)
@@ -77,6 +86,22 @@ defmodule KjogviWeb.Paths.LifelistPath do
 
   defp my_lifelist_p(year, location, query) do
     ~p"/my/lifelist/#{year}/#{location}?#{query}"
+  end
+
+  defp my_taxa_p(nil = _year, nil = _location, query) do
+    ~p"/my/taxa/lifelist?#{query}"
+  end
+
+  defp my_taxa_p(year, nil = _location, query) do
+    ~p"/my/taxa/lifelist/#{year}?#{query}"
+  end
+
+  defp my_taxa_p(nil = _year, location, query) do
+    ~p"/my/taxa/lifelist/#{location}?#{query}"
+  end
+
+  defp my_taxa_p(year, location, query) do
+    ~p"/my/taxa/lifelist/#{year}/#{location}?#{query}"
   end
 
   defp user_lifelist_p(nickname, nil = _year, nil = _location, query) do

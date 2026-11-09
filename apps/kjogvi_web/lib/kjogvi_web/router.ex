@@ -157,6 +157,11 @@ defmodule KjogviWeb.Router do
       live "/lifelist/:year_or_location", Live.Lifelist.Index, :index
       live "/lifelist/:year/:location", Live.Lifelist.Index, :index
 
+      live "/taxa", Live.Lifelist.Index, :taxa_redirect
+      # Before the taxon route: `lifelist` would otherwise match as a book slug.
+      live "/taxa/lifelist", Live.Lifelist.Index, :taxa
+      live "/taxa/lifelist/:year_or_location", Live.Lifelist.Index, :taxa
+      live "/taxa/lifelist/:year/:location", Live.Lifelist.Index, :taxa
       live "/taxa/:slug/:version/:code", Live.My.Taxa.Show, :show
 
       live "/imports", Live.My.Imports.Index, :index
