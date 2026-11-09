@@ -101,16 +101,6 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
   end
 
   describe "Lifelist.generate/2 with a book" do
-    test "puts heard-only taxa in extras", ctx do
-      observe(ctx.user, ctx.species, ~D[2020-01-01])
-      observe(ctx.user, ctx.spuh, ~D[2020-01-01], voice: true)
-
-      result = Lifelist.generate(ctx.scope, book: ctx.book, exclude_heard_only: true)
-
-      assert names(result.list) == [{"Mallard", ~D[2020-01-01]}]
-      assert names(result.extras.heard_only.list) == [{"duck sp.", ~D[2020-01-01]}]
-    end
-
     test "years and months come from the book's observations", ctx do
       observe(ctx.user, ctx.spuh, ~D[2020-04-01])
 

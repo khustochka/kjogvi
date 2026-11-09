@@ -142,22 +142,11 @@ defmodule Kjogvi.Birding.Lifelist do
     |> Repo.preload(:species_page)
   end
 
+  # Heard-only extras are built from species pages, so only for species lifelists.
   defp maybe_add_extras(
          scope,
-         %{filter: filter = %{exclude_heard_only: true, book: %Ornitho.Schema.Book{}}} = result
+         %{filter: filter = %{exclude_heard_only: true, book: nil}} = result
        ) do
-    seen_taxon_ids = MapSet.new(result.list, & &1.taxon.id)
-
-    heard_only_list =
-      TaxaLifelist.generate(scope, %{filter | exclude_heard_only: false})
-      |> Enum.reject(&MapSet.member?(seen_taxon_ids, &1.taxon.id))
-
-    heard_only = %Result{filter: filter, list: heard_only_list, total: length(heard_only_list)}
-
-    %{result | extras: %{heard_only: heard_only}}
-  end
-
-  defp maybe_add_extras(scope, %{filter: filter = %{exclude_heard_only: true}} = result) do
     seen_species_page_ids = Enum.map(result.list, & &1.species_page_id)
 
     heard_only_list =
