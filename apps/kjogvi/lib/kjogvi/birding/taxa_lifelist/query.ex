@@ -6,6 +6,7 @@ defmodule Kjogvi.Birding.TaxaLifelist.Query do
   import Ecto.Query
 
   alias Kjogvi.Birding.Lifelist
+  alias Kjogvi.Birding.Observation
 
   @doc """
   The earliest observation of each taxon matching a book lifelist `filter`.
@@ -14,12 +15,8 @@ defmodule Kjogvi.Birding.TaxaLifelist.Query do
   def first_records(scope, %Lifelist.Filter{book: %Ornitho.Schema.Book{}} = filter) do
     Lifelist.Query.observations_filtered(scope, filter)
     |> distinct([observation: o], o.taxon_key)
-    |> order_by([observation: o, checklist: c],
-      asc: o.taxon_key,
-      asc: c.observ_date,
-      asc_nulls_last: c.start_time,
-      asc: o.id
-    )
+    |> order_by([observation: o], asc: o.taxon_key)
+    |> Observation.Query.oldest_first()
     |> select([observation: o, checklist: c], %{
       id: o.id,
       taxon_key: o.taxon_key,

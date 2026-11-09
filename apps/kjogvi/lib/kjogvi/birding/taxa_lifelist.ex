@@ -110,7 +110,7 @@ defmodule Kjogvi.Birding.TaxaLifelist do
   defp source_order(%Entry{taxon: nil, taxon_key: key}), do: {1, key, 0}
   defp source_order(%Entry{taxon: taxon}), do: {0, taxon.book_id, taxon.sort_order}
 
-  # Matches `Query.first_records/2`: a missing start time sorts after any time.
+  # Matches `Observation.Query.oldest_first/1`: a missing start time sorts after any time.
   defp first_record_key(entry), do: chronological_key(entry, 1)
 
   # Matches the species lifelist's date sort: newest first, missing time last.

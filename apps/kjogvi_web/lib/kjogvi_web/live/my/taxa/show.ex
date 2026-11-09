@@ -49,13 +49,6 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
     {:noreply, assign(socket, observations: observations, meta: meta)}
   end
 
-  defp observations_path(book, taxon) do
-    fn
-      1 -> ~p"/my/taxa/#{book.slug}/#{book.version}/#{taxon.code}"
-      page -> ~p"/my/taxa/#{book.slug}/#{book.version}/#{taxon.code}/page/#{page}"
-    end
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -93,7 +86,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
     <.pagination
       id="taxon-observations-pagination-top"
       meta={@meta}
-      path={observations_path(@book, @taxon)}
+      path={&my_taxon_path(@taxon, &1)}
       label="Pagination (top)"
       class="mb-2"
       anchor="taxon-observations-pagination-top"
@@ -141,7 +134,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
     <.pagination
       id="taxon-observations-pagination"
       meta={@meta}
-      path={observations_path(@book, @taxon)}
+      path={&my_taxon_path(@taxon, &1)}
       anchor="taxon-observations-pagination-top"
     />
     """

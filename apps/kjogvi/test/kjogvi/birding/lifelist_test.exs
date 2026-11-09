@@ -208,6 +208,25 @@ defmodule Kjogvi.Birding.LifelistTest do
       assert hd(result.list).observ_date == checklist1.observ_date
     end
 
+    test "on the same day, picks the earliest start time, a missing time last" do
+      user = user_fixture()
+      scope = %Kjogvi.Scope{subject_user: user, area: :user}
+      {taxon, _} = Factory.create_species_taxon_with_page()
+
+      first_record =
+        for start_time <- [nil, ~T[10:00:00], ~T[08:00:00]] do
+          checklist =
+            insert(:checklist, observ_date: ~D[2022-06-11], start_time: start_time, user: user)
+
+          insert(:observation, checklist: checklist, taxon_key: Ornitho.Schema.Taxon.key(taxon))
+        end
+        |> List.last()
+
+      result = Kjogvi.Birding.Lifelist.generate(scope)
+      assert [%{id: id}] = result.list
+      assert id == first_record.id
+    end
+
     test "does not include spuh observation" do
       taxon = Ornitho.Factory.insert(:taxon, category: "spuh")
 

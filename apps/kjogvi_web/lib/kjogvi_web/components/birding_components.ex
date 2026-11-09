@@ -12,6 +12,7 @@ defmodule KjogviWeb.BirdingComponents do
 
   alias Kjogvi.Geo
   alias Kjogvi.Pages.Species
+  alias KjogviWeb.Paths.TaxonPath
   alias Ornitho.Schema.Taxon
 
   @ebird_checklist_base "https://ebird.org/checklist/"
@@ -562,7 +563,7 @@ defmodule KjogviWeb.BirdingComponents do
     <span class="taxon_link" phx-no-format>
       <.link
         phx-no-format
-        navigate={~p"/my/taxa/#{@taxon.book.slug}/#{@taxon.book.version}/#{@taxon.code}"}
+        navigate={TaxonPath.my_taxon_path(@taxon)}
         class={[if(@countable, do: "font-semibold"), "text-[1.05rem] text-taxon underline decoration-taxon/30 hover:decoration-taxon hover:bg-orange-50 rounded-sm px-1 -mx-1 underline-offset-2 transition"]}
       ><%= @taxon.name_en %></.link> <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@taxon.name_sci}</i></span>
     <span :if={@taxon.category != "species"} class="text-xs text-stone-500">

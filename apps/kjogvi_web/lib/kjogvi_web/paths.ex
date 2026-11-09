@@ -4,6 +4,7 @@ defmodule KjogviWeb.Paths do
   defmacro __using__(_) do
     quote do
       import KjogviWeb.Paths.LifelistPath
+      import KjogviWeb.Paths.TaxonPath
     end
   end
 

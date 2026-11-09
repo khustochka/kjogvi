@@ -52,22 +52,18 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   end
 
   defp lifers_query(scope, filter) do
-    from [o, c, stm] in observations_filtered(scope, filter),
-      distinct: stm.species_page_id,
-      order_by: [
-        asc: stm.species_page_id,
-        asc: c.observ_date,
-        asc_nulls_last: c.start_time,
-        asc: o.id
-      ],
-      select: %{
-        id: o.id,
-        checklist_id: c.id,
-        species_page_id: stm.species_page_id,
-        observ_date: c.observ_date,
-        start_time: c.start_time,
-        location_id: c.location_id
-      }
+    observations_filtered(scope, filter)
+    |> distinct([stm: stm], stm.species_page_id)
+    |> order_by([stm: stm], asc: stm.species_page_id)
+    |> Observation.Query.oldest_first()
+    |> select([observation: o, checklist: c, stm: stm], %{
+      id: o.id,
+      checklist_id: c.id,
+      species_page_id: stm.species_page_id,
+      observ_date: c.observ_date,
+      start_time: c.start_time,
+      location_id: c.location_id
+    })
   end
 
   @doc """

@@ -35,7 +35,7 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
   end
 
   defp observe(user, taxon, date, attrs \\ []) do
-    {checklist_attrs, attrs} = Keyword.split(attrs, [:location, :motorless])
+    {checklist_attrs, attrs} = Keyword.split(attrs, [:location, :motorless, :start_time])
     checklist = insert(:checklist, [user: user, observ_date: date] ++ checklist_attrs)
 
     insert(
@@ -64,6 +64,15 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
                {"Mallard (Northern)", ~D[2021-05-01]},
                {"duck sp.", ~D[2020-01-01]}
              ]
+    end
+
+    test "on the same day, takes the earliest start time, a missing time last", ctx do
+      observe(ctx.user, ctx.species, ~D[2022-03-01], start_time: nil)
+      observe(ctx.user, ctx.species, ~D[2022-03-01], start_time: ~T[10:00:00])
+      first_record = observe(ctx.user, ctx.species, ~D[2022-03-01], start_time: ~T[08:00:00])
+
+      assert [%{id: id}] = generate(ctx, [])
+      assert id == first_record.id
     end
 
     test "date sort puts the newest first record first", ctx do
