@@ -131,7 +131,8 @@ config :ornithologue, Ornitho.Importer,
     Ornitho.Importer.Ebird.V2024,
     Ornitho.Importer.Ebird.V2025,
     Ornitho.Importer.Ebird.V2026,
-    Ornitho.Importer.AviList.V2025
+    Ornitho.Importer.AviList.V2025,
+    Ornitho.Importer.AviList.V2026
   ]
 
 config :ornithologue, Ornitho.StreamImporter, adapter: Ornitho.StreamImporter.LocalAdapter
