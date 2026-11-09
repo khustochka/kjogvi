@@ -94,7 +94,7 @@ defmodule OrnithoWeb.TaxaComponents do
 
   def taxon_link(assigns) do
     ~H"""
-    <.link class={["text-brand hover:text-brand/80", @class]} {@rest}>{render_slot(@inner_block)}</.link>
+    <.link class={["text-taxon hover:text-taxon/80", @class]} {@rest}>{render_slot(@inner_block)}</.link>
     """
   end
 

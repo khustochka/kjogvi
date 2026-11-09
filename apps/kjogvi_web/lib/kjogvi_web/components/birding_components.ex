@@ -563,7 +563,7 @@ defmodule KjogviWeb.BirdingComponents do
       <.link
         phx-no-format
         navigate={~p"/my/taxa/#{@taxon.book.slug}/#{@taxon.book.version}/#{@taxon.code}"}
-        class={[if(@countable, do: "font-semibold"), "text-[1.05rem] text-orange-600 underline decoration-orange-200 hover:decoration-orange-500 hover:bg-orange-50 rounded-sm px-1 -mx-1 underline-offset-2 transition"]}
+        class={[if(@countable, do: "font-semibold"), "text-[1.05rem] text-taxon underline decoration-taxon/30 hover:decoration-taxon hover:bg-orange-50 rounded-sm px-1 -mx-1 underline-offset-2 transition"]}
       ><%= @taxon.name_en %></.link> <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@taxon.name_sci}</i></span>
     <span :if={@taxon.category != "species"} class="text-xs text-stone-500">
       ({@taxon.category})
