@@ -2,9 +2,9 @@ defmodule Kjogvi.Birding.Lifelist.Filter do
   @moduledoc """
   Lifelist filtering parameters.
 
-  With a `book`, the lifelist is of taxa recorded in that taxonomy book rather
-  than of species pages (see `Kjogvi.Birding.TaxaLifelist`); `species_only`
-  then rolls those taxa up to species.
+  With a `book`, the lifelist is of recorded taxa, matched into that taxonomy
+  book, rather than of species pages (see `Kjogvi.Birding.TaxaLifelist`);
+  `species_only` then rolls those taxa up to species.
   """
 
   alias Kjogvi.Geo

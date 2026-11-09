@@ -3,7 +3,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   The lifelist, filtered by location, year, month, etc.
 
   Serves the community, user, and private species lifelists, plus the `:taxa`
-  action: the private lifelist of taxa in the user's default taxonomy book.
+  action: the private lifelist of taxa in a taxonomy book (`?book=slug/version`,
+  defaulting to the user's default taxonomy), with taxa that couldn't be matched
+  into the book listed above it.
   """
 
   use KjogviWeb, :live_view
@@ -30,37 +32,72 @@ defmodule KjogviWeb.Live.Lifelist.Index do
   end
 
   def mount(_params, _session, %{assigns: %{live_action: :taxa} = assigns} = socket) do
-    case Kjogvi.Accounts.default_book(assigns.current_scope.current_user) do
-      nil -> {:ok, assign(socket, book: nil, page_title: "Taxa Lifelist", robots: [:noindex])}
-      book -> mount_lifelist(assign(socket, :book, book))
-    end
+    socket
+    |> assign(:default_book, Kjogvi.Accounts.default_book(assigns.current_scope.current_user))
+    |> assign(:books, Ornitho.Finder.Book.all())
+    |> mount_lifelist()
   end
 
   def mount(_params, _session, socket) do
-    mount_lifelist(assign(socket, :book, nil))
+    mount_lifelist(socket)
   end
 
-  defp mount_lifelist(%{assigns: assigns} = socket) do
-    all_years =
-      Lifelist.years(assigns.current_scope, book: assigns.book)
-      |> Enum.reverse()
-
+  defp mount_lifelist(socket) do
     {
       :ok,
-      socket
-      |> assign(:all_years, all_years)
-      |> assign(:container_class, "max-w-7xl"),
+      assign(socket, :container_class, "max-w-7xl"),
       temporary_assigns: [lifelist: nil, lifer_groups: nil, heard_only_groups: nil]
     }
   end
 
   @impl true
-  def handle_params(_params, _url, %{assigns: %{live_action: :taxa, book: nil}} = socket) do
-    {:noreply, socket}
+  def handle_params(params, _url, %{assigns: %{live_action: :taxa} = assigns} = socket) do
+    {signature, params} = Map.pop(params, "book")
+
+    case taxa_book(signature, assigns.default_book) do
+      nil ->
+        {:noreply, assign(socket, book: nil, page_title: "Taxa Lifelist", robots: [:noindex])}
+
+      book ->
+        socket |> assign(:book, book) |> handle_lifelist_params(params)
+    end
   end
 
-  def handle_params(params, _url, %{assigns: assigns} = socket) do
+  def handle_params(params, _url, socket) do
+    socket |> assign(:book, nil) |> handle_lifelist_params(params)
+  end
+
+  @impl true
+  def handle_event("select_book", %{"book" => signature}, %{assigns: assigns} = socket) do
+    book = Enum.find(assigns.books, &(book_signature(&1) == signature)) || assigns.book
+
+    {:noreply,
+     push_patch(socket, to: lifelist_path(assigns.current_scope, %{assigns.filter | book: book}))}
+  end
+
+  defp taxa_book(nil, default_book), do: default_book
+
+  defp taxa_book(signature, _default_book) do
+    with [slug, version] <- String.split(signature, "/"),
+         %Ornitho.Schema.Book{} = book <- Ornitho.Finder.Book.by_signature(slug, version) do
+      book
+    else
+      _ -> raise KjogviWeb.NotFoundError
+    end
+  end
+
+  defp book_signature(book), do: "#{book.slug}/#{book.version}"
+
+  defp handle_lifelist_params(%{assigns: assigns} = socket, params) do
     scope = assigns.current_scope
+
+    # Book lifelists cover every observation, so the book doesn't change the years.
+    socket =
+      assign_new(socket, :all_years, fn ->
+        Lifelist.years(scope, book: assigns.book) |> Enum.reverse()
+      end)
+
+    assigns = socket.assigns
 
     filter =
       KjogviWeb.Live.Lifelist.Params.to_filter(scope, params)
@@ -181,10 +218,13 @@ defmodule KjogviWeb.Live.Lifelist.Index do
           class="mt-1 text-stone-500"
           phx-no-format
         ><%= for {segment, index} <- Enum.with_index(@location_ancestor_segments) do %><span :if={index > 0}>, </span><.link href={lifelist_path(@current_scope, %{@filter | location: segment})} class="decoration-stone-300 hover:text-stone-700 hover:decoration-stone-500">{segment.name_en}</.link><% end %></p>
-        <p :if={@book} id="lifelist-book" class="mt-1 text-sm text-stone-600">
-          Taxa in <b class="font-semibold text-stone-800">{@book.name}</b>
-          ({@book.slug}/{@book.version})
-        </p>
+        <.book_selector
+          :if={@book}
+          book={@book}
+          books={@books}
+          filter={@filter}
+          current_scope={@current_scope}
+        />
         <ul
           :if={@filter.motorless or @filter.exclude_heard_only}
           class="mt-2 flex flex-wrap items-center gap-2 list-none"
@@ -392,6 +432,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
       <%!-- Main content --%>
       <div class="flex-1 min-w-0">
+        <.unmatched_taxa :if={@book} book={@book} entries={@lifelist.extras.unmatched} />
+        <.no_species_taxa :if={@book} book={@book} entries={@lifelist.extras.no_species} />
+
         <div class="mb-3 flex flex-wrap items-center justify-end gap-2">
           <.sort_selector
             current_sort={@filter.sort}
@@ -511,6 +554,104 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     <span :for={part <- @parts} class="whitespace-nowrap">
       <span class="font-semibold text-stone-700">{part}</span>
       <span :if={part != List.last(@parts)} class="text-stone-400 mx-0.5">&middot;</span>
+    </span>
+    """
+  end
+
+  # Without JS, the form submits as a GET to the current path; the hidden fields
+  # carry the other query params, which a GET form would otherwise drop.
+  defp book_selector(assigns) do
+    {_year, _location, query} = KjogviWeb.Paths.LifelistPath.split_params(assigns.filter)
+    assigns = assign(assigns, :query, query)
+
+    ~H"""
+    <form
+      id="lifelist-book"
+      method="get"
+      action={lifelist_path(@current_scope, @filter)}
+      phx-change="select_book"
+      class="mt-2 flex flex-wrap items-center gap-2 text-sm"
+    >
+      <label for="lifelist-book-select" class="text-stone-600">Taxonomy</label>
+      <select
+        id="lifelist-book-select"
+        name="book"
+        class="w-auto pr-8 py-1 rounded-md border border-stone-300 bg-white text-sm text-stone-800 focus:border-stone-400 focus:ring-0"
+      >
+        <option
+          :for={book <- @books}
+          value={book_signature(book)}
+          selected={book.id == @book.id}
+        >
+          {book.name}
+        </option>
+      </select>
+      <input :for={{name, value} <- @query} type="hidden" name={name} value={value} />
+      <noscript>
+        <button type="submit" class="px-2 py-1 rounded-md border border-stone-300">Show</button>
+      </noscript>
+    </form>
+    """
+  end
+
+  attr :book, Ornitho.Schema.Book, required: true
+  attr :entries, :list, required: true
+
+  # Recorded taxa missing from the list though they should be on it.
+  defp unmatched_taxa(%{entries: []} = assigns), do: ~H""
+
+  defp unmatched_taxa(assigns) do
+    ~H"""
+    <section
+      id="taxa-unmatched"
+      aria-labelledby="taxa-unmatched-heading"
+      class="mb-4 p-4 rounded-lg border border-red-300 bg-red-50 text-sm text-red-900"
+    >
+      <h2 id="taxa-unmatched-heading" class="font-semibold">
+        Not matched in {@book.name}: {length(@entries)}
+      </h2>
+      <p>These recorded taxa are missing from the list below.</p>
+      <ul class="mt-2 space-y-1">
+        <li :for={entry <- @entries} id={"taxa-unmatched-#{entry.id}"}>
+          <.recorded_taxon entry={entry} />
+        </li>
+      </ul>
+    </section>
+    """
+  end
+
+  attr :book, Ornitho.Schema.Book, required: true
+  attr :entries, :list, required: true
+
+  # Taxa without a species from other books: their absence is expected.
+  defp no_species_taxa(%{entries: []} = assigns), do: ~H""
+
+  defp no_species_taxa(assigns) do
+    ~H"""
+    <details id="taxa-no-species" class="mb-4 text-sm text-stone-600">
+      <summary class="cursor-pointer">
+        No counterpart in {@book.name}: {length(@entries)} spuhs, slashes, hybrids, etc.
+      </summary>
+      <ul class="mt-2 ml-4 space-y-1">
+        <li :for={entry <- @entries} id={"taxa-no-species-#{entry.id}"}>
+          <.recorded_taxon entry={entry} />
+        </li>
+      </ul>
+    </details>
+    """
+  end
+
+  defp recorded_taxon(%{entry: %{taxon: nil}} = assigns) do
+    ~H"""
+    Unknown taxon <code class="font-mono">{@entry.taxon_key}</code>
+    """
+  end
+
+  defp recorded_taxon(assigns) do
+    ~H"""
+    <.taxon_link taxon={@entry.taxon} />
+    <span class="text-xs text-stone-500">
+      in {@entry.taxon.book.slug}/{@entry.taxon.book.version}
     </span>
     """
   end

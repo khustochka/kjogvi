@@ -55,18 +55,16 @@ defmodule KjogviWeb.Paths.LifelistTest do
       %{scope: %Scope{area: :private}, book: Ornitho.Factory.insert(:book)}
     end
 
-    test "points to /my/taxa/lifelist, leaving the book out of the URL", %{
-      scope: scope,
-      book: book
-    } do
-      assert lifelist_path(scope, book: book) == "/my/taxa/lifelist"
+    test "points to /my/taxa/lifelist with the book in the query", %{scope: scope, book: book} do
+      assert lifelist_path(scope, book: book) ==
+               "/my/taxa/lifelist?book=ebird%2F#{book.version}"
     end
 
     test "carries year, location, and species_only", %{scope: scope, book: book} do
       location = insert(:location, slug: "ukraine")
 
       assert lifelist_path(scope, book: book, year: 2023, location: location, species_only: true) ==
-               "/my/taxa/lifelist/2023/ukraine?species_only=true"
+               "/my/taxa/lifelist/2023/ukraine?book=ebird%2F#{book.version}&species_only=true"
     end
   end
 end

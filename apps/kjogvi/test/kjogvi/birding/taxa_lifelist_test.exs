@@ -10,7 +10,9 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
   setup do
     user = user_fixture()
     book = Ornitho.Factory.insert(:book)
-    species = Ornitho.Factory.insert(:taxon, book: book, name_en: "Mallard")
+
+    species =
+      Ornitho.Factory.insert(:taxon, book: book, name_en: "Mallard", taxon_concept_id: "mallard")
 
     subspecies =
       Ornitho.Factory.insert(:taxon,
@@ -44,7 +46,9 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
 
   defp names(entries), do: Enum.map(entries, &{&1.taxon.name_en, &1.observ_date})
 
-  defp generate(ctx, filter) do
+  defp generate(ctx, filter), do: generate_result(ctx, filter).list
+
+  defp generate_result(ctx, filter) do
     TaxaLifelist.generate(ctx.scope, Lifelist.Filter.discombo!([book: ctx.book] ++ filter))
   end
 
@@ -72,8 +76,7 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
              ]
     end
 
-    test "excludes other books, other users, and unreported observations", ctx do
-      observe(ctx.user, Ornitho.Factory.insert(:taxon), ~D[2020-01-01])
+    test "excludes other users and unreported observations", ctx do
       observe(user_fixture(), ctx.species, ~D[2020-01-01])
       observe(ctx.user, ctx.spuh, ~D[2020-01-01], unreported: true)
 
@@ -100,6 +103,45 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
     end
   end
 
+  describe "generate/2 with observations from another book" do
+    setup ctx do
+      other = Ornitho.Factory.insert(:book, slug: "other")
+
+      %{
+        other_species:
+          Ornitho.Factory.insert(:taxon,
+            book: other,
+            taxon_concept_id: "mallard",
+            name_en: "Mallard (other)"
+          ),
+        other_spuh: Ornitho.Factory.insert(:taxon, book: other, category: "spuh"),
+        other_unmatched: Ornitho.Factory.insert(:taxon, book: other, name_en: "Lost Duck")
+      }
+    end
+
+    test "matches them into the book, keeping the earliest record per taxon", ctx do
+      observe(ctx.user, ctx.species, ~D[2022-03-01])
+      observe(ctx.user, ctx.other_species, ~D[2020-01-01])
+
+      assert names(generate(ctx, [])) == [{"Mallard", ~D[2020-01-01]}]
+    end
+
+    test "reports unmatched taxa and those without a species separately", ctx do
+      observe(ctx.user, ctx.other_spuh, ~D[2020-01-01])
+      observe(ctx.user, ctx.other_unmatched, ~D[2020-01-01])
+      observe(ctx.user, ctx.spuh, ~D[2020-01-01])
+      unknown = observe(ctx.user, ctx.spuh, ~D[2020-01-01], taxon_key: "/gone/v1/x")
+
+      result = generate_result(ctx, [])
+
+      assert names(result.list) == [{"duck sp.", ~D[2020-01-01]}]
+      assert [%{taxon: %{id: unmatched_id}}, %{taxon: nil, id: unknown_id}] = result.unmatched
+      assert {unmatched_id, unknown_id} == {ctx.other_unmatched.id, unknown.id}
+      assert [%{taxon: %{id: no_species_id}}] = result.no_species
+      assert no_species_id == ctx.other_spuh.id
+    end
+  end
+
   describe "species_count/1" do
     test "counts distinct species, ignoring taxa without one", ctx do
       observe(ctx.user, ctx.species, ~D[2020-01-01])
@@ -110,9 +152,16 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
     end
   end
 
-  describe "Lifelist.generate/2 with a book" do
-    test "years and months come from the book's observations", ctx do
-      observe(ctx.user, ctx.spuh, ~D[2020-04-01])
+  describe "Lifelist with a book" do
+    test "generate/2 puts unmatched and no-species taxa in extras", ctx do
+      observe(ctx.user, Ornitho.Factory.insert(:taxon, category: "spuh"), ~D[2020-04-01])
+
+      assert %{list: [], extras: %{unmatched: [], no_species: [_]}} =
+               Lifelist.generate(ctx.scope, book: ctx.book)
+    end
+
+    test "years and months come from all observations, species page or not", ctx do
+      observe(ctx.user, Ornitho.Factory.insert(:taxon, category: "spuh"), ~D[2020-04-01])
 
       assert Lifelist.years(ctx.scope, book: ctx.book) == [2020]
       assert Lifelist.months(ctx.scope, book: ctx.book) == [4]

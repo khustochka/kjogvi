@@ -31,6 +31,20 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
     refute has_element?(lv, "#lifelist-table")
   end
 
+  test "without a default taxonomy, a book can still be picked by URL", %{conn: conn} do
+    book = Ornitho.Factory.insert(:book, name: "AviList")
+
+    {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist?#{[book: "#{book.slug}/#{book.version}"]}")
+
+    assert has_element?(lv, "#lifelist-book-select option[selected]", "AviList")
+  end
+
+  test "an unknown book is not found", %{conn: conn} do
+    assert_raise KjogviWeb.NotFoundError, fn ->
+      live(conn, ~p"/my/taxa/lifelist?#{[book: "nope/v1"]}")
+    end
+  end
+
   describe "with a default taxonomy" do
     setup %{user: user} do
       book = Ornitho.Factory.insert(:book, name: "eBird/Clements Checklist v2026")
@@ -38,7 +52,13 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
       {:ok, _user} =
         Kjogvi.Accounts.set_default_book_signature(user, "#{book.slug}/#{book.version}")
 
-      species = Ornitho.Factory.insert(:taxon, book: book, name_en: "Mallard")
+      species =
+        Ornitho.Factory.insert(:taxon,
+          book: book,
+          name_en: "Mallard",
+          taxon_concept_id: "mallard"
+        )
+
       spuh = Ornitho.Factory.insert(:taxon, book: book, category: "spuh", name_en: "duck sp.")
       other_book_taxon = Ornitho.Factory.insert(:taxon, name_en: "Elsewhere Duck")
 
@@ -48,7 +68,7 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
       insert(:observation, checklist: newer, taxon_key: Taxon.key(spuh))
       insert(:observation, checklist: newer, taxon_key: Taxon.key(other_book_taxon))
 
-      %{book: book, species: species, spuh: spuh, newer: newer}
+      %{book: book, species: species, spuh: spuh, newer: newer, q: book_query(book)}
     end
 
     test "lists the book's taxa, spuhs included, linking to personal taxon pages", %{
@@ -61,7 +81,12 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
       {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist")
 
       assert has_element?(lv, "h1", "Taxa Lifelist")
-      assert has_element?(lv, "#lifelist-book b", "eBird/Clements Checklist v2026")
+
+      assert has_element?(
+               lv,
+               "#lifelist-book-select option[selected]",
+               "eBird/Clements Checklist v2026"
+             )
 
       assert has_element?(
                lv,
@@ -80,8 +105,58 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
       refute has_element?(lv, "#lifelist-table", "Elsewhere Duck")
     end
 
+    test "lists taxa from other books with no match in red above the list", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist")
+
+      assert has_element?(lv, "#taxa-unmatched", "Elsewhere Duck")
+      refute has_element?(lv, "#taxa-no-species")
+    end
+
+    test "switching the taxonomy matches the taxa into the other book", %{
+      conn: conn,
+      species: species
+    } do
+      avilist = Ornitho.Factory.insert(:book, slug: "avilist", name: "AviList")
+
+      Ornitho.Factory.insert(:taxon,
+        book: avilist,
+        taxon_concept_id: species.taxon_concept_id,
+        name_en: "Mallard"
+      )
+
+      {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist/2022")
+
+      lv
+      |> element("#lifelist-book")
+      |> render_change(%{"book" => "avilist/#{avilist.version}"})
+
+      assert_patch(lv, "/my/taxa/lifelist/2022?#{book_query(avilist)}")
+      assert has_element?(lv, "#lifelist-book-select option[selected]", "AviList")
+      assert has_element?(lv, "#lifer-1 a[href^='/my/taxa/avilist/']", "Mallard")
+      refute has_element?(lv, "#taxa-no-species")
+
+      lv |> element("#lifelist-year-selector a", "All years") |> render_click()
+
+      assert has_element?(lv, "#taxa-no-species", "duck sp.")
+      assert has_element?(lv, "#taxa-unmatched", "Elsewhere Duck")
+      refute has_element?(lv, "#lifelist-table", "duck sp.")
+    end
+
+    test "the taxonomy form works without JS, keeping other params", %{conn: conn, q: q} do
+      {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist/2022?sort=taxonomy")
+
+      assert has_element?(
+               lv,
+               "form#lifelist-book[method=get][action='/my/taxa/lifelist/2022?#{q}&sort=taxonomy']"
+             )
+
+      assert has_element?(lv, "#lifelist-book input[type=hidden][name=sort][value=taxonomy]")
+      refute has_element?(lv, "#lifelist-book input[type=hidden][name=book]")
+    end
+
     test "shows taxa and species counts; the species count switches to Species only", %{
-      conn: conn
+      conn: conn,
+      q: q
     } do
       {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist")
 
@@ -91,7 +166,7 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
       assert has_element?(lv, "#lifelist-species-total", "species recorded")
 
       lv |> element("#lifelist-species-total") |> render_click()
-      assert_patch(lv, ~p"/my/taxa/lifelist?species_only=true")
+      assert_patch(lv, "/my/taxa/lifelist?#{q}&species_only=true")
 
       refute has_element?(lv, "#lifelist-species-total")
       assert has_element?(lv, "#lifelist-total", "species recorded")
@@ -105,22 +180,26 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
       refute has_element?(lv, "#lifer-2 a.font-semibold")
     end
 
-    test "Species only toggle drops taxa without a species", %{conn: conn} do
+    test "Species only toggle drops taxa without a species", %{conn: conn, q: q} do
       {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist")
 
       lv |> element("#lifelist-species-only a[role=switch]") |> render_click()
-      assert_patch(lv, ~p"/my/taxa/lifelist?species_only=true")
+      assert_patch(lv, "/my/taxa/lifelist?#{q}&species_only=true")
 
       assert has_element?(lv, "#lifer-1", "Mallard")
       refute has_element?(lv, "#lifer-2")
       refute has_element?(lv, "ul[aria-label='Active filters']")
     end
 
-    test "filter links stay in the taxa URL space", %{conn: conn} do
+    test "filter links stay in the taxa URL space", %{conn: conn, q: q} do
       {:ok, lv, _html} = live(conn, ~p"/my/taxa/lifelist")
 
-      assert has_element?(lv, "#lifelist-year-selector a[href='/my/taxa/lifelist/2023']")
-      assert has_element?(lv, "ul[aria-label=Sort] a[href='/my/taxa/lifelist?sort=taxonomy']")
+      assert has_element?(lv, "#lifelist-year-selector a[href='/my/taxa/lifelist/2023?#{q}']")
+
+      assert has_element?(
+               lv,
+               "ul[aria-label=Sort] a[href='/my/taxa/lifelist?#{q}&sort=taxonomy']"
+             )
     end
 
     test "year and location URL reaches the lifelist, not a taxon page", %{conn: conn} do
@@ -153,4 +232,6 @@ defmodule KjogviWeb.Live.Lifelist.TaxaTest do
       refute has_element?(lv, "#lifelist-table", "duck sp.")
     end
   end
+
+  defp book_query(book), do: "book=#{book.slug}%2F#{book.version}"
 end

@@ -30,6 +30,11 @@ defmodule Ornitho.Query.Taxon do
     |> where([t], t.code in ^codes)
   end
 
+  def by_concept_ids(query, concept_ids) do
+    from(query)
+    |> where([t], t.taxon_concept_id in ^concept_ids)
+  end
+
   def by_being_countable(query) do
     query
     |> where([t], t.category == "species" or not is_nil(t.parent_species_id))

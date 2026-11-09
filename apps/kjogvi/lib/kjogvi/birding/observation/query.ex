@@ -49,14 +49,6 @@ defmodule Kjogvi.Birding.Observation.Query do
   defp maybe_exclude_hidden(query, :private), do: query
   defp maybe_exclude_hidden(query, :public), do: exclude_hidden(query)
 
-  @doc """
-  Restricts to observations of taxa from the given book.
-  """
-  def in_book(query, %{slug: slug, version: version}) do
-    prefix = "/#{slug}/#{version}/"
-    where(query, [observation: o], fragment("starts_with(?, ?)", o.taxon_key, ^prefix))
-  end
-
   def by_checklist(query, %{id: checklist_id}) do
     where(query, [o], o.checklist_id == ^checklist_id)
   end

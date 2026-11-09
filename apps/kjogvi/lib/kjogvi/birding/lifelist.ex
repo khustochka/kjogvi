@@ -24,21 +24,22 @@ defmodule Kjogvi.Birding.Lifelist do
   Generate lifelist based on provided filter options.
 
   The list holds `LifeObservation`s, or `TaxaLifelist.Entry`s when the filter
-  has a `book`.
+  has a `book`; a book lifelist's `extras` then hold its `unmatched` and
+  `no_species` entries (see `TaxaLifelist.generate/2`).
   """
   def generate(scope, filter \\ [])
 
   def generate(scope, %Filter{} = filter) do
-    generate_list(scope, filter)
-    |> then(fn list ->
-      %Result{
-        user: Kjogvi.Scope.subject_user(scope),
-        visibility: Kjogvi.Scope.visibility(scope),
-        filter: filter,
-        list: list,
-        total: length(list)
-      }
-    end)
+    {list, extras} = generate_list(scope, filter)
+
+    %Result{
+      user: Kjogvi.Scope.subject_user(scope),
+      visibility: Kjogvi.Scope.visibility(scope),
+      filter: filter,
+      list: list,
+      total: length(list),
+      extras: extras
+    }
     |> then(&maybe_add_extras(scope, &1))
   end
 
@@ -124,11 +125,19 @@ defmodule Kjogvi.Birding.Lifelist do
   # ===
 
   defp generate_list(scope, %Filter{book: nil} = filter) do
-    generate_with_species(scope, filter)
-    |> Location.Query.preload_all_locations()
+    list =
+      generate_with_species(scope, filter)
+      |> Location.Query.preload_all_locations()
+
+    {list, %{}}
   end
 
-  defp generate_list(scope, filter), do: TaxaLifelist.generate(scope, filter)
+  defp generate_list(scope, filter) do
+    %{list: list, unmatched: unmatched, no_species: no_species} =
+      TaxaLifelist.generate(scope, filter)
+
+    {list, %{unmatched: unmatched, no_species: no_species}}
+  end
 
   defp generate_with_species(scope, filter, opts \\ []) do
     Lifelist.Query.lifelist_query(scope, filter, opts)

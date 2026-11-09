@@ -18,13 +18,12 @@ defmodule KjogviWeb.Paths.LifelistPath do
     lifelist_gen_path(scope, year, location, query_params)
   end
 
-  # A book lifelist is the user's own, in their default taxonomy, so the book
-  # is implied by the URL.
-  def lifelist_path(%{area: area} = _scope, %Lifelist.Filter{} = filter)
+  # A book lifelist is the user's own.
+  def lifelist_path(%{area: area} = _scope, %Lifelist.Filter{book: book} = filter)
       when area in [:private, :admin] do
     {year, location, query_params} = split_params(filter)
 
-    my_taxa_p(year, location, query_params)
+    my_taxa_p(year, location, [{:book, "#{book.slug}/#{book.version}"} | query_params])
   end
 
   def lifelist_path(scope, path_opts) when is_map(path_opts) do

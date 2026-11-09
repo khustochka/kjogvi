@@ -109,13 +109,9 @@ defmodule Kjogvi.Birding.Lifelist.Query do
   end
 
   # Species lifelist: observations with a species page. Book lifelist: every
-  # observation of a taxon from the book, species page or not.
+  # observation, species page or not, whichever book it was recorded in.
   defp base_query(scope, nil), do: Observation.Query.base_for_scope(scope)
-
-  defp base_query(scope, book) do
-    Observation.Query.reportable_for_scope(scope)
-    |> Observation.Query.in_book(book)
-  end
+  defp base_query(scope, _book), do: Observation.Query.reportable_for_scope(scope)
 
   @doc """
   Query returning distinct years from filtered observations.
