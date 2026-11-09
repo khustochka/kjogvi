@@ -30,7 +30,10 @@ defmodule Converter.Ebird.V2024 do
                              @convert_dir,
                              "eBird-Clements-v2024-integrated-checklist-October-2024-rev.csv"
                            )
-  @output_file Path.join(@convert_dir, "ornithologue_ebird_v2024.csv")
+  @output_file Path.join(
+                 :code.priv_dir(:ornithologue),
+                 "import/ebird/v2024/ornithologue_ebird_v2024.csv"
+               )
 
   def convert do
     extract_taxa_from_csv(@ebird_taxonomy_file)
@@ -106,6 +109,7 @@ defmodule Converter.Ebird.V2024 do
   end
 
   def save_csv(taxa, csv_file) do
+    File.mkdir_p!(Path.dirname(csv_file))
     file = File.open!(csv_file, [:write, :utf8])
 
     values =

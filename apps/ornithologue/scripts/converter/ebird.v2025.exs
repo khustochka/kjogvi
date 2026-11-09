@@ -30,7 +30,10 @@ defmodule Converter.Ebird.V2025 do
                            )
   # Download from https://api.ebird.org/v2/ref/taxonomy/ebird?version=2025 (no auth needed)
   @api_taxonomy_file Path.join(@convert_dir, "API_eBird_taxonomy_v2025.csv")
-  @output_file Path.join(@convert_dir, "ornithologue_ebird_v2025.csv")
+  @output_file Path.join(
+                 :code.priv_dir(:ornithologue),
+                 "import/ebird/v2025/ornithologue_ebird_v2025.csv"
+               )
 
   # Explicit output column order. The attrs keyword lists are reshuffled by the amend
   # steps (`Keyword.put` prepends new keys), so the header is fixed here rather than
@@ -184,6 +187,7 @@ defmodule Converter.Ebird.V2025 do
   end
 
   def save_csv(taxa, csv_file) do
+    File.mkdir_p!(Path.dirname(csv_file))
     file = File.open!(csv_file, [:write, :utf8])
 
     values =

@@ -23,7 +23,10 @@ defmodule Converter.AviList.V2025 do
   @convert_dir Path.join(:code.priv_dir(:ornithologue), "convert/avilist/v2025")
 
   @taxonomy_file Path.join(@convert_dir, "AviList-v2025-11Jun-extended.csv")
-  @output_file Path.join(@convert_dir, "ornithologue_avilist_v2025.csv")
+  @output_file Path.join(
+                 :code.priv_dir(:ornithologue),
+                 "import/avilist/v2025/ornithologue_avilist_v2025.csv"
+               )
 
   def convert do
     extract_taxa_from_csv(@taxonomy_file)
@@ -118,6 +121,7 @@ defmodule Converter.AviList.V2025 do
   end
 
   def save_csv(taxa, csv_file) do
+    File.mkdir_p!(Path.dirname(csv_file))
     file = File.open!(csv_file, [:write, :utf8])
 
     headers = taxa |> List.first() |> Keyword.keys()
