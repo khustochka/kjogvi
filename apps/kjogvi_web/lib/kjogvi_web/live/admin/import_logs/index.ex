@@ -21,7 +21,7 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     filter = if params["status"] == "issues", do: :issues, else: :all
-    page = params |> Map.get("page", "1") |> String.to_integer()
+    page = page_number(params)
 
     {import_logs, meta} =
       Imports.list_import_logs_for_admin(filter, %{page: page, page_size: @logs_per_page})

@@ -109,4 +109,14 @@ defmodule KjogviWeb.PaginationComponentsTest do
       refute html =~ "»"
     end
   end
+
+  describe "page_number/1" do
+    test "reads the page param" do
+      assert PaginationComponents.page_number(%{"page" => "3"}) == 3
+    end
+
+    test "defaults to the first page" do
+      assert PaginationComponents.page_number(%{}) == 1
+    end
+  end
 end

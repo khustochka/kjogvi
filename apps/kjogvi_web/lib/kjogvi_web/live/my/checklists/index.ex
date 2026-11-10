@@ -22,9 +22,7 @@ defmodule KjogviWeb.Live.My.Checklists.Index do
   # and `handle_params` rebuilds the filter + taxon label from them on every nav.
   @impl true
   def handle_params(params, _url, socket) do
-    page =
-      Map.get(params, "page", "1")
-      |> String.to_integer()
+    page = page_number(params)
 
     {filter, taxon_label} = Birding.checklist_filter_from_params(params)
 

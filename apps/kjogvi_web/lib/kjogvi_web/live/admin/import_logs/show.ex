@@ -19,7 +19,7 @@ defmodule KjogviWeb.Live.Admin.ImportLogs.Show do
   @impl true
   def handle_params(%{"id" => id} = params, _uri, socket) do
     import_log = Imports.get_import_log!(id)
-    page = params |> Map.get("page", "1") |> String.to_integer()
+    page = page_number(params)
 
     {errors, meta} =
       Imports.paginate_import_errors(import_log.id, %{page: page, page_size: @errors_per_page})

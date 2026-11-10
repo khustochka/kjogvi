@@ -156,7 +156,7 @@ defmodule KjogviWeb.Live.Lifelist.Components do
   # to its species page.
   defp lifer_name(%{lifer: %TaxaLifelist.Entry{}} = assigns) do
     ~H"""
-    <.taxon_link taxon={@lifer.taxon} />
+    <.my_taxon_link taxon={@lifer.taxon} />
     """
   end
 

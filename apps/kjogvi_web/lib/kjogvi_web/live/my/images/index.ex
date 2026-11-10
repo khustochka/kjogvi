@@ -19,9 +19,7 @@ defmodule KjogviWeb.Live.My.Images.Index do
   @impl true
   @spec handle_params(map(), any(), map()) :: {:noreply, map()}
   def handle_params(params, _uri, socket) do
-    page =
-      Map.get(params, "page", "1")
-      |> String.to_integer()
+    page = page_number(params)
 
     {images, meta} =
       Images.list_images(

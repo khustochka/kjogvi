@@ -496,8 +496,9 @@ defmodule KjogviWeb.Live.Lifelist.Index do
     |> assign(:page_title, "#{assigns.page_header} (#{assigns.book.name})")
   end
 
-  defp count_unit(%{book: %Book{}, species_only: false}), do: "taxa"
-  defp count_unit(_filter), do: "species"
+  defp count_unit(%{book: nil}), do: "species"
+  defp count_unit(%{species_only: true}), do: "species"
+  defp count_unit(_filter), do: "taxa"
 
   # Private view not indexed
   defp derive_robots(%{assigns: %{current_scope: %Kjogvi.Scope{area: area}}} = socket)
@@ -637,13 +638,13 @@ defmodule KjogviWeb.Live.Lifelist.Index do
 
   defp recorded_taxon(%{entry: %{taxon: nil}} = assigns) do
     ~H"""
-    Unknown taxon <code class="font-mono">{@entry.taxon_key}</code>
+    <.unknown_taxon key={@entry.taxon_key} />
     """
   end
 
   defp recorded_taxon(assigns) do
     ~H"""
-    <.taxon_link taxon={@entry.taxon} />
+    <.my_taxon_link taxon={@entry.taxon} />
     <span class="text-xs text-stone-500">
       in {Book.signature(@entry.taxon.book)}
     </span>
@@ -662,64 +663,106 @@ defmodule KjogviWeb.Live.Lifelist.Index do
       )
 
     ~H"""
-    <div
-      id="lifelist-total"
-      class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg"
-    >
-      <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
-      <span class="text-forest-100 text-sm font-medium">{@unit} recorded</span>
-    </div>
-    <.link
+    <.count_tile id="lifelist-total" count={@lifelist.total} label={"#{@unit} recorded"} />
+    <.count_tile
       id="lifelist-species-total"
+      count={@species_total}
+      label="species recorded"
+      color={:forest_light}
       patch={lifelist_path(@current_scope, %{@lifelist.filter | species_only: true})}
-      class="inline-flex items-baseline gap-2.5 bg-forest-100 text-forest-800 px-4 py-2.5 rounded-lg hover:bg-forest-200 no-underline group"
-    >
-      <span class="text-2xl font-header font-bold tracking-tight">{@species_total}</span>
-      <span class="text-sm font-medium group-hover:underline">species recorded</span>
-    </.link>
+    />
     """
   end
 
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: false}}} = assigns) do
     ~H"""
-    <div
-      id="lifelist-total"
-      class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg"
-    >
-      <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
-      <span class="text-forest-100 text-sm font-medium">{@unit} recorded</span>
-    </div>
+    <.count_tile id="lifelist-total" count={@lifelist.total} label={"#{@unit} recorded"} />
     """
   end
 
   defp species_count_header(%{lifelist: %{extras: %{heard_only: %{list: []}}}} = assigns) do
     ~H"""
-    <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
-      <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
-      <span class="text-forest-100 text-sm font-medium">{@unit} seen</span>
-    </div>
-    <div class="inline-flex items-baseline gap-2.5 bg-purple-600/60 text-white px-4 py-2.5 rounded-lg">
-      <span class="text-2xl font-header font-bold tracking-tight">&nbsp;</span>
-      <span class="text-purple-100 text-sm font-medium">No heard only {@unit}</span>
-    </div>
+    <.count_tile id="lifelist-total" count={@lifelist.total} label={"#{@unit} seen"} />
+    <.count_tile
+      id="lifelist-heard-only-total"
+      label={"No heard only #{@unit}"}
+      color={:purple_muted}
+    />
     """
   end
 
   defp species_count_header(%{lifelist: %{filter: %{exclude_heard_only: true}}} = assigns) do
     ~H"""
-    <div class="inline-flex items-baseline gap-2.5 bg-forest-600 text-white px-4 py-2.5 rounded-lg">
-      <span class="text-2xl font-header font-bold tracking-tight">{@lifelist.total}</span>
-      <span class="text-forest-100 text-sm font-medium">{@unit} seen</span>
-    </div>
-    <a
+    <.count_tile id="lifelist-total" count={@lifelist.total} label={"#{@unit} seen"} />
+    <.count_tile
+      id="lifelist-heard-only-total"
+      count={length(@lifelist.extras.heard_only.list)}
+      label="heard only ↓"
+      color={:purple}
       href="#heard-only-list"
-      class="inline-flex items-baseline gap-2.5 bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 no-underline group"
-    >
-      <span class="text-2xl font-header font-bold tracking-tight">
-        {length(@lifelist.extras.heard_only.list)}
-      </span>
-      <span class="text-purple-100 text-sm font-medium group-hover:underline">heard only ↓</span>
-    </a>
+    />
     """
   end
+
+  attr :id, :string, required: true
+  attr :count, :integer, default: nil
+  attr :label, :string, required: true
+  attr :color, :atom, values: [:forest, :forest_light, :purple, :purple_muted], default: :forest
+  attr :patch, :string, default: nil
+  attr :href, :string, default: nil
+
+  # A count with its label; a link when given `patch` or `href`.
+  defp count_tile(%{patch: nil, href: nil} = assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class={["inline-flex items-baseline gap-2.5 px-4 py-2.5 rounded-lg", tile_class(@color)]}
+    >
+      <.count_tile_content count={@count} label={@label} color={@color} />
+    </div>
+    """
+  end
+
+  defp count_tile(assigns) do
+    ~H"""
+    <.link
+      id={@id}
+      patch={@patch}
+      href={@href}
+      class={[
+        "inline-flex items-baseline gap-2.5 px-4 py-2.5 rounded-lg no-underline group",
+        tile_class(@color)
+      ]}
+    >
+      <.count_tile_content count={@count} label={@label} color={@color} linked />
+    </.link>
+    """
+  end
+
+  attr :count, :integer, required: true
+  attr :label, :string, required: true
+  attr :color, :atom, required: true
+  attr :linked, :boolean, default: false
+
+  defp count_tile_content(assigns) do
+    ~H"""
+    <span class="text-2xl font-header font-bold tracking-tight">{@count || "\u00A0"}</span>
+    <span class={[
+      "text-sm font-medium",
+      tile_label_class(@color),
+      @linked && "group-hover:underline"
+    ]}>
+      {@label}
+    </span>
+    """
+  end
+
+  defp tile_class(:forest), do: "bg-forest-600 text-white"
+  defp tile_class(:forest_light), do: "bg-forest-100 text-forest-800 hover:bg-forest-200"
+  defp tile_class(:purple), do: "bg-purple-600 text-white hover:bg-purple-700"
+  defp tile_class(:purple_muted), do: "bg-purple-600/60 text-white"
+
+  defp tile_label_class(:forest), do: "text-forest-100"
+  defp tile_label_class(:forest_light), do: nil
+  defp tile_label_class(color) when color in [:purple, :purple_muted], do: "text-purple-100"
 end

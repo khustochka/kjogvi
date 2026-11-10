@@ -17,7 +17,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
   def mount(%{"slug" => slug, "version" => version, "code" => code}, _session, socket) do
     book = Ornitho.Finder.Book.by_signature(slug, version) || raise KjogviWeb.NotFoundError
 
-    # `taxon_link/1` builds the link from the taxon's book.
+    # `my_taxon_link/1` builds the link from the taxon's book.
     taxon =
       (Ornitho.Finder.Taxon.by_code(book, code) || raise(KjogviWeb.NotFoundError))
       |> Ornitho.Finder.Taxon.with_parent_species()
@@ -37,7 +37,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
 
   @impl true
   def handle_params(params, _url, %{assigns: assigns} = socket) do
-    page = params |> Map.get("page", "1") |> String.to_integer()
+    page = page_number(params)
 
     {observations, meta} =
       Birding.taxon_observations(
@@ -57,9 +57,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
     </.h1>
     <p id="taxon-name-sci" class="mt-1 text-lg text-stone-600">
       <i>{@taxon.name_sci}</i>
-      <span :if={@taxon.category != "species"} class="text-sm text-stone-500">
-        ({@taxon.category})
-      </span>
+      <.taxon_category taxon={@taxon} class="text-sm text-stone-500" />
     </p>
 
     <dl id="taxon-details" class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
@@ -71,7 +69,7 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
       <dd :if={@taxon.order || @taxon.family}>{@taxon.order} / {@taxon.family}</dd>
       <dt :if={@taxon.parent_species} class="text-stone-500">Species</dt>
       <dd :if={@taxon.parent_species} id="taxon-parent-species">
-        <.taxon_link taxon={@taxon.parent_species} />
+        <.my_taxon_link taxon={@taxon.parent_species} />
       </dd>
     </dl>
 
@@ -108,18 +106,15 @@ defmodule KjogviWeb.Live.My.Taxa.Show do
         <span :if={observation.quantity} class="text-sm text-stone-500">
           × {observation.quantity}
         </span>
+        <span :if={observation.voice or observation.hidden} class="inline-flex gap-1">
+          <.observation_flags obs={observation} />
+        </span>
         <ul class="flex flex-wrap gap-1.5 text-xs" aria-label="Notes">
           <li
             :if={observation.id == @first_record_id}
             class="px-1.5 py-0.5 rounded bg-forest-100 text-forest-800 font-semibold"
           >
             First record
-          </li>
-          <li :if={observation.voice} class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">
-            Heard only
-          </li>
-          <li :if={observation.hidden} class="px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">
-            Hidden
           </li>
           <li
             :if={observation.unreported}

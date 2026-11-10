@@ -19,10 +19,7 @@ defmodule KjogviWeb.Live.Photos.Index do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    page =
-      params
-      |> Map.get("page", "1")
-      |> String.to_integer()
+    page = page_number(params)
 
     {images, meta} =
       Images.list_images_for_scope(

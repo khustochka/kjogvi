@@ -86,6 +86,20 @@ defmodule KjogviWeb.Live.My.Taxa.ShowTest do
     refute has_element?(lv, "#observation-#{others.id}")
   end
 
+  test "flags hidden observations", %{conn: conn, user: user, book: book, species: species} do
+    obs =
+      insert(:observation,
+        checklist: insert(:checklist, user: user),
+        taxon_key: Taxon.key(species),
+        hidden: true
+      )
+
+    {:ok, lv, _html} = live(conn, taxon_path(book, species))
+
+    assert has_element?(lv, "#observation-#{obs.id} [title=Hidden]")
+    refute has_element?(lv, "#observation-#{obs.id} [title='Heard only']")
+  end
+
   test "an uncounted observation is not the first record", %{
     conn: conn,
     user: user,

@@ -27,7 +27,7 @@ defmodule KjogviWeb.Live.Admin.Users.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     search_term = params |> Map.get("q", "") |> String.trim()
-    page = params |> Map.get("page", "1") |> String.to_integer()
+    page = page_number(params)
 
     {users, meta} =
       Accounts.list_users_for_admin(search_term, %{page: page, page_size: @users_per_page})

@@ -199,11 +199,8 @@ defmodule KjogviWeb.Live.My.Checklists.Show do
           <:col :let={obs} label="id">{obs.id}</:col>
           <:col :let={obs} label="Quantity">
             {obs.quantity}
-            <span :if={obs.hidden} title="Hidden" class="pl-2">
-              <.icon name="hero-eye-slash" class="h-4 w-4 text-red-500" />
-            </span>
-            <span :if={obs.voice} title="Heard only" class="pl-2">
-              <.icon name="hero-musical-note" class="h-4 w-4 text-teal-600" />
+            <span :if={obs.voice or obs.hidden} class="pl-2 inline-flex gap-1">
+              <.observation_flags obs={obs} />
             </span>
           </:col>
           <:col :let={obs} label="Taxon">

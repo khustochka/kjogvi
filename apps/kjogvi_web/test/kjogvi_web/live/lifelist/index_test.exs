@@ -32,6 +32,43 @@ defmodule KjogviWeb.Live.Lifelist.IndexTest do
     assert get_number_of_species(html) == 1
   end
 
+  describe "excluding heard only" do
+    test "counts heard-only species separately", %{conn: conn, user: user} do
+      {seen, _} = Factory.create_species_taxon_with_page()
+      {heard, _} = Factory.create_species_taxon_with_page()
+      checklist = insert(:checklist, user: user)
+      insert(:observation, taxon_key: Ornitho.Schema.Taxon.key(seen), checklist: checklist)
+
+      insert(:observation,
+        taxon_key: Ornitho.Schema.Taxon.key(heard),
+        checklist: checklist,
+        voice: true
+      )
+
+      {:ok, lv, _html} =
+        live(conn, ~p"/users/#{user.nickname}/lifelist?exclude_heard_only=true")
+
+      assert has_element?(lv, "#lifelist-total", "1")
+      assert has_element?(lv, "#lifelist-total", "species seen")
+      assert has_element?(lv, "a#lifelist-heard-only-total[href='#heard-only-list']", "1")
+    end
+
+    test "notes when there are no heard-only species", %{conn: conn, user: user} do
+      {seen, _} = Factory.create_species_taxon_with_page()
+
+      insert(:observation,
+        taxon_key: Ornitho.Schema.Taxon.key(seen),
+        checklist: insert(:checklist, user: user)
+      )
+
+      {:ok, lv, _html} =
+        live(conn, ~p"/users/#{user.nickname}/lifelist?exclude_heard_only=true")
+
+      assert has_element?(lv, "#lifelist-heard-only-total", "No heard only species")
+      refute has_element?(lv, "a#lifelist-heard-only-total")
+    end
+  end
+
   test "public lifelist hides a private ancestor's name in the location column",
        %{conn: conn, user: user} do
     {taxon, _} = Factory.create_species_taxon_with_page()

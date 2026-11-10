@@ -246,22 +246,7 @@ defmodule KjogviWeb.BirdingComponents do
           <span class="min-w-0 wrap-break-words">
             <.observation_taxon_name obs={obs} />
           </span>
-          <span
-            :if={obs.voice}
-            title="Heard only"
-            class="inline-flex shrink-0 items-center rounded-full bg-teal-100 p-1 text-teal-700 ring-1 ring-inset ring-teal-300"
-          >
-            <.icon name="hero-musical-note-solid" class="h-4 w-4" />
-            <span class="sr-only">heard only</span>
-          </span>
-          <span
-            :if={obs.hidden}
-            title="Hidden"
-            class="inline-flex shrink-0 items-center rounded-full bg-red-100 p-1 text-red-600 ring-1 ring-inset ring-red-300"
-          >
-            <.icon name="hero-eye-slash-solid" class="h-4 w-4" />
-            <span class="sr-only">hidden</span>
-          </span>
+          <.observation_flags obs={obs} />
           <span class="ml-auto shrink-0 pl-2 font-mono text-xs text-stone-400" title="Observation ID">
             #{obs.id}
           </span>
@@ -275,9 +260,7 @@ defmodule KjogviWeb.BirdingComponents do
 
   defp observation_taxon_name(%{obs: %{taxon: nil}} = assigns) do
     ~H"""
-    <span class="font-mono text-sm text-stone-400" title="Undefined taxon">
-      {@obs.taxon_key}
-    </span>
+    <.unknown_taxon key={@obs.taxon_key} />
     """
   end
 
@@ -294,6 +277,45 @@ defmodule KjogviWeb.BirdingComponents do
   # it is a list. Only render the section when an actual list is present.
   defp checklist_has_loaded_observations?(%{observations: obs}) when is_list(obs), do: true
   defp checklist_has_loaded_observations?(_checklist), do: false
+
+  @doc """
+  Heard-only and hidden markers for an observation.
+  """
+  attr :obs, :map, required: true
+
+  def observation_flags(assigns) do
+    ~H"""
+    <span
+      :if={@obs.voice}
+      title="Heard only"
+      class="inline-flex shrink-0 items-center rounded-full bg-teal-100 p-1 text-teal-700 ring-1 ring-inset ring-teal-300"
+    >
+      <.icon name="hero-musical-note-solid" class="h-4 w-4" />
+      <span class="sr-only">Heard only</span>
+    </span>
+    <span
+      :if={@obs.hidden}
+      title="Hidden"
+      class="inline-flex shrink-0 items-center rounded-full bg-red-100 p-1 text-red-600 ring-1 ring-inset ring-red-300"
+    >
+      <.icon name="hero-eye-slash-solid" class="h-4 w-4" />
+      <span class="sr-only">Hidden</span>
+    </span>
+    """
+  end
+
+  @doc """
+  A taxon key that resolves to no taxon.
+  """
+  attr :key, :string, required: true
+
+  def unknown_taxon(assigns) do
+    ~H"""
+    <span class="text-stone-500">
+      Unknown taxon <code class="font-mono text-sm">{@key}</code>
+    </span>
+    """
+  end
 
   @doc """
   Renders the checklist delete control.
@@ -556,19 +578,29 @@ defmodule KjogviWeb.BirdingComponents do
   """
   attr :taxon, Taxon, required: true
 
-  def taxon_link(assigns) do
+  def my_taxon_link(assigns) do
     assigns = assign(assigns, :countable, not is_nil(Taxon.species(assigns.taxon)))
 
     ~H"""
-    <span class="taxon_link" phx-no-format>
+    <span class="my_taxon_link" phx-no-format>
       <.link
         phx-no-format
         navigate={TaxonPath.my_taxon_path(@taxon)}
         class={[if(@countable, do: "font-semibold"), "text-[1.05rem] text-taxon underline decoration-taxon/30 hover:decoration-taxon hover:bg-orange-50 rounded-sm px-1 -mx-1 underline-offset-2 transition"]}
       ><%= @taxon.name_en %></.link> <i class="whitespace-nowrap text-[0.93rem] text-stone-400">{@taxon.name_sci}</i></span>
-    <span :if={@taxon.category != "species"} class="text-xs text-stone-500">
-      ({@taxon.category})
-    </span>
+    <.taxon_category taxon={@taxon} />
+    """
+  end
+
+  @doc """
+  The taxon's category in brackets, unless it is a species.
+  """
+  attr :taxon, Taxon, required: true
+  attr :class, :any, default: "text-xs text-stone-500"
+
+  def taxon_category(assigns) do
+    ~H"""
+    <span :if={@taxon.category != "species"} class={@class}>({@taxon.category})</span>
     """
   end
 

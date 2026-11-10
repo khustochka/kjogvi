@@ -9,6 +9,12 @@ defmodule KjogviWeb.PaginationComponents do
   @item_class "inline-block min-w-9 px-3 py-1.5 text-center text-base lg:text-sm leading-snug border rounded"
   @link_class "text-forest-600 bg-white border-stone-400 hover:bg-forest-50 no-underline"
 
+  @doc """
+  The page number from a paginated route's params (`/page/:page`); 1 without one.
+  """
+  @spec page_number(map()) :: pos_integer()
+  def page_number(params), do: params |> Map.get("page", "1") |> String.to_integer()
+
   @doc ~S"""
   Renders numbered page navigation for a `Flop.Meta`.
 
