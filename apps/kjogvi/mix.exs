@@ -66,9 +66,8 @@ defmodule Kjogvi.MixProject do
       # Oban is started here, so oban_met must boot first to attach its
       # auto-start handler for the dashboard's metrics (Oban.Web is in kjogvi_web).
       {:oban_met, "~> 1.2"},
-      # Fork of waffle that makes hackney optional.
-      {:waffle, github: "khustochka/waffle", branch: "hackney-optional", override: true},
-      {:waffle_ecto, "~> 0.0.12"},
+      {:waffle, "~> 2.1"},
+      {:waffle_ecto, "~> 0.1.0"},
       {:vix, "~> 0.31"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
