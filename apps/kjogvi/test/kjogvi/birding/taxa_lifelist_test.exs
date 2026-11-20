@@ -113,7 +113,7 @@ defmodule Kjogvi.Birding.TaxaLifelistTest do
   end
 
   describe "generate/2 with observations from another book" do
-    setup ctx do
+    setup _ctx do
       other = Ornitho.Factory.insert(:book, slug: "other")
 
       %{
