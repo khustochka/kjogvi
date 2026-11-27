@@ -6,7 +6,6 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
   import Phoenix.LiveViewTest
 
   alias Kjogvi.Jobs
-  alias Kjogvi.Store
   alias Kjogvi.Util.AsyncResult
   alias Kjogvi.Util.PubSubTopic
 
@@ -16,7 +15,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
   end
 
   describe "page rendering" do
-    test "an admin sees both the Legacy and eBird import checklists", %{conn: conn} do
+    test "an admin sees the Legacy import", %{conn: conn} do
       {:ok, _lv, html} =
         conn
         |> login_user(Kjogvi.AccountsFixtures.admin_fixture())
@@ -24,20 +23,17 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       assert html =~ "Import Tasks"
       assert html =~ "Legacy Import"
-      assert html =~ "eBird preload"
       # The ISO locations import lives on /admin/imports/locations now.
       refute html =~ "Locations Import"
     end
 
-    test "a non-admin user sees the eBird preload but not the legacy import",
-         %{conn: conn} do
+    test "a non-admin user does not see the legacy import", %{conn: conn} do
       {:ok, _lv, html} =
         conn
         |> login_user(Kjogvi.AccountsFixtures.user_fixture())
         |> live(~p"/my/imports")
 
       assert html =~ "Import Tasks"
-      assert html =~ "eBird preload"
       refute html =~ "Legacy Import"
     end
 
@@ -60,11 +56,10 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
     end
   end
 
-  # Both imports run as exclusive Oban jobs: a running job broadcasts
+  # The import runs as an exclusive Oban job: a running job broadcasts
   # `{:progress, key, %{message: ...}}` on the key's PubSub topic, and the
   # matching component (subscribed on mount) renders the latest status as a
-  # loading info flash. The key tags the broadcast so it reaches the right
-  # component.
+  # loading info flash.
   defp broadcast_progress(key, data) do
     Phoenix.PubSub.broadcast(
       Kjogvi.PubSub,
@@ -74,9 +69,7 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
   end
 
   # When a job finishes, Kjogvi.Jobs.Runtime.Bridge broadcasts a lifecycle event
-  # carrying the outcome as an AsyncResult. The eBird component reacts to `:ok`
-  # by refreshing its display from the store (which the job itself populated)
-  # and surfacing a count flash.
+  # carrying the outcome as an AsyncResult.
   defp broadcast_lifecycle(key, event, async_result) do
     Phoenix.PubSub.broadcast(
       Kjogvi.PubSub,
@@ -243,115 +236,6 @@ defmodule KjogviWeb.Live.My.Imports.IndexTest do
 
       assert has_element?(lv2, "#legacy-import-form button[disabled]")
       assert render(lv2) =~ "Importing observations... 4200"
-    end
-  end
-
-  describe "starting the eBird preload" do
-    setup %{conn: conn} do
-      user = Kjogvi.AccountsFixtures.user_fixture()
-
-      {:ok, _user} =
-        Kjogvi.Accounts.update_user_preferences(user, %{
-          preferences: %{ebird: %{username: "birder", password: "secret"}}
-        })
-
-      {:ok, lv, _html} =
-        conn
-        |> login_user(user)
-        |> live(~p"/my/imports")
-
-      %{lv: lv, user: user}
-    end
-
-    # The run itself would hit the eBird site, so it is never drained here —
-    # these tests stop at the enqueued job.
-    test "enqueues the job, resets stored preloads, and disables the button",
-         %{lv: lv, user: user} do
-      Store.ChecklistPreload.store_checklists(user, [
-        %{ebird_id: "S1", date: ~D[2026-06-01], time: ~T[07:30:00], location: "Central Park"}
-      ])
-
-      lv |> element("#ebird-preload-form") |> render_submit()
-
-      assert has_element?(lv, "#ebird-preload-form button[disabled]")
-      assert render(lv) =~ "eBird preload in progress..."
-
-      assert %AsyncResult{loading: %{message: _}} =
-               Jobs.status(Jobs.EbirdPreload, %{user_id: user.id})
-
-      assert Store.ChecklistPreload.get_preloads(user).checklists == []
-    end
-  end
-
-  describe "eBird progress over PubSub" do
-    setup %{conn: conn} do
-      user = Kjogvi.AccountsFixtures.user_fixture()
-
-      {:ok, lv, _html} =
-        conn
-        |> login_user(user)
-        |> live(~p"/my/imports")
-
-      %{lv: lv, user: user}
-    end
-
-    test "a progress message is routed to the eBird component", %{lv: lv, user: user} do
-      broadcast_progress({:ebird_preload, user.id}, %{message: "Logging in..."})
-
-      assert flush_render(lv) =~ "Logging in..."
-    end
-
-    # The task persists checklists to the store and its result carries only the
-    # completion message. On the `:ok` lifecycle the component renders the
-    # checklists straight from the store and surfaces the message from the result.
-    test "on success the eBird component renders stored checklists and the message",
-         %{lv: lv, user: user} do
-      checklists = [
-        %{ebird_id: "S1", date: ~D[2026-06-01], time: ~T[07:30:00], location: "Central Park"},
-        %{ebird_id: "S2", date: ~D[2026-06-02], time: ~T[08:00:00], location: "Prospect Park"}
-      ]
-
-      # Simulates what the task does in the background before completing: persist
-      # the checklists, then finish carrying just the message.
-      Store.ChecklistPreload.store_checklists(user, checklists)
-
-      key = {:ebird_preload, user.id}
-
-      async_result =
-        AsyncResult.ok(
-          AsyncResult.loading(%{}),
-          %{message: "eBird preload done: 2 new checklists."}
-        )
-
-      broadcast_lifecycle(key, :ok, async_result)
-
-      html = flush_render(lv)
-
-      assert html =~ "eBird preload done: 2 new checklists."
-      assert html =~ "Central Park"
-      assert html =~ "Prospect Park"
-    end
-
-    # Failure path: a user without eBird credentials never enqueues the job —
-    # the error is surfaced immediately and nothing is stored.
-    test "on missing eBird configuration nothing is enqueued or stored and an error flash is shown",
-         %{conn: conn} do
-      # A bare fixture has no eBird username/password configured.
-      user = Kjogvi.AccountsFixtures.user_fixture()
-
-      {:ok, lv, _html} =
-        conn
-        |> login_user(user)
-        |> live(~p"/my/imports")
-
-      html =
-        lv
-        |> element("form[phx-submit='start_preload']")
-        |> render_submit()
-
-      assert html =~ "eBird preload failed: User does not have eBird configuration."
-      assert Store.ChecklistPreload.get_preloads(user).checklists == []
-      assert Jobs.status(Jobs.EbirdPreload, %{user_id: user.id}) == %AsyncResult{}
     end
   end
 end

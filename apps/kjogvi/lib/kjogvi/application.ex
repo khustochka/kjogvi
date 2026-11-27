@@ -12,7 +12,6 @@ defmodule Kjogvi.Application do
     children = [
       Kjogvi.Repo,
       Kjogvi.Cache,
-      {Kjogvi.Store.ChecklistPreload, name: Kjogvi.Store.ChecklistPreload},
       {DNSCluster, query: Application.get_env(:kjogvi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Kjogvi.PubSub},
       {Oban, Application.fetch_env!(:kjogvi, Oban)}

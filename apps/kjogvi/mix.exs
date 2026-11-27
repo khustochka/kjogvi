@@ -74,8 +74,6 @@ defmodule Kjogvi.MixProject do
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.25"},
       {:req, "~> 0.7.2", override: true},
-      {:http_cookie, "~> 0.11.0"},
-      {:floki, ">= 0.30.0"},
       {:datix, "~> 0.3"},
       {:flop, "~> 0.26"},
       {:nimble_options, "~> 1.1"},

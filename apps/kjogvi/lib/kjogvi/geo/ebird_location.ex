@@ -2,8 +2,7 @@ defmodule Kjogvi.Geo.EbirdLocation do
   @moduledoc """
   An eBird location reference: a country, subnational1, or subnational2 region as
   defined by eBird, keyed by eBird's own `code` (the canonical region code, e.g.
-  `"CA-AB-EI"`). This is reference data imported from eBird, distinct from the
-  `Kjogvi.Ebird.Web` client.
+  `"CA-AB-EI"`). This is reference data imported from eBird.
 
   Optionally mapped 1-to-1 to a `Kjogvi.Geo.Location` via `location_id`; the
   mapping may be `nil` when no local location corresponds to the eBird region.

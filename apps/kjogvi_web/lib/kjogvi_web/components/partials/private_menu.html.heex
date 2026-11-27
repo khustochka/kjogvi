@@ -40,7 +40,7 @@
         eBird
       </.link>
     </.menu_bar_item>
-    <.menu_bar_item>
+    <.menu_bar_item :if={Kjogvi.Accounts.admin?(@current_user)}>
       <.link href={~p"/my/imports"} class="no-underline hover:underline">
         Imports
       </.link>

@@ -107,10 +107,7 @@ Managed by [ornithologue](./apps/ornithologue/) in the `ornithologue` DB schema;
 [`Kjogvi.Images`](./apps/kjogvi/lib/kjogvi/images.ex) context; Waffle uploader (`Images.Uploader`) + libvips/Vix resizing (`Images.VixProcessor`). Variant filenames are computed at serve time, not stored — only the original `file` is persisted. URLs resolve against each image's own recorded `storage_backend` (not the env's current one), so images stay viewable across environments sharing a DB (prod-S3 image renders on local dev and vice versa).
 
 ### Background jobs
-[`Kjogvi.Jobs`](./apps/kjogvi/lib/kjogvi/jobs.ex) wraps Oban with *observable exclusive* jobs. A worker built on `Jobs.Runtime.ExclusiveWorker` runs at most one job per **slot** (worker + identifying args); `Jobs.Runtime.Bridge` rebroadcasts Oban telemetry as PubSub lifecycle events. `Jobs.status/2` reads the slot's current state from `oban_jobs` as a `Util.AsyncResult`, so a freshly mounted LiveView can seed itself before following live broadcasts; `Jobs.progress/2` reports mid-run progress (durable on the job's `meta`, plus a PubSub broadcast). Jobs live under `Kjogvi.Jobs.*` (e.g. `EbirdPreload`, `LegacyImport`).
-
-### eBird
-[`Kjogvi.Ebird.Web`](./apps/kjogvi/lib/kjogvi/ebird/web.ex) talks to the eBird API (`Ebird.Web.Client`) to preload a user's checklists. It's the integration's only piece in the core app today.
+[`Kjogvi.Jobs`](./apps/kjogvi/lib/kjogvi/jobs.ex) wraps Oban with *observable exclusive* jobs. A worker built on `Jobs.Runtime.ExclusiveWorker` runs at most one job per **slot** (worker + identifying args); `Jobs.Runtime.Bridge` rebroadcasts Oban telemetry as PubSub lifecycle events. `Jobs.status/2` reads the slot's current state from `oban_jobs` as a `Util.AsyncResult`, so a freshly mounted LiveView can seed itself before following live broadcasts; `Jobs.progress/2` reports mid-run progress (durable on the job's `meta`, plus a PubSub broadcast). Jobs live under `Kjogvi.Jobs.*` (e.g. `LegacyImport`).
 
 ### Caching
 [`Kjogvi.Cache`](./apps/kjogvi/lib/kjogvi/cache.ex) is an adapter front end — `Cache.Cachex` in normal operation, `Cache.None` (a no-op) where caching should be off, e.g. tests. Call `Kjogvi.Cache` rather than Cachex directly so the adapter stays swappable.

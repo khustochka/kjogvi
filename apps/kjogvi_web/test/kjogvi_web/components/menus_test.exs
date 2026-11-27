@@ -11,6 +11,14 @@ defmodule KjogviWeb.MenusTest do
       {:ok, live, _html} = live(conn, ~p"/my/locations")
 
       assert has_element?(live, "#private-menu a[href='/my/checklists']", "Checklists")
+      refute has_element?(live, "#private-menu a[href='/my/imports']")
+    end
+
+    test "shows the imports link for an admin", %{conn: conn} do
+      conn = login_user(conn, admin_fixture())
+
+      {:ok, live, _html} = live(conn, ~p"/my/locations")
+
       assert has_element?(live, "#private-menu a[href='/my/imports']", "Imports")
     end
 

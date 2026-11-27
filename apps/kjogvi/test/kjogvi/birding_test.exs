@@ -6,19 +6,6 @@ defmodule Kjogvi.BirdingTest do
   alias Kjogvi.Birding
   alias Kjogvi.Birding.Checklist
 
-  describe "find_new_checklists/2" do
-    test "returns unreported checklists" do
-      user = user_fixture()
-      insert(:checklist, user: user, ebird_id: "S100803884")
-      insert(:checklist, user: user, ebird_id: "S100803921")
-
-      new_checklists = [%{ebird_id: "S100878702"}, %{ebird_id: "S100803921"}]
-
-      assert Birding.find_new_checklists(user, new_checklists) ==
-               [%{ebird_id: "S100878702"}]
-    end
-  end
-
   describe "create_checklist/2" do
     test "creates a checklist with valid attributes" do
       user = user_fixture()

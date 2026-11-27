@@ -88,19 +88,4 @@ defmodule Kjogvi.Birding.Checklist.Query do
     from [..., checklist: c] in query,
       where: c.ebird_id in ^ebird_ids
   end
-
-  def all_ebird_ids(query) do
-    from(c in query,
-      where: not is_nil(c.ebird_id),
-      select: c.ebird_id
-    )
-  end
-
-  def find_new_checklists(query, new_ebird_ids) do
-    from(
-      l in fragment("SELECT checklist_id FROM UNNEST(?::text[]) AS checklist_id", ^new_ebird_ids),
-      where: l.checklist_id not in subquery(all_ebird_ids(query)),
-      select: l.checklist_id
-    )
-  end
 end

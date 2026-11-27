@@ -153,17 +153,6 @@ defmodule Kjogvi.Birding do
     end
   end
 
-  def find_new_checklists(user, checklists) do
-    new_ebird_ids =
-      Checklist
-      |> Checklist.Query.as_checklist()
-      |> Checklist.Query.by_user(user)
-      |> Checklist.Query.find_new_checklists(Enum.map(checklists, & &1.ebird_id))
-      |> Repo.all()
-
-    Enum.filter(checklists, &(&1.ebird_id in new_ebird_ids))
-  end
-
   def create_checklist(user, attrs) do
     attrs = Map.put(attrs, "user_id", user.id)
 

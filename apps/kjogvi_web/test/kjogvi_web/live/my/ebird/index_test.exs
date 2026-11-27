@@ -51,7 +51,6 @@ defmodule KjogviWeb.Live.My.Ebird.IndexTest do
       assert has_element?(lv, "#ebird-csv-import-form")
       # The other import tasks stay on /my/imports.
       refute has_element?(lv, "#legacy-import-form")
-      refute has_element?(lv, "#ebird-preload-form")
     end
 
     test "redirects when not logged in", %{conn: conn} do
